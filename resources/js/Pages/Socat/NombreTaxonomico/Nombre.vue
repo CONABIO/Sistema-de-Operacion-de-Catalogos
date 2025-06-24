@@ -30,6 +30,11 @@ const props = defineProps({
   }
 });
 
+//variables del paginado
+const totalItems = ref(0);
+const currentPage = ref(1);
+const itemsPerPage = ref(150);
+
 const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
@@ -295,7 +300,7 @@ const handleChange = async (value) => {
       
       if (response.status === 200) {
         data.value = response.data[0];
-        totalReg.value = response.data[1].total;
+        totalItems.value = response.data[1].total;
         paginas.value = response.data[1].last_page;
       }
       else {
@@ -731,6 +736,35 @@ const handleMenuClick = (action) => {
       closeMenu();
     }
   };
+
+  const handlePageChange = (page) => {
+    console.log("Este es el valor de page:", page);
+    currentPage.value = page;
+    fetchFilteredData();
+  };
+
+  const fetchFilteredData = async () => {
+    const params= {
+                    categ:catego.value,
+                    catalog:idsGrupos.value,
+                    page:currentPage.value
+                  };
+      const loading = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+
+      const response = await axios.get("/cargar-nomArb", { params });
+      if (response.status === 200) {
+        data.value = response.data[0];
+      }
+      
+      loading.close();
+      /*currentData.value = response.data.data || [];
+      totalItems.value = response.data.total || response.data.totalItems || 0;*/
+  };
 </script>
 
 <template>
@@ -744,12 +778,11 @@ const handleMenuClick = (action) => {
                 <div>
                   <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
                     placement="left-start">
-                    <el-button @click="filtro_Catalogos()" type="primary" round
+                    <el-button @click="filtro_Catalogos()" type="primary" circle
                       class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
                       <el-icon class="icono">
                         <Setting />
                       </el-icon>
-                      <span class="hidden sm:inline">Catálogo de grupos taxonómicos</span>
                     </el-button>
                   </el-tooltip>
                 </div>
@@ -760,7 +793,7 @@ const handleMenuClick = (action) => {
               <div class="demo-collapse">
                 <el-collapse>
                   <el-collapse-item title="Grupos taxonómicos seleccionados" name="1">
-                    <el-card style="width: 100%; max-width: 1500px;" shadow="always">
+                    <el-card style="width: 100%;" shadow="always">
                       <el-row :gutter='25'>
                         <el-col :span='10'>
                           <el-row> 
@@ -803,19 +836,19 @@ const handleMenuClick = (action) => {
           <br>
           <div style="flex-grow: 1;">
             <el-container style="height: 100%; border: 1px solid #eee">
-              <el-aside width="750px" style="background-color: rgb(238, 241, 246); min-height: 100%; overflow:auto;">
-                <div class="d-table-cell">
+              <el-aside width="750px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
+                <div class="tree-container">
+                  <el-scrollbar height="550px">
                   <el-tree 
                     class="filter-tree" 
-                    style="height: 100%; 
-                    overflow: auto;" 
+                    style="overflow: auto;" 
                     :data="data" 
                     node-key="id"
                     @node-click="expande" 
                     :expand-on-click-node="true" 
                     :filter-node-method="filterNode" 
                     :allow-drag="() => true"
-                    :draggable="true" 
+                    :draggable="false" 
                     empty-text='' 
                     ref="tree" 
                     :highlight-current="true" 
@@ -849,6 +882,7 @@ const handleMenuClick = (action) => {
                       </div>
                     </template>
                   </el-tree>
+                  </el-scrollbar>
                 </div>
                 <div>
                   <el-menu
@@ -876,23 +910,23 @@ const handleMenuClick = (action) => {
                   </el-menu>
                 </div>
               </el-aside>
-              <el-container v-show="mostrar === true" v-if="taxonAct != ''" style="height: 500px; border: 1px;">
+              <el-container style="height: 500px; border: 1px;">
                 <el-header style="text-align: left; font-size: 12px; height: 70px;">
                   <div>
                     <br/>
                     <br/>
                     <p></p>
                     <span class="demo-input-label">Categoria taxónomica: </span>
-                    <span class="demo-input-label">{{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</span>
+                    <span class="demo-input-label">{{ taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica }}</span>
                     <br/>
                     <br/>
                     <p></p>
                     <span class="demo-input-label">Nombre completo: </span>
-                    <span class="demo-input-label">{{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</span>
+                    <span class="demo-input-label">{{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}</span>
                     <p></p>
                     <br/>
                     <span class="demo-input-label">Taxón:</span>
-                    <span class="demo-input-label">{{ taxonAct.completo.Nombre }}</span>
+                    <span class="demo-input-label">{{ taxonAct?.completo?.Nombre }}</span>
                   </div>
                 </el-header>
                 <br/>
@@ -966,6 +1000,16 @@ const handleMenuClick = (action) => {
               </el-container>
             </el-container>
           </div>
+          <br>
+          <div class="main-section">
+            <div v-if="totalItems > 0" class="pagination-container-wrapper">
+              <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
+                @current-change="handlePageChange" layout="prev, pager, next, total" background
+                class="main-pagination-style">
+              </el-pagination>
+            </div>
+          </div>
+
         </el-header>
       </el-container>
     </div>
@@ -991,11 +1035,52 @@ const handleMenuClick = (action) => {
 </template>
 
 <style scoped>
+.el-aside {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Asegura que ocupe todo el alto disponible */
+}
+
+/* Contenedor del árbol con scroll */
+.tree-container {
+  flex: 1; /* Ocupa todo el espacio disponible */
+  overflow: auto; /* Habilita scroll si es necesario */
+  min-height: 0; /* Necesario para que funcione flex + overflow en algunos navegadores */
+}
+
+/* Ajustes para el árbol */
+.el-tree {
+  min-width: fit-content; /* Asegura que el árbol no sea más pequeño que su contenido */
+  width: 100%; /* Ocupa todo el ancho disponible */
+}
+
+/* Opcional: Ajusta el ancho de los nodos para evitar desbordamiento horizontal */
+.custom-tree-node {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/*------------------------------------------------------------------------------6&&&&&&&&&&&&&&&&&&&&&&&&&&&&*/
+.scrollbar-demo-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  margin: 10px;
+  text-align: center;
+  border-radius: 4px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+
 .icono {
   margin-right: 8px;
   /* Ajusta el espacio */
 }
-
+/*
 .custom-tree-node {
   align-items: center;
   justify-content: space-between;
@@ -1003,7 +1088,7 @@ const handleMenuClick = (action) => {
   padding-right: 8px;
   width: 50%;
   overflow: auto;
-}
+}*/
 
 :deep(.el-tree-node.is-current > .el-tree-node__content){
   background-color: rgb(203, 233, 200) !important;

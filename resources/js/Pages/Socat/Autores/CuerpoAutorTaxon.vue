@@ -158,6 +158,7 @@ const cargaListAutor = async (idsAutor) => {
     console.error('Error al obtener los datos:', error);
   }
 }
+
 watch(() => [props.autorRel, props.nombre], async () => {
   if (props.autorRel?.length > 0) {
     const idsAutor = props.autorRel.map(autor => autor.IdAutorTaxon).join(",");
@@ -187,6 +188,7 @@ const fetchFilteredData = async () => {
         sortOrder: sorting.value.order,
       },
     });
+    
     currentData.value = response.data.data || [];
     totalItems.value = response.data.total || response.data.totalItems || 0;
   } catch (error) {
