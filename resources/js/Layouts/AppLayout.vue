@@ -11,7 +11,6 @@ import { usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     title: String,
-
 });
 
 const page = usePage();
@@ -34,13 +33,13 @@ const logout = () => {
 </script>
 
 <template>
-    <div>
+    <div class="flex flex-col h-screen overflow-hidden">
         <Head :title="title" />
 
         <Banner />
 
-        <div class="min-h-screen bg-gray-100">
-            <nav class="bg-white border-b border-gray-100">
+        <!--div class="h-full max-h-full overflow-auto bg-gray-100"-->
+            <nav class="bg-white border-b border-gray-100 shrink-0">
                 <!-- Primary Navigation Menu -->
                 <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
@@ -286,18 +285,19 @@ const logout = () => {
                     </div>
                 </div>
             </nav>
+            <div class="flex-1 overflow-hidden bg-gray-100">
+                <!-- Page Heading -->
+                <header v-if="$slots.header" class="bg-white shadow">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                        <slot name="header" />
+                    </div>
+                </header>
 
-            <!-- Page Heading -->
-            <header v-if="$slots.header" class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main>
-                <slot />
-            </main>
-        </div>
+                <!-- Page Content -->
+                <main class="h-full overflow-auto px-4 pb-4">
+                    <slot />
+                </main>
+            </div>
+        <!--/div-->
     </div>
 </template>

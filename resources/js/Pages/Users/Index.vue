@@ -33,7 +33,6 @@
     layout: AppLayout,
     created() {
       // Imprime el valor de la propiedad 'users' al crear el componente
-      console.log('Usuarios:', this.users);
     },
   };
   </script>

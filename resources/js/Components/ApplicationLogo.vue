@@ -1,3 +1,4 @@
+<!--Elemento para mostrar el logo de la pagina principal-->
 <template>
     <el-image 
         class="block max-w-full max-h-full object-contain"  

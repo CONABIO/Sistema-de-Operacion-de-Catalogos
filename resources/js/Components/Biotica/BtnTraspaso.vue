@@ -1,3 +1,5 @@
+
+<!--Elemento para boton de tras paso de informacion-->
 <script setup>
     import { DArrowRight } from '@element-plus/icons-vue';
 
