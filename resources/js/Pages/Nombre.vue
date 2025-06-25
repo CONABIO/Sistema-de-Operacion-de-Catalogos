@@ -816,59 +816,56 @@ const handleMenuClick = (action) => {
             <br>
             <el-row :gutter="16" style="display: flex; flex-wrap: wrap;">
               <!-- Primera columna -->
-              <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
+              <el-col :xs="24" :sm="24" :md="6" style="display: flex; flex-direction: column; border: 1px solid red">
                 <span>Ir a:</span>
                 <el-input clearable placeholder="" v-model="filterText" @change="filterNode">
                 </el-input>
               </el-col>
 
               <!-- Segunda columna -->
-              <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
+              <el-col :xs="12" :sm="24" :md="6" style="display: flex; flex-direction: column; border: 1px solid blue">
                 <span class="block">Nivel taxonómico</span>
                 <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
                   placeholder="Nivel taxonómico" @change="handleChange">
                 </el-cascader>
               </el-col>
 
-              <!--el-row :gutter='2' justify="center" style="display: flex; border: 1px solid green"-->
-              <el-col :span="14">
-                <el-row :gutter="10" align="middle">
-                  <el-col :span='11' >
-                    <el-row> 
-                      <span class="demo-input-label">Catálogo(s)</span>
-                      <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
-                      </el-input>
-                    </el-row>
-                  </el-col>
-                  <el-col :span='11'>
-                    <el-row>
-                      <span class="demo-input-label">Grupo SCAT</span>
-                      <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
-                      </el-input>
-                    </el-row>
-                  </el-col>
-                  <el-col :span="2">
-                    <div>
-                      <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
-                        placement="left-start">
-                        <el-button @click="filtro_Catalogos()" type="primary" circle
-                          class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
-                          <el-icon class="icono">
-                            <Setting />
-                          </el-icon>
-                        </el-button>
-                      </el-tooltip>
-                    </div>
-                  </el-col>
-                </el-row>
-              </el-col>
+              <el-row :gutter='2' justify="center" style="display: flex; border: 1px solid green">
+                <el-col :span='11'>
+                  <el-row> 
+                    <span class="demo-input-label">Catálogo(s)</span>
+                    <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
+                    </el-input>
+                  </el-row>
+                </el-col>
+                <el-col :span='11'>
+                  <el-row>
+                    <span class="demo-input-label">Grupo SCAT</span>
+                    <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
+                    </el-input>
+                  </el-row>
+                </el-col>
+                <el-col :span="1">
+                  <div>
+                    <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
+                      placement="left-start">
+                      <el-button @click="filtro_Catalogos()" type="primary" circle
+                        class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
+                        <el-icon class="icono">
+                          <Setting />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                </el-col>
+              </el-row>
 
             </el-row>
           </div>
           <br>
           <div style="flex-grow: 1;">
-            <el-container style="height: 100%; border: 1px solid red;">
-              <el-aside width="650px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
+            <el-container style="height: 100%; border: 1px solid #eee">
+              <el-aside width="750px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
                 <div class="tree-container">
                   <el-scrollbar height="550px">
                   <el-tree 
