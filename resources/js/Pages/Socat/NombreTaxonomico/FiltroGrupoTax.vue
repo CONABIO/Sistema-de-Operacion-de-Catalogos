@@ -71,31 +71,33 @@
 
 <template>
     <div class="common-layout">
-        <el-container>
-            <el-header class="header">
-                <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
-            </el-header>
-            <el-main class="contenido">
-                <div>
-                    <btnTraspaso @traspasa="recuperaMarcados()" />
-                    <br />
-                    <div v-show="!checkAll">
-                        <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="marcar">
-                            Marcar todos
-                        </el-checkbox>
+        <el-card>
+            <el-container>
+                <el-header class="header">
+                    <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
+                </el-header>
+                <el-main class="contenido">
+                    <div>
+                        <btnTraspaso @traspasa="recuperaMarcados()" />
+                        <br />
+                        <div v-show="!checkAll">
+                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="marcar">
+                                Marcar todos
+                            </el-checkbox>
+                        </div>
+                        <div v-show="checkAll">
+                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">
+                                Desmarcar todos
+                            </el-checkbox>
+                        </div>
                     </div>
-                    <div v-show="checkAll">
-                        <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">
-                            Desmarcar todos
-                        </el-checkbox>
-                    </div>
-                </div>
-                <arbolCheck :datosArbol="datos" 
-                            :defaultProps="propiedades" 
-                            ref="arbolRef"
-                            @regresaMarcados="recibeGrupos"/>
-            </el-main>
-        </el-container>
+                    <arbolCheck :datosArbol="datos" 
+                                :defaultProps="propiedades" 
+                                ref="arbolRef"
+                                @regresaMarcados="recibeGrupos"/>
+                </el-main>
+            </el-container>
+        </el-card>
     </div>
 </template>
 

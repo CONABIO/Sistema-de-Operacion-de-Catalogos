@@ -35,6 +35,7 @@ const totalItems = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref(150);
 
+const tree = ref(null);
 const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
@@ -322,7 +323,7 @@ const filterNode = async (value, data) => {
     backgroud: 'rgba(255,255,255,0.85)',
   });
 
-  if (value != '' && idsGrupos.value != '' && categ.value[0] != '') {
+  if (value != '' && idsGrupos.value != '' && categ.value != null) {
     const params = {
       categ: categ.value[0],
       catalog: idsGrupos.value,
@@ -338,7 +339,9 @@ const filterNode = async (value, data) => {
       paginas = response.data[1].last_page;
       loading.close();
     }
-  } else if (idsGrupos.value != '') {
+  } 
+  
+  if (idsGrupos.value != '') {
     const params = {
       categ: categ.value[0],
       catalog: idsGrupos.value
@@ -703,15 +706,21 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
   
 }
 
-const handleNodeRightClick = (event, data) => {
-   taxAct.value = data;
+const handleNodeRightClick = (event, data, node) => {
+
   event.preventDefault(); // Prevenir el menú contextual del navegador
+
+  tree.value.setCurrentKey(data.id);
+
+  taxAct.value = data;
+  console.log("Taxon actual: ", taxAct.value);
   selectedNode.value = data;
   menuPosition.value = { 
     x: event.clientX, 
     y: event.clientY 
   };
   isMenuVisible.value = true;
+
   document.addEventListener('click', closeMenu);
   document.addEventListener('keydown', handleEscKey);
 };
@@ -773,52 +782,13 @@ const handleMenuClick = (action) => {
       <el-container style="min-height: 100vh; display: flex; flex-direction: column; border: 1px solid #eee">
         <el-header>
           <div>
-            <br/>
-            <el-row  :gutter="16" style="margin: 0 2px; height: 100%; border: 1px solid #eee">
-              <el-col :span="24" style="height: 100%;">
-                <el-collapse>
-                  <el-collapse-item title="Grupos taxonómicos seleccionados" name="1">
-                    <el-card style="width: 100%;" shadow="always">
-                      <el-row :gutter='25' justify="center" style="display: flex;">
-                        <el-col :span='11'>
-                          <el-row> 
-                            <span class="demo-input-label">Catálogo(s)</span>
-                            <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
-                            </el-input>
-                          </el-row>
-                        </el-col>
-                        <el-col :span='11'>
-                          <el-row>
-                            <span class="demo-input-label">Grupo SCAT</span>
-                            <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
-                            </el-input>
-                          </el-row>
-                        </el-col>
-                        <el-col :span="1">
-                          <div>
-                            <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
-                              placement="left-start">
-                              <el-button @click="filtro_Catalogos()" type="primary" circle
-                                class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
-                                <el-icon class="icono">
-                                  <Setting />
-                                </el-icon>
-                              </el-button>
-                            </el-tooltip>
-                          </div>
-                        </el-col>
-                      </el-row>
-                    </el-card>
-                  </el-collapse-item>
-                </el-collapse>
-              </el-col>
-            </el-row>
             <br>
             <el-row :gutter="16" style="display: flex; flex-wrap: wrap;">
               <!-- Primera columna -->
-              <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
+              <el-col :xs="24" :sm="12" :md="7" style="display: flex; flex-direction: column;">
                 <span>Ir a:</span>
-                <el-input clearable placeholder="" v-model="filterText" @change="filterNode">
+                <el-input clearable placeholder="" v-model="filterText" @change="filterNode"  
+                          style="height: 28px; font-size: 9px;">
                 </el-input>
               </el-col>
 
@@ -831,38 +801,62 @@ const handleMenuClick = (action) => {
               </el-col>
 
               <!--el-row :gutter='2' justify="center" style="display: flex; border: 1px solid green"-->
-              <el-col :span="14">
-                <el-row :gutter="10" align="middle">
-                  <el-col :span='11' >
-                    <el-row> 
-                      <span class="demo-input-label">Catálogo(s)</span>
-                      <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
-                      </el-input>
-                    </el-row>
-                  </el-col>
-                  <el-col :span='11'>
-                    <el-row>
-                      <span class="demo-input-label">Grupo SCAT</span>
-                      <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
-                      </el-input>
-                    </el-row>
-                  </el-col>
-                  <el-col :span="2">
-                    <div>
-                      <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
-                        placement="left-start">
-                        <el-button @click="filtro_Catalogos()" type="primary" circle
-                          class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
-                          <el-icon class="icono">
-                            <Setting />
-                          </el-icon>
-                        </el-button>
-                      </el-tooltip>
+              <el-col :span="12">
+                <el-row :gutter="10" style="display: flex; align-items: flex-start;">
+                  
+                  <!-- Catálogo(s) -->
+                  <el-col :span="11">
+                    <div style="display: flex; flex-direction: column;">
+                      <span class="demo-input-label" style="margin-bottom: 4px;">
+                        Catálogo(s)
+                      </span>
+                      <el-input
+                        type="textarea"
+                        :rows="2"
+                        placeholder="Catálogos"
+                        v-model="catalogos"
+                        :disabled="true"
+                      />
                     </div>
+                  </el-col>
+
+                  <!-- Grupo SCAT -->
+                  <el-col :span="11">
+                    <div style="display: flex; flex-direction: column;">
+                      <span class="demo-input-label" style="margin-bottom: 4px;">
+                        Grupo SCAT
+                      </span>
+                      <el-input
+                        type="textarea"
+                        :rows="2"
+                        placeholder="Grupo SCAT"
+                        v-model="grupos"
+                        :disabled="true"
+                      />
+                    </div>
+                  </el-col>
+
+                  <!-- Botón alineado con las etiquetas -->
+                  <el-col :span="2" style="display: flex; align-items: flex-start;">
+                    <el-tooltip
+                      effect="dark"
+                      content="Selección Catálogo de Grupos taxonómicos"
+                      placement="left-start"
+                    >
+                      <el-button
+                        @click="filtro_Catalogos()"
+                        type="primary"
+                        circle
+                        style="margin-top: 4px;" 
+                      >
+                        <el-icon>
+                          <Setting />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
                   </el-col>
                 </el-row>
               </el-col>
-
             </el-row>
           </div>
           <br>
