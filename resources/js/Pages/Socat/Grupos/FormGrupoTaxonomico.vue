@@ -82,14 +82,15 @@ const intentarGuardar = async () => {
 </script>
 
 <template>
-    <!-- Usamos la misma estructura de siempre -->
     <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true">
         <div class="dialog-header">
             <h3>{{ dialogTitle }}</h3>
         </div>
         <div class="header">
+            <div class="form-actions">
+                <GuardarButton @click="intentarGuardar" />
+            </div>
             <div class="dialog-body">
-                <!-- Tu formulario de Grupo Taxonómico, sin tocar los campos -->
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top" @submit.prevent="intentarGuardar">
                     <el-form-item label="Nombre del Grupo" prop="GrupoSCAT">
                         <el-input v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
@@ -102,16 +103,13 @@ const intentarGuardar = async () => {
                     </el-form-item>
                 </el-form>
 
-                <div class="form-actions">
-                    <GuardarButton @click="intentarGuardar" />
-                </div>
+                
             </div>
         </div>
     </DialogGeneral>
 </template>
 
 <style scoped>
-/* Y el CSS que nunca falla, directo de los otros componentes */
 :deep(.el-dialog__body) {
     padding: 0 !important;
 }
@@ -153,7 +151,8 @@ const intentarGuardar = async () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
 
 :deep(.el-form-item) {

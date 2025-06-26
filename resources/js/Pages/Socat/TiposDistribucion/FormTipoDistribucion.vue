@@ -77,6 +77,9 @@ const intentarGuardar = async () => {
         <div class="header">
             
 
+            <div class="form-actions">
+                <GuardarButton @click="intentarGuardar" />
+            </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Descripción" prop="Descripcion">
@@ -84,9 +87,6 @@ const intentarGuardar = async () => {
                     </el-form-item>
                 </el-form>
 
-                <div class="form-actions">
-                    <GuardarButton @click="intentarGuardar" />
-                </div>
             </div>
         </div>
 
@@ -135,7 +135,8 @@ const intentarGuardar = async () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
 
 :deep(.el-form-item) {

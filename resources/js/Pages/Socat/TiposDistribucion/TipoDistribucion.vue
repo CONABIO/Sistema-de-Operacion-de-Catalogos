@@ -1,34 +1,31 @@
 <script setup>
-import { ref, watchEffect, onMounted, h } from 'vue';
-import { usePage } from '@inertiajs/inertia-vue3';
+import { ref, h } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import axios from 'axios';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
-import FiltrarPor from '@/Components/Biotica/FiltrarPorInput.vue';
+import { ElMessageBox } from 'element-plus';
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import FormTipoDistribucion from '@/Pages/Socat/TiposDistribucion/FormTipoDistribucion.vue';
-import { ElMessageBox, ElMessage } from 'element-plus';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 
-const { datosTipoDistribucion } = usePage().props;
+const tablaRef = ref(null);
 const currentData = ref([]);
-const currentPage = ref(1);
 const totalItems = ref(0);
-const itemsPerPage = 100;
-const prevPageUrl = ref(null);
-const nextPageUrl = ref(null);
-const tipoDistribucion = ref('');
 const modalVisible = ref(false);
 const tipoDistribucionEditado = ref(null);
-const sorting = ref({ column: null, order: null });
+
+const columnasDefinidas = ref([
+    { prop: 'Descripcion', label: 'Descripción', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
+]);
+
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
 const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
@@ -39,66 +36,18 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
-const fetchFilteredData = async () => {
-    try {
-        const response = await axios.get('/busca-tipo-distribucion', {
-            params: {
-                tipoDistribucion: tipoDistribucion.value,
-                page: currentPage.value,
-                sortBy: sorting.value.column,
-                sortOrder: sorting.value.order,
-                perPage: itemsPerPage,
-            }
-        });
-        currentData.value = response.data.data;
-        totalItems.value = response.data.totalItems;
-        prevPageUrl.value = response.data.prevPageUrl;
-        nextPageUrl.value = response.data.nextPageUrl;
-    } catch (error) {
-        console.error('Error al obtener los datos:', error);
-    }
-};
-
-const handleSortChange = ({ prop, order }) => {
-    sorting.value.column = prop;
-    sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-    if (!order) {
-        sorting.value.column = null;
-        sorting.value.order = null;
-    }
-    currentPage.value = 1;
-    fetchFilteredData();
-};
-
 
 const nuevoTipoDistribucion = () => {
     tipoDistribucionEditado.value = null;
     modalVisible.value = true;
 };
-
-
 const editarTipoDistribucion = (item) => {
     tipoDistribucionEditado.value = item;
     modalVisible.value = true;
 };
-
-
-const buscarPor = () => {
-    currentPage.value = 1;
-    fetchFilteredData();
-};
-
-
-const handlePageChange = (page) => {
-    currentPage.value = page;
-    fetchFilteredData();
-};
-
-
 const cerrarModal = () => {
     modalVisible.value = false;
 };
-
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
@@ -111,7 +60,9 @@ const handleFormSubmited = (datosDelFormulario) => {
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
             }
-            await fetchFilteredData();
+            if (tablaRef.value) {
+                tablaRef.value.fetchData();
+            }
             mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
         } catch (error) {
             if (error.response && error.response.status === 422) {
@@ -135,7 +86,7 @@ const handleFormSubmited = (datosDelFormulario) => {
                 h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
             ])
         ])
-    }).catch(() => {  });
+    }).catch(() => { });
 };
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
@@ -145,7 +96,9 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
             const nombreItem = itemAEliminar ? `"${itemAEliminar.Descripcion}"` : 'el registro';
             await axios.delete(`/tipos-distribucion/${idTipoDistribucion}`);
-            await fetchFilteredData();
+            if (tablaRef.value) {
+                tablaRef.value.fetchData();
+            }
             mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
         } catch (apiError) {
             mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
@@ -167,86 +120,44 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
         ])
     }).catch(() => { });
 };
-
-const props = defineProps({
-    datosTipoDistribucion: { type: Object, required: false },
-});
-
-watchEffect(() => {
-    if (props.datosTipoDistribucion) {
-        fetchFilteredData();
-    }
-});
-onMounted(() => {
-    currentData.value = datosTipoDistribucion?.data || [];
-    totalItems.value = datosTipoDistribucion?.totalItems || 0;
-    currentPage.value = datosTipoDistribucion?.currentPage || 1;
-    prevPageUrl.value = datosTipoDistribucion?.prevPageUrl || null;
-    nextPageUrl.value = datosTipoDistribucion?.nextPageUrl || null;
-    if (!currentData.value.length) {
-        fetchFilteredData();
-    }
-});
 </script>
 
 <template>
-    <AppLayout title="Tipos de Distribución">
-        
+    <AppLayout title="Catálogo de tipos de distribución">
         <div class="app-container">
-            
-
             <div class="page-title-header">
                 <h1 class="page-main-title-class"> Catálogo de tipos de distribución</h1>
             </div>
             <div class="content-wrapper2">
-            <div class="content-wrapper">
-                <div class="table-wrapper">
-                    <el-card class="box-card">
-                        <template #header>
-                            <div class="header-container">
-                                
-                                <div class="right">
-                                    <FiltrarPor v-model:busca="tipoDistribucion" @update:busca="buscarPor()" />
-                                </div>
-                                <div class="left">
-                                    <NuevoButton @crear="nuevoTipoDistribucion" />
-                                </div>
-                            </div>
-                        </template>
-                        <div class="table-responsive">
-                            <el-table :data="currentData" :border="true" height="400" style="width: 100%"
-                                :highlight-current-row="true" @sort-change="handleSortChange">
+                <div class="content-wrapper">
+                    <div class="table-wrapper">
+                        <TablaFiltrable
+                            ref="tablaRef"
+                            :columnas="columnasDefinidas"
+                            v-model:datos="currentData"
+                            v-model:total-items="totalItems"
+                            endpoint="/busca-tipo-distribucion"
+                            id-key="IdTipoDistribucion"
+                            @editar-item="editarTipoDistribucion"
+                            @eliminar-item="eliminarTipoDistribucion"
+                            @nuevo-item="nuevoTipoDistribucion"
+                        >
+                            
+                            <template #expand-column>
                                 <el-table-column type="expand">
                                     <template #default="{ row }">
-                                        <div class="bg-gray-50 p-4 rounded-md">
-                                            <p><strong>Fecha de Captura:</strong> {{ row.FechaCaptura }}</p>
-                                            <p><strong>Fecha de Modificación:</strong> {{ row.FechaModificacion }}</p>
+                                        <div class="expand-content-detail">
+                                            <p><strong>Id del tipo de distribución:</strong> {{ row.IdTipoDistribucion }}</p>
+                                            <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
+                                            <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
                                         </div>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="Descripcion" label="Descripción" min-width="120"
-                                    sortable="custom" align="center"></el-table-column>
-                                <el-table-column label="Acciones" width="120">
-                                    <template #default="{ row }">
-                                        <div class="flex justify-around">
-                                            <EditarButton @editar="editarTipoDistribucion(row)" />
-                                            <EliminarButton
-                                                @eliminar="eliminarTipoDistribucion(row.IdTipoDistribucion)" />
-                                        </div>
-                                    </template>
-                                </el-table-column>
-                            </el-table>
-                        </div>
-                    </el-card>
-                    <div v-if="totalItems > 0" class="pagination-container-wrapper">
-                        <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                            @current-change="handlePageChange" layout="prev, pager, next, total" background
-                            class="main-pagination-style">
-                        </el-pagination>
+                            </template>
+                        </TablaFiltrable>
                     </div>
                 </div>
             </div>
-        </div>
 
             <FormTipoDistribucion :visible="modalVisible" :tipoDistEdit="tipoDistribucionEditado"
                 :accion="tipoDistribucionEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"

@@ -5,7 +5,7 @@ import CuerpoAutor from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
 </script>
 
 <template>
-    <AppLayout title="Catálogo de autores"> 
+    <AppLayout title="Catálogo de autoridades taxonómicas"> 
         
         
         <CuerpoAutor /> 

@@ -1,37 +1,172 @@
+<script setup>
+import { ref, h } from 'vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import axios from 'axios';
+import { ElMessageBox, ElTableColumn } from 'element-plus';
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+import FormBibliografia from '@/Pages/Socat/Bibliografia/FormBibliografia.vue';
+import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
+
+const tablaRef = ref(null);
+const localTableData = ref([]);
+const total = ref(0);
+const dialogFormVisible = ref(false);
+const rowEdit = ref({});
+const accBiblio = ref('');
+const cita = ref('');
+
+const columnasDefinidas = ref([
+  { prop: "Autor", label: "Autor(es)", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "Anio", label: "Año(s)", minWidth: 80, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloPublicacion", label: "Titulo de la publicación", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloSubPublicacion", label: "Titulo de la subpublicación", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "EditorialPaisPagina", label: "Editorial, país, lugar, páginas", minWidth: 200, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 200, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "EditoresCompiladores", label: "Editor(es)/compílador(es)", minWidth: 200, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' }
+]);
+
+const notificacionVisible = ref(false);
+const notificacionTitulo = ref("");
+const notificacionMensaje = ref("");
+const notificacionTipo = ref("info");
+const notificacionDuracion = ref(5000);
+
+const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = duracion;
+  notificacionVisible.value = true;
+};
+const cerrarNotificacion = () => {
+  notificacionVisible.value = false;
+};
+
+const crear = () => {
+  accBiblio.value = 'crear';
+  rowEdit.value = {};
+  dialogFormVisible.value = true;
+};
+const editar = (row) => {
+  accBiblio.value = 'editar';
+  rowEdit.value = { ...row };
+  dialogFormVisible.value = true;
+};
+const cerrarDialogo = () => {
+  dialogFormVisible.value = false;
+};
+
+const handleRowClick = (row) => {
+  citaCompleta(row);
+};
+
+const citaCompleta = (row) => {
+  let orden = row.OrdenCitaCompleta || '1243765';
+  let citaComp = '';
+  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'ISBNISSN'];
+  const myArray = orden.split("");
+  for (let i = 0; i < myArray.length; i++) {
+    const campoActual = campos[myArray[i]];
+    if (row[campoActual]) {
+      citaComp += (citaComp ? ' ' : '') + row[campoActual];
+    }
+  }
+  cita.value = citaComp;
+};
+
+const handleFormSubmited = (datosDelFormulario) => {
+  cerrarDialogo();
+  const procederConGuardado = async () => {
+    ElMessageBox.close();
+    try {
+      if (accBiblio.value === 'crear') {
+        await axios.post('/bibliografias', datosDelFormulario);
+      } else {
+        await axios.put(`/bibliografias/${rowEdit.value.IdBibliografia}`, datosDelFormulario);
+      }
+      if (tablaRef.value) {
+        tablaRef.value.fetchData();
+      }
+      mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
+    } catch (error) {
+      if (error.response && error.response.status === 422) {
+        let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+        mostrarNotificacion("Error de Validación", errorMsg, "error", 0);
+      } else {
+        mostrarNotificacion("Error del Servidor", error.response?.data?.message || "Ocurrió un error.", "error");
+      }
+    }
+  };
+  const cancelarGuardado = () => { ElMessageBox.close(); };
+  const mensaje = `¿Estás seguro de que deseas guardar los cambios para la bibliografía de "${datosDelFormulario.Autor || "nuevo registro"}"?`;
+  ElMessageBox({
+    title: 'Confirmar Guardado', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
+      ])
+    ])
+  }).catch(() => { });
+};
+
+const borrarDatos = (idBibliografia) => {
+  const procederConEliminacion = async () => {
+    try {
+      ElMessageBox.close();
+      const itemAEliminar = localTableData.value.find(item => item.IdBibliografia === idBibliografia);
+      const nombreItem = itemAEliminar ? `"${itemAEliminar.Autor}"` : 'el registro';
+      await axios.delete(`/bibliografias/${idBibliografia}`);
+      if (tablaRef.value) {
+        tablaRef.value.fetchData();
+      }
+      mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
+    } catch (apiError) {
+      mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+    }
+  };
+  const cancelarEliminacion = () => { ElMessageBox.close(); };
+  const itemAEliminar = localTableData.value.find(item => item.IdBibliografia === idBibliografia);
+  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'seleccionado'}"? Esta acción no se puede revertir.`;
+  ElMessageBox({
+    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarEliminacion }), h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+};
+</script>
+
 <template>
-  <AppLayout title="Bibliografía">
-    
+  <AppLayout title="Catálogo de referencias bibliograficas">
     <div class="app-container">
       <div class="page-title-header">
-        <h1 class="page-main-title-class"> Catálogo de bibliografía</h1>
+        <h1 class="page-main-title-class"> Catálogo de referencias bibliograficas</h1>
       </div>
-      <div class="content-wrapper">
-
-        <div class="content-wrapper2">
+      <div class="content-wrapper2">
+        <div class="content-wrapper">
           <div class="table-wrapper">
-            <el-card class="box-card">
-              <template #header>
-                <div class="card-header-content">
-                  <el-row :gutter="20" align="bottom" class="filter-action-row">
-                    <el-col :span="18">
-                      <el-form label-position="top" class="filter-form" @submit.prevent>
-                        <el-row :gutter="20">
-                          <el-col :span="8">
-                            <el-form-item label="Filtrar por">
-                              <el-input v-model="filterText" placeholder="Escribe para buscar..."
-                                @keyup.enter="querySearch" @clear="querySearch" clearable />
-                            </el-form-item>
-                          </el-col>
-                          <el-col :span="16">
-                            <el-form-item label="Referencia completa">
-                              <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none" />
-                            </el-form-item>
-                          </el-col>
-                        </el-row>
-                      </el-form>
-                    </el-col>
-
-                    <el-col :span="6" class="action-buttons-col">
+            <TablaFiltrable ref="tablaRef" :columnas="columnasDefinidas" v-model:datos="localTableData"
+              v-model:total-items="total" endpoint="/bibliografias-api" id-key="IdBibliografia" @editar-item="editar"
+              @eliminar-item="borrarDatos" @nuevo-item="crear" @row-dblclick="handleRowClick">
+              
+              <template #header-actions>
+                
+                  <el-col :span="6" class="action-buttons-col">
                       <div class="action-group">
                         <NuevoButton @crear="crear" />
                         <el-tooltip class="item" effect="dark" content="Exportar" placement="bottom">
@@ -56,358 +191,35 @@
                         </el-tooltip>
                       </div>
                     </el-col>
-                  </el-row>
-
-                  <div class="table-filters">
-                    <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAllChange">
-                      Todos
-                    </el-checkbox>
-                    <el-checkbox-group v-model="opcionesElejidas" @change="updateIndeterminateState">
-                      <el-checkbox v-for="opc in opciones" :key="opc" :label="opc">
-                        {{ opc }}
-                      </el-checkbox>
-                    </el-checkbox-group>
-                  </div>
-                </div>
               </template>
-
-              <div class="table-responsive">
-                <el-table v-if="localTableData" :data="localTableData" border height="400" style="width: 100%"
-                  @row-click="handleRowClick" :default-sort="{ prop: 'Autor', order: 'ascending' }"
-                  :highlight-current-row="true" @sort-change="handleSortChange">
-                  <el-table-column type="expand">
-                    <template #default="scope">
-                      <div class="bg-gray-50 p-4 rounded-md">
-                        <p><strong>IdOriginal:</strong> {{ scope.row.IdOriginal }}</p>
-                      </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column v-for="column in tableColumns" :key="column.label" :label="column.label"
-                    :prop="column.prop" :column-key="column.prop" :min-width="column.minWidth"
-                    :sortable="column.sortable" :align="column.align" :header-align="column.align"
-                    :fixed="column.fixed || null" :formatter="column.formatter || null">
-                  </el-table-column>
-                  <el-table-column label="Acciones" align="center" width="120" fixed="right">
-                    <template #default="scope">
-                      <div class="flex justify-around">
-                        <EditarButton @editar="editar(scope.row)" />
-                        <EliminarButton @eliminar="borrarDatos(scope.row.IdBibliografia)" />
-                      </div>
-                    </template>
-                  </el-table-column>
-
-                </el-table>
-                <div v-if="total > 0" class="pagination-container-wrapper">
-                  <el-pagination @current-change="handlePageChange" :current-page="currentPage" :page-size="pageSize"
-                    layout="prev, pager, next, total" :total="total" @size-change="handleSizeChange" background
-                    class="main-pagination-style">
-                  </el-pagination>
-                </div>
-              </div>
-            </el-card>
+              <template #expand-column>
+                <el-table-column type="expand">
+                  <template #default="{ row }">
+                    <div class="expand-content-detail">
+                      <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                    </div>
+                  </template>
+                </el-table-column>
+              </template>
+            </TablaFiltrable>
+            <br>
+            <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
+                  placeholder="Seleccione una fila para ver la cita completa..." />
           </div>
         </div>
-
-        <DialogForm v-model="dialogFormVisible" style="width:1250px" :botCerrar="true" :pressEsc="false">
-          <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
-            @formSubmited="handleFormSubmited">
-          </FormBibliografia>
-        </DialogForm>
       </div>
-
-      <Teleport to="body">
-        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-          :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-          @close="cerrarNotificacion" />
-      </Teleport>
+      <DialogForm v-model="dialogFormVisible" style="width:1250px" :bot-cerrar="true" :press-esc="false">
+        <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
+          @form-submited="handleFormSubmited" />
+      </DialogForm>
     </div>
+    <Teleport to="body">
+      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+        @close="cerrarNotificacion" />
+    </Teleport>
   </AppLayout>
 </template>
-
-<script setup>
-import { ref, onMounted, h } from 'vue';
-import AppLayout from '@/Layouts/AppLayout.vue';
-import axios from 'axios';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
-import FormBibliografia from '@/Pages/Socat/Bibliografia/FormBibliografia.vue';
-import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import { ElMessageBox, ElMessage } from 'element-plus';
-import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
-import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
-import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-
-
-const props = defineProps({
-  bibliografiaData: {
-    type: Object,
-    required: true
-  }
-});
-
-const notificacionVisible = ref(false);
-const notificacionTitulo = ref("");
-const notificacionMensaje = ref("");
-const notificacionTipo = ref("info");
-const notificacionDuracion = ref(5000);
-
-const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
-const handleSortChange = ({ prop, order }) => {
-    sorting.value.column = prop;
-    sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-    if (!order) {
-        sorting.value.column = null;
-        sorting.value.order = null;
-    }
-
-    list(1); 
-};
-
-const cerrarDialogo = () => {
-  dialogFormVisible.value = false;
-};
-
-const localTableData = ref(props.bibliografiaData.data);
-const total = ref(props.bibliografiaData.totalItems);
-const currentPage = ref(props.bibliografiaData.currentPage);
-const lastPage = ref(props.bibliografiaData.lastPage);
-const nextPageUrl = ref(props.bibliografiaData.nextPageUrl);
-const prevPageUrl = ref(props.bibliografiaData.prevPageUrl);
-
-const handlePageChange = (newPage) => {
-  list(newPage);
-};
-
-const handleSizeChange = (newSize) => {
-  pageSize.value = newSize;
-  list(1);
-};
-
-const opcionesBuscar = ['Autor(es)', 'Año(s)', 'Titulo de la publicación', 'Cita bibliográfica',
-  'Titulo de la subpublicación', 'ISBN/ISSN'];
-
-const paginas = ref(1);
-const checkAll = ref(false);
-const opciones = ref(opcionesBuscar);
-const isIndeterminate = ref(true);
-const opcionesElejidas = ref([]);
-const pageSize = ref(100);
-const cita = ref('');
-const idBiblio = ref('');
-const accBiblio = ref('');
-const filterText = ref('');
-const dialogFormVisible = ref(false);
-const dialogFormVisibleCat = ref(false);
-const filgrupoScat = ref([]);
-const rowEdit = ref({});
-const sorting = ref({ column: null, order: null });
-const tableColumns = ref([
-  { prop: "Autor", label: "Autor(es)", minWidth: 150, sortable: 'custom', hidden: false, align: 'left', fixed: true },
-  { prop: "Anio", label: "Año(s)", minWidth: 80, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "TituloPublicacion", label: "Titulo de la publicación", minWidth: 250, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "TituloSubPublicacion", label: "Titulo de la subpublicación", minWidth: 200, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "EditorialPaisPagina", label: "Editorial, país, lugar, páginas", minWidth: 200, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 200, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "EditoresCompiladores", label: "Editor(es)/compílador(es)", minWidth: 200, sortable: 'custom', hidden: false, align: 'left' },
-  { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 150, sortable: 'custom', hidden: false, align: 'left' }
-]);
-
-const handleCheckAllChange = (val) => {
-  opcionesElejidas.value = val ? [...opciones] : [];
-  updateIndeterminateState();
-};
-
-const handleCheckboxChange = (opc, event) => {
-  if (event.target.checked) {
-    opcionesElejidas.value.push(opc);
-  } else {
-    opcionesElejidas.value = opcionesElejidas.value.filter(item => item !== opc);
-  }
-  updateIndeterminateState();
-};
-
-const updateIndeterminateState = () => {
-  const checkedCount = opcionesElejidas.value.length;
-  checkAll.value = checkedCount === opciones.value.length;
-  isIndeterminate.value = checkedCount > 0 && checkedCount < opciones.value.length;
-};
-
-const crear = () => {
-  accBiblio.value = 'crear';
-  rowEdit.value = {};
-  dialogFormVisible.value = true;
-};
-
-const editar = (row) => {
-  accBiblio.value = 'editar';
-  rowEdit.value = { ...row };
-  dialogFormVisible.value = true;
-};
-
-const handleRowClick = (row) => {
-  citaCompleta(row);
-  idBiblio.value = row.IdBibliografia;
-  cargaGrupos();
-};
-
-const citaCompleta = (row) => {
-  let orden = '';
-  let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'ISBNISSN'];
-  
-  
-  if (row && row.OrdenCitaCompleta) { 
-    orden = row.OrdenCitaCompleta;
-  } else {
-    
-    orden = '1243765';
-  }
-
-  const myArray = orden.split("");
-  for (let i = 0; i < myArray.length; i++) {
-    const campoActual = campos[myArray[i]];
-    if (row[campoActual]) { 
-        if (citaComp != '') {
-            citaComp += ' ' + row[campoActual];
-        } else {
-            citaComp = row[campoActual];
-        }
-    }
-  }
-  cita.value = citaComp;
-};
-
-const cargaGrupos = async () => {
-  try {
-  } catch (error) {
-    console.error('Error al cargar grupos:', error);
-  }
-};
-
-const borrarGrp = (index, row) => {
-  cargaGrupos();
-};
-
-const handleFormSubmited = (datosDelFormulario) => {
-  cerrarDialogo();
-  const procederConGuardado = async () => {
-    ElMessageBox.close();
-    try {
-      if (accBiblio.value === 'crear') {
-        await axios.post('/bibliografias', datosDelFormulario);
-      } else {
-        await axios.put(`/bibliografias/${rowEdit.value.IdBibliografia}`, datosDelFormulario);
-      }
-      await list();
-      mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
-    } catch (error) {
-      if (error.response && error.response.status === 422) {
-        let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error de Validación", errorMsg, "error", 0);
-      } else {
-        mostrarNotificacion("Error del Servidor", error.response?.data?.message || "Ocurrió un error.", "error");
-      }
-    }
-  };
-  const cancelarGuardado = () => { ElMessageBox.close();};
-  const mensaje = `¿Estás seguro de que deseas guardar los cambios para la bibliografía de "${datosDelFormulario.Autor || "nuevo registro"}"?`;
-  ElMessageBox({
-    title: 'Confirmar Guardado', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
-      ])
-    ])
-  }).catch(() => { });
-};
-
-const borrarDatos = (idBibliografia) => {
-  const procederConEliminacion = async () => {
-    try {
-      ElMessageBox.close();
-      const itemAEliminar = localTableData.value.find(item => item.IdBibliografia === idBibliografia);
-      const nombreItem = itemAEliminar ? `"${itemAEliminar.Autor}"` : 'el registro';
-      await axios.delete(`/bibliografias/${idBibliografia}`);
-      await list();
-      mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
-    } catch (apiError) {
-      mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
-    }
-  };
-  const cancelarEliminacion = () => { ElMessageBox.close();  };
-  const itemAEliminar = localTableData.value.find(item => item.IdBibliografia === idBibliografia);
-  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'seleccionado'}"? Esta acción no se puede revertir.`;
-  ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }), h(BotonAceptar, { onClick: procederConEliminacion }),
-      ])
-    ])
-  }).catch(() => { });
-};
-
-const querySearch = () => {
-  list(1);
-};
-
-const list = async (page = 1) => {
-  currentPage.value = page;
-  try {
-    const params = {
-      buscado: filterText.value,
-      page: currentPage.value,
-      perPage: pageSize.value,
-      sortBy: sorting.value.column,
-      sortOrder: sorting.value.order,
-      ...(opcionesElejidas.value.length > 0 && { opciones: opcionesElejidas.value })
-    };
-    const response = await axios.get('/bibliografias-api', { params });
-    localTableData.value = response.data?.bibliografiaData?.data || [];
-    total.value = response.data.bibliografiaData.totalItems;
-    paginas.value = response.data.bibliografiaData.lastPage;
-    nextPageUrl.value = response.data.bibliografiaData.nextPageUrl;
-    prevPageUrl.value = response.data.bibliografiaData.prevPageUrl;
-
-  } catch (error) {
-    console.error('Error al cargar bibliografías:', error);
-    localTableData.value = [];
-    total.value = 0;
-  }
-};
-
-const filtroCatalogos = () => {
-  if (idBiblio.value != '') {
-    dialogFormVisibleCat.value = true;
-  } else {
-    ElMessageBox.alert('Primero se debe seleccionar una bibliografía', 'SOCAT', { type: 'warning' });
-  }
-};
-
-onMounted(() => {
-  list();
-});
-</script>
-
 
 <style>
 .message-box-diseno-limpio .el-message-box__header {
@@ -462,18 +274,40 @@ onMounted(() => {
 </style>
 
 <style scoped>
+
+.bibliografia-header {
+  display: flex;
+  align-items: center; /* Centra verticalmente */
+  gap: 15px; /* Espacio entre el textarea y los botones */
+  width: 100%;
+}
+
+.cita-container {
+  flex-grow: 1; /* Hace que el contenedor del textarea ocupe todo el espacio posible */
+}
+
+.action-group {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0; /* Evita que el grupo de botones se encoja */
+}
+
+
+
 .page-title-header {
   background-color: #d9e1eb;
+  color: white;
   padding: 1rem 1.5rem;
   border-radius: 8px;
   margin-bottom: 20px;
 }
+
 .page-title-header .page-main-title-class {
-  color: #1f1e1e;
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: rgb(31, 30, 30) !important;
+  margin: 0 !important;
+  font-size: 1.25rem !important;
 }
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -482,6 +316,7 @@ onMounted(() => {
   align-items: center;
   padding: 20px;
 }
+
 .content-wrapper2 {
   width: 100%;
   max-width: 1600px;
@@ -490,51 +325,49 @@ onMounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
   padding: 25px;
 }
-:deep(.el-card__header) {
-    padding: 20px 24px !important;
-    border-bottom: 1px solid #e4e7ed !important;
-}
-.card-header-content {
-    width: 100%;
-}
-.filter-form :deep(.el-form-item) {
-    margin-bottom: 0; 
-}
-.filter-form :deep(.el-form-item__label) {
-    font-size: 0.85em;
-    padding-bottom: 2px;
-}
-.action-buttons-col {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-}
-.action-group {
-    display: flex;
-    gap: 10px;
-}
-.table-filters {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #f0f2f5;
-}
 
-.table-responsive {
-  overflow-x: auto;
-}
-.pagination-container-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  padding-top: 20px;
-  margin-top: 0;
+.content-wrapper {
+  width: 100%;
+  max-width: 1600px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  padding: 25px;
 }
 
 .page-main-title-class {
   font-size: 22px !important;
   font-weight: 600 !important;
   color: #303133 !important;
-  margin-bottom: 5px !important;
+  margin-bottom: 20px !important;
   width: 1550px;
 }
 
+.page-main-title-class {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #303133 !important;
+  margin-bottom: 20px !important;
+}
+
+.table-wrapper {
+  width: 100%;
+  margin-top: 0;
+}
+
+.expand-content-detail {
+  padding: 10px 15px;
+  background-color: #fdfdfd;
+  font-size: 13px;
+}
+
+.card-header-title {
+  font-weight: 500;
+  color: #303133;
+}
+
+.action-group {
+  display: flex;
+  gap: 10px;
+}
 </style>

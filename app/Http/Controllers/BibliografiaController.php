@@ -16,8 +16,14 @@ use Illuminate\Support\Facades\Validator;
 class BibliografiaController extends Controller
 {
     private $sortableColumns = [
-        'Autor', 'Anio', 'TituloPublicacion', 'TituloSubPublicacion', 
-        'EditorialPaisPagina', 'NumeroVolumenAnio', 'EditoresCompiladores', 'ISBNISSN'
+        'Autor',
+        'Anio',
+        'TituloPublicacion',
+        'TituloSubPublicacion',
+        'EditorialPaisPagina',
+        'NumeroVolumenAnio',
+        'EditoresCompiladores',
+        'ISBNISSN'
     ];
 
     public function index(Request $request)
@@ -48,53 +54,49 @@ class BibliografiaController extends Controller
         $result = $query->paginate($perPage);
 
         return response()->json([
-            'bibliografiaData' => [
-                'data' => $result->items(),
-                'totalItems' => $result->total(),
-                'currentPage' => $result->currentPage(),
-                'lastPage' => $result->lastPage(),
-                'nextPageUrl' => $result->nextPageUrl(),
-                'prevPageUrl' => $result->previousPageUrl(),
-            ],
+            'data' => $result->items(),
+            'totalItems' => $result->total(),
+            'currentPage' => $result->currentPage(),
+            'lastPage' => $result->lastPage(),
+            'nextPageUrl' => $result->nextPageUrl(),
+            'prevPageUrl' => $result->previousPageUrl(),
         ]);
     }
-
 
     private function buildQuery(Request $request)
     {
         $validated = $request->validate([
-            'buscado' => 'nullable|string',
+            'filtros' => 'nullable|array',
+            'filtros.*' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
             'sortBy' => ['nullable', 'string', \Illuminate\Validation\Rule::in($this->sortableColumns)],
-            'sortOrder' => 'nullable|string|in:asc,desc',
-            'opciones' => 'nullable|array',
+            'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
         ]);
-        
-        $buscado = $validated['buscado'] ?? null;
+
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
         $sortBy = $validated['sortBy'] ?? null;
         $sortOrder = $validated['sortOrder'] ?? null;
-        $opciones = $validated['opciones'] ?? [];
 
         $query = Bibliografia::query();
 
-        if ($buscado) {
-            $query->where(function ($q) use ($buscado, $opciones) {
-                if (empty($opciones)) {
-                    $opciones = ['Autor(es)', 'Año(s)', 'Titulo de la publicación', 'Cita bibliográfica', 'Titulo de la subpublicación', 'ISBN/ISSN'];
-                }
-
-                $columnMapping = [
-                    'Autor(es)' => 'Autor',
-                    'Año(s)' => 'Anio',
-                    'Titulo de la publicación' => 'TituloPublicacion',
-                    'Cita bibliográfica' => 'CitaCompleta',
-                    'Titulo de la subpublicación' => 'TituloSubPublicacion',
-                    'ISBN/ISSN' => 'ISBNISSN',
-                ];
-
-                foreach($opciones as $opcion) {
-                    if (isset($columnMapping[$opcion])) {
-                        $columna = $columnMapping[$opcion];
-                        $q->orWhere(DB::raw("LOWER(`{$columna}`)"), 'like', '%' . strtolower($buscado) . '%');
+        if (!empty($filtros)) {
+            $query->where(function ($q) use ($filtros, $tipo_busqueda) {
+                foreach ($filtros as $campo => $valor) {
+                    if (!empty($valor)) {
+                        if (in_array($campo, ['Autor', 'Anio', 'TituloPublicacion', 'TituloSubPublicacion', 'ISBNISSN'])) {
+                            switch ($tipo_busqueda) {
+                                case 'inicia':
+                                    $q->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                                    break;
+                                case 'termina':
+                                    $q->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                                    break;
+                                default: // 'contiene'
+                                    $q->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                                    break;
+                            }
+                        }
                     }
                 }
             });
@@ -108,7 +110,6 @@ class BibliografiaController extends Controller
 
         return $query;
     }
-
 
 
     public function store(Request $request)

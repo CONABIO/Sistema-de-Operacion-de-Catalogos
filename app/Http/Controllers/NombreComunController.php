@@ -175,41 +175,61 @@ class NombreComunController extends Controller
     }
 
     public function buscaNombreComun(Request $request)
-{
-    $validated = $request->validate([
-        'nombreComun' => 'nullable|string',
-        'page' => 'integer|min:1',
-        'perPage' => 'integer|min:1',
-        'sortBy' => 'nullable|string|in:NomComun,Observaciones,Lengua', 
-        'sortOrder' => 'nullable|string|in:asc,desc',
-    ]);
+    {
+        $validated = $request->validate([
+            'filtros' => 'nullable|array',
+            'filtros.NomComun' => 'nullable|string',
+            'filtros.Observaciones' => 'nullable|string',
+            'filtros.Lengua' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
+            'page' => 'nullable|integer|min:1',
+            'perPage' => 'nullable|integer|min:1',
+            'sortBy' => 'nullable|string|in:NomComun,Observaciones,Lengua',
+            'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
+        ]);
 
-    $nombreComun = $validated['nombreComun'] ?? null;
-    $page = $validated['page'] ?? 1;
-    $perPage = $validated['perPage'] ?? 100; 
-    $sortBy = $validated['sortBy'] ?? null;
-    $sortOrder = $validated['sortOrder'] ?? null;
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
+        $page = $validated['page'] ?? 1;
+        $perPage = $validated['perPage'] ?? 100;
+        $sortBy = $validated['sortBy'] ?? null;
+        $sortOrderInput = $validated['sortOrder'] ?? null;
 
-    $query = NomComun::query();
+        $query = NomComun::query();
 
-    if ($nombreComun) {
-        $query->where(DB::raw('LOWER(NomComun)'), 'like', '%' . strtolower($nombreComun) . '%');
+        foreach ($filtros as $campo => $valor) {
+            if (!empty($valor)) {
+                if (in_array($campo, ['NomComun', 'Observaciones', 'Lengua'])) {
+                    switch ($tipo_busqueda) {
+                        case 'inicia':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                            break;
+                        case 'termina':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                            break;
+                        default:
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                            break;
+                    }
+                }
+            }
+        }
+
+        if ($sortBy && $sortOrderInput) {
+            $sortOrder = (in_array($sortOrderInput, ['ascending', 'asc'])) ? 'asc' : 'desc';
+            $query->orderByRaw("LOWER(`{$sortBy}`) {$sortOrder}");
+        } else {
+            $query->orderByRaw('LOWER(`NomComun`) asc');
+        }
+
+        $result = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data' => $result->items(),
+            'totalItems' => $result->total(),
+            'currentPage' => $result->currentPage(),
+            'nextPageUrl' => $result->nextPageUrl(),
+            'prevPageUrl' => $result->previousPageUrl(),
+        ]);
     }
-
-    if ($sortBy && $sortOrder) {
-        $query->orderByRaw("LOWER(`{$sortBy}`) {$sortOrder}");
-    } else {
-        $query->orderByRaw('LOWER(`NomComun`) asc');
-    }
-
-    $result = $query->paginate($perPage, ['*'], 'page', $page);
-
-    return response()->json([
-        'data' => $result->items(),
-        'totalItems' => $result->total(),
-        'currentPage' => $result->currentPage(),
-        'nextPageUrl' => $result->nextPageUrl(),
-        'prevPageUrl' => $result->previousPageUrl(),
-    ]);
-}
 }

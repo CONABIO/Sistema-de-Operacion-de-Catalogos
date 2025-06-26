@@ -4,8 +4,8 @@ import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 import EditarButton from "@/Components/Biotica/EditarButton.vue";
 import EliminarButton from "@/Components/Biotica/EliminarButton.vue";
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
-// import ModalGenerico from "@/Components/Biotica/ModalGenerico.vue"; // <-- 1. Lo quitamos
-import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue"; // <-- 2. Añadimos este
+// import ModalGenerico from "@/Components/Biotica/ModalGenerico.vue"; 
+import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue"; 
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
@@ -245,9 +245,8 @@ const cerrarModalOperacion = () => {
   opcionNivel.value = "mismo";
 };
 
-// 3. Añadimos el computed para el título del modal
 const modalTitle = computed(() => {
-    return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
+    return modalMode.value === "editar" ? "Editar la característica seleccionada" : "Ingresar una nueva característica";
 });
 
 const guardarDesdeModal = async () => {
@@ -326,14 +325,9 @@ const guardarDesdeModal = async () => {
 
           if (finalNewNodeId) {
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
-          } else {
-            console.error(
-              "¡CAGASTE! El backend no está devolviendo el 'newNodeId' en el flash."
-            );
           }
         },
         onError: (errors) => {
-          // ...
         },
       });
     }
@@ -582,7 +576,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   () => !selectedNode.value || esModalVisible.value
 );
 
-// [ ... resto de tu lógica ... ]
 </script>
 
 <template>
@@ -628,7 +621,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                   node-key="IdCatNombre"
                   :current-node-key="selectedNode?.IdCatNombre" 
                   :highlight-current="true" 
-                  :expand-on-click-node="false"
+                  :expand-on-click-node="true"
                   
                   :default-expanded-keys="expandedKeysArray"
                   @node-expand="handleNodeExpand"
@@ -652,7 +645,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
       </div>
     </div>
 
-    <!-- 4. Reemplazamos el modal con la nueva estructura -->
     <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
         <div class="dialog-header">
                 <h3>{{ modalTitle }}</h3>
@@ -666,11 +658,11 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                     label-position="top"
                     @submit.prevent="guardarDesdeModal"
                 >
-                    <el-form-item prop="Descripcion">
-                        <template #label>
+                    <el-form-item prop="Descripcion" >
+                        <template #label >
                         {{
                             modalMode === "editar"
-                            ? "Nueva característica:"
+                            ? "Nueva descripción:"
                             : "Característica:"
                         }}
                         </template>
@@ -686,7 +678,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 
                     <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Posición:</label
+                        >Posición con respecto a la información seleccionada en el catálogo:</label
                         >
                         <el-radio-group v-model="opcionNivel">
                         <el-radio label="mismo">Mismo nivel</el-radio>
@@ -716,7 +708,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 </template>
 
 <style>
-/* Estilos globales para message box, sin cambios */
 .message-box-diseno-limpio .el-message-box__header {
   border-bottom: none;
 }
