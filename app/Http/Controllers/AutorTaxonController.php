@@ -83,23 +83,42 @@ class AutorTaxonController extends Controller
     public function buscaAutor(Request $request)
     {
         $validated = $request->validate([
-            'autor' => 'nullable|string',
-            'page' => 'integer|min:1',
+            'filtros' => 'nullable|array',
+            'filtros.NombreAutoridad' => 'nullable|string',
+            'filtros.NombreCompleto' => 'nullable|string',
+            'filtros.GrupoTaxonomico' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
+            'page' => 'nullable|integer|min:1',
+            'perPage' => 'nullable|integer|min:1',
             'sortBy' => 'nullable|string|in:NombreAutoridad,NombreCompleto,GrupoTaxonomico',
             'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
         ]);
 
-        $autor = $validated['autor'] ?? null;
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
         $page = $validated['page'] ?? 1;
-        $perPage = 100;
+        $perPage = $validated['perPage'] ?? 100;
         $sortBy = $validated['sortBy'] ?? null;
         $sortOrderInput = $validated['sortOrder'] ?? null;
 
         $query = AutorTaxon::query();
 
-        if ($autor) {
-            $query->where(DB::raw('LOWER(NombreAutoridad)'), 'like', '%' . strtolower($autor) . '%')
-                ->orWhere(DB::raw('LOWER(NombreCompleto)'), 'like', '%' . strtolower($autor) . '%'); 
+        foreach ($filtros as $campo => $valor) {
+            if (!empty($valor)) {
+                if (in_array($campo, ['NombreAutoridad', 'NombreCompleto', 'GrupoTaxonomico'])) {
+                    switch ($tipo_busqueda) {
+                        case 'inicia':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                            break;
+                        case 'termina':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                            break;
+                        default:
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                            break;
+                    }
+                }
+            }
         }
 
         if ($sortBy && $sortOrderInput) {
@@ -113,12 +132,14 @@ class AutorTaxonController extends Controller
 
         return response()->json([
             'data' => $result->items(),
+            'total' => $result->total(),
             'totalItems' => $result->total(),
             'currentPage' => $result->currentPage(),
             'nextPageUrl' => $result->nextPageUrl(),
             'prevPageUrl' => $result->previousPageUrl(),
         ]);
     }
+
 
     public function store(RequestAutorTaxon $request)
     {

@@ -76,7 +76,7 @@ watch(
             :default-active="activeIndex2" @select="handleSelect" :ellipsis="false">
             <el-sub-menu index="2" v-if="hasPermisos('MnuCatalogos')">
                 <template #title>Catálogos</template>
-                <el-menu-item index="2-1" v-if="hasPermisos('MnuCatAutores')">Autores</el-menu-item>
+                <el-menu-item index="2-1" v-if="hasPermisos('MnuCatAutores')">Autoridades taxonómicas</el-menu-item>
                 <el-menu-item index="2-2" v-if="hasPermisos('MnuCatGrpTax')">Grupos taxonómicos</el-menu-item>
                 <el-menu-item index="2-3" v-if="hasPermisos('MnuCatNomCom')">Nombre común</el-menu-item>
                 <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipo de distribución</el-menu-item>

@@ -57,20 +57,48 @@ class GrupoTaxonomicoController extends Controller
 
     public function buscaGrupo(Request $request)
     {
-        $grupo = $request->input('grupo');
-        $page = $request->input('page', 1);
-        $perPage = 100;
-        $sortBy = $request->input('sortBy');
-        $sortOrder = $request->input('sortOrder');
+        $validated = $request->validate([
+            'filtros' => 'nullable|array',
+            'filtros.GrupoSCAT' => 'nullable|string',
+            'filtros.GrupoAbreviado' => 'nullable|string',
+            'filtros.GrupoSNIB' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
+            'page' => 'nullable|integer|min:1',
+            'perPage' => 'nullable|integer|min:1',
+            'sortBy' => 'nullable|string|in:GrupoSCAT,GrupoAbreviado,GrupoSNIB',
+            'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
+        ]);
+
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
+        $page = $validated['page'] ?? 1;
+        $perPage = $validated['perPage'] ?? 100;
+        $sortBy = $validated['sortBy'] ?? null;
+        $sortOrderInput = $validated['sortOrder'] ?? null;
 
         $query = GrupoScat::query();
 
-        if ($grupo) {
-            $query->where(DB::raw('LOWER(GrupoSCAT)'), 'like', '%' . strtolower($grupo) . '%');
+        foreach ($filtros as $campo => $valor) {
+            if (!empty($valor)) {
+                if (in_array($campo, ['GrupoSCAT', 'GrupoAbreviado', 'GrupoSNIB'])) {
+                    switch ($tipo_busqueda) {
+                        case 'inicia':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                            break;
+                        case 'termina':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                            break;
+                        default: // 'contiene'
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                            break;
+                    }
+                }
+            }
         }
 
-        if ($sortBy && $sortOrder) {
-            $query->orderBy($sortBy, $sortOrder === 'ascending' ? 'asc' : 'desc');
+        if ($sortBy && $sortOrderInput) {
+            $sortOrder = (in_array($sortOrderInput, ['ascending', 'asc'])) ? 'asc' : 'desc';
+            $query->orderBy($sortBy, $sortOrder);
         } else {
             $query->orderBy('GrupoSCAT', 'asc');
         }
