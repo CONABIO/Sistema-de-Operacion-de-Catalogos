@@ -1,17 +1,14 @@
 <script setup>
 import { ref, h } from 'vue';
-import { usePage } from '@inertiajs/inertia-vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
-import { ElMessageBox } from 'element-plus';
+import { ElMessageBox, ElTableColumn } from 'element-plus';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import FormNombreComun from '@/Pages/Socat/Nombres/FormNombreComun.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 
-const { datosNombreComun } = usePage().props;
 
 const tablaRef = ref(null);
 const currentData = ref([]);
@@ -66,13 +63,14 @@ const handleFormSubmited = (datosDelFormulario) => {
             };
             if (datosDelFormulario.accionOriginal === 'crear') {
                 await axios.post('/nombres-comunes', payload);
+                mostrarNotificacion("¡Ingreso!", "La información ha sido ingresada correctamente.", "success");
             } else {
                 await axios.put(`/nombres-comunes/${datosDelFormulario.idParaEditar}`, payload);
+                mostrarNotificacion("¡Ingreso!", "La información ha sido modificada correctamente.", "success");
             }
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
         } catch (error) {
             if (error.response && error.response.status === 422) {
                 let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
@@ -83,20 +81,25 @@ const handleFormSubmited = (datosDelFormulario) => {
         }
     };
     const cancelarGuardado = () => { ElMessageBox.close(); };
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.NomComun || "nuevo registro"}"?`;
-    ElMessageBox({
-        title: 'Confirmar Guardado', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-        message: h('div', { class: 'custom-message-content' }, [
-            h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-            ]),
-            h('div', { class: 'footer-buttons' }, [
-                h(BotonCancelar, { onClick: cancelarGuardado }),
-                h(BotonAceptar, { onClick: procederConGuardado }),
+    if (datosDelFormulario.accionOriginal === 'crear') {
+        procederConGuardado();
+    } else {
+        const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.NomComun || "nuevo registro"}"?`;
+        ElMessageBox({
+            title: 'Confirmación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            message: h('div', { class: 'custom-message-content' }, [
+                h('div', { class: 'body-content' }, [
+                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                ]),
+                h('div', { class: 'footer-buttons' }, [
+                    h(BotonCancelar, { onClick: cancelarGuardado }),
+                    h(BotonAceptar, { onClick: procederConGuardado }),
+                ])
             ])
-        ])
-    }).catch(() => { });
+        }).catch(() => { });
+    }
+
 };
 
 const eliminarNombreComun = (idNomComun) => {
@@ -134,48 +137,38 @@ const eliminarNombreComun = (idNomComun) => {
 </script>
 
 <template>
-    <AppLayout title="Catálogo de nombres comunes">
-        <div class="app-container">
-            <div class="page-title-header">
-                <h1 class="page-main-title-class">Catálogo de nombres comunes</h1>
-            </div>
-            <div class="content-wrapper2">
-                <div class="content-wrapper">
-                    <div class="table-wrapper">
-                        <TablaFiltrable ref="tablaRef" :columnas="columnasDefinidas" v-model:datos="currentData"
-                            v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun"
-                            @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun"
-                            @nuevo-item="nuevoNombreComun">
-                            
-                            <template #expand-column>
-                                <el-table-column type="expand">
-                                    <template #default="{ row }">
-                                        <div class="expand-content-detail">
-                                            <p><strong>Id del nombre común:</strong> {{ row.IdNomComun }}</p>
-                                            <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
-                                            <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
-                                            <p><strong>Id original:</strong> {{ row.IdOriginal }}</p>
-                                            <p><strong>Catálogo:</strong> {{ row.Catalogo }}</p>
-                                        </div>
-                                    </template>
-                                </el-table-column>
-                            </template>
-                        </TablaFiltrable>
-                    </div>
-                </div>
-            </div>
+    <LayoutCuerpo :usar-app-layout="true" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
+        <div class="h-full flex flex-col">
+            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun"
+                @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun" @nuevo-item="nuevoNombreComun">
 
-            <FormNombreComun :visible="modalVisible" :nomComEdit="nombreComunEditado"
-                :accion="nombreComunEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"
-                @formSubmited="handleFormSubmited" />
-
-            <Teleport to="body">
-                <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                    :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                    @close="cerrarNotificacion" />
-            </Teleport>
+                <template #expand-column>
+                    <el-table-column type="expand">
+                        <template #default="{ row }">
+                            <div class="expand-content-detail">
+                                <p><strong>Id del nombre común:</strong> {{ row.IdNomComun }}</p>
+                                <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
+                                <p><strong>Id original:</strong> {{ row.IdOriginal }}</p>
+                                <p><strong>Catálogo:</strong> {{ row.Catalogo }}</p>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </template>
+            </TablaFiltrable>
         </div>
-    </AppLayout>
+
+        <FormNombreComun :visible="modalVisible" :nomComEdit="nombreComunEditado"
+            :accion="nombreComunEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"
+            @formSubmited="handleFormSubmited" />
+
+        <Teleport to="body">
+            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+                @close="cerrarNotificacion" />
+        </Teleport>
+    </LayoutCuerpo>
 </template>
 
 <style>
@@ -231,82 +224,9 @@ const eliminarNombreComun = (idNomComun) => {
 </style>
 
 <style scoped>
-.page-title-header {
-    background-color: #d9e1eb;
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.page-title-header .page-main-title-class {
-    color: rgb(31, 30, 30) !important;
-    margin: 0 !important;
-    font-size: 1.25rem !important;
-}
-
-.content-wrapper2 {
-    width: 100%;
-    max-width: 1600px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.page-main-title-class {
-    font-size: 22px !important;
-    font-weight: 600 !important;
-    color: #303133 !important;
-    margin-bottom: 20px !important;
-    width: 1550px;
-}
-
-.app-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f0f2f5;
-    align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.content-wrapper {
-    width: 100%;
-    max-width: 1600px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.page-main-title-class {
-    font-size: 22px !important;
-    font-weight: 600 !important;
-    color: #303133 !important;
-    margin-bottom: 20px !important;
-}
-
-.table-wrapper {
-    width: 100%;
-    margin-top: 0;
-}
-
 .expand-content-detail {
     padding: 10px 15px;
     background-color: #fdfdfd;
     font-size: 13px;
-}
-
-.card-header-title {
-    font-weight: 500;
-    color: #303133;
 }
 </style>

@@ -14,7 +14,8 @@ const routeMap = {
     '2-2': 'grupoTaxonomico.index',
     '2-3': 'nombresComunes.index',
     '2-4': 'tiposDistribucion.index',
-    '2-6': 'grafica.index',
+    '2-5': 'tipos-relacion.index', 
+    '2-6': 'categorias-taxonomicas.index', 
     '2-7': 'caracteristicas-taxon.index',
     '3-1': 'nombreTax.index',
     '4': 'bibliografias.index'

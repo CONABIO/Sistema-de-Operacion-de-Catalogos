@@ -2,7 +2,7 @@
 import { ref, onMounted, triggerRef} from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; // Asegúrate de que la ruta sea correcta
+import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import { ElMessageBox } from 'element-plus';
@@ -18,7 +18,6 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -34,8 +33,8 @@ const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
 
-const dialogFormVisibleAlta = ref(false); // Para controlar la visibilidad del modal
-const taxonAct = ref([]); // Agrega esta línea
+const dialogFormVisibleAlta = ref(false); 
+const taxonAct = ref([]); 
 const data = ref([]);
 const categ = ref(null);
 const catalogos = ref('');
@@ -735,285 +734,157 @@ const handleMenuClick = (action) => {
 
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
-    <div class="common-layout">
-      <el-container style="min-height: 100vh; display: flex; flex-direction: column; border: 1px solid #eee">
-        <el-header>
-          <div>
-            <el-row :gutter="10">
-              <el-col :xs="8" :sm="6" :md="4" :lg="3" :xl="1">
-                <div>
-                  <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
-                    placement="left-start">
-                    <el-button @click="filtro_Catalogos()" type="primary" round
-                      class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
-                      <el-icon class="icono">
-                        <Setting />
-                      </el-icon>
-                      <span class="hidden sm:inline">Catálogo de grupos taxonómicos</span>
-                    </el-button>
-                  </el-tooltip>
-                </div>
-              </el-col>
-            </el-row>
-            <br>
-            <el-row>
-              <div class="demo-collapse">
-                <el-collapse>
-                  <el-collapse-item title="Grupos taxonómicos seleccionados" name="1">
-                    <el-card style="width: 100%; max-width: 1500px;" shadow="always">
-                      <el-row :gutter='25'>
-                        <el-col :span='10'>
-                          <el-row> 
-                            <span class="demo-input-label">Catálogo(s)</span>
-                            <el-input type="textarea" autosize placeholder="Catálogos" v-model="catalogos" :disabled="true">
-                            </el-input>
-                          </el-row>
-                        </el-col>
-                        <el-col :span='10'>
-                          <el-row>
-                            <span class="demo-input-label">Grupo SCAT</span>
-                            <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
-                            </el-input>
-                          </el-row>
-                        </el-col>
-                      </el-row>
-                    </el-card>
-                  </el-collapse-item>
-                </el-collapse>
-              </div>
-            </el-row>
-            <br>
-            <el-row :gutter="20" style="display: flex; flex-wrap: wrap;">
-              <!-- Primera columna -->
-              <el-col :xs="24" :sm="12" :md="6" style="display: flex; flex-direction: column;">
-                <span>Ir a:</span>
-                <el-input clearable placeholder="" v-model="filterText" @change="filterNode">
-                </el-input>
-              </el-col>
+    <div class="main-content-card">
+      
+      <div class="filters-section">
+        <el-row :gutter="20" class="mb-4">
+          <el-col :span="24">
+            <el-tooltip content="Selección Catálogo de Grupos taxonómicos" placement="top">
+              <el-button @click="filtro_Catalogos()" type="primary" :icon="Setting" round>
+                Grupos taxonómicos
+              </el-button>
+            </el-tooltip>
+          </el-col>
+        </el-row>
 
-              <!-- Segunda columna -->
-              <el-col :xs="24" :sm="12" :md="6" style="display: flex; flex-direction: column;">
-                <span class="block">Nivel taxonómico</span>
-                <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                  placeholder="Nivel taxonómico" @change="handleChange">
-                </el-cascader>
-              </el-col>
-            </el-row>
-          </div>
-          <br>
-          <div style="flex-grow: 1;">
-            <el-container style="height: 100%; border: 1px solid #eee">
-              <el-aside width="750px" style="background-color: rgb(238, 241, 246); min-height: 100%; overflow:auto;">
-                <div class="d-table-cell">
-                  <el-tree 
-                    class="filter-tree" 
-                    style="height: 100%; 
-                    overflow: auto;" 
-                    :data="data" 
-                    node-key="id"
-                    @node-click="expande" 
-                    :expand-on-click-node="true" 
-                    :filter-node-method="filterNode" 
-                    :allow-drag="() => true"
-                    :draggable="true" 
-                    empty-text='' 
-                    ref="tree" 
-                    :highlight-current="true" 
-                    :current-node-key="selectedNodeKey"
-                    :props="defaultProps"
-                    @node-contextmenu="handleNodeRightClick">
-                    <template #default="{ node }">
-                      <div class="tree-node-wrapper" >
-                        <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
-                        <el-tooltip content="Información">
-                          <el-icon @click.prevent="openDialog(node.data)">
-                            <!-- Agregamos el @click.stop y el openDialog -->
-                            <InfoFilled />
-                          </el-icon>
-                        </el-tooltip>
-                        <div v-if="hasPermisos('MnuNomCientifico', 'Cambios')">
-                          <el-tooltip class="item" effect="dark" content="Mover" placement="right">
-                            <span :style="{ color: node.color }" :id="`node-${node.id}`">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
-                                  class="bi bi-diagram-3-fill" viewBox="0 0 16 16" @click="mover(node)">
-                                <path fill-rule="evenodd" 
-                                  d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6v1H14a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0v-1A.5.5 0 0 1 2 7h5.5V6A1.5 1.5 0 0 1 6 4.5zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5zM0 11.5A1.5 1.5 0 0 1 1.5 10h1A1.5 1.5 0 0 1 4 11.5v1A1.5 1.5 0 0 1 2.5 14h-1A1.5 1.5 0 0 1 0 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5A1.5 1.5 0 0 1 7.5 10h1a1.5 1.5 0 0 1 1.5 1.5v1A1.5 1.5 0 0 1 8.5 14h-1A1.5 1.5 0 0 1 6 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
-                              </svg>
-                            </span>
-                          </el-tooltip>
-                        </div>
-                        <span class="tree-node-label"
-                          :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
-                          {{ node.label }}
-                        </span>
-                      </div>
-                    </template>
-                  </el-tree>
-                </div>
-                <div>
-                  <el-menu
-                  ref = "contextMenu"
-                  class="context-menu"
-                  :style="{top: menuPosition.y + 'px', left: menuPosition + 'px'}"
-                  v-if="isMenuVisible">
-                    <el-menu-item
-                      class="item">
-                      <el-icon><HelpFilled /></el-icon>
-                      <span>Relaciones</span>
-                    </el-menu-item>
-                    <el-menu-item
-                      class="item">
-                      <el-icon><Grid /></el-icon>
-                      <span>Catálogos asociados</span>
-                    </el-menu-item>
-                    <el-menu-item
-                      class="item">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bar-chart-steps" viewBox="0 0 16 16">
-                        <path d="M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z"/>
-                      </svg> 
-                      <span>Ascendentes</span>
-                    </el-menu-item>
-                  </el-menu>
-                </div>
-              </el-aside>
-              <el-container v-show="mostrar === true" v-if="taxonAct != ''" style="height: 500px; border: 1px;">
-                <el-header style="text-align: left; font-size: 12px; height: 70px;">
-                  <div>
-                    <br/>
-                    <br/>
-                    <p></p>
-                    <span class="demo-input-label">Categoria taxónomica: </span>
-                    <span class="demo-input-label">{{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</span>
-                    <br/>
-                    <br/>
-                    <p></p>
-                    <span class="demo-input-label">Nombre completo: </span>
-                    <span class="demo-input-label">{{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</span>
-                    <p></p>
-                    <br/>
-                    <span class="demo-input-label">Taxón:</span>
-                    <span class="demo-input-label">{{ taxonAct.completo.Nombre }}</span>
+        <el-collapse class="mb-4">
+          <el-collapse-item title="Grupos taxonómicos seleccionados" name="1">
+              <el-row :gutter='20'>
+                <el-col :xs="24" :sm="12">
+                  <span class="font-semibold">Catálogo(s)</span>
+                  <el-input type="textarea" autosize placeholder="Catálogos" v-model="catalogos" :disabled="true" />
+                </el-col>
+                <el-col :xs="24" :sm="12">
+                  <span class="font-semibold">Grupo SCAT</span>
+                  <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
+                </el-col>
+              </el-row>
+          </el-collapse-item>
+        </el-collapse>
+
+        <el-row :gutter="20">
+          <el-col :xs="24" :md="12">
+            <span class="font-semibold">Ir a:</span>
+            <el-input clearable placeholder="Buscar taxón..." v-model="filterText" @change="filterNode" />
+          </el-col>
+          <el-col :xs="24" :md="12">
+            <span class="font-semibold">Nivel taxonómico</span>
+            <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
+              placeholder="Seleccionar nivel taxonómico" @change="handleChange" class="w-full" />
+          </el-col>
+        </el-row>
+      </div>
+
+      <div class="main-view-section">
+        <el-container class="h-full border rounded-lg">
+          
+          <el-aside width="750px" class="bg-gray-50 p-2">
+              <el-tree 
+                class="filter-tree" 
+                :data="data" 
+                node-key="id"
+                @node-click="expande" 
+                :expand-on-click-node="true" 
+                :draggable="hasPermisos('MnuNomCientifico', 'Cambios')" 
+                empty-text='No hay datos para mostrar' 
+                ref="tree" 
+                :highlight-current="true" 
+                :current-node-key="selectedNodeKey"
+                :props="defaultProps"
+                @node-contextmenu="handleNodeRightClick"
+              >
+                <template #default="{ node }">
+                  <div class="tree-node-wrapper">
+                    <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+                    <el-tooltip content="Información">
+                      <el-icon @click.stop="openDialog(node.data)"><InfoFilled /></el-icon>
+                    </el-tooltip>
+                    <el-tooltip v-if="hasPermisos('MnuNomCientifico', 'Cambios')" content="Mover" placement="right">
+                      <span @click.stop="mover(node)" class="cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-diagram-3-fill" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6v1H14a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0v-1A.5.5 0 0 1 2 7h5.5V6A1.5 1.5 0 0 1 6 4.5zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5zM0 11.5A1.5 1.5 0 0 1 1.5 10h1A1.5 1.5 0 0 1 4 11.5v1A1.5 1.5 0 0 1 2.5 14h-1A1.5 1.5 0 0 1 0 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5A1.5 1.5 0 0 1 7.5 10h1a1.5 1.5 0 0 1 1.5 1.5v1A1.5 1.5 0 0 1 8.5 14h-1A1.5 1.5 0 0 1 6 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/></svg>
+                      </span>
+                    </el-tooltip>
+                    <span class="tree-node-label" :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
+                      {{ node.label }}
+                    </span>
                   </div>
-                </el-header>
-                <br/>
-                <br/>
-                <el-main width="500px" style="height: 500px;">
-                  <span class="demo-input-label">Relaciones nomenclaturales</span>
-                    <el-table 
-                      :data="tablaNomenclatura"
-                      :border="true"
-                      height="200"
-                      style="width: 100%;"
-                      highlight-current-row
-                      :cell-class-name="classChecker">
-                      <!-- Columnas deben ir directamente aquí -->
-                      <el-table-column
-                        v-for="(column) in columnasNom"
-                        :key="column.label"
-                        :label="column.label"
-                        :prop="column.prop"
-                        :column-key="column.prop"
-                        :min-width="column.minWidth"
-                        :sortable="column.sortable"
-                        :align="column.align"
-                        :header-align="column.align"
-                        :fixed="column.fixed || null"
-                        :formatter="column.formatter || null"
-                      ></el-table-column>
-                      <!-- Columna adicional -->
-                      <el-table-column align="center" style="width: 80px;" prop="Biblio" label="Referencia">
-                        <template #default>
-                          <span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16">
-                              <path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
-                            </svg>
-                          </span>
-                        </template>
+                </template>
+              </el-tree>
+          </el-aside>
+          
+          <el-container v-if="mostrar && taxonAct" class="p-4">
+            <el-main>
+                <div class="mb-6">
+                    <p><span class="font-semibold">Categoría:</span> {{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</p>
+                    <p><span class="font-semibold">Nombre:</span> {{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</p>
+                    <p><span class="font-semibold">Taxón:</span> {{ taxonAct.completo.Nombre }}</p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-2">Relaciones nomenclaturales</h3>
+                    <el-table :data="tablaNomenclatura" border height="200" style="width: 100%;">
+                      <el-table-column v-for="col in columnasNom" :key="col.prop" v-bind="col" />
+                      <el-table-column align="center" width="100" prop="Biblio" label="Referencia">
+                        <template #default><span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16"><path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span></template>
                       </el-table-column>
-                      <!-- Contenido personalizado cuando no hay datos -->
-                      <template #empty>
-                        <div>No hay datos para mostrar</div>
-                      </template>
+                      <template #empty><div>No hay datos para mostrar</div></template>
                     </el-table>
-                  <br>
-                  <span class="demo-input-label">Referencias asocidas</span>
-                    <el-table
-                      :data="tablaReferencias"
-                      :border="true"
-                      height="400"
-                      style="width: 100%;"
-                      highlight-current-row
-                      :cell-class-name="classChecker"
-                    >
-                      <el-table-column
-                        v-for="(column) in columnasRef"
-                        :key="column.label"
-                        :label="column.label"
-                        :prop="column.prop"
-                        :column-key="column.prop"
-                        :min-width="column.minWidth"
-                        :sortable="column.sortable"
-                        :align="column.align"
-                        :header-align="column.align"
-                        :fixed="column.fixed || null"
-                        :formatter="column.formatter || null"
-                      ></el-table-column>
-                      <template #empty>
-                        <div>No hay referencias asociadas</div>
-                      </template>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Referencias asociadas</h3>
+                    <el-table :data="tablaReferencias" border height="250" style="width: 100%;">
+                      <el-table-column v-for="col in columnasRef" :key="col.prop" v-bind="col" />
+                      <template #empty><div>No hay referencias asociadas</div></template>
                     </el-table>
-                </el-main>                  
-              </el-container>
-            </el-container>
-          </div>
-        </el-header>
-      </el-container>
+                </div>
+            </el-main>                  
+          </el-container>
+        </el-container>
+      </div>
+
+        <el-menu v-if="isMenuVisible" class="context-menu" :style="{ top: menuPosition.y + 'px', left: menuPosition.x + 'px' }">
+            <el-menu-item @click="handleMenuClick('relaciones')"><el-icon><HelpFilled /></el-icon>Relaciones</el-menu-item>
+            <el-menu-item @click="handleMenuClick('catalogos')"><el-icon><Grid /></el-icon>Catálogos asociados</el-menu-item>
+        </el-menu>
+
     </div>
   </CuerpoGen>
+  
   <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false">
     <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
   </DialogForm>
 
-  <DialogForm v-model="dialogFormVisibleAlta" 
-              @close = "closeDialog" 
-              @reset-form = "resetFormNombre" 
-              :botCerrar = "true" 
-              :pressEsc = "true">
-    <FormNombre :taxonAct = "taxonAct" 
-                :paginaActual = "1" 
-                :categoria = "catego.value" 
-                :catalogos = "idsGrupos.value" 
-                @cerrar = "closeDialog"
-                @regresaTaxMod = "recibeTaxMod"
-                @resultadoAlta = "recibeTaxNuevo"
-                @resultadoBaja = "recibeTaxBaja"/>
-</DialogForm>
+  <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" @reset-form="resetFormNombre" :botCerrar="true" :pressEsc="true">
+    <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" :catalogos="idsGrupos.value" @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo" @resultadoBaja="recibeTaxBaja"/>
+  </DialogForm>
 </template>
 
 <style scoped>
-.icono {
-  margin-right: 8px;
-  /* Ajusta el espacio */
+.main-content-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 705px; 
 }
 
-.custom-tree-node {
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  padding-right: 8px;
-  width: 50%;
-  overflow: auto;
+.filters-section {
+  margin-bottom: 20px;
+  flex-shrink: 0; 
+}
+
+.main-view-section {
+  flex-grow: 1; 
+  min-height: 0; 
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content){
   background-color: rgb(203, 233, 200) !important;
-  color: #0d6efd !important;            /* azul para texto */
+  color: #0d6efd !important;
 }
-
-/*
-:deep(.el-tree-node__content .highlight-node) {
-  color: #a52f2f !important;  /* Fondo 
-}*/
 
 :deep(.highlight-node){
   color: #a52f2f !important;
@@ -1021,142 +892,45 @@ const handleMenuClick = (action) => {
 
 .tree-node-wrapper {
   display: flex;
-  align-items: center;
-  /* Alinea verticalmente los elementos*/ 
+  align-items: center; 
   gap: 8px;
-  /* Espacio entre el ícono y el texto */
   white-space: nowrap;
-  /* Evita que el texto se divida en varias líneas */
+  font-size: 14px;
 }
 
 .tree-node-logo {
   width: 20px;
-  /* Ajusta según el tamaño de tus íconos */
   height: 20px;
   flex-shrink: 0;
-  /* Evita que el ícono se reduzca de tamaño */
 }
 
-.tree-node-label {
-  font-size: 14px;
-  line-height: 20px;
-  /* Ajusta el alto del texto para que coincida con el ícono */
-}
-
-.el-tree-node:hover {
-  background-color: transparent !important;
-}
-
-:deep(.el-table .greenClass) {
-  background: rgb(90, 177, 90);
-}
-
-:deep(.el-table .redClass) {
-  background: rgb(226, 119, 119);
-}
+:deep(.el-table .greenClass) { background: rgb(90, 177, 90); }
+:deep(.el-table .redClass) { background: rgb(226, 119, 119); }
 
 .context-menu {
-  display: block !important;
-  visibility: visible !important;
   position: absolute;
   z-index: 9999;
-  background-color: hsl(223, 41%, 93%);
+  background-color: white;
   border: 1px solid #dcdfe6;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  /* Añade un relleno para que no se vea tan estrecho */
-  min-width: 190px;
-  /* Ajusta el ancho mínimo */
-  height: auto;
-  /* Asegúrate de que la altura se ajuste al contenido */
-  box-sizing: border-box;
-  /* Asegura que el padding no afecte el ancho del menú */
+  padding: 5px 0;
+  border-radius: 4px;
+  min-width: 180px;
 }
-
 .el-menu-item {
-  padding: 4px 12px;
-  /* Reduce el padding vertical a la mitad */
-  font-size: 14px;
-  /* Ajusta el tamaño del texto si es necesario */
-  line-height: 16px;
-  /* Asegúrate de que la línea del texto sea más compacta */
-  height: auto;
-  /* Asegura que la altura se ajuste automáticamente */
+    height: 36px;
+    line-height: 36px;
 }
-
-.menu-item-submenu {
-  padding: 4px 12px;
-  /* Reduce el padding */
-  font-size: 14px;
-  /* Ajusta el tamaño del texto */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.el-submenu .el-menu-item {
-  padding: 4px 12px;
-  /* Aplica el mismo padding a los items del submenu */
-  font-size: 14px;
-  /* Asegura que el texto tenga el mismo tamaño */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.el-submenu__title {
-  padding: 4px 12px;
-  /* Aplica el mismo padding a la cabecera del submenu */
-  font-size: 14px;
-  /* Asegura que el texto tenga el mismo tamaño */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.icon-style {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  /* Asegura que el color sea el mismo */
-  margin-right: 2px;
-  /* Espacio a la derecha */
-  vertical-align: middle;
-  /* Alineación vertical */
-}
-
-.el-icon {
-  font-size: 16px;
-  /* Ajusta el tamaño de la fuente */
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-/* --------------------------------------------------------- */
-
-.flex-container {
-  display: flex;
-  align-items: center;
-  /* Centra verticalmente */
-  gap: 8px;
-  /* Espacio entre el texto y el input */
-  flex-wrap: wrap;
-  /* Permite que los elementos bajen si no hay espacio */
-}
-
-.flex-container span {
-  white-space: nowrap;
-  /* Evita que el texto se divida en varias líneas */
-}
-
-.el-input,
-.el-cascader {
-  flex: 1;
-  /* Hace que los inputs ocupen el espacio disponible */
-  min-width: 150px;
-  /* Evita que se vuelvan demasiado pequeños */
-}
+.w-full { width: 100%; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.p-2 { padding: 0.5rem; }
+.p-4 { padding: 1rem; }
+.h-full { height: 100%; }
+.border { border: 1px solid #dcdfe6; }
+.rounded-lg { border-radius: 8px; }
+.bg-gray-50 { background-color: #f9fafb; }
+.font-semibold { font-weight: 600; }
+.cursor-pointer { cursor: pointer; }
 </style>

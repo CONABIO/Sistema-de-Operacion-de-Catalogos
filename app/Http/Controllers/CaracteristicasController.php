@@ -159,10 +159,8 @@ class CaracteristicasController extends Controller
 
     public function store(Request $request)
     {
-        // Tu lógica de validación es compleja y parece correcta. La dejamos intacta.
         $maxNiveles = 7;
-        $validationRules = [ /* ... */];
-        // ... validación ...
+        $validationRules = [ ];
         Validator::make($request->all(), $validationRules, [ /* ... */])->after(function ($validator) { /* ... */
         })->validate();
 
@@ -182,12 +180,10 @@ class CaracteristicasController extends Controller
         $caracteristica->FechaCaptura = now();
         $caracteristica->save();
 
-        // --- DEPURACIÓN: VERIFICA EL ID AQUÍ ---
         Log::info('ID Generado después de guardar: ' . $caracteristica->IdCatNombre);
         if (!$caracteristica->IdCatNombre) {
             Log::error('El IdCatNombre es nulo después de guardar la característica.');
         }
-        // ----------------------------------------
 
         if (!$caracteristica->IdOriginal && $caracteristica->IdCatNombre) {
             $caracteristica->IdOriginal = $caracteristica->IdCatNombre;

@@ -4,8 +4,7 @@ import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 import EditarButton from "@/Components/Biotica/EditarButton.vue";
 import EliminarButton from "@/Components/Biotica/EliminarButton.vue";
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
-// import ModalGenerico from "@/Components/Biotica/ModalGenerico.vue"; 
-import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue"; 
+import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue";
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
@@ -21,6 +20,7 @@ import {
   ElFormItem,
 } from "element-plus";
 import { router, usePage } from "@inertiajs/vue3";
+import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 
 
 const notificacionVisible = ref(false);
@@ -40,12 +40,12 @@ const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 
 const handleNodeExpand = (data, node) => {
   expandedNodeIds.value.add(data.IdCatNombre);
-  handleNodeSelected(data, node); 
+  handleNodeSelected(data, node);
 };
 
 const handleNodeCollapse = (data, node) => {
   expandedNodeIds.value.delete(data.IdCatNombre);
-  handleNodeSelected(data, node); 
+  handleNodeSelected(data, node);
 };
 
 const scrollToNode = (nodeId) => {
@@ -58,7 +58,6 @@ const scrollToNode = (nodeId) => {
     }
   });
 };
-
 
 const expandAncestors = (nodeIdToExpand) => {
   const node = treeRef.value?.getNode(nodeIdToExpand);
@@ -184,6 +183,14 @@ watch(
   { immediate: true, deep: true }
 );
 
+
+onMounted(() => {
+  if (localTreeData.value && localTreeData.value.length > 0) {
+    const firstNodeId = localTreeData.value[0].IdCatNombre;
+    selectAndFocusNode(firstNodeId);
+  }
+});
+
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const page = usePage();
@@ -218,7 +225,7 @@ const modalRules = {
 };
 const abrirModalParaInsertar = () => {
   if (!selectedNode.value && props.treeDataProp.length > 0) {
-   
+
   }
   modalMode.value = "insertar";
   formModal.value = { Descripcion: "" };
@@ -246,7 +253,7 @@ const cerrarModalOperacion = () => {
 };
 
 const modalTitle = computed(() => {
-    return modalMode.value === "editar" ? "Editar la característica seleccionada" : "Ingresar una nueva característica";
+  return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
 });
 
 const guardarDesdeModal = async () => {
@@ -257,7 +264,7 @@ const guardarDesdeModal = async () => {
   }
 
   const proceedWithSave = () => {
-    ElMessageBox.close();
+    ElMessageBox.close(); 
     if (modalMode.value === "editar") {
       const datosUpdate = { Descripcion: formModal.value.Descripcion.trim() };
       const nodeId = nodoEnModal.value.IdCatNombre;
@@ -267,8 +274,8 @@ const guardarDesdeModal = async () => {
         onSuccess: (page) => {
           cerrarModalOperacion();
           mostrarNotificacion(
-            "¡Éxito!",
-            "Característica actualizada correctamente.",
+            "Ingreso!", // Título cambiado para ser más genérico
+            "La información ha sido modificada correctamente.",
             "success"
           );
           nextTick(() => {
@@ -315,14 +322,8 @@ const guardarDesdeModal = async () => {
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-          mostrarNotificacion(
-            "¡Éxito!",
-            `Característica insertada.`,
-            "success"
-          );
-
+          
           const finalNewNodeId = page.props.flash?.newNodeId;
-
           if (finalNewNodeId) {
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
           }
@@ -333,40 +334,43 @@ const guardarDesdeModal = async () => {
     }
   };
 
-  const nombreCaracteristica = formModal.value.Descripcion.trim();
-  ElMessageBox({
-    title: "Confirmar Guardado",
-    showConfirmButton: false,
-    showCancelButton: false,
-    customClass: "message-box-diseno-limpio",
-    message: h("div", { class: "custom-message-content" }, [
-      h("div", { class: "body-content" }, [
-        h("div", { class: "custom-warning-icon-container" }, [
-          h(
-            "div",
-            {
-              class: "custom-warning-circle",
-              style: "background-color: #e6a23c;",
-            },
-            "!"
-          ),
+  if (modalMode.value === 'insertar') {
+    proceedWithSave();
+  } else {
+    const nombreCaracteristica = formModal.value.Descripcion.trim();
+    ElMessageBox({
+      title: "Confirmación",
+      showConfirmButton: false,
+      showCancelButton: false,
+      customClass: "message-box-diseno-limpio",
+      message: h("div", { class: "custom-message-content" }, [
+        h("div", { class: "body-content" }, [
+          h("div", { class: "custom-warning-icon-container" }, [
+            h(
+              "div",
+              {
+                class: "custom-warning-circle",
+                style: "background-color: #e6a23c;", 
+              },
+              "!"
+            ),
+          ]),
+          h("div", { class: "text-container" }, [
+            h(
+              "p",
+              null,
+              `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`
+            ),
+          ]),
         ]),
-        h("div", { class: "text-container" }, [
-          h(
-            "p",
-            null,
-            `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`
-          ),
+        h("div", { class: "footer-buttons" }, [
+          h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+          h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
         ]),
       ]),
-      h("div", { class: "footer-buttons" }, [
-        h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-        h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
-      ]),
-    ]),
-  }).catch(() => {
-    ElMessage.info("Guardado cancelado.");
-  });
+    }).catch(() => {
+    });
+  }
 };
 
 const handleEliminar = () => {
@@ -575,134 +579,79 @@ const calcularNivelesParaNuevoNodo = (
 const isAccionDependienteDeNodoDeshabilitada = computed(
   () => !selectedNode.value || esModalVisible.value
 );
-
 </script>
 
 <template>
   <AppLayout title="Características Taxonómicas">
-    <div class="app-container">
-      
-      <div class="page-title-header">
-        <h1 class="page-main-title-class"> Catálogo de características asociadas al taxón</h1>
-      </div>
+    <LayoutCuerpo :usar-app-layout="false" titulo-pag="Características Taxonómicas"
+      titulo-area="Catálogo de características asociadas al taxón">
 
-      <div class="content-wrapper2">
-        <el-card class="box-card">
-            <template #header>
-              <div class="header-container">
-                  <div class="right"></div>
-                  <div class="left">
-                      <div class="action-group">
-                          <NuevoButton
-                              @crear="abrirModalParaInsertar"
-                              toolPosicion="bottom"
-                              :disabled="esModalVisible"
-                          />
-                          <EditarButton
-                              @editar="abrirModalParaEditar"
-                              toolPosicion="bottom"
-                              :disabled="isAccionDependienteDeNodoDeshabilitada"
-                          />
-                          <EliminarButton
-                              @eliminar="handleEliminar"
-                              toolPosicion="bottom"
-                              :disabled="isAccionDependienteDeNodoDeshabilitada"
-                          />
-                      </div>
-                  </div>
-              </div>
-            </template>
-            
-            <div class="tree-view-container">
-              <el-tree v-if="localTreeData && localTreeData.length" 
-                  ref="treeRef" 
-                  :data="localTreeData"
-                  :props="{ children: 'children', label: 'Descripcion' }" 
-                  node-key="IdCatNombre"
-                  :current-node-key="selectedNode?.IdCatNombre" 
-                  :highlight-current="true" 
-                  :expand-on-click-node="true"
-                  
-                  :default-expanded-keys="expandedKeysArray"
-                  @node-expand="handleNodeExpand"
-                  @node-collapse="handleNodeCollapse"
-                  
-                  @node-click="handleNodeSelected" 
-                  class="custom-element-tree">
-                  
-                  <template #default="{ node, data }">
-                      <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
-                          <span>{{ node.label }}</span>
-                      </span>
-                  </template>
-
-              </el-tree>
-              <div v-else class="no-data-message">
-                  No hay datos de características para mostrar.
+      <el-card class="box-card tree-card">
+        <template #header>
+          <div class="header-container">
+            <div class="left-header-content"></div>
+            <div class="right-header-content">
+              <div class="action-group">
+                <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+                <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
+                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
+                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
               </div>
             </div>
-        </el-card>
-      </div>
-    </div>
+          </div>
+        </template>
 
-    <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
-        <div class="dialog-header">
-                <h3>{{ modalTitle }}</h3>
-            </div>
-        <div class="header">
-            <div class="dialog-body">
-                <el-form
-                    :model="formModal"
-                    ref="formModalRef"
-                    :rules="modalRules"
-                    label-position="top"
-                    @submit.prevent="guardarDesdeModal"
-                >
-                    <el-form-item prop="Descripcion" >
-                        <template #label >
-                        {{
-                            modalMode === "editar"
-                            ? "Nueva descripción:"
-                            : "Característica:"
-                        }}
-                        </template>
-                        <el-input
-                        id="descripcionModalInput"
-                        v-model="formModal.Descripcion"
-                        placeholder="Ingrese la descripción"
-                        clearable
-                        maxlength="255"
-                        show-word-limit
-                        />
-                    </el-form-item>
-
-                    <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1"
-                        >Posición con respecto a la información seleccionada en el catálogo:</label
-                        >
-                        <el-radio-group v-model="opcionNivel">
-                        <el-radio label="mismo">Mismo nivel</el-radio>
-                        <el-radio label="inferior">Nivel inferior</el-radio>
-                        </el-radio-group>
-                    </div>
-                </el-form>
-
-                <div class="form-actions">
-                    <GuardarButton @click="guardarDesdeModal" />
-                </div>
-            </div>
+        <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
+          :props="{ children: 'children', label: 'Descripcion' }" node-key="IdCatNombre"
+          :current-node-key="selectedNode?.IdCatNombre" :highlight-current="true" :expand-on-click-node="true"
+          :default-expanded-keys="expandedKeysArray" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+          @node-click="handleNodeSelected" class="custom-element-tree">
+          <template #default="{ node, data }">
+            <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
+              <span>{{ node.label }}</span>
+            </span>
+          </template>
+        </el-tree>
+        <div v-else class="no-data-message">
+          No hay datos de características para mostrar.
         </div>
-    </DialogGeneral>
+      </el-card>
+
+    </LayoutCuerpo>
 
     <Teleport to="body">
-      <NotificacionExitoErrorModal
-        :visible="notificacionVisible"
-        :titulo="notificacionTitulo"
-        :mensaje="notificacionMensaje"
-        :tipo="notificacionTipo"
-        :duracion="notificacionDuracion"
-        @close="cerrarNotificacion"
-      />
+      <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+        <div class="dialog-header">
+          <h3>{{ modalTitle }}</h3>
+        </div>
+        <div class="dialog-body-container">
+          <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+            @submit.prevent="guardarDesdeModal">
+            <el-form-item prop="Descripcion">
+              <template #label>
+                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
+              </template>
+              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
+                clearable maxlength="255" show-word-limit />
+            </el-form-item>
+            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+              <el-radio-group v-model="opcionNivel">
+                <el-radio value="mismo">Mismo nivel</el-radio>
+                <el-radio value="inferior">Nivel inferior</el-radio>
+              </el-radio-group>
+            </div>
+          </el-form>
+          <div class="form-actions">
+            <GuardarButton @click="guardarDesdeModal" />
+          </div>
+        </div>
+      </DialogGeneral>
+
+      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+        @close="cerrarNotificacion" />
     </Teleport>
   </AppLayout>
 </template>
@@ -711,26 +660,32 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 .message-box-diseno-limpio .el-message-box__header {
   border-bottom: none;
 }
+
 .message-box-diseno-limpio .el-message-box__content {
   padding: 10px 20px 20px 20px;
 }
+
 .custom-message-content {
   display: flex;
   flex-direction: column;
 }
+
 .body-content {
   display: flex;
   align-items: center;
   gap: 15px;
 }
+
 .text-container p {
   margin: 0;
   line-height: 1.5;
   color: #606266;
 }
+
 .custom-warning-icon-container {
   flex-shrink: 0;
 }
+
 .custom-warning-circle {
   width: 30px;
   height: 30px;
@@ -744,154 +699,140 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   font-weight: bold;
   line-height: 1;
 }
+
 .footer-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 25px;
 }
+
 .custom-element-tree {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  font-size: 14px; 
-    line-height: 20px; 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
 }
+
 .custom-element-tree .el-tree-node__content {
-  padding: 0px 4px; 
-  border-bottom: none; 
+  padding: 0px 4px;
+  border-bottom: none;
   height: auto;
   margin-bottom: 0;
   border-radius: 4px;
 }
+
 .custom-element-tree .el-tree-node__content:hover {
   background-color: #f4f6f8;
 }
-.custom-element-tree .el-tree-node.is-current > .el-tree-node__content {
+
+.custom-element-tree .el-tree-node.is-current>.el-tree-node__content {
   background-color: #e4f5e1;
   font-weight: 500;
   color: #007bff;
 }
+
 .custom-element-tree .el-tree-node__expand-icon {
   font-size: 1.2em;
   color: #909399;
 }
+
 .custom-element-tree .el-tree-node__expand-icon:hover {
   color: #606266;
+}
+
+.tree-card>.el-card__body {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  margin: 0 24px 24px 24px;
 }
 </style>
 
 <style scoped>
-/* Estilos de la página, sin cambios */
-.page-title-header {
-  background-color: #d9e1eb;
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 20px;
+.tree-card {
   width: 100%;
-  max-width: 1600px; 
+  max-width: 1600px;
+  max-height: 726px;
+  display: flex;
+  flex-direction: column;
+
 }
-.page-title-header .page-main-title-class {
-  color: rgb(31, 30, 30) !important;
-  margin: 0 !important;
-  font-size: 1.25rem !important;
-  font-weight: 600 !important;
-}
-.content-wrapper2 {
-    width: 100%;
-    max-width: 1600px;
-    max-height: 700px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-.app-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f0f2f5;
-    align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
+
 :deep(.el-card__header) {
-    
-    border-bottom: none !important;
-    background-color: #fff;
+  padding: 16px 24px !important;
+  border-bottom: 1px solid #e4e7ed !important;
+  flex-shrink: 0;
 }
+
+:deep(.el-card__body) {
+  padding: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.action-group {
-  display: inline-flex;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: -15px;
 }
-.tree-view-container {
-  overflow: auto;
-  max-height: 550px; 
-  position: relative;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 10px;
+
+.action-group {
+  display: flex;
+  gap: 10px;
 }
+
 .no-data-message {
   text-align: center;
   color: #777;
   padding: 20px;
   font-style: italic;
+  margin: auto;
 }
+
 .mb-4 {
   margin-bottom: 1rem;
 }
 
 :deep(.el-dialog__body) {
-    padding: 0 !important;
+  padding: 0 !important;
 }
+
 .dialog-header {
-    background-color: #f1f7ff;
-    padding: 20px 24px;
-    border-bottom: 1px solid #e4e7ed;
-    text-align: left;
-    border-radius: 10px;
-    margin-bottom: 10px;
+  background-color: #f1f7ff;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
 }
-.header {
-    background-color: #ffffff; 
-    padding: 20px 24px;
-    text-align: left;
-    position: relative; 
-    z-index: 10; 
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-    border-radius: 10px;
-}
+
 .dialog-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #303133;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #303133;
 }
-.dialog-body {
-    padding: 30px;
+
+.dialog-body-container {
+  padding: 24px 30px 30px;
 }
+
 .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
+
 :deep(.el-form-item) {
-    margin-bottom: 22px;
+  margin-bottom: 22px;
 }
+
 :deep(.el-form-item__label) {
-    padding-bottom: 4px !important;
-    line-height: normal !important;
-    font-size: 0.9em;
-    color: #606266;
+  padding-bottom: 4px !important;
+  line-height: normal !important;
+  font-size: 0.9em;
+  color: #606266;
 }
 </style>

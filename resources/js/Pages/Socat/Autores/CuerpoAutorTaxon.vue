@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, h } from "vue";
 import axios from "axios";
 import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElCard, ElCollapse, ElCollapseItem, ElScrollbar, ElTable, ElTableColumn, ElTooltip, ElButton, ElIcon, ElPagination, ElRadioGroup, ElRadioButton } from "element-plus";
-import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue'; 
+import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 import EditarButton from "@/Components/Biotica/EditarButton.vue";
 import EliminarButton from "@/Components/Biotica/EliminarButton.vue";
@@ -182,14 +182,20 @@ const manejarNuevoItem = () => {
   accionModalForm.value = "crear";
   modalFormVisible.value = true;
 };
+
+
 const manejarEditarItem = (item) => {
   itemEditado.value = { ...item };
   accionModalForm.value = "editar";
   modalFormVisible.value = true;
 };
+
+
 const cerrarFormModal = () => {
   modalFormVisible.value = false;
 };
+
+
 const handleFormAutorSubmited = (datosDelFormulario) => {
   cerrarFormModal();
   const procederConGuardado = async () => {
@@ -204,15 +210,16 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
       };
       if (datosDelFormulario.accionOriginal === 'crear') {
         response = await axios.post("/autores", payload);
+        mostrarNotificacion("¡Ingreso!", "La información ha sido ingresada correctamente.", "success");
       } else if (datosDelFormulario.accionOriginal === 'editar' && datosDelFormulario.idParaEditar) {
         response = await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
+        mostrarNotificacion("¡Ingreso!", "La información ha sido modificada correctamente.", "success");
       } else {
         throw new Error("Acción de formulario no válida o falta ID.");
       }
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
     } catch (error) {
       if (error.response) {
         if (error.response.status === 422) {
@@ -229,23 +236,29 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
       guardandoDatosServer.value = false;
     }
   };
+
+
   const cancelarGuardado = () => {
     ElMessageBox.close();
   };
-  const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
-  ElMessageBox({
-    title: 'Confirmar Guardado', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarGuardado }),
-        h(BotonAceptar, { onClick: procederConGuardado }),
+  if (datosDelFormulario.accionOriginal === 'crear') {
+    procederConGuardado();
+  } else {
+    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
+    ElMessageBox({
+      title: 'Confirmación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarGuardado }),
+          h(BotonAceptar, { onClick: procederConGuardado }),
+        ])
       ])
-    ])
-  }).catch(() => { });
+    }).catch(() => { });
+  }
 };
 const manejarEliminarItem = (itemId) => {
   const procederConEliminacion = async () => {
@@ -295,20 +308,22 @@ const cerrarNotificacion = () => {
 </script>
 
 <template>
-  <LayoutCuerpo :usar-app-layout="false" tituloPag="Autoridades Taxonómicas" tituloArea="Catálogo de autoridades taxonómicas">
-    <!-- --- CAMBIO CLAVE: Este div envuelve todo el contenido del slot --- -->
+  <LayoutCuerpo :usar-app-layout="false" tituloPag="Autoridades Taxonómicas"
+    tituloArea="Catálogo de autoridades taxonómicas">
     <div class="h-full flex flex-col">
       <div v-if="props.nombre" class="main-section" style="margin-bottom: 20px;">
         <el-card class="box-card-inner-table">
           <el-collapse v-model="activeNames">
             <el-collapse-item title="Autores Relacionados" name="1">
               <el-scrollbar max-height="400px">
-                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea" placeholder="Autoridad Taxonomica" />
+                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
+                  placeholder="Autoridad Taxonomica" />
                 <el-table :data="autoresRel" style="width: 100%" max-height="250" :show-header="false">
                   <el-table-column prop="IdAutorTaxon" label="Id" width="80" v-if="false" />
                   <el-table-column label="Texto Inicio" width="120">
-                    <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto" maxlength="15"
-                        @input="val => handleInput(val, scope, 'CadInicio')" @keydown.native.prevent="onKeyDown($event)"
+                    <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto"
+                        maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')"
+                        @keydown.native.prevent="onKeyDown($event)"
                         @paste.native.prevent="onPaste($event, scope)" /></template>
                   </el-table-column>
                   <el-table-column prop="NombreAutoridad" label="Nombre" min-width="180" />
@@ -357,11 +372,10 @@ const cerrarNotificacion = () => {
         </el-card>
       </div>
 
-      <!-- --- CAMBIO CLAVE: Se añade 'flex-grow' para que la tabla ocupe el espacio sobrante --- -->
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        endpoint="/busca-autor" id-key="IdAutorTaxon" @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem"
-        @nuevo-item="manejarNuevoItem" @row-dblclick="agregarAutor">
+        endpoint="/busca-autor" id-key="IdAutorTaxon" @editar-item="manejarEditarItem"
+        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem" @row-dblclick="agregarAutor">
 
 
         <template #header-actions>
@@ -395,7 +409,6 @@ const cerrarNotificacion = () => {
 </template>
 
 <style>
-/* Estilos globales para ElMessageBox. Estos se mantienen. */
 .message-box-diseno-limpio .el-message-box__header {
   border-bottom: none;
 }
@@ -448,12 +461,7 @@ const cerrarNotificacion = () => {
 </style>
 
 <style scoped>
-/* --- CAMBIO: Se han eliminado las clases de layout como .app-container, .page-title-header, .content-wrapper, etc. --- */
-/* Solo se mantienen los estilos específicos del contenido de ESTE componente. */
-
-.main-section {
-  /* Dejado vacío a propósito, para que lo herede el componente hijo */
-}
+.main-section {}
 
 .expand-content-detail {
   padding: 10px 15px;
