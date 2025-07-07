@@ -13,10 +13,9 @@ use App\Http\Controllers\GrupoTaxonomicoController;
 use App\Http\Controllers\NombreComunController;
 use App\Http\Controllers\NombresArbolController;
 use App\Http\Controllers\NombresController;
-use App\Http\Controllers\TipoDistribucionController;
+use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
-use App\Http\Controllers\TreeMapController;
 
 
 Route::get('/', function () {
@@ -57,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('busca-autoresRel', [AutorTaxonController::class, 'buscaAutoresRel']);
 
 
-    Route::get('/busca-grupo', [GrupoTaxonomicoController::class, 'buscaGrupo'])->name('buscaGrupo'); 
+    Route::get('/busca-grupo', [GrupoTaxonomicoController::class, 'buscaGrupo'])->name('buscaGrupo');
     Route::get('/grupos-taxonomicos', [GrupoTaxonomicoController::class, 'index'])->name('grupoTaxonomico.index');
     Route::get('/grupos-taxonomicos/create', [GrupoTaxonomicoController::class, 'create'])->name('gruposTaxonomicos.create');
     Route::post('/grupos-taxonomicos', [GrupoTaxonomicoController::class, 'store'])->name('gruposTaxonomicos.store');
@@ -76,8 +75,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
 
 
-    
-    
+
+
 
     Route::get('/nombres-comunes', [NombreComunController::class, 'index'])->name('nombresComunes.index');
     Route::get('/nombres-comunes/create', [NombreComunController::class, 'create'])->name('nombresComunes.create');
@@ -85,52 +84,76 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/nombres-comunes/{IdNomComun}/edit', [NombreComunController::class, 'edit'])->name('nombresComunes.edit');
     Route::put('/nombres-comunes/{IdNomComun}', [NombreComunController::class, 'update'])->name('nombresComunes.update');
     Route::delete('/nombres-comunes/{IdNomComun}', [NombreComunController::class, 'destroy'])->name('nombresComunes.destroy');
- 
+
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
 
 
-    Route::get('/grafica', [GraficasController::class, 'getData'])->name('grafica.index');
+
 
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
 
     Route::get('/categoria-taxonomica', [CategoriaTaxonomicaController::class, 'index'])->name('categoria-taxonomica.index');
 
 
-     Route::get('/Nombre',[NombresController::class, 'Index'])->name('nombreTax.index');
-     Route::get('/cargar-nomArb',[NombresController::class, 'fetchNomArb']);
-     Route::get('/cargar-hijos-nomArb/{id}',[NombresController::class, 'fetchHijos']);
+    Route::get('/Nombre', [NombresController::class, 'Index'])->name('nombreTax.index');
+    Route::get('/cargar-nomArb', [NombresController::class, 'fetchNomArb']);
+    Route::get('/cargar-hijos-nomArb/{id}', [NombresController::class, 'fetchHijos']);
 
-     Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
-     Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
-     Route::get('/carga-list-grp', [NombresArbolController::class, 'cargaListGrupos']);
-     Route::get('/cargar-comSnib', [NombresArbolController::class, 'cargaComSnib']);
-     Route::get('/carga-categ', [NombresArbolController::class, 'cargaCategorias']);
-     Route::post('/nombres-store',[NombresArbolController::class, 'store']);
-     Route::put('/actualiza-nombre/{id}',[NombresArbolController::class,'update']);
-     Route::put('/baja-nombre/{id}',[NombresArbolController::class,'bajaTax']);
+    Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
+    Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
+    Route::get('/carga-list-grp', [NombresArbolController::class, 'cargaListGrupos']);
+    Route::get('/cargar-comSnib', [NombresArbolController::class, 'cargaComSnib']);
+    Route::get('/carga-categ', [NombresArbolController::class, 'cargaCategorias']);
+    Route::post('/nombres-store', [NombresArbolController::class, 'store']);
+    Route::put('/actualiza-nombre/{id}', [NombresArbolController::class, 'update']);
+    Route::put('/baja-nombre/{id}', [NombresArbolController::class, 'bajaTax']);
 
-     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
-     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
+    Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
+    Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
     Route::put('/bibliografias/{id}', [BibliografiaController::class, 'update'])->name('bibliografias.update');
     Route::delete('/bibliografias/{id}', [BibliografiaController::class, 'destroy'])->name('bibliografias.destroy');
     Route::get('/bibliografias-api', [BibliografiaController::class, 'indexApi'])->name('bibliografias.api');
-    Route::get('/bibliografiasIndex',[BibliografiaController::class, 'index'])->name('bibliografias.index');
-    Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store'); 
+    Route::get('/bibliografiasIndex', [BibliografiaController::class, 'index'])->name('bibliografias.index');
+    Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store');
 
     Route::delete('/caracteristicas-taxon/{id}', [CaracteristicasController::class, 'destroy'])
-    ->name('caracteristicasTaxon.destroy');
+        ->name('caracteristicasTaxon.destroy');
 
     Route::put('/caracteristicas-taxon/{id}', [CaracteristicasController::class, 'update'])
-    ->name('caracteristicasTaxon.update');
+        ->name('caracteristicasTaxon.update');
 
     Route::post('/caracteristicas-taxon', [CaracteristicasController::class, 'store'])
-    ->name('caracteristicas-taxon.store'); 
+        ->name('caracteristicas-taxon.store');
 
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
-    ->name('caracteristicas-taxon.index'); 
+        ->name('caracteristicas-taxon.index');
 
-    
+
+    Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
+        Route::get('/', [TipoRelacionController::class, 'index'])->name('index');
+        Route::post('/', [TipoRelacionController::class, 'store'])->name('store');
+        Route::put('/{tipoRelacion}', [TipoRelacionController::class, 'update'])->name('update');
+        Route::delete('/{tipoRelacion}', [TipoRelacionController::class, 'destroy'])->name('destroy');
+    });
+
+
+    Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
+        ->name('categorias-taxonomicas.index');
+
+    Route::post('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'store'])
+        ->name('categorias-taxonomicas.store');
+
+    Route::put('categorias-taxonomicas/{categoria_taxonomica:IdCategoriaTaxonomica}', [CategoriaTaxonomicaController::class, 'update'])
+    ->name('categorias-taxonomicas.update');
+
+    Route::delete('categorias-taxonomicas/{categoria_taxonomica}', [CategoriaTaxonomicaController::class, 'destroy'])
+    ->name('categorias-taxonomicas.destroy');
+
+    Route::put('categorias-taxonomicas/{categoriaTaxonomica}/update-icon', [CategoriaTaxonomicaController::class, 'updateIcon'])
+    ->name('categorias-taxonomicas.updateIcon');
+
+    Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
 });

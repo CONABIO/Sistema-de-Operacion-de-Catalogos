@@ -12,6 +12,7 @@ const handleClick = (event) => { emit('click', event); };
 </script>
 
 <template>
+  <el-tooltip class="item" effect="dark" content="Cancelar" :placement= "toolPosicion">
   <el-button 
     type="danger" 
     circle 
@@ -31,6 +32,7 @@ const handleClick = (event) => { emit('click', event); };
       </svg>
     </el-icon>
   </el-button>
+  </el-tooltip>
 </template>
 
 <style scoped>
