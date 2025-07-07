@@ -956,7 +956,7 @@ const borrarDatos = async () => {
         if (error.response.status === 422) {
             const errorMessages = Object.values(error.response.data.errors).flat();
             errorMessages.forEach(msg => {
-                await mostrarNotificacion(
+                mostrarNotificacion(
                   "Aviso",
                   msg,
                   "Error",
@@ -1146,7 +1146,7 @@ const Guardar = async () =>{
                     if (error.response.status === 422) {
                         const errorMessages = Object.values(error.response.data.errors).flat();
                         errorMessages.forEach(msg => {
-                            await mostrarNotificacion(
+                            mostrarNotificacion(
                               "Aviso",
                               msg,
                               "Error",
@@ -1208,7 +1208,7 @@ const Guardar = async () =>{
                     if (error.response.status === 422) {
                         const errorMessages = Object.values(error.response.data.errors).flat();
                         errorMessages.forEach(msg => {
-                            await mostrarNotificacion(
+                            mostrarNotificacion(
                               "Aviso",
                                msg,
                               "Error",
