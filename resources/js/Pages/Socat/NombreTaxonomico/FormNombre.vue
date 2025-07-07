@@ -1,64 +1,44 @@
 <template>
   <div class="form-nombre-container">
-    <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px">
+    <el-card>
       <el-container>
-        <el-header >
-          <table>
-            <tbody>
-              <th v-if="hasPermisos('MnuNomCientifico', 'Altas')">
-                <NuevoButton @crear="nuevoTax" toolPosicion = 'bottom' :habActTax = 'habNuevo'/>
-              </th>
-              <th v-if="hasPermisos('MnuNomCientifico', 'Cambios')">
-                <EditarButton @editar="editarTax()" toolPosicion = 'top' :habActTax = 'habMod' />
-              </th>
-              <th v-if="hasPermisos('MnuNomCientifico', 'Bajas')">
-                <EliminarButton @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-              </th>
-              <th>
-                <div v-if="muestraGrd">
-                  <el-popconfirm confirm-button-text="Si" 
-                                  cancel-button-text="No" 
-                                  :icon="InfoFilled" 
-                                  icon-color="#E6A23C"
-                                  title="¿Realmente desea guardar los cambios?" 
-                                  @confirm="Guardar('nombreTax', accion)">
-                    <template #reference>
-                      <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                        <el-button circle type="warning">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                              <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                          </svg>
-                        </el-button>
-                      <!--/el-tooltip-->
-                    </template>
-                  </el-popconfirm>
-                </div>
-              </th>
-              <th style="width:20px;"></th>
-              <th style="width:300px;">
-                <div>
-                  <el-form-item label = "Nivel taxonómico" prop="catTax">
-                    <th style="width: 500px;">
-                      <div align = "rigth">
-                        <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
-                          <el-option
-                            v-for="item in categorias"
-                                  :key="item.id"
-                                  :label="item.label"
-                                  :value="item.id">
-                          </el-option>
-                        </el-select>
-                      </div>
-                    </th>
-                  </el-form-item>
-                </div>
-              </th>
-            </tbody>
-          </table>
+        <el-header class="header">
+          <h1 class="titulo">Información del taxón</h1>
         </el-header>
-        <el-main>
-          <td>Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}</td>
-          <el-form-item label="Estatus: " prop="estatusTax">
+      <el-main>
+        <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
+          <el-row :gutter="21">
+              <!-- Texto del taxón -->
+              <el-col :span="20">
+                <span class="subtitulo" style="color: red;">
+                  Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
+                </span>
+              </el-col>
+
+              <!-- Botones -->
+              <el-col :span="2" style="display: flex;">
+                <el-space>
+                  <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
+                              @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"/>
+                  <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
+                              @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
+                  <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
+                              @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
+                </el-space>
+              </el-col>
+          </el-row>
+          <br />
+          <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
+            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
+              <el-option
+                v-for="item in categorias"
+                      :key="item.id"
+                      :label="item.label"
+                      :value="item.id">
+              </el-option>
+            </el-select>
+          </el-form-item>     
+          <el-form-item label = "Estatus: ">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
                 <el-radio :disabled="estCor" :value="2">{{ estDinamico }}</el-radio>
@@ -68,56 +48,47 @@
               </el-radio-group>
             </div>
           </el-form-item>
-          <p></p>
           <el-tabs type="card">
             <el-tab-pane label="Taxón">
-              <!-- El resto del formulario -->
-              <el-form-item label="Taxón" prop="nombreTaxon">
+              <el-form-item label = "Taxón" prop = "nombreTaxon">
                 <el-input type="text" 
-                          maxlength="100" 
-                          v-model="nombreTax.nombreTaxon"
-                          placeholder="Nombre taxón" 
-                          show-word-limit 
-                          @keydown="onPressSistC"
-                          :disabled="habAltEdic" />
+                                maxlength="100" 
+                                v-model="nombreTax.nombreTaxon"
+                                placeholder="Nombre taxón" 
+                                show-word-limit 
+                                @keydown="onPressSistC"
+                                :disabled="habAltEdic" />
               </el-form-item>
               <el-form-item label="Nombre autoridad" prop="nombreAutoridad">
-                  <el-input type="textarea" 
-                            :rows="2" 
-                            maxlength="255" 
-                            show-word-limit 
-                            placeholder="Nombre autoridad"
-                            :disabled="true"
-                            :value="autorComp" 
-                            style="width: 100%" />
-                  <br />
-                  <br />
-                  <el-tooltip class="item" effect="dark" content="Catálogo de Autoridades taxonómicas" placement="left-start">
-                    <el-button @click="carga_autor" 
-                                type="primary" 
-                                circle style="background-color: #AF7AC5; border-color: #985ede;"
-                                :disabled = autorAct>
-                      <el-icon>
-                        <User />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
+                <el-input type="textarea" 
+                          :rows="2" 
+                          maxlength="255" 
+                          show-word-limit 
+                          placeholder="Nombre autoridad"
+                          :disabled="true"
+                          :value="autorComp" 
+                          style="width: 90%" />
+                <el-tooltip class="item" effect="dark" content="Catálogo de Autoridades taxonómicas" placement="bottom">
+                  <el-button 
+                              @click="carga_autor" 
+                              type="primary" 
+                              circle style="background-color: #AF7AC5; border-color: #985ede; margin-left: 10px;"
+                              :disabled = autorAct>
+                    <el-icon>
+                      <autoridades />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
               </el-form-item>
-              <el-form-item label="Sist. Clas. / Catálogo de autoridad / Diccionario" prop="sistClassDicc">
+              <el-form-item label="Sist. Clas. / Catálogo de autoridad / Diccionario" prop="sistClassDicc" >
                 <el-input type="textarea" 
                           :row = 2
                           maxlength="255" 
                           show-word-limit placeholder="Sistema de clasificación"
                           @keydown="onPressSistC" 
-
-                          @input="(value) => handleInput(value, scope)"
-                          @keydown.native.prevent="onKeyDown($event)"
-                          @paste.native.prevent="onPaste($event, scope)"
-
                           :disabled="habAltEdic"
                           v-model="nombreTax.sistClassDicc" />
               </el-form-item>
-              
               <el-form-item label="Cita nomenclatural" prop="citaNomenclatural">
                 <el-input type="text" 
                           maxlength="255" 
@@ -126,7 +97,6 @@
                           :disabled="habAltEdic"
                           v-model="nombreTax.citaNomenclatural" />
               </el-form-item>
-
               <el-form-item label="Anotación al taxón" prop="anotacionTaxon">
                 <el-input type="textarea" 
                           :rows="3" maxlength="1650" 
@@ -136,7 +106,6 @@
                           :disabled="habAltEdic" 
                           v-model="nombreTax.anotacionTaxon" />
               </el-form-item>
-
               <el-form-item label="Otras observaciones" prop="otrasObservaciones">
                 <el-input type="text" 
                           maxlength="50" 
@@ -149,215 +118,218 @@
             </el-tab-pane>
 
             <el-tab-pane label="SCAT">
-              <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
-                <el-col :span="10">
-                  <table style="border: 1px solid black; width: 100%;">
-                    <tbody>
-                      <tr style="border: 1px solid black;">
-                        <th style="border: 1px solid black;">IdNombre</th>
-                        <th style="border: 1px solid black;">IDCat</th>
-                      </tr>
-                      <tr>
-                        <td style="border: 1px solid black;">{{ idNombre }}</td>
-                        <td style="border: 1px solid black;">{{ idCat }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </el-col>
-                <el-col :span="14" style="display:flex; align-items: center; gap: 8px;">
-                  <div  style="flex: 1; min-width:0; display: flex; align-items:center;">
-                      <el-form-item label="Grupo" 
-                                    prop="grpSelec" 
-                                    style="width: 100%; margin: 0;">
-                        <el-select v-model="nombreTax.grpSelec" 
-                                    placeholder="Select" 
-                                    :disabled="actGrupo" style="width: 100%;">
-                          <el-option 
-                            v-for="item in listGrp" 
-                            :key="item.id" 
-                            :label="item.label" 
-                            :value="item.id">
-                          </el-option>
-                        </el-select>
-                      </el-form-item>
-                    </div>
-                    <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
-                      placement="top-start">
-                      <el-button @click="carga_Grupos()" 
-                                  round 
-                                  size="small" 
-                                  type="warning"
-                                  style="flex-shrink: 0">
-                        <el-icon>
-                          <Connection />
-                        </el-icon>            
-                      </el-button>
-                    </el-tooltip>
-                </el-col>
-              </el-row>
-              <br>
-              <el-row :gutter='25'>
-                <el-col :span="7">
-                  <el-form-item label="Validación SNIB" prop="valSnib" class="custom-form-item" label-position="top">
-                    <el-select 
-                        v-model="valSnib" 
-                        placeholder="" 
-                        :disabled="autorAct" 
-                        popper-class="custom-select-dropdown"
-                        style="width: 100%">
-                      <el-option v-for="item in opcSnib" 
-                                :key="item.id" 
-                                :label="item.label" 
-                                :value="item.id">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                
-                <el-col :span="10">
-                  <el-form-item label="Nivel de revisión" prop="nivelRev" label-position="top">
-                    <el-select 
-                          v-model="nombreTax.nivelRev" 
-                          placeholder="Nivel de revisión" 
-                          :disabled="autorAct" 
-                          popper-class="custom-select-dropdown"
-                          style="width: 100%">
-                      <el-option v-for="item in opcNivRev" 
+                    <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
+                      <el-col :span="10">
+                        <table style="border: 1px solid black; width: 100%;">
+                          <tbody>
+                            <tr style="border: 1px solid black;">
+                              <th style="border: 1px solid black;">IdNombre</th>
+                              <th style="border: 1px solid black;">IDCat</th>
+                            </tr>
+                            <tr>
+                              <td style="border: 1px solid black;">{{ idNombre }}</td>
+                              <td style="border: 1px solid black;">{{ idCat }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </el-col>
+                      <el-col :span="14" style="display:flex; align-items: center; gap: 8px;">
+                        <div  style="flex: 1; min-width:0; display: flex; align-items:center;">
+                            <el-form-item label="Grupo" 
+                                          prop="grpSelec" 
+                                          style="width: 100%; margin: 0;">
+                              <el-select v-model="nombreTax.grpSelec" 
+                                          placeholder="Select" 
+                                          :disabled="actGrupo" style="width: 100%;">
+                                <el-option 
+                                  v-for="item in listGrp" 
                                   :key="item.id" 
                                   :label="item.label" 
-                                  :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                
-                <el-col :span="7">
-                  <el-form-item label="Publico" prop="estado" label-position="top">
-                    <el-radio-group v-model="nombreTax.estado" :disabled="autorAct">
-                      <el-radio :disabled="estPubS" :value="1">Si</el-radio>
-                      <el-radio :disabled="estPubN" :value="0">No</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <br>
-              <el-row :gutter='25'>
-                <el-col :span='9'>
-                  <el-row>Id Invasora</el-row>
-                  <el-row>
-                    <el-input placeholder="Id Invasora" 
-                              type="number"
-                              v-model="idInvasora" 
-                              @keydown="onPressSistC"
+                                  :value="item.id">
+                                </el-option>
+                              </el-select>
+                            </el-form-item>
+                          </div>
+                          <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
+                            placement="bottom">
+                            <el-button @click="carga_Grupos()" 
+                                        circle 
+                                        style="flex-shrink: 0; background-color: #a08223;">
+                              <el-icon>
+                                <filtroGrupos />
+                              </el-icon>            
+                            </el-button>
+                          </el-tooltip>
+                      </el-col>
+                    </el-row>
+                    <br>
+                    <el-row :gutter='25'>
+                      <el-col :span="7">
+                        <el-form-item label="Validación SNIB" prop="valSnib" class="custom-form-item" label-position="top">
+                          <el-select 
+                              v-model="valSnib" 
+                              placeholder="" 
                               :disabled="autorAct" 
-                              :value="idInvasora" />
-                  </el-row>
-                </el-col>
-                <el-col :span='6'>
-                  <el-row>Comentarios SNIB</el-row>
-                  <el-row>
-                    <el-input placeholder="Comentarios SNIB" 
-                              v-model="comentariosSnib" 
-                              @keydown="onPressSistC"
-                              :disabled="true" />
-                  </el-row>
-                </el-col>
-                <el-col :span='2'>
-                  <el-tooltip class="item" effect="dark" content="Total de comentarios al nombre en el SNIB"
-                    placement="left-start">
-                    <el-button @click="comentarios_Snib()" 
-                                round 
-                                size="small" 
-                                type="success" 
-                                :disabled="comDet">
-                      <el-icon>
-                        <ChatDotSquare />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-                </el-col>
-              </el-row>
-              <br>
-              <el-row :gutter='25'>
-                <el-col :span="24">
-                  <p></p>
-                  <el-row>
-                    Homonimia SNIB
-                  </el-row>
-                  <el-row>
-                    <el-input type="input" 
-                              placeholder="Homonimia SNIB" 
-                              v-model="homonimiaSnib"
-                              @keydown="onPressSistC" 
-                              :disabled="autorAct" />
-                  </el-row>
-                </el-col>
-              </el-row>
-              <br>
-              <el-row :gutter='25'>
-                <el-col :span='8'>
-                  <el-row>IdIUCN</el-row>
-                  <el-row>
-                    <el-input placeholder="IdIUCN" 
-                              type="number"
-                              v-model="idIUCN" 
-                              @keydown="onPressSistC"
-                              :disabled="autorAct"/>
-                  </el-row>
-                </el-col>
-                <el-col :span='8'>
-                  <el-row>IdCOL</el-row>
-                  <el-row>
-                    <el-input placeholder="IdCOL" 
-                              v-model="idCol" 
-                              @keydown="onPressSistC"
-                              :disabled="autorAct" />
-                  </el-row>
-                </el-col>
-                <el-col :span='8'>
-                  <el-row>IdCITES</el-row>
-                  <el-row>
-                    <el-input placeholder="IdCITES" 
-                              v-model="idCites" 
-                              @keydown="onPressSistC"
-                              :disabled="autorAct"/>
-                  </el-row>
-                </el-col>
-              </el-row>
-            </el-tab-pane>
+                              popper-class="custom-select-dropdown"
+                              style="width: 100%">
+                            <el-option v-for="item in opcSnib" 
+                                      :key="item.id" 
+                                      :label="item.label" 
+                                      :value="item.id">
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                      
+                      <el-col :span="10">
+                        <el-form-item label="Nivel de revisión" prop="nivelRev" label-position="top">
+                          <el-select 
+                                v-model="nombreTax.nivelRev" 
+                                placeholder="Nivel de revisión" 
+                                :disabled="autorAct" 
+                                popper-class="custom-select-dropdown"
+                                style="width: 100%">
+                            <el-option v-for="item in opcNivRev" 
+                                        :key="item.id" 
+                                        :label="item.label" 
+                                        :value="item.value">
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                      
+                      <el-col :span="7">
+                        <el-form-item label="Publico" prop="estado" label-position="top">
+                          <el-radio-group v-model="nombreTax.estado" :disabled="autorAct">
+                            <el-radio :disabled="estPubS" :value="1">Si</el-radio>
+                            <el-radio :disabled="estPubN" :value="0">No</el-radio>
+                          </el-radio-group>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <br>
+                    <el-row :gutter='25'>
+                      <el-col :span='9'>
+                        <el-row>Id Invasora</el-row>
+                        <el-row>
+                          <el-input placeholder="Id Invasora" 
+                                    type="number"
+                                    v-model="idInvasora" 
+                                    @keydown="onPressSistC"
+                                    :disabled="autorAct" 
+                                    :value="idInvasora" />
+                        </el-row>
+                      </el-col>
+                      <el-col :span='6'>
+                        <el-row>Comentarios SNIB</el-row>
+                        <el-row>
+                          <el-input placeholder="Comentarios SNIB" 
+                                    v-model="comentariosSnib" 
+                                    @keydown="onPressSistC"
+                                    :disabled="true" />
+                        </el-row>
+                      </el-col>
+                      <el-col :span='2'>
+                        <el-tooltip class="item" effect="dark" content="Total de comentarios al nombre en el SNIB"
+                          placement="bottom">
+                          <el-button @click="comentarios_Snib()" 
+                                      circle 
+                                      type="success" 
+                                      :disabled="comDet">
+                            <el-icon>
+                              <comentarioSnib />
+                            </el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </el-col>
+                    </el-row>
+                    <br>
+                    <el-row :gutter='25'>
+                      <el-col :span="24">
+                        <p></p>
+                        <el-row>
+                          Homonimia SNIB
+                        </el-row>
+                        <el-row>
+                          <el-input type="input" 
+                                    placeholder="Homonimia SNIB" 
+                                    v-model="homonimiaSnib"
+                                    @keydown="onPressSistC" 
+                                    :disabled="autorAct" />
+                        </el-row>
+                      </el-col>
+                    </el-row>
+                    <br>
+                    <el-row :gutter='25'>
+                      <el-col :span='8'>
+                        <el-row>IdIUCN</el-row>
+                        <el-row>
+                          <el-input placeholder="IdIUCN" 
+                                    type="number"
+                                    v-model="idIUCN" 
+                                    @keydown="onPressSistC"
+                                    :disabled="autorAct"/>
+                        </el-row>
+                      </el-col>
+                      <el-col :span='8'>
+                        <el-row>IdCOL</el-row>
+                        <el-row>
+                          <el-input placeholder="IdCOL" 
+                                    v-model="idCol" 
+                                    @keydown="onPressSistC"
+                                    :disabled="autorAct" />
+                        </el-row>
+                      </el-col>
+                      <el-col :span='8'>
+                        <el-row>IdCITES</el-row>
+                        <el-row>
+                          <el-input placeholder="IdCITES" 
+                                    v-model="idCites" 
+                                    @keydown="onPressSistC"
+                                    :disabled="autorAct"/>
+                        </el-row>
+                      </el-col>
+                    </el-row>
+                  </el-tab-pane>
           </el-tabs>
-        </el-main>
-      </el-container>
-    </el-form>
+        </el-form>
+      </el-main>  
+    </el-container>
+  </el-card>
     
-      <div>
-        <DialogAutor v-model="dialogFormVisibleAutor" :botCerrar="false" :pressEsc="false">
-          <CurpAutorTax :autorRel = listAutores
-                        :nombre = true
-                        @traspasoAutores="recibeAutores">
-          </CurpAutorTax>
-        </DialogAutor>
-      </div>
+    <div>
+      <DialogAutor v-model="dialogFormVisibleAutor" :botCerrar="false" :pressEsc="false">
+        <CurpAutorTax :autorRel = listAutores
+                      :nombre = true
+                      @traspasoAutores="recibeAutores">
+        </CurpAutorTax>
+      </DialogAutor>
+    </div>
       
-      <div>
-        <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
-          <CurpGruposTax />
-        </DialogGrp>
-      </div>
+    <div>
+      <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
+        <CurpGruposTax />
+      </DialogGrp>
+    </div>
 
-      <div>
-        <DialogComSnib v-model="dialogFormVisibleComentarios" :botCerrar="true" :pressEsc="true">
-          <ComenSnibNom :taxon = "taxonAct" />
-        </DialogComSnib>
-      </div>
+    <div>
+      <DialogComSnib v-model="dialogFormVisibleComentarios" :botCerrar="true" :pressEsc="true">
+        <ComenSnibNom :taxon = "taxonAct" />
+      </DialogComSnib>
+    </div>
 
+    <Teleport to="body">
+      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+        @close="cerrarNotificacion" />
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue';
 import { usePage } from '@inertiajs/inertia-vue3';
-import { ElMessage, ElInput, ElPopconfirm} from 'element-plus'
+import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
 import axios from 'axios';
 import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
 import CurpAutorTax from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
@@ -370,13 +342,14 @@ import DialogAutor from '@/Components/Biotica/DialogGeneral.vue';
 import DialogGrp from '@/Components/Biotica/DialogGeneral.vue';
 import DialogComSnib from '@/Components/Biotica/DialogGeneral.vue';
 import usePermisos from '@/composables/usePermisos';
+import autoridades from '@/Components/Biotica/Icons/Autor.vue';
+import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
+import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 
 const { permisos, usuario } = usePermisos();
 
-
 const page = usePage();
 
-//const nombreTaxon = ref(''); // Inicializamos con un string vacío
 const taxon = ref('');
 
 //Funcion para validae la visbilidad de los objetos 
@@ -386,56 +359,6 @@ const hasPermisos = (etiqueta, modulo) => {
 
     return permiso[modulo];
 };
-
-// Funcion para manejar el evento input
-const handleInput = (value, scope, campo) => {
-
-  let filteredValue = '';
-  
-  for (const char of value) {
-    if (allowedChars.has(char.toLowerCase())) {
-      filteredValue += char;
-    }
-  }
-  
-  nombreTax.sistClassDicc = filteredValue;
-};
-
-// Funcion para prevenir teclas no permitidas
-const onKeyDown = (event) => {
-  // Permitir teclas de control
-  if (event.ctrlKey || event.altKey || event.metaKey || 
-      [8, 9, 13, 16, 17, 18, 19, 20, 27, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46].includes(event.keyCode)) {
-    return;
-  }
-  
-  if (!allowedChars.has(event.key.toLowerCase())) {
-    event.preventDefault();
-  }
-};
-
-// Funcion para evitar que peguen el texto 
-const onPaste = (event, scope) => {
-  const clipboardData = event.clipboardData || window.clipboardData;
-  const pastedText = clipboardData.getData('text');
-  let filteredText = '';
-  
-  for (const char of pastedText) {
-    if (allowedChars.has(char.toLowerCase())) {
-      filteredText += char;
-    }
-  }
-  
-  // Actualizar el valor en el scope.row
-  nombreTax.sistClassDicc = filteredText;
-};
-
-//Lista de caracteres permitidos en el input de autores
-const allowedChars = new Set([
-  '(', ')', '[', ']', '&', 'e', 'x', 'i', 'n', 'o', 'c', 's', 'u', 
-  'y', 'u', 't', 'a', 'f', 'p', '1', '2', '3', '4', '5', '6', '7', 
-  '8', '9', '0', ',', '.', '-', ':', ';', ' '
-]);
 
 const abrirAutorTaxon = () => {
   dialogFormVisibleAutor.value = true;
@@ -652,6 +575,7 @@ const carga_inicio = () => {
       type: 'warning',
       duration: 3000
     })
+    
   }
 };
 
@@ -729,7 +653,7 @@ const cargaCategorias = async () => {
 
 const cargaValSnib = async () => {
 
-  if (props.taxonAct.completo.scat) {
+  if (props?.taxonAct?.completo?.scat) {
 
     let valSnibValue = props.taxonAct.completo.scat.ValidacionSNIB;
  
@@ -749,7 +673,7 @@ const cargaValSnib = async () => {
 };
 
 const cargaNivRev = async () => {
-  if (props.taxonAct.completo.scat) {
+  if (props?.taxonAct?.completo?.scat) {
     let nivRev = props.taxonAct.completo.scat.Nivel_de_revision;
 
     let resp = opcNivRev.value.find(niv => niv.value === nivRev);
@@ -836,12 +760,12 @@ const nuevoTax = async() => {
   muestraGrd.value = true;
 
   if (props.taxonAct.estatus.value === 'NA') {
-    ElMessage({
-      showClose: true,
-      message: 'No es posible ingresar un nuevo taxón que tenga como ascendente a un taxón con estatus NA',
-      type: 'error',
-      duration: '1500'
-    });
+    await mostrarNotificacion(
+          "Aviso",
+          "No es posible ingresar un nuevo taxón que tenga como ascendente a un taxón con estatus NA",
+          "error",
+          5000
+        );
     nuevoTax.break();
   }
  
@@ -1010,13 +934,12 @@ const borrarDatos = async () => {
   }
 
   if (rel > 0 || hijos > 0 || catRel > 0 || comentariosSnib.value > 0) {
-    ElMessage({
-      showClose: true,
-      dangerouslyUseHTMLString: true,
-      message: mensaje,
-      type: 'error',
-      duration: '3000'
-    })
+    await mostrarNotificacion(
+        "Aviso",
+        mensaje,
+        "Error",
+        5000
+      );
     return;
   }
  
@@ -1033,11 +956,12 @@ const borrarDatos = async () => {
         if (error.response.status === 422) {
             const errorMessages = Object.values(error.response.data.errors).flat();
             errorMessages.forEach(msg => {
-                ElMessage({
-                    message: msg,
-                    type: 'error',
-                    duration: 3000,
-                });
+                await mostrarNotificacion(
+                  "Aviso",
+                  msg,
+                  "Error",
+                  5000
+                );
             });
        }
     }
@@ -1081,15 +1005,35 @@ const resetForm = () => {
 const cambioPublico = async (estadoTaxon)=> {
   if(props.taxonAct.numEjemp > 0 && estadoTaxon != 1)
     {
-      ElMessage({
-          message: 'No se puede cambiar el valor a no publico ya que tiene nombres relacionados en el SNIB',
-          type: 'error',
-          duration: 1500,
-      });
+      await mostrarNotificacion(
+        "Aviso",
+        'No se puede cambiar el valor a no publico ya que tiene nombres relacionados en el SNIB',
+        "Error",
+        5000
+      );
        return false; 
      }
      return true;
 }
+
+const mostrarNotificacion = (
+  titulo,
+  mensaje,
+  tipo = "warning",
+  duracion = 5000,
+  dangerouslyUseHTML = false
+) => {
+  console.log("Entre a mostrar la notificación");
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = duracion;
+  notificacionVisible.value = true;
+};
+
+const cerrarNotificacion = () => {
+  notificacionVisible.value = false;
+};
 
 //Función para guardar los cambios en el taxón
 const Guardar = async () =>{
@@ -1098,7 +1042,12 @@ const Guardar = async () =>{
   const esValido = await formRef.value.validate().then(() => true).catch(() => false);
   
   if (!esValido) {
-    ElMessage.error('Por favor, complete todos los campos requeridos.');
+    await mostrarNotificacion(
+      "Aviso",
+      'Por favor, complete todos los campos requeridos.',
+      "Error",
+      5000
+    );
     return;
   }
 
@@ -1150,11 +1099,12 @@ const Guardar = async () =>{
                 console.log("Entre a la función guardar nuevo");
               if(Array.isArray(listAutorTax.value) && 
                                        listAutorTax.value.length === 0){
-                  ElMessage({
-                                message: "No es posible continuar ya que no hay valores de lista de autores.",
-                                type: 'error',
-                                duration: 3000,
-                            });
+                  await mostrarNotificacion(
+                    "Aviso",
+                    'No es posible continuar ya que no hay valores de lista de autores.',
+                    "Error",
+                    5000
+                  );
                   return;
                 }
 
@@ -1196,11 +1146,12 @@ const Guardar = async () =>{
                     if (error.response.status === 422) {
                         const errorMessages = Object.values(error.response.data.errors).flat();
                         errorMessages.forEach(msg => {
-                            ElMessage({
-                                message: msg,
-                                type: 'error',
-                                duration: 3000,
-                            });
+                            await mostrarNotificacion(
+                              "Aviso",
+                              msg,
+                              "Error",
+                              5000
+                            );
                         });
                     }
                 }
@@ -1213,11 +1164,12 @@ const Guardar = async () =>{
                                        props.taxonAct.completo.rel_nombre_autor.length === 0 && 
                                        listAutorTax.value.length === 0)
                 {
-                  ElMessage({
-                                message: "No es posible continuar ya que no hay valores de lista de autores.",
-                                type: 'error',
-                                duration: 3000,
-                            });
+                   await mostrarNotificacion(
+                              "Aviso",
+                              'No es posible continuar ya que no hay valores de lista de autores.',
+                              "Error",
+                              5000
+                            );
                   return;
                 }
                 params = {
@@ -1256,11 +1208,12 @@ const Guardar = async () =>{
                     if (error.response.status === 422) {
                         const errorMessages = Object.values(error.response.data.errors).flat();
                         errorMessages.forEach(msg => {
-                            ElMessage({
-                                message: msg,
-                                type: 'error',
-                                duration: 3000,
-                            });
+                            await mostrarNotificacion(
+                              "Aviso",
+                               msg,
+                              "Error",
+                              5000
+                            );
                         });
                     }
                 }
@@ -1300,6 +1253,13 @@ onMounted(() => {
   padding: 20px;
   /* Otros estilos si los tienes */
 }
+
+.header {
+    text-align: left;
+    padding: 0.5rem; /* Reducir el padding en móviles */
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
 
 .form-header {
   padding: 20px;

@@ -191,6 +191,12 @@ const fetchFilteredData = async () => {
     
     currentData.value = response.data.data || [];
     totalItems.value = response.data.total || response.data.totalItems || 0;
+     mostrarNotificacion(
+      "Error de Carga",
+      "Ocurrió un error al cargar los autores.",
+      "error",
+      7000
+    );
   } catch (error) {
     console.error("CuerpoAutorTaxon: Error al obtener los datos:", error);
     currentData.value = [];
@@ -305,6 +311,8 @@ const eliminarItem = (itemId) => {
   const procederConEliminacion = async () => {
     try {
       ElMessageBox.close();
+      console.log("Aqui mando el mensaje?");
+      return;
       const autorAEliminar = currentData.value.find(aut => aut.IdAutorTaxon === itemId);
       const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreCompleto}"` : 'el registro seleccionado';
       await axios.delete(`/autores/${itemId}`);

@@ -6,7 +6,8 @@
                            :highlight-current-row= true
                            :border="true"
                            height="400"
-                           style="width: 100%">
+                           style="width: 100%"
+                           @row-click="carga_DetCom">
                     <div slot="empty" v-if="comSnib.length=='0'">
 
                     </div>
@@ -26,12 +27,11 @@
                     <el-table-column align="center" width="80">
                         <template  #default="{ row }">
                             <div class="flex justify-around">
-                                <el-button size="small"  
-                                            type="success" 
-                                            round
-                                            @click="carga_DetCom(row)">
+                                <el-button type="success" 
+                                           circle
+                                           @click="carga_DetCom(row)">
                                     <el-icon>
-                                        <ChatDotSquare />
+                                        <comentarioSnib />
                                     </el-icon>
                                 </el-button>
                             </div>
@@ -76,6 +76,7 @@
 
     import { ref, onMounted, watch } from 'vue';
     import { ChatDotSquare } from '@element-plus/icons-vue';
+    import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 
     const props = defineProps({
         taxon: {
@@ -183,7 +184,6 @@
         const response = await axios.get('/carga-ComDet', { params } ); 
 
         if (response.status === 200) {
-            console.log("Esta es la respuesta correcta: ", response);
             tableDetCom.value = response.data;
         }
         else {
