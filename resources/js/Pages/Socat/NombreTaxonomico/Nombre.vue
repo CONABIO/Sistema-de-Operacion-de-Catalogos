@@ -4,7 +4,7 @@ import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@elemen
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; // Asegúrate de que la ruta sea correcta
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
-import DialogRelaciones from '@/Pages/Socat/Relaciones/RelacionesTaxon.vue';
+
 import DialogRelacionesTax from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
@@ -835,13 +835,8 @@ const fetchFilteredData = async () => {
   totalItems.value = response.data.total || response.data.totalItems || 0;*/
 };
 
-  const abre_Relaciones = (accion) => {
-    console.log(accion);
-    if(accion === 'vista'){
-      dialogFormVisibleRel.value = true;
-    }else{
-      dialogFormVisibleRelTax.value = true;
-    }
+  const abre_Relaciones = () => {
+    dialogFormVisibleRelTax.value = true;
   }
 </script>
 
@@ -999,10 +994,10 @@ const fetchFilteredData = async () => {
                         </el-icon>
                       </span>
                       <span class="hidden sm:inline mr-2 text-base">Relaciones taxonómicas</span> 
-                      <el-button @click="abre_Relaciones('vista')" type="primary" circle size="default" >
+                      <el-button @click="abre_Relaciones()" type="primary" circle size="default" >
                         <el-icon><View /></el-icon>
                       </el-button>
-                      <EditarButton @editar="abre_Relaciones('editar')" toolPosicion = 'top' 
+                      <EditarButton v-if="hasPermisos('MnuAsociar', 'Cambios')" @editar="abre_Relaciones()" toolPosicion = 'top' 
                                     :tamaño = "'default'"/>
                     </el-menu-item>
                     <el-menu-item
@@ -1141,18 +1136,6 @@ const fetchFilteredData = async () => {
                 @regresaTaxMod = "recibeTaxMod"
                 @resultadoAlta = "recibeTaxNuevo"
                 @resultadoBaja = "recibeTaxBaja"/>
-  </DialogForm>
-
-  <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'90%'">
-    <!--FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" /-->
-    <DialogRelaciones :taxonAct = "taxonAct" 
-                      :gruposTax = "gruposTax"
-                      :categoriasTax = "categoriasTax"
-                      :catalogPadre = "catalogos"
-                      :gruposPadre = "grupos"
-                      :idsGruposPadre = "idsGrupos"
-                       @cerrar = "closeDialog">
-    </DialogRelaciones>
   </DialogForm>
 
   <DialogForm v-model="dialogFormVisibleRelTax" :botCerrar="true" :pressEsc="true" :width="'90%'">

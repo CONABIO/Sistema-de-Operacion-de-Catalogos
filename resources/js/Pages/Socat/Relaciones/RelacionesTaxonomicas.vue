@@ -14,8 +14,8 @@
                             <h1 class="subtitulo">
                                 <span style="color: red;">{{ props.taxonAct.label }}</span>
                             </h1>
-                            <el-row style="padding: 8px; width:100%; border: 2px solid red;">
-                                <el-col :xs="24" :sm="24" :md="12" :lg="8"style="padding: 12px;  border: 2px solid green;">
+                            <el-row style="display: flex; flex-wrap: wrap; padding: 8px;">
+                                <el-col style="padding: 12px; flex: 0 0 auto;">
                                     <span style="display: block; margin-bottom: 2px;">Relaciones nomenclaturales</span>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <el-cascader
@@ -25,7 +25,7 @@
                                             v-model="tipRel"
                                             placeholder="Seleccione"
                                             @change="cargaRelaciones"
-                                            style="flex-grow: 1; font-size: 14px; border: 2px solid red;">
+                                            style="flex-grow: 1; font-size: 14px;">
                                         </el-cascader>
                                         <el-tooltip class="item" 
                                                         effect="dark" 
@@ -41,16 +41,16 @@
                                         </el-tooltip>
                                     </div>
                                 </el-col>
-                                <el-col :xs="15" :sm="15" style="padding: 8px;  border: 2px solid blue; width:100%">
-                                    <el-row :gutter="16" style="margin: 0 10px;  border: 2px solid green;">
-                                        <el-col :span="10" style="padding: 8px; border-right: 1px solid #ebeef5;">
+                                <el-col style="padding: 8px; flex: 1;">
+                                    <el-row :gutter="16" style="margin: 0 10px;">
+                                        <el-col :span="11" style="padding: 8px;">
                                             <div style="margin-left: 8px;"> 
                                                 <span class="demo-input-label">Catálogo(s)</span>
                                                 <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
                                                 </el-input>
                                             </div>
                                         </el-col>
-                                        <el-col :span="10" style="padding: 8px;">
+                                        <el-col :span="11" style="padding: 8px;">
                                             <div style="margin-left: 8px;">
                                                 <span class="demo-input-label">Grupo SCAT</span>
                                                 <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
@@ -83,7 +83,7 @@
                                     </el-cascader>
                                 </el-col>
                             </el-row>
-                            <el-row>
+                            <el-row>                                
                                 <div style="text-align: center">
                                     <el-transfer
                                         v-model="selectedValues"
@@ -206,7 +206,9 @@ const openDialog = async (nodo) => {
     };
 
     onMounted(async () => {
+        console.log("Ya estoy aqui");
         const response = await axios.get('/cargar-tipoRel');
+        console.log("Esta es la respuesta: ", response);
         if (response.status === 200) {
             tiposRel.value = response.data;
         }
@@ -256,7 +258,7 @@ const openDialog = async (nodo) => {
         let idsNombreSin = 0;
         let idsNombreVal = 0;
         let params = {};
-   
+        console.log("Aqui se cargan las relaciones");
         const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
         
         if(etiqueta != undefined)
@@ -431,7 +433,7 @@ const openDialog = async (nodo) => {
         display: inline-block;
         width: 20px;
         height: 20px;
-        background: url('/storage/images/punto-de-la-mano-hacia-atras-a-la-derecha.svg') no-repeat center center;
+        background: url('/storage/images/traspaso.svg') no-repeat center center;
         background-size: contain;
     }
 

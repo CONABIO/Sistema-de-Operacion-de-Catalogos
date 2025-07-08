@@ -17,6 +17,7 @@ use App\Http\Controllers\TipoDistribucionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\TreeMapController;
+use App\Http\Controllers\TipoRelacionController;
 
 
 Route::get('/', function () {
@@ -132,5 +133,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
     ->name('caracteristicas-taxon.index'); 
 
+    //---------------------------------------------------------
+    Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
+    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelacionesInicio']);
     
 });
