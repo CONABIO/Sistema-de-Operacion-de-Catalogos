@@ -23,7 +23,8 @@ const emit = defineEmits([
   'editar-item',
   'eliminar-item',
   'nuevo-item',
-  'row-dblclick'
+  'row-dblclick',
+  'row-click'
 ]);
 
 const currentPage = ref(1);
@@ -124,7 +125,7 @@ defineExpose({ fetchData });
     </template>
 
     <div class="table-responsive " >
-      <el-table :data="props.datos" :border="true" height="550" @sort-change="handleSortChange" @row-dblclick="onRowDblClick">
+      <el-table :data="props.datos" :border="true" height="550" @sort-change="handleSortChange" @row-dblclick="onRowDblClick" @row-click="(row) => emit('row-click', row)">
         <slot name="expand-column"></slot>
         
         <el-table-column

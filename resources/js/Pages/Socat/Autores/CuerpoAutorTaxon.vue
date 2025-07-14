@@ -25,16 +25,16 @@ const datosDeAutores = ref([]);
 const totalAutores = ref(0);
 
 const columnasDefinidas = ref([
-  { prop: 'NombreAutoridad', label: 'Abreviado', minWidth: '180', sortable: true, align: 'left', filtrable: true },
-  { prop: 'NombreCompleto', label: 'Nombre completo', minWidth: '250', sortable: true, align: 'left', filtrable: true },
-  { prop: 'GrupoTaxonomico', label: 'Grupo taxonómico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
+  { prop: 'NombreAutoridad', label: 'NombreAutoridad', minWidth: '180', sortable: true, align: 'left', filtrable: true },
+  { prop: 'NombreCompleto', label: 'NombreCompleto', minWidth: '250', sortable: true, align: 'left', filtrable: true },
+  { prop: 'GrupoTaxonomico', label: 'GrupoTaxonomico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
 ]);
 
 
 const opcionesFiltroAutores = ref([
-  { label: 'Abreviado', value: 'NombreAutoridad' },
-  { label: 'Nombre Completo', value: 'NombreCompleto' },
-  { label: 'Grupo Taxonómico', value: 'GrupoTaxonomico' }
+  { label: 'NombreAutoridad', value: 'NombreAutoridad' },
+  { label: 'NombreCompleto', value: 'NombreCompleto' },
+  { label: 'GrupoTaxonomico', value: 'GrupoTaxonomico' }
 ]);
 
 const autoresRel = ref([]);
@@ -210,10 +210,10 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
       };
       if (datosDelFormulario.accionOriginal === 'crear') {
         response = await axios.post("/autores", payload);
-        mostrarNotificacion("¡Ingreso!", "La información ha sido ingresada correctamente.", "success");
+        mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
       } else if (datosDelFormulario.accionOriginal === 'editar' && datosDelFormulario.idParaEditar) {
         response = await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
-        mostrarNotificacion("¡Ingreso!", "La información ha sido modificada correctamente.", "success");
+        mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
       } else {
         throw new Error("Acción de formulario no válida o falta ID.");
       }
@@ -246,7 +246,7 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
   } else {
     const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
     ElMessageBox({
-      title: 'Confirmación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
           h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -385,12 +385,12 @@ const cerrarNotificacion = () => {
           <el-table-column type="expand">
             <template #default="{ row }">
               <div class="expand-content-detail">
-                <p><strong>Id autor taxón:</strong> {{ row.IdAutorTaxon }}</p>
-                <p><strong>Id original:</strong> {{ row.IdOriginal }}</p>
-                <p><strong>Catálogo:</strong> {{ row.Catalogo }}</p>
-                <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
-                <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
-                <p><strong>Nombre de autoridad original:</strong> {{ row.NombreAutoridadOriginal }}</p>
+                <p><strong>IdAutorTaxon:</strong> {{ row.IdAutorTaxon }}</p>
+                <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
+                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
+                <p><strong>NombreAutoridadOriginal:</strong> {{ row.NombreAutoridadOriginal }}</p>
               </div>
             </template>
           </el-table-column>
