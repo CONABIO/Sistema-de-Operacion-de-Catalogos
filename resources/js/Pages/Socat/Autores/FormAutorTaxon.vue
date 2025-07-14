@@ -18,7 +18,7 @@ const autorTax = ref({ nombreAutoridad: '', nombreCompleto: '', grupoTaxonomico:
 const autorTaxFormRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar nueva autoridad taxonómica' : 'Modificar autoridad taxonómica';
+    return props.accion === 'crear' ? 'Ingresar una nueva autoridad taxonómica' : 'Modificar la autoridad taxonómica seleccionada';
 });
 
 const rules = {
@@ -95,17 +95,17 @@ const intentarGuardar = async () => {
             <div class="dialog-body">
                 <el-form :model="autorTax" :rules="rules" ref="autorTaxFormRef" label-position="top"
                     @submit.prevent="intentarGuardar">
-                    <el-form-item label="Nombre de la autoridad" prop="nombreAutoridad">
+                    <el-form-item label="NombreAutoridad" prop="nombreAutoridad">
                         <el-input type="text" maxlength="100" v-model="autorTax.nombreAutoridad"
                             show-word-limit></el-input>
                     </el-form-item>
 
-                    <el-form-item label="Nombre completo" prop="nombreCompleto">
+                    <el-form-item label="NombreCompleto" prop="nombreCompleto">
                         <el-input type="text" maxlength="255" show-word-limit
                             v-model="autorTax.nombreCompleto"></el-input>
                     </el-form-item>
 
-                    <el-form-item label="Grupo taxonómico" prop="grupoTaxonomico">
+                    <el-form-item label="GrupoTaxonomico" prop="grupoTaxonomico">
                         <el-input type="text" maxlength="255" show-word-limit
                             v-model="autorTax.grupoTaxonomico"></el-input>
                     </el-form-item>

@@ -2,28 +2,26 @@
     <Teleport to="body">
         <div v-if="localVisible" class="notificacion-overlay" @click.self="handleClickOverlay">
             <div class="notificacion-container" :class="`tipo-${tipo}`">
-                <div class="notificacion-header">
-                    
-                    <span v-if="tipo === 'error'" class="icono-notificacion icono-error">
-                        <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
-                            <path fill="currentColor"
-                                d="M512 64a448 448 0 1 1 0 896a448 448 0 0 1 0-896zm0 832a384 384 0 0 0 0-768a384 384 0 0 0 0 768zm48-420.608l123.776-123.776a32 32 0 1 1 45.248 45.248L562.048 512l123.776 123.776a32 32 0 1 1-45.248 45.248L512 562.048l-123.776 123.776a32 32 0 1 1-45.248-45.248L461.504 512l-123.776-123.776a32 32 0 1 1 45.248-45.248L512 461.504z">
-                            </path>
-                        </svg>
-                    </span>
-                    <h3 class="notificacion-titulo">{{ titulo }}</h3>
+                
+                <h3 class="notificacion-titulo">{{ titulo }}</h3>
+
+                <div class="notificacion-contenido-principal">
+                    <div class="notificacion-header">
+                       
+                    </div>
+                    <div class="notificacion-body">
+                        <p v-html="mensaje"></p> 
+                    </div>
+                    <div class="notificacion-footer">
+                        <BotonAceptar @click="closeModal"></BotonAceptar>
+                    </div>
                 </div>
-                <div class="notificacion-body">
-                    <p>{{ mensaje }}</p>
-                </div>
-                <div class="notificacion-footer">
-                    <BotonAceptar @click="closeModal" ></BotonAceptar>
-                </div>
+
                 <div v-if="localDuration > 0" class="notificacion-progress-bar-container">
                     <div class="notificacion-progress-bar" ref="progressBarRef"
                         :class="{ 'animate-progress': animateBar }"
-                        :style="{ '--progress-duration': localDuration + 'ms' }" 
-                        ></div>
+                        :style="{ '--progress-duration': localDuration + 'ms' }">
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,24 +121,47 @@ if (props.visible && props.duracion > 0) {
 }
 
 .notificacion-container {
-    background-color: white;
+    background-color: #f9fafb; 
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
     width: 420px;
     max-width: 90%;
-    padding: 25px;
-    text-align: center;
+    padding: 20px; 
     display: flex;
     flex-direction: column;
-    gap: 18px;
     overflow: hidden;
 }
 
-.notificacion-header {
+.notificacion-titulo {
+    background-color: #d9e1eb;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    color: #334155;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    font-weight: 600;
+    text-align: left;
+    margin: 0; 
+}
+
+.notificacion-contenido-principal {
+    /* background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); */
+    padding: 25px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 18px;
+    margin-top: 16px;
+}
+
+
+.notificacion-header {
+    display: flex;
+    justify-content: center;
 }
 
 .icono-notificacion {
@@ -148,28 +169,15 @@ if (props.visible && props.duracion > 0) {
     line-height: 1;
 }
 
-.icono-exito {
-    color: #67c23a;
-}
-
-.icono-error {
-    color: #f56c6c;
-}
-
-.notificacion-titulo {
-    font-size: 1.5em;
-    font-weight: 600;
-    color: #303133;
-    margin: 0;
-    line-height: 1.3;
-}
+.icono-exito { color: #67c23a; }
+.icono-error { color: #f56c6c; }
 
 .notificacion-body p {
     font-size: 1em;
     color: #606266;
     line-height: 1.6;
     margin: 0;
-    padding: 0 10px;
+    text-align: left;
 }
 
 .notificacion-footer {
@@ -178,29 +186,15 @@ if (props.visible && props.duracion > 0) {
     justify-content: center;
 }
 
-.boton-ok {
-    min-width: 100px;
-    font-weight: 500;
-}
-
-
 .notificacion-progress-bar-container {
     height: 6px;
     background-color: #ebeef5;
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 20px;
-    width: 100%;
+    margin: 20px -20px -20px -20px; 
 }
 
 .notificacion-progress-bar {
     height: 100%;
-    background-color: #409eff;
-    /* Color por defecto */
     width: 100%;
-    /* Inicia al 100% */
-    border-radius: 3px;
-    /* La animación se activa/desactiva con la clase 'animate-progress' */
 }
 
 .notificacion-progress-bar.animate-progress {
@@ -208,36 +202,15 @@ if (props.visible && props.duracion > 0) {
     animation-timing-function: linear;
     animation-fill-mode: forwards;
     animation-duration: var(--progress-duration);
-    /* Usar variable CSS */
 }
 
-.notificacion-container.tipo-success .notificacion-progress-bar {
-    background-color: #67c23a;
-}
-
-.notificacion-container.tipo-error .notificacion-progress-bar {
-    background-color: #f56c6c;
-}
-
-.notificacion-container.tipo-warning .notificacion-progress-bar {
-    background-color: #e6a23c;
-}
-
-.notificacion-container.tipo-info .notificacion-progress-bar {
-    background-color: #409eff;
-}
+.notificacion-container.tipo-success .notificacion-progress-bar { background-color: #67c23a; }
+.notificacion-container.tipo-error .notificacion-progress-bar { background-color: #f56c6c; }
+.notificacion-container.tipo-warning .notificacion-progress-bar { background-color: #e6a23c; }
+.notificacion-container.tipo-info .notificacion-progress-bar { background-color: #409eff; }
 
 @keyframes decreaseWidthModal {
-    from {
-        width: 100%;
-    }
-
-    to {
-        width: 0%;
-    }
-}
-
-@media (max-width: 480px) {
-    /* ... tus media queries ... */
+    from { width: 100%; }
+    to { width: 0%; }
 }
 </style>

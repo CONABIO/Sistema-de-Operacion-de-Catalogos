@@ -168,22 +168,32 @@ class GrupoTaxonomicoController extends Controller
         }
     }
 
+
     public function destroy($IdGrupoSCAT)
     {
+        $isAssociated = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')->where('IdGrupoSCAT', $IdGrupoSCAT)->exists();
+
+        if ($isAssociated) {
+            return response()->json([
+                'message' => 'El grupo está asociado a información y no puede ser eliminado.'
+            ], 409);
+        }
+
         Log::info("Intentando eliminar grupo taxonómico con ID: {$IdGrupoSCAT}");
         $grupoTaxonomico = GrupoScat::find($IdGrupoSCAT);
-        Log::info("GrupoTaxonomico encontrado:", (array) $grupoTaxonomico);
+
         if (!$grupoTaxonomico) {
             Log::warning("GrupoTaxonomico no encontrado con ID: {$IdGrupoSCAT}");
-            return response()->json(['message' => 'GrupoTaxonomico not found'], 404);
+            return response()->json(['message' => 'Grupo no encontrado.'], 404);
         }
+
         try {
             $grupoTaxonomico->delete();
             Log::info("GrupoTaxonomico eliminado con ID: {$IdGrupoSCAT}");
-            return response()->json(['message' => 'GrupoTaxonomico deleted successfully'], 200);
+            return response()->json(['message' => 'Grupo eliminado correctamente.'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar GrupoTaxonomico con ID: {$IdGrupoSCAT}: " . $e->getMessage());
-            return response()->json(['message' => 'Error al eliminar el GrupoTaxonomico'], 500);
+            return response()->json(['message' => 'Error al eliminar el Grupo'], 500);
         }
     }
 }

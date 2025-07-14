@@ -14,8 +14,8 @@ import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import CambiarIconoButton from "@/Components/Biotica/CambiarIconoButton.vue";
 
-// ESTADO GENERAL
 const treeRef = ref(null);
+const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
 const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
@@ -25,10 +25,8 @@ const opcionNivel = ref("mismo");
 const formModal = ref({ NombreCategoriaTaxonomica: "" });
 const nodoEnModal = ref(null);
 
-// LA CLAVE: UN SET PARA GUARDAR LOS NODOS EXPANDIDOS
 const expandedNodeIds = ref(new Set());
 
-// ESTADO DE NOTIFICACIONES Y MODAL DE ICONOS
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -41,13 +39,11 @@ const notificacionDuracion = ref(5000);
 let debounceTimer = null;
 
 
-// Props
 const props = defineProps({
   treeDataProp: { type: Array, required: true },
   flatTreeDataProp: { type: Array, required: true },
 });
 
-// --- FUNCIONES DEL ÁRBOL ---
 const handleNodeExpand = (data) => {
   expandedNodeIds.value.add(data.IdCategoria);
 };
@@ -83,7 +79,6 @@ const findNodeInTree = (nodes, nodeId) => {
   return null;
 };
 
-// --- LÓGICA DE REACTIVIDAD ---
 watch(() => props.treeDataProp, (newVal) => {
   localTreeData.value = newVal;
   nextTick(() => {
@@ -125,8 +120,7 @@ onMounted(() => {
   }
 });
 
-// --- LÓGICA DE MODALES ---
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar Categoría Taxonómica" : "Ingresar Nueva Categoría Taxonómica");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar la categoría taxonómica seleccionada" : "Ingresar una nueva categoría taxonómica");
 const modalRules = { NombreCategoriaTaxonomica: [{ required: true, message: "El nombre es obligatorio.", trigger: "blur" }] };
 
 const abrirModalParaInsertar = () => {
@@ -139,11 +133,15 @@ const abrirModalParaInsertar = () => {
 
 const abrirModalParaEditar = () => {
   if (!selectedNode.value) return ElMessage.warning("Seleccione un nodo para editar.");
-  modalMode.value = "editar";
-  nodoEnModal.value = { ...selectedNode.value };
-  formModal.value = { NombreCategoriaTaxonomica: selectedNode.value.NombreCategoriaTaxonomica };
-  esModalVisible.value = true;
-  nextTick(() => formModalRef.value?.clearValidate());
+  if (isEditarDeshabilitado.value) {
+    return mostrarNotificacion("Error", "Esta categoría no puede ser modificada.", "error");
+  } else {
+    modalMode.value = "editar";
+    nodoEnModal.value = { ...selectedNode.value };
+    formModal.value = { NombreCategoriaTaxonomica: selectedNode.value.NombreCategoriaTaxonomica };
+    esModalVisible.value = true;
+    nextTick(() => formModalRef.value?.clearValidate());
+  }
 };
 
 const cerrarModalOperacion = () => {
@@ -158,7 +156,7 @@ const guardarDesdeModal = async () => {
 
   const onSuccess = () => {
     cerrarModalOperacion();
-    mostrarNotificacion("¡Éxito!", "Operación completada correctamente.", "success");
+    mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
   };
   const onError = (e) => mostrarNotificacion("Error", Object.values(e).flat().join("\n"), "error");
 
@@ -180,15 +178,12 @@ const guardarDesdeModal = async () => {
       onError
     });
   } else {
-    // PREPARA LOS DATOS A ENVIAR
     const datos = {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim()
     };
 
-    // CONSTRUYE LA URL CORRECTA USANDO EL CAMPO CORRECTO
     const url = `/categorias-taxonomicas/${nodoEnModal.value.IdCategoriaTaxonomica}`;
 
-    // MANDA LA PUTA PETICIÓN
     router.put(url, datos, {
       preserveScroll: true,
       onSuccess,
@@ -200,7 +195,7 @@ const guardarDesdeModal = async () => {
 const handleEliminar = () => {
   if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
   if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-    return mostrarNotificacion("Acción no permitida", "No es posible eliminar, tiene categorías dependientes.", "error");
+    return mostrarNotificacion("Error", "No es posible eliminar categorías taxonómicas precargadas por omisión en Biótica.", "error");
   }
   const nombre = selectedNode.value.NombreCategoriaTaxonomica;
   const mensaje = `¿Está seguro de eliminar la categoría "${nombre}"? Esta acción no se puede revertir.`;
@@ -343,10 +338,16 @@ const iconosSugeridos = [
 
 const abrirModalIconos = () => {
   if (!selectedNode.value) return ElMessage.warning("Seleccione un nodo.");
-  esModalIconosVisible.value = true;
-  listaIconosEncontrados.value = iconosSugeridos;
-  terminoBusquedaIcono.value = '';
+  if (isCambiarIconoDeshabilitado.value) {
+    return mostrarNotificacion("Error", "El ícono de esta categoría no puede ser modificado.", "error");
+  } else {
+    esModalIconosVisible.value = true;
+    listaIconosEncontrados.value = iconosSugeridos;
+    terminoBusquedaIcono.value = '';
+  }
 };
+
+
 const cerrarModalIconos = () => { esModalIconosVisible.value = false; };
 
 
@@ -390,13 +391,43 @@ const onInputBusquedaIcono = () => {
   }, 500);
 };
 
-// --- FUNCIÓN PARA CALCULAR NIVELES ---
 const MAX_NIVELES = 12;
 const calcularNivelesParaNuevoNodo = (nodoRef, opcion, todos) => { const n = {}; for (let i = 1; i <= MAX_NIVELES; i++) n[`IdNivel${i}`] = 0; if (opcion === "raiz") { let max = 0; todos.forEach(nodo => { if (nodo.IdNivel1 > 0 && nodo.IdNivel2 === 0) max = Math.max(max, nodo.IdNivel1); }); n.IdNivel1 = max + 1; return { niveles: n }; } if (!nodoRef) { mostrarNotificacion("Error", "Se necesita un nodo de referencia.", "error"); return null; } if (opcion === "inferior") { let p = 0; for (let i = 1; i <= MAX_NIVELES; i++) { if (nodoRef[`IdNivel${i}`] > 0) { n[`IdNivel${i}`] = nodoRef[`IdNivel${i}`]; p = i; } else break; } const s = p + 1; if (s > MAX_NIVELES) { mostrarNotificacion("Error", "Profundidad máxima excedida.", "error"); return null; } let max = 0; todos.forEach(nodo => { let esHijo = true; for (let i = 1; i <= p; i++) if (nodo[`IdNivel${i}`] !== n[`IdNivel${i}`]) { esHijo = false; break; } if (esHijo) for (let i = s + 1; i <= MAX_NIVELES; i++) if (nodo[`IdNivel${i}`] > 0) { esHijo = false; break; } if (esHijo) max = Math.max(max, nodo[`IdNivel${s}`] || 0); }); n[`IdNivel${s}`] = max + 1; return { niveles: n }; } if (opcion === 'mismo') { let p = 0; for (let i = 1; i <= MAX_NIVELES; i++) if (nodoRef[`IdNivel${i}`] > 0) p = i; else break; if (p === 0) return null; if (p === 1) { let max = 0; todos.forEach(nodo => { if (nodo.IdNivel1 > 0 && nodo.IdNivel2 === 0) max = Math.max(max, nodo.IdNivel1); }); n.IdNivel1 = max + 1; return { niveles: n }; } for (let i = 1; i < p; i++) n[`IdNivel${i}`] = nodoRef[`IdNivel${i}`]; let max = 0; todos.forEach(nodo => { let esHermano = true; for (let i = 1; i < p; i++) if (nodo[`IdNivel${i}`] !== n[`IdNivel${i}`]) { esHermano = false; break; } if (esHermano) for (let i = p + 1; i <= MAX_NIVELES; i++) if (nodo[`IdNivel${i}`] > 0) { esHermano = false; break; } if (esHermano) max = Math.max(max, nodo[`IdNivel${p}`] || 0); }); n[`IdNivel${p}`] = max + 1; return { niveles: n }; } return null; };
 
 const mostrarNotificacion = (titulo, mensaje, tipo) => { notificacionTitulo.value = titulo; notificacionMensaje.value = mensaje; notificacionTipo.value = tipo; notificacionVisible.value = true; };
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
+
+
+const isEditarDeshabilitado = computed(() => {
+  if (!selectedNode.value || esModalVisible.value) {
+    return true;
+  }
+
+  if (selectedNode.value.IdCategoriaTaxonomica < 132) {
+    return true;
+  }
+
+  return false; 
+});
+
+const isCambiarIconoDeshabilitado = computed(() => {
+  if (!selectedNode.value || esModalVisible.value) {
+    return true; 
+  }
+
+  if (selectedNode.value.IdCategoriaTaxonomica < 132 && selectedNode.value.RutaIcono === ICONO_POR_DEFECTO) {
+    return false;
+  }
+
+  if (selectedNode.value.RutaIcono !== ICONO_POR_DEFECTO) {
+    return true;
+  }
+
+  return false; 
+});
 </script>
+
+
 
 <template>
   <AppLayout title="Categorías Taxonómicas">
@@ -428,25 +459,16 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
           <template #default="{ data }">
             <span :id="`tree-node-${data.IdCategoriaTaxonomica}`" class="custom-tree-node-content">
 
-              <!-- LÓGICA DEFINITIVA, A PRUEBA DE PENDEJOS -->
 
-              <!-- CASO 1: Si RutaIcono NO ESTÁ DEFINIDO O ESTÁ VACÍO... -->
-              <!-- ...mostramos el puto ícono de interrogación y se acabó. -->
               <img v-if="!data.RutaIcono" src="/storage/images/REvyORsYggrsOFexbUteuMmMhVzDTfKaZzDkAffD.png"
                 class="node-icon-wrapper" />
 
-              <!-- CASO 2: Si RutaIcono SÍ EXISTE... -->
               <template v-else>
-                <!-- ...preguntamos: ¿La ruta empieza con '<svg'? -->
-                <!-- SI SÍ, es un ícono de Iconify, usamos v-html. -->
                 <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono" class="node-icon-wrapper">
                 </span>
-
-                <!-- SI NO, es una ruta de archivo .png, usamos <img>. -->
                 <img v-else :src="data.RutaIcono" class="node-icon-wrapper" />
               </template>
 
-              <!-- Y EL PUTO NOMBRE SIEMPRE SE MUESTRA -->
               <span>{{ data.NombreCategoriaTaxonomica }}</span>
 
             </span>
@@ -487,7 +509,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
 
       <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
         <div class="dialog-header">
-          <h3>Seleccionar Ícono para "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
+          <h3>Seleccione el ícono para la categoría  "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
         </div>
         <div class="dialog-body-container">
           <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal')"

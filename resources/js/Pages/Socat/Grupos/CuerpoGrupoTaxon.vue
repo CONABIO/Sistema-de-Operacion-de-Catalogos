@@ -17,9 +17,9 @@ const modalVisible = ref(false);
 const grupoEditado = ref(null);
 
 const columnasDefinidas = ref([
-    { prop: 'GrupoSCAT', label: 'Nombre del grupo', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
-    { prop: 'GrupoAbreviado', label: 'Abreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
-    { prop: 'GrupoSNIB', label: 'Grupo SNIB', minWidth: '150', sortable: true, filtrable: true, align: 'left' }
+    { prop: 'GrupoSCAT', label: 'GrupoSCAT', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoAbreviado', label: 'GrupoAbreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoSNIB', label: 'GrupoSNIB', minWidth: '150', sortable: true, filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -63,10 +63,10 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             };
             if (datosDelFormulario.accionOriginal === 'crear') {
                 await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion("¡Ingreso!", "La información ha sido ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
             } else {
                 await axios.put(`/grupos-taxonomicos/${datosDelFormulario.idParaEditar}`, payload);
-                 mostrarNotificacion("¡Ingreso!", "La información ha sido modificada correctamente.", "success");
+                 mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
             }
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
@@ -86,7 +86,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     } else {
         const mensaje = `¿Estás seguro de que deseas guardar los cambios para el grupo "${datosDelFormulario.GrupoSCAT || "nuevo grupo"}"?`;
         ElMessageBox({
-            title: 'Confirmación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -113,7 +113,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             }
             mostrarNotificacion("¡Eliminación Exitosa!", `Grupo ${nombreGrupoEliminado} eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+            mostrarNotificacion("Error", apiError.response?.data?.message || 'Ocurrió un error.', "error");
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };
@@ -147,9 +147,9 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                     <el-table-column type="expand">
                         <template #default="{ row }">
                             <div class="expand-content-detail">
-                                <p><strong>Id del grupo taxonómico:</strong> {{ row.IdGrupoSCAT }}</p>
-                                <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
-                                <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
+                                <p><strong>IdGrupoSCAT:</strong> {{ row.IdGrupoSCAT }}</p>
+                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                             </div>
                         </template>
                     </el-table-column>

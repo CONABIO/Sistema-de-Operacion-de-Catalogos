@@ -16,7 +16,7 @@ const modalVisible = ref(false);
 const tipoDistribucionEditado = ref(null);
 
 const columnasDefinidas = ref([
-    { prop: 'Descripcion', label: 'Descripción', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
+    { prop: 'Descripcion', label: 'Descripcion', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -56,10 +56,10 @@ const handleFormSubmited = (datosDelFormulario) => {
             const payload = { Descripcion: datosDelFormulario.Descripcion };
             if (datosDelFormulario.accionOriginal === 'crear') {
                 await axios.post('/tipos-distribucion', payload);
-                mostrarNotificacion("¡Ingreso!", "La información ha sido ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("¡Ingreso!", "La información ha sido modificada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
             }
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
@@ -79,7 +79,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     } else {
         const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.Descripcion || "nuevo registro"}"?`;
         ElMessageBox({
-            title: 'Confirmación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -139,9 +139,9 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
                     <el-table-column type="expand">
                         <template #default="{ row }">
                             <div class="expand-content-detail">
-                                <p><strong>Id del tipo de distribución:</strong> {{ row.IdTipoDistribucion }}</p>
-                                <p><strong>Fecha de captura:</strong> {{ row.FechaCaptura }}</p>
-                                <p><strong>Fecha de modificación:</strong> {{ row.FechaModificacion }}</p>
+                                <p><strong>IdTipoDistribucion:</strong> {{ row.IdTipoDistribucion }}</p>
+                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                             </div>
                         </template>
                     </el-table-column>

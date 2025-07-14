@@ -449,7 +449,7 @@ const cerrarModalOperacion = () => {
     opcionNivel.value = "mismo";
 };
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el Tipo de Relación" : "Ingresar un Nuevo Tipo de Relación");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación seleccionado" : "Ingresar un nuevo tipo de relación");
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
@@ -497,7 +497,7 @@ const guardarDesdeModal = async () => {
     } else {
         const nombreTipoRelacion = formModal.value.Descripcion.trim();
         ElMessageBox({
-            title: "Confirmar Guardado", showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
+            title: "Confirmar modificación", showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),

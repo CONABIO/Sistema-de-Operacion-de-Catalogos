@@ -23,7 +23,7 @@ const form = ref({
 const formRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar nuevo grupo taxonómico' : 'Modificar grupo taxonómico';
+    return props.accion === 'crear' ? 'Ingresar un nuevo grupo taxonómico' : 'Modificar el grupo taxonómico seleccionado';
 });
 
 const rules = {
@@ -92,17 +92,16 @@ const intentarGuardar = async () => {
             </div>
             <div class="dialog-body">
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top" @submit.prevent="intentarGuardar">
-                    <el-form-item label="Nombre del Grupo" prop="GrupoSCAT">
+                    <el-form-item label="GrupoSCAT" prop="GrupoSCAT">
                         <el-input v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="Abreviado" prop="GrupoAbreviado">
+                    <el-form-item label="GrupoAbreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
+                    <el-form-item label="GrupoSNIB" prop="GrupoSNIB">
                         <el-input v-model="form.GrupoSNIB" maxlength="100" show-word-limit />
                     </el-form-item>
                 </el-form>
-
                 
             </div>
         </div>

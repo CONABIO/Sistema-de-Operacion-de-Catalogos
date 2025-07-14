@@ -253,7 +253,7 @@ const cerrarModalOperacion = () => {
 };
 
 const modalTitle = computed(() => {
-  return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
+  return modalMode.value === "editar" ? "Modificar la característica seleccionada" : "Ingresar una nueva característica";
 });
 
 const guardarDesdeModal = async () => {
@@ -274,7 +274,7 @@ const guardarDesdeModal = async () => {
         onSuccess: (page) => {
           cerrarModalOperacion();
           mostrarNotificacion(
-            "Ingreso!", // Título cambiado para ser más genérico
+            "Ingreso", 
             "La información ha sido modificada correctamente.",
             "success"
           );
@@ -339,7 +339,7 @@ const guardarDesdeModal = async () => {
   } else {
     const nombreCaracteristica = formModal.value.Descripcion.trim();
     ElMessageBox({
-      title: "Confirmación",
+      title: "Confirmar modificación",
       showConfirmButton: false,
       showCancelButton: false,
       customClass: "message-box-diseno-limpio",
@@ -413,7 +413,7 @@ const handleEliminar = () => {
         }),
       ]),
     ]),
-  }).catch(() => ElMessage.info("Eliminación cancelada."));
+  }).catch();
 };
 
 const proceedWithDeletion = async () => {

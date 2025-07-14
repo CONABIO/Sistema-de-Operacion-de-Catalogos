@@ -14,16 +14,11 @@ class CategoriaTaxonomicaController extends Controller
 {
     private const MAX_NIVELES = 12;
 
-
     public function index()
     {
-        $query = CategoriasTaxonomicas::query();
-        for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
-            $query->orderBy("IdNivel{$i}");
-        }
-        $todosLosNodosPlanos = $query->get();
+        $todosLosNodosPlanos = CategoriasTaxonomicas::all();
+        $treeDataParaVisualizacion = $this->buildTreeFromParentId($todosLosNodosPlanos);
 
-        $treeDataParaVisualizacion = $this->buildTreeFromLevels($todosLosNodosPlanos);
         return Inertia::render('Socat/Categorias/CategoriaTaxonomica', [
             'treeDataProp' => $treeDataParaVisualizacion,
             'flatTreeDataProp' => $todosLosNodosPlanos,
@@ -31,7 +26,55 @@ class CategoriaTaxonomicaController extends Controller
     }
 
 
-    private function buildTreeFromLevels(Collection $nodes): array
+    private function buildTreeFromParentId(Collection $nodes): array
+    {
+        if ($nodes->isEmpty()) {
+            return [];
+        }
+
+        $tree = [];
+        $nodeMap = [];
+        $primaryKeyName = 'IdCategoriaTaxonomica';
+
+        foreach ($nodes as $node) {
+            $nodeArray = $node->toArray();
+            $nodeArray['children'] = [];
+            $nodeMap[$node->$primaryKeyName] = $nodeArray;
+        }
+
+        foreach ($nodeMap as $nodeId => &$node) {
+            $parentId = $node['IdAscendente'];
+            if (!empty($parentId) && isset($nodeMap[$parentId])) {
+                $nodeMap[$parentId]['children'][] = &$node;
+            } else {
+                $tree[] = &$node;
+            }
+        }
+
+        $sortChildren = function (&$nodes) use (&$sortChildren) {
+            usort($nodes, function ($a, $b) {
+                for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
+                    $levelKey = "IdNivel{$i}";
+                    $diff = $a[$levelKey] <=> $b[$levelKey];
+                    if ($diff !== 0) {
+                        return $diff;
+                    }
+                }
+                return 0;
+            });
+
+            foreach ($nodes as &$node) {
+                if (!empty($node['children'])) {
+                    $sortChildren($node['children']);
+                }
+            }
+        };
+        $sortChildren($tree);
+        return $tree;
+    }
+
+
+    /* private function buildTreeFromLevels(Collection $nodes): array
     {
         if ($nodes->isEmpty()) {
             return [];
@@ -65,7 +108,7 @@ class CategoriaTaxonomicaController extends Controller
 
         return $tree;
     }
-
+ */
 
     public function store(Request $request)
     {
