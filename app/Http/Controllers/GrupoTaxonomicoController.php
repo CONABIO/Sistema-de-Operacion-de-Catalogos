@@ -57,20 +57,48 @@ class GrupoTaxonomicoController extends Controller
 
     public function buscaGrupo(Request $request)
     {
-        $grupo = $request->input('grupo');
-        $page = $request->input('page', 1);
-        $perPage = 100;
-        $sortBy = $request->input('sortBy');
-        $sortOrder = $request->input('sortOrder');
+        $validated = $request->validate([
+            'filtros' => 'nullable|array',
+            'filtros.GrupoSCAT' => 'nullable|string',
+            'filtros.GrupoAbreviado' => 'nullable|string',
+            'filtros.GrupoSNIB' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
+            'page' => 'nullable|integer|min:1',
+            'perPage' => 'nullable|integer|min:1',
+            'sortBy' => 'nullable|string|in:GrupoSCAT,GrupoAbreviado,GrupoSNIB',
+            'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
+        ]);
+
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
+        $page = $validated['page'] ?? 1;
+        $perPage = $validated['perPage'] ?? 100;
+        $sortBy = $validated['sortBy'] ?? null;
+        $sortOrderInput = $validated['sortOrder'] ?? null;
 
         $query = GrupoScat::query();
 
-        if ($grupo) {
-            $query->where(DB::raw('LOWER(GrupoSCAT)'), 'like', '%' . strtolower($grupo) . '%');
+        foreach ($filtros as $campo => $valor) {
+            if (!empty($valor)) {
+                if (in_array($campo, ['GrupoSCAT', 'GrupoAbreviado', 'GrupoSNIB'])) {
+                    switch ($tipo_busqueda) {
+                        case 'inicia':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                            break;
+                        case 'termina':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                            break;
+                        default: // 'contiene'
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                            break;
+                    }
+                }
+            }
         }
 
-        if ($sortBy && $sortOrder) {
-            $query->orderBy($sortBy, $sortOrder === 'ascending' ? 'asc' : 'desc');
+        if ($sortBy && $sortOrderInput) {
+            $sortOrder = (in_array($sortOrderInput, ['ascending', 'asc'])) ? 'asc' : 'desc';
+            $query->orderBy($sortBy, $sortOrder);
         } else {
             $query->orderBy('GrupoSCAT', 'asc');
         }
@@ -140,22 +168,32 @@ class GrupoTaxonomicoController extends Controller
         }
     }
 
+
     public function destroy($IdGrupoSCAT)
     {
+        $isAssociated = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')->where('IdGrupoSCAT', $IdGrupoSCAT)->exists();
+
+        if ($isAssociated) {
+            return response()->json([
+                'message' => 'El grupo está asociado a información y no puede ser eliminado.'
+            ], 409);
+        }
+
         Log::info("Intentando eliminar grupo taxonómico con ID: {$IdGrupoSCAT}");
         $grupoTaxonomico = GrupoScat::find($IdGrupoSCAT);
-        Log::info("GrupoTaxonomico encontrado:", (array) $grupoTaxonomico);
+
         if (!$grupoTaxonomico) {
             Log::warning("GrupoTaxonomico no encontrado con ID: {$IdGrupoSCAT}");
-            return response()->json(['message' => 'GrupoTaxonomico not found'], 404);
+            return response()->json(['message' => 'Grupo no encontrado.'], 404);
         }
+
         try {
             $grupoTaxonomico->delete();
             Log::info("GrupoTaxonomico eliminado con ID: {$IdGrupoSCAT}");
-            return response()->json(['message' => 'GrupoTaxonomico deleted successfully'], 200);
+            return response()->json(['message' => 'Grupo eliminado correctamente.'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar GrupoTaxonomico con ID: {$IdGrupoSCAT}: " . $e->getMessage());
-            return response()->json(['message' => 'Error al eliminar el GrupoTaxonomico'], 500);
+            return response()->json(['message' => 'Error al eliminar el Grupo'], 500);
         }
     }
 }

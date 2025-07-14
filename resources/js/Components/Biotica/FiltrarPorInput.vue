@@ -21,7 +21,7 @@ export default {
 </script>
 
 <template>
-    <span class="demo-input-label">Filtrar por </span>
+    <span class="demo-input-label">Filtrar por: </span>
     <el-input
       style="width:180px"
       v-model="localBuscar"

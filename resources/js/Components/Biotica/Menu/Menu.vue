@@ -14,7 +14,8 @@ const routeMap = {
     '2-2': 'grupoTaxonomico.index',
     '2-3': 'nombresComunes.index',
     '2-4': 'tiposDistribucion.index',
-    '2-6': 'grafica.index',
+    '2-5': 'tipos-relacion.index', 
+    '2-6': 'categorias-taxonomicas.index', 
     '2-7': 'caracteristicas-taxon.index',
     '3-1': 'nombreTax.index',
     '4': 'bibliografias.index'
@@ -76,7 +77,7 @@ watch(
             :default-active="activeIndex2" @select="handleSelect" :ellipsis="false">
             <el-sub-menu index="2" v-if="hasPermisos('MnuCatalogos')">
                 <template #title>Catálogos</template>
-                <el-menu-item index="2-1" v-if="hasPermisos('MnuCatAutores')">Autores</el-menu-item>
+                <el-menu-item index="2-1" v-if="hasPermisos('MnuCatAutores')">Autoridades taxonómicas</el-menu-item>
                 <el-menu-item index="2-2" v-if="hasPermisos('MnuCatGrpTax')">Grupos taxonómicos</el-menu-item>
                 <el-menu-item index="2-3" v-if="hasPermisos('MnuCatNomCom')">Nombre común</el-menu-item>
                 <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipo de distribución</el-menu-item>

@@ -37,7 +37,7 @@ const rules = {
 };
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar nombre común' : 'Modificar nombre común';
+    return props.accion === 'crear' ? 'Ingresar un nuevo nombre común' : 'Modificar el nombre común seleccionado';
 });
 
 watch(() => props.visible, (newVal) => {
@@ -88,22 +88,25 @@ const intentarGuardar = async () => {
                 <h3>{{ dialogTitle }}</h3>
             </div>
         <div class="header">
+            <div class="form-actions">
+                <GuardarButton @click="intentarGuardar" />
+            </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
-                    <el-form-item label="Nombre Común" prop="NomComun">
+                    <el-form-item label="NomComun" prop="NomComun">
                         <el-input type="text" v-model="form.NomComun" maxlength="255" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="Observaciones" prop="Observaciones">
-                        <el-input type="textarea" v-model="form.Observaciones" maxlength="500" show-word-limit />
-                    </el-form-item>
+
                     <el-form-item label="Lengua" prop="Lengua">
                         <el-input type="text" v-model="form.Lengua" maxlength="50" show-word-limit />
                     </el-form-item>
+
+                    <el-form-item label="Observaciones" prop="Observaciones">
+                        <el-input type="textarea" v-model="form.Observaciones" maxlength="500" show-word-limit />
+                    </el-form-item>
+
                 </el-form>
 
-                <div class="form-actions">
-                    <GuardarButton @click="intentarGuardar" />
-                </div>
             </div>
         </div>
 
@@ -152,8 +155,10 @@ const intentarGuardar = async () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
+
 
 :deep(.el-form-item) {
     margin-bottom: 22px;

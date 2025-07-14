@@ -3,6 +3,7 @@
     import arbolCheck from "@/Components/Biotica/ArbCheck.vue";
     import { ElMessageBox } from 'element-plus';
     import btnTraspaso from "@/Components/Biotica/BtnTraspaso.vue";
+    import NotificacionExitoErrorModal from"@/Components/Biotica/NotificacionExitoErrorModal.vue";
 
     //Definición de variables 
     const props = defineProps({
@@ -17,24 +18,26 @@
         label: 'label'
     }
 
+    const notificacionVisible = ref(false);
+    const notificacionTitulo = ref("");
+    const notificacionMensaje = ref("");
+    const notificacionTipo = ref("info");
+    const notificacionDuracion = ref(5000);
+
     const datos =  props.grupos["original"];
     const checkAll = ref(false);
     const arbolRef = ref(null);
     const isIndeterminate = ref(false);
 
     const emit = defineEmits(['regresaGrupos', 'cerrar']);
-
-    //const emit = defineEmits(['cerrar', 'valorAlta', 'valorActual']);
-
-    //Definicion de las funciones 
-    const open = (mensaje) => {
-                            ElMessageBox.alert(mensaje, 'Grupos Taxonómicos', {
-                                confirmButtonText: 'OK',
-                            })
-                        }
     
     onMounted(() => {
-        open("Se debe seleccionar al menos un grupo taxonómico");
+        mostrarNotificacion(
+            "Grupos taxonómicos",
+            "Se debe seleccionar al menos un grupo taxonómico",
+            "info",
+            7000
+        );
     });
 
     //Función referenciada para ejecutar las funciones desde el componente padre hasta el componente hijo
@@ -63,9 +66,32 @@
         emit('regresaGrupos', data);
        }
        else{
-        open("Se debe seleccionar al menos un grupo taxonómico");
+            mostrarNotificacion(
+                "Grupos taxonómicos",
+                "Se debe selccionar al menos un grupo taxonómico",
+                "error",
+                7000
+            );
        }
     }
+
+    const mostrarNotificacion = (
+        titulo,
+        mensaje,
+        tipo = "warning",
+        duracion = 5000,
+        dangerouslyUseHTML = false
+    ) => {
+        notificacionTitulo.value = titulo;
+        notificacionMensaje.value = mensaje;
+        notificacionTipo.value = tipo;
+        notificacionDuracion.value = duracion;
+        notificacionVisible.value = true;
+    };
+
+    const cerrarNotificacion = () => {
+        notificacionVisible.value = false;
+    };
 
 </script>
 
@@ -98,6 +124,11 @@
                 </el-main>
             </el-container>
         </el-card>
+        <Teleport to="body">
+            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+                @close="cerrarNotificacion" />
+        </Teleport>
     </div>
 </template>
 
