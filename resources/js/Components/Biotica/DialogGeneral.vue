@@ -1,3 +1,4 @@
+<!--Elemento para generar las ventanas modales de los componentes de biotica-->
 <script setup>
 import { defineModel } from 'vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';

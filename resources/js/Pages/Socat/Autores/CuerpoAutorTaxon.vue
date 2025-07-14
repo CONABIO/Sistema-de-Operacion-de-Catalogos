@@ -167,6 +167,7 @@ const cargaListAutor = async (idsAutor) => {
     console.error('Error al obtener los datos:', error);
   }
 }
+
 watch(() => [props.autorRel, props.nombre], async () => {
   if (props.autorRel?.length > 0) {
     const idsAutor = props.autorRel.map(autor => autor.IdAutorTaxon).join(",");
@@ -176,6 +177,7 @@ watch(() => [props.autorRel, props.nombre], async () => {
     autoresRel.value = [];
   }
 }, { immediate: true, deep: true });
+
 
 const manejarNuevoItem = () => {
   itemEditado.value = null;
@@ -264,7 +266,10 @@ const manejarEliminarItem = (itemId) => {
   const procederConEliminacion = async () => {
     try {
       ElMessageBox.close();
+
+
       const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
+
       const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreCompleto}"` : 'el registro seleccionado';
       await axios.delete(`/autores/${itemId}`);
       if (tablaRef.value) {

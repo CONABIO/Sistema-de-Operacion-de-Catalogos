@@ -34,7 +34,7 @@
                             </div>
                         </el-card>
                     </div>
-                </div>
+                </el-card>
             </div>
         </div>
     </AppLayout>

@@ -1,24 +1,16 @@
 <script setup>
-import { ref, onMounted, triggerRef, h } from 'vue';
-import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
+import { ref, onMounted, triggerRef} from 'vue';
+import { InfoFilled, MessageBox, Setting, HelpFilled, Grid } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; // Asegúrate de que la ruta sea correcta
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
-
-import DialogRelacionesTax from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import { ElMessageBox } from 'element-plus';
 import { ElLoading } from 'element-plus';
 import AutorTaxon from '../Autores/AutorTaxon.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import { usePage } from '@inertiajs/vue3';
 import usePermisos from '@/composables/usePermisos';
-import NotificacionExitoErrorModal from"@/Components/Biotica/NotificacionExitoErrorModal.vue";
-import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
-import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-import { showConfirmMessage } from '@/Composables/mensajeConfirm'
 
 const { permisos } = usePermisos();
 
@@ -26,6 +18,7 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
+//Definición de variables
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -42,21 +35,12 @@ const totalItems = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref(150);
 
-const tree = ref(null);
 const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
 
-
-const notificacionVisible = ref(false);
-const notificacionTitulo = ref("");
-const notificacionMensaje = ref("");
-const notificacionTipo = ref("info");
-const notificacionDuracion = ref(5000);
-
 const dialogFormVisibleAlta = ref(false); // Para controlar la visibilidad del modal
 const taxonAct = ref([]); // Agrega esta línea
-
 const data = ref([]);
 const categ = ref(null);
 const catalogos = ref('');
@@ -64,8 +48,6 @@ const grupos = ref('');
 const idsGrupos = ref('');
 const mostrar = ref(false);
 const dialogFormVisibleCat = ref(false);
-const dialogFormVisibleRel = ref(false);
-const dialogFormVisibleRelTax = ref(false); 
 const totalReg = ref(0);
 const paginas = ref('');
 const taxAct = ref([]);
@@ -156,30 +138,29 @@ const filtro_Catalogos = () => {
 
 //Funcion para validae la visbilidad de los objetos 
 const hasPermisos = (etiqueta, modulo) => {
+    
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
-  const permiso = permisos.find(item => item.NombreModulo === etiqueta);
-
-  return permiso[modulo];
+    return permiso[modulo];
 };
 
 // Funcion para abrir el modal de FormNombre
 const openDialog = (nodeData) => {
-  console.log(nodeData);
-
-  emit('reset-form'); // Emite el evento "reset-form"
-  dialogFormVisibleAlta.value = true;
+    console.log(nodeData);
+    
+    emit('reset-form'); // Emite el evento "reset-form"
+    dialogFormVisibleAlta.value = true;
 };
 
 const emit = defineEmits(['reset-form']); //Definimos el Emite
 //Reseteamos FormNombre
-const resetFormNombre = () => {
-  emit('reset-form'); // Emitimos el evento de vuelta al componente
+const resetFormNombre = () =>{
+ emit('reset-form'); // Emitimos el evento de vuelta al componente
 }
 
 //Funcion para cerrar el modal de FormNombre
 const closeDialog = () => {
   dialogFormVisibleAlta.value = false;
-  dialogFormVisibleRel.value = false;
 };
 
 const cerrarDialog = (valor) => {
@@ -194,10 +175,10 @@ const recibeGrupos = async (data) => {
 
   if (categ.value === '') {
     open("Se debe seleccionar una categoría taxonómica.");
-  } else {
+  }else{
     let categ = [];
-    categ.push(catego.value)
-    handleChange(categ);
+    categ.push(catego.value)  
+    handleChange(categ); 
   }
 };
 
@@ -205,14 +186,15 @@ const recibeGrupos = async (data) => {
 const recibeTaxMod = async (res) => {
 
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  for (const node of data.value) {
-    if (node.id === res.id) {
-      Object.assign(node, res);
-      return true;  // Nodo encontrado y actualizado
+  
+  for(const node of data.value){
+    if(node.id === res.id){
+       Object.assign(node, res);
+       return true;  // Nodo encontrado y actualizado
     }
-
-    if (node.children && node.children.length > 0) {
+    
+    if(node.children && node.children.length > 0 )
+    {
       const found = await updateChildNode(node.children, res);
       if (found) break;
     }
@@ -221,25 +203,25 @@ const recibeTaxMod = async (res) => {
 
 const updateChildNode = async (children, res) => {
   for (const child of children) {
-    if (child.id === res.id) {
-      Object.assign(child, res);
-      return true; // Nodo encontrado y actualizado en los hijos
-    }
-    if (child.children && child.children.length > 0) {
-      const found = await updateChildNode(child.children, res);
-      if (found) return true;
-    }
+      if (child.id === res.id) {
+          Object.assign(child, res);
+          return true; // Nodo encontrado y actualizado en los hijos
+      }
+      if (child.children && child.children.length > 0) {
+          const found = await updateChildNode(child.children, res);
+          if (found) return true;
+      }
   }
   return false; // Nodo no encontrado en los hijos
 };
 
 //Función para recibir los nuevos taxones 
 const recibeTaxNuevo = async (res) => {
-
+  
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  if (index !== -1) {
-    if (!data.value[index].children) {
+  
+  if(index !== -1){
+    if(!data.value[index].children){
       data.value[index].children = [];
     }
     data.value[index].children.push(res);
@@ -248,33 +230,34 @@ const recibeTaxNuevo = async (res) => {
 
 //Función para recibir los taxones que dan de baja
 const recibeTaxBaja = async (res) => {
-
+ 
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
 
   let found = false;
-
-  for (let i = 0; i < data.value.length; i++) {
-    if (String(data.value[i].id) === String(res.Id)) {
-      children.splice(i, 1);
+  
+  for(let i=0; i < data.value.length; i++){
+    if(String(data.value[i].id) === String(res.Id)){
+      children.splice(i,1);
       return true;
     }
 
-    if (data.value[i].children && data.value[i].children.length > 0) {
+    if(data.value[i].children && data.value[i].children.length > 0){
 
       found = deleteChildNode(data.value[i].children, res);
-      if (found) break;
+      if(found) break;
     }
   }
 }
 
 const deleteChildNode = async (children, res) => {
-  for (let i = 0; i < children.length; i++) {
-    if (String(children[i].id) === String(res.Id)) {
-      children.splice(i, 1);
+  for(let i=0; i < children.length; i++){
+    if(String(children[i].id) === String(res.Id))
+    {
+      children.splice(i,1);
       return true;
     }
   }
-  return false;
+  return  false;
 };
 
 //Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
@@ -292,8 +275,9 @@ const open = (mensaje) => {
 
 //Esta funcion se dispara una vez que se selecciona una categia taxonomica
 const handleChange = async (value) => {
-
-  if (value != undefined) {
+  
+  if(value != undefined)
+  {
     filterText.value = "";
     mostrar.value = false;
     catego.value = value[0];
@@ -313,7 +297,7 @@ const handleChange = async (value) => {
 
       //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
       const response = await axios.get('/cargar-nomArb', { params });
-
+      
       if (response.status === 200) {
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
@@ -328,16 +312,7 @@ const handleChange = async (value) => {
 }
 
 //Función para hacer la busqueda de los valores colocados en el input de busqueda
-const filterNode = async (value) => {
-  if (data.value.length === 0) {
-     mostrarNotificacion(
-      "Aviso",
-      "Se debe seleccionar una categoría taxonómica.",
-      "warning",
-      7000
-    );
-    return;
-  }
+const filterNode = async (value, data) => {
   mostrar.value = false;
 
   const loading = ElLoading.service({
@@ -347,7 +322,7 @@ const filterNode = async (value) => {
     backgroud: 'rgba(255,255,255,0.85)',
   });
 
-  if (value != '' && idsGrupos.value != '' && categ.value != null) {
+  if (value != '' && idsGrupos.value != '' && categ.value[0] != '') {
     const params = {
       categ: categ.value[0],
       catalog: idsGrupos.value,
@@ -356,40 +331,34 @@ const filterNode = async (value) => {
 
     const response = await axios.get('/cargar-nomArb',
       { params });
-
+      
     if (response.status === 200) {
       data.value = response.data[0];
-      totalReg.value = response.data[1].total;
-      paginas.value = response.data[1].last_page;
+      totalReg = response.data[1].total;
+      paginas = response.data[1].last_page;
+      loading.close();
+    }
+  } else if (idsGrupos.value != '') {
+    const params = {
+      categ: categ.value[0],
+      catalog: idsGrupos.value
+    };
+
+    const response = await axios.get('/cargar-nomArb',
+      { params });
+      
+    if (response.status === 200) {
+      data.value = response.data[0];
+      totalReg = response.data[1].total;
+      paginas = response.data[1].last_page;
       loading.close();
     }
   }
-
   loading.close();
 }
 
-const mostrarNotificacion = (
-  titulo,
-  mensaje,
-  tipo = "warning",
-  duracion = 5000,
-  dangerouslyUseHTML = false
-) => {
-  console.log("Entre a mostrar la notificación");
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
 //Funcion que se ejecuta para la expancion de un nodo
-const expande = async (draggingNode, nodeData, nodeComponent) => {
-  isMenuVisible.value = false;
+const expande = async (draggingNode) => {
   mostrar.value = true;
   taxonAct.value = draggingNode;
   if (draggingNode.children.length === 0) {
@@ -403,30 +372,25 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
     const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
     if (response.status === 200) {
+      tablaNomenclatura.value = response.data[1];
+      tablaReferencias.value = response.data[2];
       if (draggingNode.children.length === 0) {
         for (let i = 0; i < response.data[0].length; i++) {
           draggingNode.children.push(response.data[0][i]);
         }
       }
-
-      const node = tree.value.getNode(draggingNode);
-      node.expanded = true;
-
     }
     loading.close();
   }
-  tablaNomenclatura.value = draggingNode.relaciones;
-  tablaReferencias.value = draggingNode.referencias;
   selectedNodeKey.value = draggingNode.id;
-
 }
 
 //Función para cambiar el color de la columna referencias bibliograficas
-const classChecker = ({ row, column, rowIndex, columnIndex }) => {
-  if (column.property === 'Biblio') {
+const classChecker =({ row, column, rowIndex, columnIndex}) =>{
+  if(column.property === 'Biblio'){
 
     const val = row[column.property];
-    if (val > 0) {
+    if( val > 0 ){
       return 'greenClass';
     } else {
       return 'redClass';
@@ -434,110 +398,98 @@ const classChecker = ({ row, column, rowIndex, columnIndex }) => {
   }
 }
 
-const proceder = ()=>
-{
-  console.log("Pase el movimeinto");
-}
-
-const cancelar = ()=>
-{
-  console.log("Evite el movimeinto");
-}
 //Función para mover un taxón y reasignarlo a otro 
 const mover = async (node) => {
-
-  if (taxMov.value.length === 0) {
+  if(taxMov.value.length === 0)
+  {
     try {
-
-     const result = await showConfirmMessage({
-        title: 'Atención',
-        message: '¿Está seguro de mover este taxón?',
-        icon: '!'
-      });
-
-      if(!result)
-      {
-        return ;
-      }
-
+      await ElMessageBox.confirm("¿Está seguro de mover este taxón?",
+                                "Alert",
+          {
+            confirmButtonText: "OK",
+            cancelButtonText: 'Cancel',
+            type: 'warning'
+          }
+      );
+    
       node.data.customClass = 'highlight-node';
       taxMov.value = node;
 
       // Forzar actualización del árbol
       triggerRef(data); // Esto actualizará la vista reactivamente
 
-      await mostrarNotificacion(
-          "Aviso",
-          "El taxón será reasignado.",
-          "info",
-          5000
-        );
-
+      await ElMessageBox.alert("El taxón será reasignado", 
+      {
+        confirmButtonText: "OK",
+        type: "success"
+      });
     } catch (error) {
-      await ElMessageBox.alert("Acción cancelada", {
+      await ElMessageBox.alert("Acción cancelada",{
         confirmButtonText: "OK",
         type: 'info'
       });
     }
-  } else {
-    if (taxMov.value.data.completo.scat === undefined) {
-        await mostrarNotificacion(
-          "Error",
-          `El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
-          "error",
-          5000
-        ); 
-      return;
-    } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0) {
-        await mostrarNotificacion(
-          "Error",
-          `El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
-          "error",
-          5000
-        ); 
-      return;
-    }
-    if (taxMov.value.data.id === node.data.id) {
-      taxMov.value = [];
-      await mostrarNotificacion(
-        "Aviso",
-        "Se cancelará el movimiento del taxón",
-        "info",
-        5000
+  }else{
+    if(taxMov.value.data.completo.scat === undefined){
+      await ElMessageBox.alert(`El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
+        {
+          title: "Error",
+          confirmButtonText: "OK",
+          type: "error"
+        });
+        return;
+    } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0){
+      await ElMessageBox.alert(`El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
+        {
+          title: "Error",
+          confirmButtonText:"OK",
+          type: "error"
+        }
       );
-      delete node.data.customClass;
       return;
     }
-    if (taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT) {
-      if (node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 - 1)) {
+    if(taxMov.value.data.id === node.data.id){
+      taxMov.value= [];
+      await ElMessageBox.alert("Se cancelará el movimiento del taxón", 
+        {
+          title: "SOCAT",
+          confirmButtonText: "OK",
+          type:"success"
+        });
+        delete node.data.customClass;
+        return;
+    }
+    if(taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT)
+    {
+      if(node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 -1 )){
         const params = {
-          estatusInicio: taxMov.value.data.completo.Estatus,
-          nomAct: taxMov.value.data.id
-        };
+            estatusInicio: taxMov.value.data.completo.Estatus,
+            nomAct: taxMov.value.data.id
+          };
 
-        try {
+        try{
           const response = await axios.get('/valCamEstatus', params);
 
           //Lógica para validación de estatus
-          switch (taxMov.value.data.completo.Estatus) {
+          switch(taxMov.value.data.completo.Estatus){
             case 1:
-              switch (node.data.completo.Estatus) {
+              switch(node.data.completo.Estatus)
+              {
                 case 1:
-                  await moverTaxon(
-                    taxMov.value.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node
-                  );
+                    await moverTaxon(
+                      taxMov.value.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node
+                    );
                   break;
                 case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
+                  if(response.data != 1)
+                  {
+                    await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                      confirmButtonText: "OK",
+                      type: "error"
+                    });
                   } else {
                     await moverTaxon(
                       taxonMov.value.data.completo.IdNombre,
@@ -546,19 +498,18 @@ const mover = async (node) => {
                       node
                     );
                   }
-                  break;
-                default:
-                  await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  break;
+                break;
+                default: 
+                  await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                    confirmButtonText: 'OK', 
+                    type: 'error'}
+                  );
+                break;
               }
-              break;
+            break;
             case 2:
-              switch (node.data.completo.Estatus) {
+              switch(node.data.completo.Estatus)
+              {
                 case 2:
                   await moverTaxon(
                     taxMov.value.data.completo.IdNombre,
@@ -566,16 +517,15 @@ const mover = async (node) => {
                     taxMov.value,
                     node
                   );
-                  break;
+                break;
                 case 1:
-                  if (response.data != 1) {
-                   await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
+                  if(response.data != 1)
+                  {
+                    await ElMessageBox.alert(`Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                      confirmButtonText: 'OK',
+                      type: 'error'
+                    });
+                  }else{
                     await moverTaxon(
                       taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
@@ -583,36 +533,34 @@ const mover = async (node) => {
                       node
                     );
                   }
-                  break;
+                break;
                 default:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
+                  await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                    confirmButtonText: 'OK',
+                    type: 'error'
+                  });
               }
-              break;
+            break;
             case 6:
-              switch (node.data.completo.Estatus) {
+              switch(node.data.completo.Estatus)
+              {
                 case 6:
                 case -9:
                   await moverTaxon(
-                    taxMov.data.completo.IdNombre,
+                    taxMov.data.completo.IdNombre, 
                     node.data.completo.IdNombre,
                     taxMov.value,
                     node);
-                  break;
+                break;
                 case 1:
                 case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                        "Error",
-                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                        "error",
-                        5000
-                      );
-                  } else {
+                  if(response.data != 1)
+                  {
+                    await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                      confirmButtonText: 'OK',
+                      type: 'error'
+                    });
+                  }else{
                     await moverTaxon(
                       taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
@@ -620,34 +568,32 @@ const mover = async (node) => {
                       node);
                   }
               }
-              break;
+            break;
             case -9:
-              switch (node.data.completo.Estatus) {
+              switch(node.data.completo.Estatus)
+              {
                 case 6:
                   await moverTaxon(
                     taxMov.data.completo.IdNombre,
                     node.data.completo.IdNombre,
                     taxMov.value,
                     node);
-                  break;
-                case -9:
-                  await mostrarNotificacion(
-                     "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-                  break;
+                break;
+                case -9: 
+                  await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,{
+                    confirmButtonText: 'OK',
+                    type: 'error'
+                  });
+                break;
                 case 1:
                 case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
+                  if(response.data != 1)
+                  {
+                    await ElMessageBox.alert(`Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`, {
+                      confirmButtonText: 'OK',
+                      type: 'error'
+                    });
+                  }else{
                     await moverTaxon(
                       taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
@@ -655,65 +601,58 @@ const mover = async (node) => {
                       node
                     );
                   }
-                  break;
+                break;
               }
-              break;
+            break;
           }
-        } catch (error) {
+        } catch(error){
           console.error('Error al validar estatus:', error);
           ElMessageBox.error('Error al validar el estatus del taxón');
         }
-      } else {
-        await mostrarNotificacion(
-          "Error",
-          `Está intentando mover el taxón a una categoria no permitida.`,
-          "error",
-          5000
-        );
+      }else{
+        await ElMessageBox.alert(`Está intentando mover el taxón a una categoria no permitida`, {
+          confirmButtonText: 'OK',
+          type: 'error'
+        });
       }
-    } else {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,
-        "error",
-        5000
-      );
+    }else{
+      await ElMessageBox.alert(`El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,{
+        confirmButtonText: 'OK',
+        type: 'error'
+      });
     }
   }
 }
 
 const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
-  if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
-    await mostrarNotificacion(
-        "Error",
-        'El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',
-        "error",
-        5000
-      );
+  if(nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre)
+  {
+    await ElMessageBox.alert('El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',{
+      confirmButtonText: 'OK',
+      type: 'error'
+    });
     return;
   }
-
+ 
   try {
-    const result = await showConfirmMessage({
-        title: 'Atención',
-        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
-                  ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
-                  ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
-        icon: '!'
-      });
 
-      if(!result)
-      {
-        return ;
-      }
+    await ElMessageBox.confirm(`¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
+            ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
+            ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
+            'Alerta',{
+              confirmButtonText: 'OK',
+              cancelButtonText: 'Cancel',
+              type: 'warning'
+            }
+          );
 
-    const requestData = {
-      taxonMover: taxMover,
-      taxonRecibir: taxRecb,
-      categorias: catego.value,
-      grupos: idsGrupos.value,
-      alias: authUser.Alias
+    const requestData  = {
+            taxonMover: taxMover,
+            taxonRecibir: taxRecb,
+            categorias: catego.value,
+            grupos: idsGrupos.value,
+            alias: authUser.Alias
     };
 
     const loading = ElLoading.service({
@@ -727,20 +666,18 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
     const response = await axios.put('/mueveTaxones', requestData);
 
     if (response.status === 200) {
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón sea reasignado exitosamente',
-        "error",
-        5000
-      );
+      await ElMessageBox.alert('El taxón sea reasignado exitosamente',{
+        confirmButtonText: 'OK',
+        type: 'success'
+      });
 
-      const params = {
+      const params ={
         categ: catego.value,
         catalog: idsGrupos.value
       }
-
-      const resp = await axios.get('/cargar-nomArb', { params: params });
-
+      
+      const resp = await axios.get('/cargar-nomArb', {params: params});
+      
       console.log('Esta es respuesta despues del get: ', resp);
 
       data.value = resp.data[0];
@@ -748,185 +685,187 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
       paginas.value = resp.data[1].last_page;
 
     }
-    else {      
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón que intenta mover no se pudo reasignar',
-        "Error",
-        5000
-      );
+    else {
+      await ElMessageBox.alert('El taxón que intenta mover no se pudo reasignar',{
+        confirmButtonText: 'OK',
+        type: 'error'
+      });
     }
 
     loading.close();
-
+  
 
   } catch (error) {
     // El usuario canceló la operación
     console.log(error);
     console.log('Operación cancelada por el usuario');
   }
-
+  
 }
 
-const handleNodeRightClick = (event, data, node) => {
-
+const handleNodeRightClick = (event, data) => {
+   taxAct.value = data;
   event.preventDefault(); // Prevenir el menú contextual del navegador
-
-  tree.value.setCurrentKey(data.id);
-
-  taxAct.value = data;
   selectedNode.value = data;
-  menuPosition.value = {
-    x: event.clientX,
-    y: event.clientY
+  menuPosition.value = { 
+    x: event.clientX, 
+    y: event.clientY 
   };
   isMenuVisible.value = true;
-
   document.addEventListener('click', closeMenu);
   document.addEventListener('keydown', handleEscKey);
 };
 
 // Manejador de acciones del menú
-const handleMenuClick = (action) => {
-  isMenuVisible.value = false;
-  // Aquí puedes agregar lógica específica para cada acción
+const handleMenuClick = (action) => {       
+   isMenuVisible.value = false;
+   // Aquí puedes agregar lógica específica para cada acción
   console.log('Acción seleccionada:', action);
 };
 
-// Cerrar menú
-const closeMenu = () => {
-  isMenuVisible.value = false;
-  document.removeEventListener('click', closeMenu);
-  document.removeEventListener('keydown', handleEscKey);
-};
-
-// Manejador de tecla Escape
-const handleEscKey = (event) => {
-  if (event.key === 'Escape' || event.key === 'Esc') {
-    closeMenu();
-  }
-};
-
-const handlePageChange = (page) => {
-  console.log("Este es el valor de page:", page);
-  currentPage.value = page;
-  fetchFilteredData();
-};
-
-const fetchFilteredData = async () => {
-  const params = {
-    categ: catego.value,
-    catalog: idsGrupos.value,
-    page: currentPage.value
+ // Cerrar menú
+ const closeMenu = () => {
+    isMenuVisible.value = false;
+    document.removeEventListener('click', closeMenu);
+    document.removeEventListener('keydown', handleEscKey);
   };
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
 
-  const response = await axios.get("/cargar-nomArb", { params });
-  if (response.status === 200) {
-    data.value = response.data[0];
-  }
+  // Manejador de tecla Escape
+  const handleEscKey = (event) => {
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      closeMenu();
+    }
+  };
 
-  loading.close();
-  /*currentData.value = response.data.data || [];
-  totalItems.value = response.data.total || response.data.totalItems || 0;*/
-};
+  const handlePageChange = (page) => {
+    console.log("Este es el valor de page:", page);
+    currentPage.value = page;
+    fetchFilteredData();
+  };
 
-  const abre_Relaciones = () => {
-    dialogFormVisibleRelTax.value = true;
-  }
+  const fetchFilteredData = async () => {
+    const params= {
+                    categ:catego.value,
+                    catalog:idsGrupos.value,
+                    page:currentPage.value
+                  };
+      const loading = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+
+      const response = await axios.get("/cargar-nomArb", { params });
+      if (response.status === 200) {
+        data.value = response.data[0];
+      }
+      
+      loading.close();
+      /*currentData.value = response.data.data || [];
+      totalItems.value = response.data.total || response.data.totalItems || 0;*/
+  };
 </script>
 
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
-      <!--el-container style="min-height: 100vh; display: flex; flex-direction: column; border: 1px solid #eee"-->
-      <el-container style="height: 100vh; display: flex;">
+    <div class="common-layout">
+      <el-container style="min-height: 100vh; display: flex; flex-direction: column; border: 1px solid #eee">
         <el-header>
           <div>
+            <br/>
+            <el-row  :gutter="16" style="margin: 0 2px; height: 100%; border: 1px solid #eee">
+              <el-col :span="24" style="height: 100%;">
+                <el-collapse>
+                  <el-collapse-item title="Grupos taxonómicos seleccionados" name="1">
+                    <el-card style="width: 100%;" shadow="always">
+                      <el-row :gutter='25' justify="center" style="display: flex;">
+                        <el-col :span='11'>
+                          <el-row> 
+                            <span class="demo-input-label">Catálogo(s)</span>
+                            <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
+                            </el-input>
+                          </el-row>
+                        </el-col>
+                        <el-col :span='11'>
+                          <el-row>
+                            <span class="demo-input-label">Grupo SCAT</span>
+                            <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
+                            </el-input>
+                          </el-row>
+                        </el-col>
+                        <el-col :span="1">
+                          <div>
+                            <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
+                              placement="left-start">
+                              <el-button @click="filtro_Catalogos()" type="primary" circle
+                                class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
+                                <el-icon class="icono">
+                                  <Setting />
+                                </el-icon>
+                              </el-button>
+                            </el-tooltip>
+                          </div>
+                        </el-col>
+                      </el-row>
+                    </el-card>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-col>
+            </el-row>
+            <br>
             <el-row :gutter="16" style="display: flex; flex-wrap: wrap;">
               <!-- Primera columna -->
-              <el-col :xs="24" :sm="12" :md="7" style="display: flex; flex-direction: column;">
+              <el-col :xs="24" :sm="24" :md="6" style="display: flex; flex-direction: column; border: 1px solid red">
                 <span>Ir a:</span>
-                <el-input clearable placeholder="" v-model="filterText" @change="filterNode"  
-                          style="height: 28px;" size="small">
+                <el-input clearable placeholder="" v-model="filterText" @change="filterNode">
                 </el-input>
               </el-col>
 
               <!-- Segunda columna -->
-              <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
+              <el-col :xs="12" :sm="24" :md="6" style="display: flex; flex-direction: column; border: 1px solid blue">
                 <span class="block">Nivel taxonómico</span>
                 <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
                   placeholder="Nivel taxonómico" @change="handleChange">
                 </el-cascader>
               </el-col>
 
-              <!--el-row :gutter='2' justify="center" style="display: flex; border: 1px solid green"-->
-              <el-col :span="12">
-                <el-row :gutter="10" style="display: flex; align-items: flex-start;">
-                  
-                  <!-- Catálogo(s) -->
-                  <el-col :span="11">
-                    <div style="display: flex; flex-direction: column;">
-                      <span class="demo-input-label" style="margin-bottom: 4px;">
-                        Catálogo(s)
-                      </span>
-                      <el-input
-                        type="textarea"
-                        :rows="2"
-                        placeholder="Catálogos"
-                        v-model="catalogos"
-                        :disabled="true"
-                      />
-                    </div>
-                  </el-col>
-
-                  <!-- Grupo SCAT -->
-                  <el-col :span="11">
-                    <div style="display: flex; flex-direction: column;">
-                      <span class="demo-input-label" style="margin-bottom: 4px;">
-                        Grupo SCAT
-                      </span>
-                      <el-input
-                        type="textarea"
-                        :rows="2"
-                        placeholder="Grupo SCAT"
-                        v-model="grupos"
-                        :disabled="true"
-                      />
-                    </div>
-                  </el-col>
-
-                  <!-- Botón alineado con las etiquetas -->
-                  <el-col :span="2" style="display: flex; align-items: flex-start;">
-                    <el-tooltip
-                      effect="dark"
-                      content="Selección Catálogo de Grupos taxonómicos"
-                      placement="bottom"
-                    >
-                      <el-button
-                        @click="filtro_Catalogos()"
-                        type="primary"
-                        circle
-                        style="margin-top: 4px;" 
-                      >
-                        <el-icon>
-                          <filtroGrupos />
+              <el-row :gutter='2' justify="center" style="display: flex; border: 1px solid green">
+                <el-col :span='11'>
+                  <el-row> 
+                    <span class="demo-input-label">Catálogo(s)</span>
+                    <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
+                    </el-input>
+                  </el-row>
+                </el-col>
+                <el-col :span='11'>
+                  <el-row>
+                    <span class="demo-input-label">Grupo SCAT</span>
+                    <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
+                    </el-input>
+                  </el-row>
+                </el-col>
+                <el-col :span="1">
+                  <div>
+                    <el-tooltip class="item" effect="dark" content="Selección Catálogo de Grupos taxonómicos"
+                      placement="left-start">
+                      <el-button @click="filtro_Catalogos()" type="primary" circle
+                        class="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm md:text-base lg:text-lg">
+                        <el-icon class="icono">
+                          <Setting />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                  </el-col>
-                </el-row>
-              </el-col>
+                  </div>
+                </el-col>
+              </el-row>
+
             </el-row>
           </div>
           <br>
           <div style="flex-grow: 1;">
-            <el-container style="height: 100%; border: 1px solid red;">
-              <el-aside width="650px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
+            <el-container style="height: 100%; border: 1px solid #eee">
+              <el-aside width="750px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
                 <div class="tree-container">
                   <el-scrollbar height="550px">
                   <el-tree 
@@ -955,14 +894,13 @@ const fetchFilteredData = async () => {
                           </el-icon>
                         </el-tooltip>
                         <div v-if="hasPermisos('MnuNomCientifico', 'Cambios')">
-                          <el-tooltip class="item" effect="dark" content="Mover" placement="bottom">
+                          <el-tooltip class="item" effect="dark" content="Mover" placement="right">
                             <span :style="{ color: node.color }" :id="`node-${node.id}`">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
                                   class="bi bi-diagram-3-fill" viewBox="0 0 16 16" @click="mover(node)">
                                 <path fill-rule="evenodd" 
                                   d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6v1H14a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0V8h-5v.5a.5.5 0 0 1-1 0v-1A.5.5 0 0 1 2 7h5.5V6A1.5 1.5 0 0 1 6 4.5zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5zM0 11.5A1.5 1.5 0 0 1 1.5 10h1A1.5 1.5 0 0 1 4 11.5v1A1.5 1.5 0 0 1 2.5 14h-1A1.5 1.5 0 0 1 0 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5A1.5 1.5 0 0 1 7.5 10h1a1.5 1.5 0 0 1 1.5 1.5v1A1.5 1.5 0 0 1 8.5 14h-1A1.5 1.5 0 0 1 6 12.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm4.5.5a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5zm1.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
                               </svg>
-                              <ModalConfirmacion ref="modalConfirmar" />
                             </span>
                           </el-tooltip>
                         </div>
@@ -977,29 +915,14 @@ const fetchFilteredData = async () => {
                 </div>
                 <div>
                   <el-menu
-                        ref = "contextMenu"
-                        class="context-menu"
-                        :style="{top: menuPosition.y + 'px', left: menuPosition + 'px'}"
-                        v-if="isMenuVisible">
+                  ref = "contextMenu"
+                  class="context-menu"
+                  :style="{top: menuPosition.y + 'px', left: menuPosition + 'px'}"
+                  v-if="isMenuVisible">
                     <el-menu-item
                       class="item">
-                      <!--el-button @click="abre_Relaciones()" type="primary" round>
-                        <el-icon class="icono">
-                          <HelpFilled />
-                        </el-icon>
-                        <span class="hidden sm:inline">Relaciones</span>
-                      </el-button-->
-                      <span  class="text-lg">  
-                        <el-icon class="icono">
-                          <HelpFilled />
-                        </el-icon>
-                      </span>
-                      <span class="hidden sm:inline mr-2 text-base">Relaciones taxonómicas</span> 
-                      <el-button @click="abre_Relaciones()" type="primary" circle size="default" >
-                        <el-icon><View /></el-icon>
-                      </el-button>
-                      <EditarButton v-if="hasPermisos('MnuAsociar', 'Cambios')" @editar="abre_Relaciones()" toolPosicion = 'top' 
-                                    :tamaño = "'default'"/>
+                      <el-icon><HelpFilled /></el-icon>
+                      <span>Relaciones</span>
                     </el-menu-item>
                     <el-menu-item
                       class="item">
@@ -1034,34 +957,73 @@ const fetchFilteredData = async () => {
                     <span class="demo-input-label">Taxón:</span>
                     <span class="demo-input-label">{{ taxonAct?.completo?.Nombre }}</span>
                   </div>
-                </template>
-              </el-tree>
-          </el-aside>
-          
-          <el-container v-if="mostrar && taxonAct" class="p-4">
-            <el-main>
-                <div class="mb-6">
-                    <p><span class="font-semibold">Categoría:</span> {{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</p>
-                    <p><span class="font-semibold">Nombre:</span> {{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</p>
-                    <p><span class="font-semibold">Taxón:</span> {{ taxonAct.completo.Nombre }}</p>
-                </div>
-                
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-2">Relaciones nomenclaturales</h3>
-                    <el-table :data="tablaNomenclatura" border height="200" style="width: 100%;">
-                      <el-table-column v-for="col in columnasNom" :key="col.prop" v-bind="col" />
-                      <el-table-column align="center" width="100" prop="Biblio" label="Referencia">
-                        <template #default><span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16"><path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span></template>
+                </el-header>
+                <br/>
+                <br/>
+                <el-main width="500px" style="height: 500px;">
+                  <span class="demo-input-label">Relaciones nomenclaturales</span>
+                    <el-table 
+                      :data="tablaNomenclatura"
+                      :border="true"
+                      height="200"
+                      style="width: 100%;"
+                      highlight-current-row
+                      :cell-class-name="classChecker">
+                      <!-- Columnas deben ir directamente aquí -->
+                      <el-table-column
+                        v-for="(column) in columnasNom"
+                        :key="column.label"
+                        :label="column.label"
+                        :prop="column.prop"
+                        :column-key="column.prop"
+                        :min-width="column.minWidth"
+                        :sortable="column.sortable"
+                        :align="column.align"
+                        :header-align="column.align"
+                        :fixed="column.fixed || null"
+                        :formatter="column.formatter || null"
+                      ></el-table-column>
+                      <!-- Columna adicional -->
+                      <el-table-column align="center" style="width: 80px;" prop="Biblio" label="Referencia">
+                        <template #default>
+                          <span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16">
+                              <path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                            </svg>
+                          </span>
+                        </template>
                       </el-table-column>
-                      <template #empty><div>No hay datos para mostrar</div></template>
+                      <!-- Contenido personalizado cuando no hay datos -->
+                      <template #empty>
+                        <div>No hay datos para mostrar</div>
+                      </template>
                     </el-table>
-                </div>
-
-                <div>
-                    <h3 class="font-semibold mb-2">Referencias asociadas</h3>
-                    <el-table :data="tablaReferencias" border height="250" style="width: 100%;">
-                      <el-table-column v-for="col in columnasRef" :key="col.prop" v-bind="col" />
-                      <template #empty><div>No hay referencias asociadas</div></template>
+                  <br>
+                  <span class="demo-input-label">Referencias asocidas</span>
+                    <el-table
+                      :data="tablaReferencias"
+                      :border="true"
+                      height="400"
+                      style="width: 100%;"
+                      highlight-current-row
+                      :cell-class-name="classChecker"
+                    >
+                      <el-table-column
+                        v-for="(column) in columnasRef"
+                        :key="column.label"
+                        :label="column.label"
+                        :prop="column.prop"
+                        :column-key="column.prop"
+                        :min-width="column.minWidth"
+                        :sortable="column.sortable"
+                        :align="column.align"
+                        :header-align="column.align"
+                        :fixed="column.fixed || null"
+                        :formatter="column.formatter || null"
+                      ></el-table-column>
+                      <template #empty>
+                        <div>No hay referencias asociadas</div>
+                      </template>
                     </el-table>
                 </el-main>                  
               </el-container>
@@ -1079,9 +1041,8 @@ const fetchFilteredData = async () => {
 
         </el-header>
       </el-container>
-    
+    </div>
   </CuerpoGen>
-  
   <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false">
     <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
   </DialogForm>
@@ -1099,25 +1060,7 @@ const fetchFilteredData = async () => {
                 @regresaTaxMod = "recibeTaxMod"
                 @resultadoAlta = "recibeTaxNuevo"
                 @resultadoBaja = "recibeTaxBaja"/>
-  </DialogForm>
-
-  <DialogForm v-model="dialogFormVisibleRelTax" :botCerrar="true" :pressEsc="true" :width="'90%'">
-    <!--FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" /-->
-    <DialogRelacionesTax :taxonAct = "taxonAct" 
-                      :gruposTax = "gruposTax"
-                      :categoriasTax = "categoriasTax"
-                      :catalogPadre = "catalogos"
-                      :gruposPadre = "grupos"
-                      :idsGruposPadre = "idsGrupos"
-                       @cerrar = "closeDialog">
-    </DialogRelacionesTax>
-  </DialogForm>
-
-    <Teleport to="body">
-      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-        @close="cerrarNotificacion" />
-    </Teleport>
+</DialogForm>
 </template>
 
 <style scoped>
@@ -1176,31 +1119,15 @@ const fetchFilteredData = async () => {
   overflow: auto;
 }*/
 
-.main-content-card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  padding: 25px;
-  display: flex;
-  flex-direction: column;
-  height: 705px; 
-}
-
-.filters-section {
-  margin-bottom: 20px;
-  flex-shrink: 0; 
-}
-
-.main-view-section {
-  flex-grow: 1; 
-  min-height: 0; 
-}
-
-
 :deep(.el-tree-node.is-current > .el-tree-node__content){
   background-color: rgb(203, 233, 200) !important;
-  color: #0d6efd !important;
+  color: #0d6efd !important;            /* azul para texto */
 }
+
+/*
+:deep(.el-tree-node__content .highlight-node) {
+  color: #a52f2f !important;  /* Fondo 
+}*/
 
 :deep(.highlight-node){
   color: #a52f2f !important;
@@ -1208,45 +1135,142 @@ const fetchFilteredData = async () => {
 
 .tree-node-wrapper {
   display: flex;
-  align-items: center; 
+  align-items: center;
+  /* Alinea verticalmente los elementos*/ 
   gap: 8px;
+  /* Espacio entre el ícono y el texto */
   white-space: nowrap;
-  font-size: 14px;
+  /* Evita que el texto se divida en varias líneas */
 }
 
 .tree-node-logo {
   width: 20px;
+  /* Ajusta según el tamaño de tus íconos */
   height: 20px;
   flex-shrink: 0;
+  /* Evita que el ícono se reduzca de tamaño */
 }
 
-:deep(.el-table .greenClass) { background: rgb(90, 177, 90); }
-:deep(.el-table .redClass) { background: rgb(226, 119, 119); }
+.tree-node-label {
+  font-size: 14px;
+  line-height: 20px;
+  /* Ajusta el alto del texto para que coincida con el ícono */
+}
+
+.el-tree-node:hover {
+  background-color: transparent !important;
+}
+
+:deep(.el-table .greenClass) {
+  background: rgb(90, 177, 90);
+}
+
+:deep(.el-table .redClass) {
+  background: rgb(226, 119, 119);
+}
 
 .context-menu {
+  display: block !important;
+  visibility: visible !important;
   position: absolute;
   z-index: 9999;
-  background-color: white;
+  background-color: hsl(223, 41%, 93%);
   border: 1px solid #dcdfe6;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 5px 0;
-  border-radius: 4px;
-  min-width: 180px;
+  padding: 20px;
+  /* Añade un relleno para que no se vea tan estrecho */
+  min-width: 190px;
+  /* Ajusta el ancho mínimo */
+  height: auto;
+  /* Asegúrate de que la altura se ajuste al contenido */
+  box-sizing: border-box;
+  /* Asegura que el padding no afecte el ancho del menú */
 }
+
 .el-menu-item {
-    height: 36px;
-    line-height: 36px;
+  padding: 4px 12px;
+  /* Reduce el padding vertical a la mitad */
+  font-size: 14px;
+  /* Ajusta el tamaño del texto si es necesario */
+  line-height: 16px;
+  /* Asegúrate de que la línea del texto sea más compacta */
+  height: auto;
+  /* Asegura que la altura se ajuste automáticamente */
 }
-.w-full { width: 100%; }
-.mb-4 { margin-bottom: 1rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.p-2 { padding: 0.5rem; }
-.p-4 { padding: 1rem; }
-.h-full { height: 100%; }
-.border { border: 1px solid #dcdfe6; }
-.rounded-lg { border-radius: 8px; }
-.bg-gray-50 { background-color: #f9fafb; }
-.font-semibold { font-weight: 600; }
-.cursor-pointer { cursor: pointer; }
+
+.menu-item-submenu {
+  padding: 4px 12px;
+  /* Reduce el padding */
+  font-size: 14px;
+  /* Ajusta el tamaño del texto */
+  line-height: 16px;
+  /* Línea del texto compacta */
+  height: auto;
+  /* Ajusta la altura automáticamente */
+}
+
+.el-submenu .el-menu-item {
+  padding: 4px 12px;
+  /* Aplica el mismo padding a los items del submenu */
+  font-size: 14px;
+  /* Asegura que el texto tenga el mismo tamaño */
+  line-height: 16px;
+  /* Línea del texto compacta */
+  height: auto;
+  /* Ajusta la altura automáticamente */
+}
+
+.el-submenu__title {
+  padding: 4px 12px;
+  /* Aplica el mismo padding a la cabecera del submenu */
+  font-size: 14px;
+  /* Asegura que el texto tenga el mismo tamaño */
+  line-height: 16px;
+  /* Línea del texto compacta */
+  height: auto;
+  /* Ajusta la altura automáticamente */
+}
+
+.icon-style {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  /* Asegura que el color sea el mismo */
+  margin-right: 2px;
+  /* Espacio a la derecha */
+  vertical-align: middle;
+  /* Alineación vertical */
+}
+
+.el-icon {
+  font-size: 16px;
+  /* Ajusta el tamaño de la fuente */
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+/* --------------------------------------------------------- */
+
+.flex-container {
+  display: flex;
+  align-items: center;
+  /* Centra verticalmente */
+  gap: 8px;
+  /* Espacio entre el texto y el input */
+  flex-wrap: wrap;
+  /* Permite que los elementos bajen si no hay espacio */
+}
+
+.flex-container span {
+  white-space: nowrap;
+  /* Evita que el texto se divida en varias líneas */
+}
+
+.el-input,
+.el-cascader {
+  flex: 1;
+  /* Hace que los inputs ocupen el espacio disponible */
+  min-width: 150px;
+  /* Evita que se vuelvan demasiado pequeños */
+}
 </style>

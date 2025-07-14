@@ -1,5 +1,7 @@
+
+<!--Elemento para boton de tras paso de informacion-->
 <script setup>
-    import { DArrowRight } from '@element-plus/icons-vue';
+    import traspasoInfo from '@/Components/Biotica/Icons/TraspasoInfo.vue';
 
     // Declaramos los eventos que este componente puede emitir
     const emit = defineEmits(['traspasa']);
@@ -17,7 +19,7 @@
                     icon="el-icon-d-arrow-right"
                     type="primary">
             <el-icon>
-                <DArrowRight />
+                <traspasoInfo />
             </el-icon>
         </el-button>
     </el-tooltip>

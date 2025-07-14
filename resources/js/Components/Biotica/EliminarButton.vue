@@ -1,3 +1,4 @@
+<!--Elemento para el formato del boton eliminar-->
 <template>
   <el-tooltip class="item" effect="dark" content="Eliminar" :placement="toolPosicion">
     <el-button circle type="danger" class="float-right" @click="handleEliminar" :disabled = habActTax>

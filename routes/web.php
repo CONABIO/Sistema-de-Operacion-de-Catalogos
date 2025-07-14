@@ -18,6 +18,7 @@ use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 
 
+
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
         'canLogin' => Route::has('login'),
@@ -95,9 +96,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/categoria-taxonomica', [CategoriaTaxonomicaController::class, 'index'])->name('categoria-taxonomica.index');
 
 
-    Route::get('/Nombre', [NombresController::class, 'Index'])->name('nombreTax.index');
-    Route::get('/cargar-nomArb', [NombresController::class, 'fetchNomArb']);
-    Route::get('/cargar-hijos-nomArb/{id}', [NombresController::class, 'fetchHijos']);
+
+     Route::get('/Nombre',[NombresArbolController::class, 'Index'])->name('nombreTax.index');
+     Route::get('/cargar-nomArb',[NombresArbolController::class, 'fetchNomArb']);
+     Route::get('/cargar-hijos-nomArb/{id}',[NombresArbolController::class, 'fetchHijos']);
+
 
     Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
     Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
@@ -140,6 +143,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
+
+    //---------------------------------------------------------
+    Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
+    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelacionesInicio']);
+    
+});
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');
 
@@ -157,3 +166,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
 });
+

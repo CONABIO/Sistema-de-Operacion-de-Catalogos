@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CuerpoAutor from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue'; 
+import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 
 </script>
 
@@ -10,7 +11,9 @@ import CuerpoAutor from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
         
         <CuerpoAutor /> 
 
-    </AppLayout>
+
+    
+    </CuerpoGen>
 </template>
 
 <style scoped>
