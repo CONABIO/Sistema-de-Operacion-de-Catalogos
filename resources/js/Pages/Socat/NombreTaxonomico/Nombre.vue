@@ -2,7 +2,7 @@
 import { ref, onMounted, triggerRef, h } from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; // Asegúrate de que la ruta sea correcta
+import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 
 import DialogRelacionesTax from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
@@ -26,7 +26,6 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -48,6 +47,7 @@ const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
 
+
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -56,6 +56,7 @@ const notificacionDuracion = ref(5000);
 
 const dialogFormVisibleAlta = ref(false); // Para controlar la visibilidad del modal
 const taxonAct = ref([]); // Agrega esta línea
+
 const data = ref([]);
 const categ = ref(null);
 const catalogos = ref('');
@@ -1033,73 +1034,34 @@ const fetchFilteredData = async () => {
                     <span class="demo-input-label">Taxón:</span>
                     <span class="demo-input-label">{{ taxonAct?.completo?.Nombre }}</span>
                   </div>
-                </el-header>
-                <br/>
-                <br/>
-                <el-main width="500px" style="height: 500px;">
-                  <span class="demo-input-label">Relaciones nomenclaturales</span>
-                    <el-table 
-                      :data="tablaNomenclatura"
-                      :border="true"
-                      height="200"
-                      style="width: 100%;"
-                      highlight-current-row
-                      :cell-class-name="classChecker">
-                      <!-- Columnas deben ir directamente aquí -->
-                      <el-table-column
-                        v-for="(column) in columnasNom"
-                        :key="column.label"
-                        :label="column.label"
-                        :prop="column.prop"
-                        :column-key="column.prop"
-                        :min-width="column.minWidth"
-                        :sortable="column.sortable"
-                        :align="column.align"
-                        :header-align="column.align"
-                        :fixed="column.fixed || null"
-                        :formatter="column.formatter || null"
-                      ></el-table-column>
-                      <!-- Columna adicional -->
-                      <el-table-column align="center" style="width: 80px;" prop="Biblio" label="Referencia">
-                        <template #default>
-                          <span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16">
-                              <path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
-                            </svg>
-                          </span>
-                        </template>
+                </template>
+              </el-tree>
+          </el-aside>
+          
+          <el-container v-if="mostrar && taxonAct" class="p-4">
+            <el-main>
+                <div class="mb-6">
+                    <p><span class="font-semibold">Categoría:</span> {{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</p>
+                    <p><span class="font-semibold">Nombre:</span> {{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</p>
+                    <p><span class="font-semibold">Taxón:</span> {{ taxonAct.completo.Nombre }}</p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-2">Relaciones nomenclaturales</h3>
+                    <el-table :data="tablaNomenclatura" border height="200" style="width: 100%;">
+                      <el-table-column v-for="col in columnasNom" :key="col.prop" v-bind="col" />
+                      <el-table-column align="center" width="100" prop="Biblio" label="Referencia">
+                        <template #default><span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16"><path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span></template>
                       </el-table-column>
-                      <!-- Contenido personalizado cuando no hay datos -->
-                      <template #empty>
-                        <div>No hay datos para mostrar</div>
-                      </template>
+                      <template #empty><div>No hay datos para mostrar</div></template>
                     </el-table>
-                  <br>
-                  <span class="demo-input-label">Referencias asocidas</span>
-                    <el-table
-                      :data="tablaReferencias"
-                      :border="true"
-                      height="400"
-                      style="width: 100%;"
-                      highlight-current-row
-                      :cell-class-name="classChecker"
-                    >
-                      <el-table-column
-                        v-for="(column) in columnasRef"
-                        :key="column.label"
-                        :label="column.label"
-                        :prop="column.prop"
-                        :column-key="column.prop"
-                        :min-width="column.minWidth"
-                        :sortable="column.sortable"
-                        :align="column.align"
-                        :header-align="column.align"
-                        :fixed="column.fixed || null"
-                        :formatter="column.formatter || null"
-                      ></el-table-column>
-                      <template #empty>
-                        <div>No hay referencias asociadas</div>
-                      </template>
+                </div>
+
+                <div>
+                    <h3 class="font-semibold mb-2">Referencias asociadas</h3>
+                    <el-table :data="tablaReferencias" border height="250" style="width: 100%;">
+                      <el-table-column v-for="col in columnasRef" :key="col.prop" v-bind="col" />
+                      <template #empty><div>No hay referencias asociadas</div></template>
                     </el-table>
                 </el-main>                  
               </el-container>
@@ -1119,6 +1081,7 @@ const fetchFilteredData = async () => {
       </el-container>
     
   </CuerpoGen>
+  
   <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false">
     <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
   </DialogForm>
@@ -1213,15 +1176,31 @@ const fetchFilteredData = async () => {
   overflow: auto;
 }*/
 
-:deep(.el-tree-node.is-current > .el-tree-node__content){
-  background-color: rgb(203, 233, 200) !important;
-  color: #0d6efd !important;            /* azul para texto */
+.main-content-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 705px; 
 }
 
-/*
-:deep(.el-tree-node__content .highlight-node) {
-  color: #a52f2f !important;  /* Fondo 
-}*/
+.filters-section {
+  margin-bottom: 20px;
+  flex-shrink: 0; 
+}
+
+.main-view-section {
+  flex-grow: 1; 
+  min-height: 0; 
+}
+
+
+:deep(.el-tree-node.is-current > .el-tree-node__content){
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+}
 
 :deep(.highlight-node){
   color: #a52f2f !important;
@@ -1229,142 +1208,45 @@ const fetchFilteredData = async () => {
 
 .tree-node-wrapper {
   display: flex;
-  align-items: center;
-  /* Alinea verticalmente los elementos*/ 
+  align-items: center; 
   gap: 8px;
-  /* Espacio entre el ícono y el texto */
   white-space: nowrap;
-  /* Evita que el texto se divida en varias líneas */
+  font-size: 14px;
 }
 
 .tree-node-logo {
   width: 20px;
-  /* Ajusta según el tamaño de tus íconos */
   height: 20px;
   flex-shrink: 0;
-  /* Evita que el ícono se reduzca de tamaño */
 }
 
-.tree-node-label {
-  font-size: 14px;
-  line-height: 20px;
-  /* Ajusta el alto del texto para que coincida con el ícono */
-}
-
-.el-tree-node:hover {
-  background-color: transparent !important;
-}
-
-:deep(.el-table .greenClass) {
-  background: rgb(90, 177, 90);
-}
-
-:deep(.el-table .redClass) {
-  background: rgb(226, 119, 119);
-}
+:deep(.el-table .greenClass) { background: rgb(90, 177, 90); }
+:deep(.el-table .redClass) { background: rgb(226, 119, 119); }
 
 .context-menu {
-  display: block !important;
-  visibility: visible !important;
   position: absolute;
   z-index: 9999;
-  background-color: hsl(223, 41%, 93%);
+  background-color: white;
   border: 1px solid #dcdfe6;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  /* Añade un relleno para que no se vea tan estrecho */
-  min-width: 190px;
-  /* Ajusta el ancho mínimo */
-  height: auto;
-  /* Asegúrate de que la altura se ajuste al contenido */
-  box-sizing: border-box;
-  /* Asegura que el padding no afecte el ancho del menú */
+  padding: 5px 0;
+  border-radius: 4px;
+  min-width: 180px;
 }
-
 .el-menu-item {
-  padding: 4px 12px;
-  /* Reduce el padding vertical a la mitad */
-  font-size: 14px;
-  /* Ajusta el tamaño del texto si es necesario */
-  line-height: 16px;
-  /* Asegúrate de que la línea del texto sea más compacta */
-  height: auto;
-  /* Asegura que la altura se ajuste automáticamente */
+    height: 36px;
+    line-height: 36px;
 }
-
-.menu-item-submenu {
-  padding: 4px 12px;
-  /* Reduce el padding */
-  font-size: 14px;
-  /* Ajusta el tamaño del texto */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.el-submenu .el-menu-item {
-  padding: 4px 12px;
-  /* Aplica el mismo padding a los items del submenu */
-  font-size: 14px;
-  /* Asegura que el texto tenga el mismo tamaño */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.el-submenu__title {
-  padding: 4px 12px;
-  /* Aplica el mismo padding a la cabecera del submenu */
-  font-size: 14px;
-  /* Asegura que el texto tenga el mismo tamaño */
-  line-height: 16px;
-  /* Línea del texto compacta */
-  height: auto;
-  /* Ajusta la altura automáticamente */
-}
-
-.icon-style {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  /* Asegura que el color sea el mismo */
-  margin-right: 2px;
-  /* Espacio a la derecha */
-  vertical-align: middle;
-  /* Alineación vertical */
-}
-
-.el-icon {
-  font-size: 16px;
-  /* Ajusta el tamaño de la fuente */
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-/* --------------------------------------------------------- */
-
-.flex-container {
-  display: flex;
-  align-items: center;
-  /* Centra verticalmente */
-  gap: 8px;
-  /* Espacio entre el texto y el input */
-  flex-wrap: wrap;
-  /* Permite que los elementos bajen si no hay espacio */
-}
-
-.flex-container span {
-  white-space: nowrap;
-  /* Evita que el texto se divida en varias líneas */
-}
-
-.el-input,
-.el-cascader {
-  flex: 1;
-  /* Hace que los inputs ocupen el espacio disponible */
-  min-width: 150px;
-  /* Evita que se vuelvan demasiado pequeños */
-}
+.w-full { width: 100%; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.p-2 { padding: 0.5rem; }
+.p-4 { padding: 1rem; }
+.h-full { height: 100%; }
+.border { border: 1px solid #dcdfe6; }
+.rounded-lg { border-radius: 8px; }
+.bg-gray-50 { background-color: #f9fafb; }
+.font-semibold { font-weight: 600; }
+.cursor-pointer { cursor: pointer; }
 </style>

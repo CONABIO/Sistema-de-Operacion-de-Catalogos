@@ -7,7 +7,7 @@ import CuerpoGrupo from '@/Pages/Socat/Grupos/CuerpoGrupoTaxon.vue';
 </script>
 
 <template>
-    <AppLayout title="GrupoTaxonomico">
+    <AppLayout title="Catálogo de grupos taxonómicos">
         
         
         <CuerpoGrupo />

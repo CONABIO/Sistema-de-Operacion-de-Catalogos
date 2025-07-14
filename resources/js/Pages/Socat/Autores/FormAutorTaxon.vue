@@ -1,7 +1,7 @@
 <script setup>
-import { ref, watch, nextTick, computed } from 'vue'; 
-import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue'; 
-import { ElMessage } from 'element-plus'; 
+import { ref, watch, nextTick, computed } from 'vue';
+import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue';
+import { ElMessage } from 'element-plus';
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
 
 const props = defineProps({
@@ -10,7 +10,7 @@ const props = defineProps({
     autTaxEdit: Object,
 });
 
-const emit = defineEmits(['cerrar', 'formSubmited']); 
+const emit = defineEmits(['cerrar', 'formSubmited']);
 
 const dialogVisible = ref(false);
 
@@ -18,7 +18,7 @@ const autorTax = ref({ nombreAutoridad: '', nombreCompleto: '', grupoTaxonomico:
 const autorTaxFormRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar nuevo autor taxonómico' : 'Modificar autor taxonómico';
+    return props.accion === 'crear' ? 'Ingresar una nueva autoridad taxonómica' : 'Modificar la autoridad taxonómica seleccionada';
 });
 
 const rules = {
@@ -36,7 +36,7 @@ const rules = {
 };
 
 watch(() => props.visible, (newVal) => {
-    dialogVisible.value = newVal; 
+    dialogVisible.value = newVal;
     if (newVal) {
         if (props.accion === 'editar' && props.autTaxEdit) {
             autorTax.value = {
@@ -44,7 +44,7 @@ watch(() => props.visible, (newVal) => {
                 nombreCompleto: props.autTaxEdit?.NombreCompleto || '',
                 grupoTaxonomico: props.autTaxEdit?.GrupoTaxonomico || '',
             };
-        } else { 
+        } else {
             autorTax.value = { nombreAutoridad: '', nombreCompleto: '', grupoTaxonomico: '' };
         }
         nextTick(() => {
@@ -68,9 +68,9 @@ const intentarGuardar = async () => {
         const isValid = await autorTaxFormRef.value.validate();
         if (isValid) {
             const datosParaEnviar = {
-                ...autorTax.value, 
+                ...autorTax.value,
                 idParaEditar: props.accion === 'editar' ? props.autTaxEdit?.IdAutorTaxon : null,
-                accionOriginal: props.accion 
+                accionOriginal: props.accion
             };
             emit('formSubmited', datosParaEnviar);
         } else {
@@ -87,46 +87,31 @@ const intentarGuardar = async () => {
         <div class="dialog-header">
             <h3>{{ dialogTitle }}</h3>
         </div>
+
         <div class="header">
+            <div class="form-actions">
+                <GuardarButton @click="intentarGuardar" />
+            </div>
             <div class="dialog-body">
-                <el-form 
-                    :model="autorTax" 
-                    :rules="rules" 
-                    ref="autorTaxFormRef" 
-                    label-position="top" 
-                    @submit.prevent="intentarGuardar" 
-                >
-                    <el-form-item label="Nombre de la autoridad" prop="nombreAutoridad">
-                        <el-input 
-                            type="text" 
-                            maxlength="100" 
-                            v-model="autorTax.nombreAutoridad" 
-                            show-word-limit 
-                        ></el-input>
+                <el-form :model="autorTax" :rules="rules" ref="autorTaxFormRef" label-position="top"
+                    @submit.prevent="intentarGuardar">
+                    <el-form-item label="NombreAutoridad" prop="nombreAutoridad">
+                        <el-input type="text" maxlength="100" v-model="autorTax.nombreAutoridad"
+                            show-word-limit></el-input>
                     </el-form-item>
 
-                    <el-form-item label="Nombre completo" prop="nombreCompleto">
-                        <el-input 
-                            type="text" 
-                            maxlength="255" 
-                            show-word-limit 
-                            v-model="autorTax.nombreCompleto" 
-                        ></el-input>
+                    <el-form-item label="NombreCompleto" prop="nombreCompleto">
+                        <el-input type="text" maxlength="255" show-word-limit
+                            v-model="autorTax.nombreCompleto"></el-input>
                     </el-form-item>
 
-                    <el-form-item label="Grupo taxonómico" prop="grupoTaxonomico">
-                        <el-input 
-                            type="text" 
-                            maxlength="255" 
-                            show-word-limit 
-                            v-model="autorTax.grupoTaxonomico" 
-                        ></el-input>
+                    <el-form-item label="GrupoTaxonomico" prop="grupoTaxonomico">
+                        <el-input type="text" maxlength="255" show-word-limit
+                            v-model="autorTax.grupoTaxonomico"></el-input>
                     </el-form-item>
                 </el-form>
 
-                <div class="form-actions">
-                    <GuardarButton @click="intentarGuardar" />
-                </div>
+
             </div>
         </div>
     </DialogGeneral>
@@ -152,17 +137,18 @@ const intentarGuardar = async () => {
     border: 3px;
     text-align: left;
     border-radius: 10px;
-    background-color: #ffffff; 
+    background-color: #ffffff;
     padding: 20px 24px;
     text-align: left;
-    position: relative; 
-    z-index: 10; 
+    position: relative;
+    z-index: 10;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .dialog-header h3 {
     margin: 0;
     font-size: 1.25rem;
+
     font-weight: 600;
     color: #303133;
 }
@@ -174,7 +160,8 @@ const intentarGuardar = async () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
 
 :deep(.el-form-item) {

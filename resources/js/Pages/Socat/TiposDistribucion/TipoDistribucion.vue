@@ -1,34 +1,30 @@
 <script setup>
-import { ref, watchEffect, onMounted, h } from 'vue';
-import { usePage } from '@inertiajs/inertia-vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import { ref, h } from 'vue';
+import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
-import FiltrarPor from '@/Components/Biotica/FiltrarPorInput.vue';
+import { ElMessageBox, ElTableColumn } from 'element-plus';
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import FormTipoDistribucion from '@/Pages/Socat/TiposDistribucion/FormTipoDistribucion.vue';
-import { ElMessageBox, ElMessage } from 'element-plus';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
-const { datosTipoDistribucion } = usePage().props;
+const tablaRef = ref(null);
 const currentData = ref([]);
-const currentPage = ref(1);
 const totalItems = ref(0);
-const itemsPerPage = 100;
-const prevPageUrl = ref(null);
-const nextPageUrl = ref(null);
-const tipoDistribucion = ref('');
 const modalVisible = ref(false);
 const tipoDistribucionEditado = ref(null);
-const sorting = ref({ column: null, order: null });
+
+const columnasDefinidas = ref([
+    { prop: 'Descripcion', label: 'Descripcion', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
+]);
+
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
 const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
@@ -39,66 +35,18 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
-const fetchFilteredData = async () => {
-    try {
-        const response = await axios.get('/busca-tipo-distribucion', {
-            params: {
-                tipoDistribucion: tipoDistribucion.value,
-                page: currentPage.value,
-                sortBy: sorting.value.column,
-                sortOrder: sorting.value.order,
-                perPage: itemsPerPage,
-            }
-        });
-        currentData.value = response.data.data;
-        totalItems.value = response.data.totalItems;
-        prevPageUrl.value = response.data.prevPageUrl;
-        nextPageUrl.value = response.data.nextPageUrl;
-    } catch (error) {
-        console.error('Error al obtener los datos:', error);
-    }
-};
-
-const handleSortChange = ({ prop, order }) => {
-    sorting.value.column = prop;
-    sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-    if (!order) {
-        sorting.value.column = null;
-        sorting.value.order = null;
-    }
-    currentPage.value = 1;
-    fetchFilteredData();
-};
-
 
 const nuevoTipoDistribucion = () => {
     tipoDistribucionEditado.value = null;
     modalVisible.value = true;
 };
-
-
 const editarTipoDistribucion = (item) => {
     tipoDistribucionEditado.value = item;
     modalVisible.value = true;
 };
-
-
-const buscarPor = () => {
-    currentPage.value = 1;
-    fetchFilteredData();
-};
-
-
-const handlePageChange = (page) => {
-    currentPage.value = page;
-    fetchFilteredData();
-};
-
-
 const cerrarModal = () => {
     modalVisible.value = false;
 };
-
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
@@ -108,11 +56,14 @@ const handleFormSubmited = (datosDelFormulario) => {
             const payload = { Descripcion: datosDelFormulario.Descripcion };
             if (datosDelFormulario.accionOriginal === 'crear') {
                 await axios.post('/tipos-distribucion', payload);
+                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
+                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
             }
-            await fetchFilteredData();
-            mostrarNotificacion("¡Operación Exitosa!", "Los cambios se guardaron correctamente.", "success");
+            if (tablaRef.value) {
+                tablaRef.value.fetchData();
+            }
         } catch (error) {
             if (error.response && error.response.status === 422) {
                 let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
@@ -123,19 +74,24 @@ const handleFormSubmited = (datosDelFormulario) => {
         }
     };
     const cancelarGuardado = () => { ElMessageBox.close(); };
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.Descripcion || "nuevo registro"}"?`;
-    ElMessageBox({
-        title: 'Confirmar Guardado', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-        message: h('div', { class: 'custom-message-content' }, [
-            h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-            ]),
-            h('div', { class: 'footer-buttons' }, [
-                h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
+    if (datosDelFormulario.accionOriginal === 'crear') {
+        procederConGuardado();
+    } else {
+        const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.Descripcion || "nuevo registro"}"?`;
+        ElMessageBox({
+            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            message: h('div', { class: 'custom-message-content' }, [
+                h('div', { class: 'body-content' }, [
+                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                ]),
+                h('div', { class: 'footer-buttons' }, [
+                    h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
+                ])
             ])
-        ])
-    }).catch(() => {  });
+        }).catch(() => { });
+    }
+
 };
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
@@ -145,7 +101,9 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
             const nombreItem = itemAEliminar ? `"${itemAEliminar.Descripcion}"` : 'el registro';
             await axios.delete(`/tipos-distribucion/${idTipoDistribucion}`);
-            await fetchFilteredData();
+            if (tablaRef.value) {
+                tablaRef.value.fetchData();
+            }
             mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
         } catch (apiError) {
             mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
@@ -167,98 +125,40 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
         ])
     }).catch(() => { });
 };
-
-const props = defineProps({
-    datosTipoDistribucion: { type: Object, required: false },
-});
-
-watchEffect(() => {
-    if (props.datosTipoDistribucion) {
-        fetchFilteredData();
-    }
-});
-onMounted(() => {
-    currentData.value = datosTipoDistribucion?.data || [];
-    totalItems.value = datosTipoDistribucion?.totalItems || 0;
-    currentPage.value = datosTipoDistribucion?.currentPage || 1;
-    prevPageUrl.value = datosTipoDistribucion?.prevPageUrl || null;
-    nextPageUrl.value = datosTipoDistribucion?.nextPageUrl || null;
-    if (!currentData.value.length) {
-        fetchFilteredData();
-    }
-});
 </script>
 
 <template>
-    <AppLayout title="Tipos de Distribución">
-        
-        <div class="app-container">
-            
-
-            <div class="page-title-header">
-                <h1 class="page-main-title-class"> Catálogo de tipos de distribución</h1>
-            </div>
-            <div class="content-wrapper2">
-            <div class="content-wrapper">
-                <div class="table-wrapper">
-                    <el-card class="box-card">
-                        <template #header>
-                            <div class="header-container">
-                                
-                                <div class="right">
-                                    <FiltrarPor v-model:busca="tipoDistribucion" @update:busca="buscarPor()" />
-                                </div>
-                                <div class="left">
-                                    <NuevoButton @crear="nuevoTipoDistribucion" />
-                                </div>
+    <LayoutCuerpo :usar-app-layout="true" tituloPag="Tipos de Distribución"
+        tituloArea="Catálogo de tipos de distribución">
+        <div class="h-full flex flex-col">
+            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
+                @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
+                @nuevo-item="nuevoTipoDistribucion">
+                <template #expand-column>
+                    <el-table-column type="expand">
+                        <template #default="{ row }">
+                            <div class="expand-content-detail">
+                                <p><strong>IdTipoDistribucion:</strong> {{ row.IdTipoDistribucion }}</p>
+                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                             </div>
                         </template>
-                        <div class="table-responsive">
-                            <el-table :data="currentData" :border="true" height="400" style="width: 100%"
-                                :highlight-current-row="true" @sort-change="handleSortChange">
-                                <el-table-column type="expand">
-                                    <template #default="{ row }">
-                                        <div class="bg-gray-50 p-4 rounded-md">
-                                            <p><strong>Fecha de Captura:</strong> {{ row.FechaCaptura }}</p>
-                                            <p><strong>Fecha de Modificación:</strong> {{ row.FechaModificacion }}</p>
-                                        </div>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column prop="Descripcion" label="Descripción" min-width="120"
-                                    sortable="custom" align="center"></el-table-column>
-                                <el-table-column label="Acciones" width="120">
-                                    <template #default="{ row }">
-                                        <div class="flex justify-around">
-                                            <EditarButton @editar="editarTipoDistribucion(row)" />
-                                            <EliminarButton
-                                                @eliminar="eliminarTipoDistribucion(row.IdTipoDistribucion)" />
-                                        </div>
-                                    </template>
-                                </el-table-column>
-                            </el-table>
-                        </div>
-                    </el-card>
-                    <div v-if="totalItems > 0" class="pagination-container-wrapper">
-                        <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                            @current-change="handlePageChange" layout="prev, pager, next, total" background
-                            class="main-pagination-style">
-                        </el-pagination>
-                    </div>
-                </div>
-            </div>
+                    </el-table-column>
+                </template>
+            </TablaFiltrable>
         </div>
 
-            <FormTipoDistribucion :visible="modalVisible" :tipoDistEdit="tipoDistribucionEditado"
-                :accion="tipoDistribucionEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"
-                @formSubmited="handleFormSubmited" />
+        <FormTipoDistribucion :visible="modalVisible" :tipoDistEdit="tipoDistribucionEditado"
+            :accion="tipoDistribucionEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"
+            @formSubmited="handleFormSubmited" />
 
-            <Teleport to="body">
-                <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                    :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                    @close="cerrarNotificacion" />
-            </Teleport>
-        </div>
-    </AppLayout>
+        <Teleport to="body">
+            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+                @close="cerrarNotificacion" />
+        </Teleport>
+    </LayoutCuerpo>
 </template>
 
 <style>
@@ -314,162 +214,9 @@ onMounted(() => {
 </style>
 
 <style scoped>
-.page-title-header {
-  background-color: #d9e1eb;
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.page-title-header .page-main-title-class {
-  color: rgb(31, 30, 30) !important;
-  margin: 0 !important;
-  font-size: 1.25rem !important;
-}
-
-.content-wrapper2 {
-    width: 100%;
-    max-width: 1600px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-
-.page-main-title-class {
-    font-size: 22px !important;
-    font-weight: 600 !important;
-    color: #303133 !important;
-    margin-bottom: 20px !important;
-    width: 1550px;
-}
-
-.app-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f0f2f5;
-    align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.content-wrapper {
-    width: 100%;
-    max-width: 1600px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.page-main-title-class {
-    font-size: 22px !important;
-    font-weight: 600 !important;
-    color: #303133 !important;
-    margin-bottom: 20px !important;
-}
-
-.table-wrapper {
-    width: 100%;
-    margin-top: 0;
-}
-
-.el-card.box-card-inner-table {
-    border: 1px solid #e4e7ed !important;
-    box-shadow: none !important;
-    border-radius: 6px !important;
-    overflow: hidden;
-}
-
-:deep(.el-card__header) {
-    padding: 15px 20px !important;
-    border-bottom: 1px solid #e4e7ed !important;
-    background-color: #fff;
-}
-
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.table-responsive {
-    overflow-x: auto;
-}
-
-:deep(.el-table) {
-    border-radius: 0 !important;
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: 1px solid #ebeef5 !important;
-    box-shadow: none !important;
-}
-
-:deep(.el-table th.el-table__cell) {
-    background-color: #fafafa !important;
-    color: #606266 !important;
-    font-weight: 500 !important;
-    text-align: center !important;
-    padding: 10px 10px !important;
-    font-size: 13px !important;
-    border-bottom: 1px solid #ebeef5 !important;
-}
-
-:deep(.el-table td.el-table__cell) {
-    padding: 10px 10px !important;
-    font-size: 13px !important;
-    color: #303133;
-    border-bottom: 1px solid #ebeef5 !important;
-}
-
-:deep(.el-table .el-table__row:hover > td.el-table__cell) {
-    background-color: #f5f7fa !important;
-}
-
 .expand-content-detail {
     padding: 10px 15px;
     background-color: #fdfdfd;
     font-size: 13px;
-}
-
-.action-buttons-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-}
-
-.pagination-container-wrapper {
-    display: flex;
-    justify-content: flex-start;
-    padding-top: 20px;
-    margin-top: 0;
-}
-
-:deep(.main-pagination-style button),
-:deep(.main-pagination-style .el-pager li) {
-    background-color: #fff !important;
-    border: 1px solid #dcdfe6 !important;
-    border-radius: 4px !important;
-    font-size: 13px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-    line-height: 28px !important;
-}
-
-:deep(.main-pagination-style .el-pager li.is-active) {
-    background-color: #409eff !important;
-    color: white !important;
-    border-color: #409eff !important;
 }
 </style>

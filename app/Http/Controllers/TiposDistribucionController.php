@@ -10,11 +10,7 @@ use Inertia\Inertia;
 
 class TiposDistribucionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         Log::info("Mostrando el índice de TipoDistribucion");
@@ -32,37 +28,24 @@ class TiposDistribucionController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function create()
     {
         return response()->json(['message' => 'Método create no implementado'], 501);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         Log::info("Creando un nuevo TipoDistribucion");
 
         $request->validate([
             'Descripcion' => 'required|string|max:255',
-            // 'FechaCaptura' => 'nullable|date', // Ajusta las reglas de validación según sea necesario
-            // 'FechaModificacion' => 'nullable|date', // Ajusta las reglas de validación según sea necesario
         ]);
 
         try {
             $tipoDistribucion = new TipoDistribucion();
             $tipoDistribucion->Descripcion = $request->input('Descripcion');
-            $tipoDistribucion->FechaCaptura = $request->input('FechaCaptura'); // Si recibes la fecha desde el frontend
-            $tipoDistribucion->FechaModificacion = $request->input('FechaModificacion'); // Si recibes la fecha desde el frontend
             $tipoDistribucion->save();
 
             return response()->json([
@@ -75,12 +58,7 @@ class TiposDistribucionController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         $tipoDistribucion = TipoDistribucion::find($id);
@@ -92,24 +70,13 @@ class TiposDistribucionController extends Controller
         return response()->json($tipoDistribucion);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function edit($id)
     {
         return response()->json(['message' => 'Método edit no implementado'], 501);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $IdTipoDistribucion
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, $IdTipoDistribucion)
     {
         Log::info("Actualizando TipoDistribucion con ID: {$IdTipoDistribucion}");
@@ -123,14 +90,11 @@ class TiposDistribucionController extends Controller
 
         $request->validate([
             'Descripcion' => 'required|string|max:255',
-            // 'FechaCaptura' => 'nullable|date', // Ajusta las reglas de validación según sea necesario
-            // 'FechaModificacion' => 'nullable|date', // Ajusta las reglas de validación según sea necesario
+
         ]);
 
         try {
             $tipoDistribucion->Descripcion = $request->input('Descripcion');
-            $tipoDistribucion->FechaCaptura = $request->input('FechaCaptura'); // Si recibes la fecha desde el frontend
-            $tipoDistribucion->FechaModificacion = $request->input('FechaModificacion'); // Si recibes la fecha desde el frontend
             $tipoDistribucion->save();
 
             Log::info("TipoDistribucion actualizado con ID: {$IdTipoDistribucion}");
@@ -144,12 +108,7 @@ class TiposDistribucionController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $IdTipoDistribucion
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy($IdTipoDistribucion)
     {
         Log::info("Eliminando TipoDistribucion con ID: {$IdTipoDistribucion}");
@@ -168,33 +127,51 @@ class TiposDistribucionController extends Controller
     public function buscaTipoDistribucion(Request $request)
     {
         $validated = $request->validate([
-            'tipoDistribucion' => 'nullable|string',
-            'page' => 'integer|min:1',
-            'perPage' => 'integer|min:1',
-            'sortBy' => 'nullable|string|in:Descripcion', 
-            'sortOrder' => 'nullable|string|in:asc,desc',
+            'filtros' => 'nullable|array',
+            'filtros.Descripcion' => 'nullable|string',
+            'tipo_busqueda' => 'nullable|string|in:inicia,contiene,termina',
+            'page' => 'nullable|integer|min:1',
+            'perPage' => 'nullable|integer|min:1',
+            'sortBy' => 'nullable|string|in:Descripcion',
+            'sortOrder' => 'nullable|string|in:asc,desc,ascending,descending',
         ]);
-    
-        $tipoDistribucion = $validated['tipoDistribucion'] ?? null;
+
+        $filtros = $validated['filtros'] ?? [];
+        $tipo_busqueda = $validated['tipo_busqueda'] ?? 'contiene';
         $page = $validated['page'] ?? 1;
         $perPage = $validated['perPage'] ?? 100;
         $sortBy = $validated['sortBy'] ?? null;
-        $sortOrder = $validated['sortOrder'] ?? null;
-    
+        $sortOrderInput = $validated['sortOrder'] ?? null;
+
         $query = TipoDistribucion::query();
-    
-        if ($tipoDistribucion) {
-            $query->where(DB::raw('LOWER(Descripcion)'), 'like', '%' . strtolower($tipoDistribucion) . '%');
+
+        foreach ($filtros as $campo => $valor) {
+            if (!empty($valor)) {
+                if ($campo === 'Descripcion') {
+                    switch ($tipo_busqueda) {
+                        case 'inicia':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', strtolower($valor) . '%');
+                            break;
+                        case 'termina':
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
+                            break;
+                        default: 
+                            $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
+                            break;
+                    }
+                }
+            }
         }
-    
-        if ($sortBy && $sortOrder) {
+
+        if ($sortBy && $sortOrderInput) {
+            $sortOrder = (in_array($sortOrderInput, ['ascending', 'asc'])) ? 'asc' : 'desc';
             $query->orderByRaw("LOWER(`{$sortBy}`) {$sortOrder}");
         } else {
             $query->orderByRaw('LOWER(`Descripcion`) asc');
         }
-    
+
         $result = $query->paginate($perPage, ['*'], 'page', $page);
-    
+
         return response()->json([
             'data' => $result->items(),
             'totalItems' => $result->total(),
