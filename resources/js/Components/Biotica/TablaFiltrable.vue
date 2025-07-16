@@ -7,6 +7,8 @@ import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+
 
 const props = defineProps({
   columnas: { type: Array, required: true },
@@ -116,10 +118,12 @@ defineExpose({ fetchData });
             <TipoBusqueda v-model="tipoDeBusqueda" />
           </slot>
         </div>
-        <div class="left">
-          <slot name="header-actions">
-            <NuevoButton @crear="onNuevo" />
-          </slot>
+        <div class="left" >
+
+          <div class="form-actions">
+               <NuevoButton @crear="onNuevo" />
+               <BotonSalir />
+            </div>
         </div>
       </div>
     </template>
@@ -309,5 +313,13 @@ defineExpose({ fetchData });
 }
 .header-filter-button {
   flex-shrink: 0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+    margin-right: 35px;
+    gap: 4px;
 }
 </style>

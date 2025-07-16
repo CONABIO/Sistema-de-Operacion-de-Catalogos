@@ -3,6 +3,8 @@ import { ref, watch, nextTick, computed } from 'vue';
 import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue'; 
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
 import { ElMessage } from 'element-plus';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     visible: Boolean,
@@ -80,6 +82,10 @@ const intentarGuardar = async () => {
     }
 };
 
+const cerrarDialogo = () => {
+    emit('cerrar');
+};
+
 </script>
 
 <template>
@@ -89,7 +95,8 @@ const intentarGuardar = async () => {
             </div>
         <div class="header">
             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar" />
+                <GuardarButton @click="intentarGuardar"/>
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
@@ -157,7 +164,9 @@ const intentarGuardar = async () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
+    gap: 25px;
 }
+
 
 
 :deep(.el-form-item) {

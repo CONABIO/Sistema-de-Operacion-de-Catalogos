@@ -1,10 +1,9 @@
-<!--Elemento para generar las ventanas modales de los componentes de biotica-->
 <script setup>
 import { defineModel } from 'vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
 
-//Definición de variables 
+
 const props = defineProps({
     botCerrar: {
         type: Boolean,
@@ -36,12 +35,12 @@ const dialogFormVisible = defineModel();
             :close-on-press-escape="pressEsc" 
             class="my-responsive-dialog"
         >
-            <template #header="{ close, titleId, titleClass }">
+            <!-- <template #header="{ close, titleId, titleClass }">
                 <div class="my-dialog-header">
                     <slot name="header"></slot>
                     <BotonSalir @salir="handleLogout" /> 
                 </div>
-            </template>
+            </template> -->
 
             <div class="my-dialog-content">
                 <slot></slot>

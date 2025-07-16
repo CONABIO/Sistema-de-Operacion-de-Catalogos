@@ -2,6 +2,8 @@
 import { ref, watch, defineProps, defineEmits, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     accion: {
@@ -66,6 +68,12 @@ const submitForm = () => {
     }
     emit('formSubmited', form.value);
 };
+
+
+const cerrarDialogo = () => {
+    emit('cerrar');
+};
+
 </script>
 
 <template>
@@ -78,6 +86,7 @@ const submitForm = () => {
                 <el-form :model="form" label-position="top" class="bibliografia-form">
                     <div class="form-actions" style="margin-top: -30px;">
                         <GuardarButton @click="submitForm" />
+                        <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                     </div>
                     <el-row :gutter="20">
                         <el-col :span="12">
@@ -189,8 +198,11 @@ const submitForm = () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
+    gap: 10px;
 }
+
 
 :deep(.el-form-item) {
     margin-bottom: 22px;

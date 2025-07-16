@@ -13,6 +13,7 @@ use App\Http\Controllers\GrupoTaxonomicoController;
 use App\Http\Controllers\NombreComunController;
 use App\Http\Controllers\NombresArbolController;
 use App\Http\Controllers\NombresController;
+use App\Http\Controllers\TipoRegionController;
 use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
@@ -97,9 +98,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-     Route::get('/Nombre',[NombresArbolController::class, 'Index'])->name('nombreTax.index');
-     Route::get('/cargar-nomArb',[NombresArbolController::class, 'fetchNomArb']);
-     Route::get('/cargar-hijos-nomArb/{id}',[NombresArbolController::class, 'fetchHijos']);
+    Route::get('/Nombre', [NombresArbolController::class, 'Index'])->name('nombreTax.index');
+    Route::get('/cargar-nomArb', [NombresArbolController::class, 'fetchNomArb']);
+    Route::get('/cargar-hijos-nomArb/{id}', [NombresArbolController::class, 'fetchHijos']);
 
 
     Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
@@ -143,12 +144,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
+    Route::prefix('tipos-region')->name('tipos-region.')->group(function () {
+        Route::get('/', [TipoRegionController::class, 'index'])->name('index');
+        Route::post('/', [TipoRegionController::class, 'store'])->name('store');
+        Route::put('/{tipoRegion}', [TipoRegionController::class, 'update'])->name('update');
+        Route::delete('/{tipoRegion}', [TipoRegionController::class, 'destroy'])->name('destroy');
+    });
+
+
 
     //---------------------------------------------------------
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
-    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelacionesInicio']);
-    
-});
+    Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
+
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');
 
@@ -156,14 +164,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('categorias-taxonomicas.store');
 
     Route::put('categorias-taxonomicas/{categoria_taxonomica:IdCategoriaTaxonomica}', [CategoriaTaxonomicaController::class, 'update'])
-    ->name('categorias-taxonomicas.update');
+        ->name('categorias-taxonomicas.update');
 
     Route::delete('categorias-taxonomicas/{categoria_taxonomica}', [CategoriaTaxonomicaController::class, 'destroy'])
-    ->name('categorias-taxonomicas.destroy');
+        ->name('categorias-taxonomicas.destroy');
 
     Route::put('categorias-taxonomicas/{categoriaTaxonomica}/update-icon', [CategoriaTaxonomicaController::class, 'updateIcon'])
-    ->name('categorias-taxonomicas.updateIcon');
+        ->name('categorias-taxonomicas.updateIcon');
 
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
 });
-

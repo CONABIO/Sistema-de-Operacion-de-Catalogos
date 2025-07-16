@@ -9,6 +9,8 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import { ref, computed, watch, onMounted, nextTick, h } from "vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+
 import {
   ElTree,
   ElMessage,
@@ -597,6 +599,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                  <BotonSalir /> 
               </div>
             </div>
           </div>
@@ -625,6 +628,10 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
+        <div class="form-actions">
+            <GuardarButton @click="guardarDesdeModal" />
+            <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
+          </div>
         <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
@@ -643,9 +650,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
               </el-radio-group>
             </div>
           </el-form>
-          <div class="form-actions">
-            <GuardarButton @click="guardarDesdeModal" />
-          </div>
+          
         </div>
       </DialogGeneral>
 
@@ -820,9 +825,10 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    gap: 10px;
 }
 
 :deep(.el-form-item) {

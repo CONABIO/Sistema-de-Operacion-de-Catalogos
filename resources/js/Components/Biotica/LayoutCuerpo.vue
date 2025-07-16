@@ -1,23 +1,23 @@
 <script setup>
-    import AppLayout from '@/Layouts/AppLayout.vue';
-    import Titulo from '@/Components/Biotica/LayoutTitulo.vue';
-    import { Head } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import Titulo from '@/Components/Biotica/LayoutTitulo.vue';
+import { Head } from '@inertiajs/vue3';
 
-    
-    defineProps({
-        tituloArea: {
-            type: String,
-            required: true,
-        },
-        tituloPag: {
-            type: String,
-            required: true,
-        },
-        usarAppLayout: { 
-            type: Boolean,
-            default: true, 
-        }
-    });
+
+defineProps({
+    tituloArea: {
+        type: String,
+        required: true,
+    },
+    tituloPag: {
+        type: String,
+        required: true,
+    },
+    usarAppLayout: {
+        type: Boolean,
+        default: true,
+    }
+});
 </script>
 
 <template>
@@ -34,12 +34,14 @@
                             </div>
                         </el-card>
                     </div>
-                </el-card>
+
+                </div>
             </div>
         </div>
     </AppLayout>
 
     <template v-else>
+
         <Head :title="tituloPag" />
         <div class="flex justify-start min-h-[90vh] p-4">
             <div class="w-full max-w-[1600px] mx-auto h-full">
