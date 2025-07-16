@@ -17,6 +17,7 @@ const routeMap = {
     '2-5': 'tipos-relacion.index', 
     '2-6': 'categorias-taxonomicas.index', 
     '2-7': 'caracteristicas-taxon.index',
+    '2-8': 'tipos-region.index',
     '3-1': 'nombreTax.index',
     '4': 'bibliografias.index'
 };
@@ -83,8 +84,8 @@ watch(
                 <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipo de distribución</el-menu-item>
                 <el-menu-item index="2-5" v-if="hasPermisos('MnuCatTipRel')">Tipo de relación</el-menu-item>
                 <el-menu-item index="2-6" v-if="hasPermisos('MnuCatCatTax')">Categoría taxonómica</el-menu-item>
-                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCatTax')">Características asociadas al
-                    taxón</el-menu-item>
+                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCatTax')">Características asociadas al taxón</el-menu-item>
+                <el-menu-item index="2-8" >Tipo de región</el-menu-item>
             </el-sub-menu>
 
             <el-sub-menu index="3" v-if="hasPermisos('MnuNomenclatura')">

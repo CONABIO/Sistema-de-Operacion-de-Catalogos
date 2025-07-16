@@ -1,6 +1,6 @@
 <template>
     <el-tooltip class="item" effect="dark" content="Salir" placement= "bottom"  :z-index="2101">
-    <button class="boton-salir" @click="handleClick" aria-label="Salir">
+    <el-button class="boton-salir" @click="ejecutarAccion" aria-label="Salir">
         <svg version="1.0" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
     x="0px" y="0px" width="40px" height="40px" viewBox="0 0 1200 1200" enable-background="new 0 0 1200 1200"
     xml:space="preserve">
@@ -28,18 +28,35 @@
     />
 </svg>
 
-    </button>
+    </el-button>
     </el-tooltip>
     
 </template>
+
+
 <script setup>
 import { defineEmits } from 'vue';
+import { router } from '@inertiajs/vue3';
+
+const props = defineProps({
+  accion: {
+    type: String,
+    default: 'salida', 
+    validator: (value) => ['salida', 'cerrar'].includes(value),
+  }
+});
 
 const emit = defineEmits(['salir']);
 
-function handleClick() {
+function ejecutarAccion() {
+  if (props.accion === 'salida') {
+    router.get('/dashboard'); 
+  } else if (props.accion === 'cerrar') {
     emit('salir');
+  }
 }
+
+
 </script>
 
 <style scoped>

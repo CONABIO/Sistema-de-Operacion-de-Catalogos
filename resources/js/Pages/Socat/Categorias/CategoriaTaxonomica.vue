@@ -13,6 +13,7 @@ import { ElTree, ElMessage, ElMessageBox, ElInput, ElRadioGroup, ElRadio, ElForm
 import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import CambiarIconoButton from "@/Components/Biotica/CambiarIconoButton.vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const treeRef = ref(null);
 const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
@@ -446,6 +447,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                <BotonSalir toolPosicion="bottom" />
               </div>
             </div>
           </div>
@@ -486,6 +488,10 @@ const isCambiarIconoDeshabilitado = computed(() => {
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
+         <div class="form-actions">
+            <GuardarButton @click="guardarDesdeModal" />
+            <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
+          </div>
         <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
@@ -501,9 +507,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
               </el-radio-group>
             </div>
           </el-form>
-          <div class="form-actions">
-            <GuardarButton @click="guardarDesdeModal" />
-          </div>
+         
         </div>
       </DialogGeneral>
 
@@ -699,9 +703,10 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    gap: 25px;
 }
 
 :deep(.el-form-item) {

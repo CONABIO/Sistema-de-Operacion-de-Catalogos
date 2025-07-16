@@ -13,7 +13,7 @@ import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 
 
     
-    </CuerpoGen>
+    </AppLayout>
 </template>
 
 <style scoped>
