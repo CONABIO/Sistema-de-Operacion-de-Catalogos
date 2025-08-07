@@ -146,9 +146,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //---------------------------------------------------------
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
-    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelacionesInicio']);
+    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
     
-});
+
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');
 
