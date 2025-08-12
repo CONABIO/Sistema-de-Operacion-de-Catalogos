@@ -9,7 +9,6 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
-
 const props = defineProps({
   columnas: { type: Array, required: true },
   datos: { type: Array, required: true },
@@ -29,10 +28,12 @@ const emit = defineEmits([
   'row-click'
 ]);
 
+
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
 const tipoDeBusqueda = ref('inicia'); 
+
 
 watch(() => props.columnas, (nuevasColumnas) => {
   const nuevosFiltros = {};
@@ -45,6 +46,12 @@ watch(() => props.columnas, (nuevasColumnas) => {
   }
   filtros.value = nuevosFiltros;
 }, { immediate: true, deep: true });
+
+watch(tipoDeBusqueda, () => {
+    onFiltroInput(); 
+});
+
+
 
 const fetchData = async () => {
   try {
@@ -98,14 +105,12 @@ const handlePageChange = (page) => {
 
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
-const onRowDblClick = (row) => emit('row-dblclick', row);
 const onNuevo = () => emit('nuevo-item');
+const onRowDblClick = (row) => emit('row-dblclick', row); 
 
-watch(tipoDeBusqueda, () => {
-    onFiltroInput(); 
-});
 
 onMounted(fetchData);
+
 defineExpose({ fetchData });
 </script>
 
@@ -119,7 +124,6 @@ defineExpose({ fetchData });
           </slot>
         </div>
         <div class="left" >
-
           <div class="form-actions">
                <NuevoButton @crear="onNuevo" />
                <BotonSalir />
@@ -129,7 +133,14 @@ defineExpose({ fetchData });
     </template>
 
     <div class="table-responsive " >
-      <el-table :data="props.datos" :border="true" height="550" @sort-change="handleSortChange" @row-dblclick="onRowDblClick" @row-click="(row) => emit('row-click', row)">
+      <el-table 
+        :data="props.datos" 
+        :border="true" 
+        height="550" 
+        @sort-change="handleSortChange" 
+        @row-dblclick="onRowDblClick" 
+        @row-click="(row) => emit('row-click', row)"
+      >
         <slot name="expand-column"></slot>
         
         <el-table-column
@@ -245,7 +256,6 @@ defineExpose({ fetchData });
     justify-content: flex-start;
     padding-top: 20px;
 }
-
 :deep(.el-table) {
     border-radius: 0 !important;
     border-top: none !important;
@@ -298,7 +308,6 @@ defineExpose({ fetchData });
   top: 50%;
   transform: translateY(-50%); 
 }
-
 
 .custom-header {
   align-items: center;

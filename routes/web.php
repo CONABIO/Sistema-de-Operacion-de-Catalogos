@@ -13,12 +13,13 @@ use App\Http\Controllers\GrupoTaxonomicoController;
 use App\Http\Controllers\NombreComunController;
 use App\Http\Controllers\NombresArbolController;
 use App\Http\Controllers\NombresController;
+use App\Http\Controllers\ObjetoExternoController;
+use App\Http\Controllers\RegionController;
 use App\Http\Controllers\TipoRegionController;
 use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
-
-
+use App\Models\Mime;
 
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
@@ -150,6 +151,58 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{tipoRegion}', [TipoRegionController::class, 'update'])->name('update');
         Route::delete('/{tipoRegion}', [TipoRegionController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('regiones')->name('regiones.')->group(function () {
+        Route::get('/', [RegionController::class, 'index'])->name('index');
+        Route::post('/', [RegionController::class, 'store'])->name('store');
+        Route::put('/{region}', [RegionController::class, 'update'])->name('update');
+        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
+    });
+
+
+    Route::get('/api/bibliografias/{bibliografia}/grupos-taxonomicos', [BibliografiaController::class, 'getGruposTaxonomicos']);
+
+    Route::post('/bibliografias/asociar-grupo', [BibliografiaController::class, 'asociarGrupo'])->name('bibliografias.asociarGrupo');
+
+    Route::put('/bibliografias/asociar-grupo/actualizar', [BibliografiaController::class, 'actualizarAsociacion'])->name('bibliografias.asociarGrupo.actualizar');
+
+    Route::delete('/bibliografias/asociar-grupo/eliminar', [BibliografiaController::class, 'eliminarAsociacion'])->name('bibliografias.asociarGrupo.eliminar');
+
+
+    //OBJETOS EXTERNOS CRUD Y VISTA  ________________________________________________________________
+
+    Route::get('/objetos-externos', [ObjetoExternoController::class, 'index'])
+        ->name('objetos-externos.index');
+
+    Route::get('/api/objetos-externos', [ObjetoExternoController::class, 'apiIndex'])
+        ->name('api.objetos-externos.index');
+
+    Route::post('/objetos-externos', [ObjetoExternoController::class, 'store'])
+        ->name('objetos-externos.store');
+
+    Route::put('/objetos-externos/{objetoExterno}', [ObjetoExternoController::class, 'update'])
+        ->name('objetos-externos.update');
+
+    Route::delete('/objetos-externos/{objetoExterno}', [ObjetoExternoController::class, 'destroy'])
+        ->name('objetos-externos.destroy');
+
+    Route::get('/api/mimes', function () {
+        return Mime::orderBy('Extension')->get();
+    });
+
+    //________________________________________________________________________________________________
+
+
+
+
+    Route::get('/api/bibliografias/{bibliografiaId}/objetos-externos', [BibliografiaController::class, 'getObjetosExternos'])
+        ->name('bibliografias.objetosExternos.get');
+
+    Route::post('/bibliografias/asociar-objeto', [BibliografiaController::class, 'asociarObjetoExterno'])
+        ->name('bibliografias.asociarObjeto');
+
+    Route::delete('/bibliografias/eliminar-asociacion-objeto', [BibliografiaController::class, 'eliminarAsociacionObjeto'])
+        ->name('bibliografias.asociarObjeto.eliminar');
 
 
 

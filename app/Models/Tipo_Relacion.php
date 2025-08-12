@@ -21,6 +21,17 @@ class Tipo_Relacion extends Model
     //Se asignan los campos que podran ser actualizados 
     protected $guarded = [];
 
+     protected $fillable = [
+        'Descripcion',
+        'Nivel1',
+        'Nivel2',
+        'Nivel3',
+        'Nivel4',
+        'Nivel5',
+        'Direccionalidad',
+        'RutaIcono' 
+    ];
+
     //Se declara la relacion de uno a uno con la tabla Tipo_Relacion 
   public function nombreRel()
   {

@@ -14,7 +14,7 @@ class CatalogoNombre extends Model
     //Con esta instruccion se omite el ingreso de fechas en el modelo 
     public $timestamps = false;
     
-    protected $table = 'CatalogoNombre2';
+    protected $table = 'CatalogoNombre';
 
     protected $primaryKey='IdCatNombre';
 

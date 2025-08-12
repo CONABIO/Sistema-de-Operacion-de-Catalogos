@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tipo_Relacion;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
@@ -106,10 +107,9 @@ class TipoRelacionController extends Controller
     public function destroy(Tipo_Relacion $tipoRelacion)
     {
         if ($tipoRelacion->IdTipoRelacion <= 8) {
-            throw ValidationException::withMessages([
-                'protected' => 'La relación seleccionada no puede ser modificada por ser un registro protegido del sistema.'
-            ]);
-        } else {
+            return Redirect::back()->withErrors(['message' => 'La relación seleccionada no puede ser eliminada por ser un registro protegido del sistema.']);
+        }
+
         $query = Tipo_Relacion::query();
         $profundidad = 0;
         for ($i = 1; $i <= 5; $i++) {
@@ -120,37 +120,39 @@ class TipoRelacionController extends Controller
                 break;
             }
         }
-
         if ($profundidad < 5) {
             $query->where("Nivel" . ($profundidad + 1), '>', 0);
         }
-
-        $tieneHijos = $profundidad < 5 && $query->exists();
-
-        if ($tieneHijos) {
-            return redirect()->back()->with('error', 'No se puede eliminar un elemento que tiene subordinados.');
+        if ($profundidad < 5 && $query->exists()) {
+            return Redirect::back()->withErrors(['message' => 'No se puede eliminar un elemento que tiene subordinados en el árbol.']);
         }
 
-        $tipoRelacion->delete();
+        try {
+            $tipoRelacion->delete();
+            return Redirect::back()->with('success', 'Tipo de Relación eliminado con éxito.');
 
-        return redirect()->route('tipos-relacion.index')->with('success', 'Tipo de Relación eliminado con éxito.');
-    }
-    }
+        } catch (QueryException $e) {
+            $errorCode = $e->errorInfo[1];
+            if ($errorCode == 1451) {
+                return Redirect::back()->withErrors(['message' => 'No se puede eliminar. Este tipo de relación está en uso en otra parte del sistema.']);
+            }
 
+            return Redirect::back()->withErrors(['message' => 'Error de base de datos al intentar eliminar el registro.']);
+        }
+    }
 
 
     public function updateIcon(Request $request, Tipo_Relacion $tipoRelacion)
-{
-    $request->validate([
-        'RutaIcono' => 'nullable|string',
-    ]);
+    {
+        $request->validate([
+            'RutaIcono' => 'nullable|string',
+        ]);
 
-    $tipoRelacion->update([
-        'RutaIcono' => $request->RutaIcono,
-    ]);
+        $tipoRelacion->update([
+            'RutaIcono' => $request->RutaIcono,
+        ]);
 
-    return redirect()->route('tipos-relacion.index')
-        ->with('success', 'Ícono actualizado.');
-}
-
+        return redirect()->route('tipos-relacion.index')
+            ->with('success', 'Ícono actualizado.');
+    }
 }
