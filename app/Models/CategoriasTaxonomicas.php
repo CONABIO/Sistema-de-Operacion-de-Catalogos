@@ -22,6 +22,26 @@ class CategoriasTaxonomicas extends Model
 
       //Se asignan los campos que podran ser actualizados 
     protected $guarded = [];
+
+
+    protected $fillable = [
+        'NombreCategoriaTaxonomica',
+        'IdAscendente',
+        'RutaIcono',   
+        'IdNivel1',
+        'IdNivel2',
+        'IdNivel3',
+        'IdNivel4',
+        'IdNivel5',
+        'IdNivel6',
+        'IdNivel7',
+        'IdNivel8',
+        'IdNivel9',
+        'IdNivel10',
+        'IdNivel11',
+        'IdNivel12',
+    ];
+
     
     public function nombre()
     {

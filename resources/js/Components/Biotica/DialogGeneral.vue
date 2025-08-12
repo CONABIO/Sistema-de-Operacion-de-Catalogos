@@ -13,10 +13,14 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    draggable: {
+        type: Boolean,
+        default: false
+    }
 });
 
 function handleLogout() {
-  router.get('/dashboard'); 
+    router.get('/dashboard');
 }
 
 const currentZIndex = 1000;
@@ -26,22 +30,9 @@ const dialogFormVisible = defineModel();
 
 <template>
     <div>
-        <el-dialog 
-            v-model="dialogFormVisible" 
-            :z-index="currentZIndex" 
-            :close-on-click-modal="false" 
-            :show-close="botCerrar"
-            :destroy-on-close="false" 
-            :close-on-press-escape="pressEsc" 
-            class="my-responsive-dialog"
-        >
-            <!-- <template #header="{ close, titleId, titleClass }">
-                <div class="my-dialog-header">
-                    <slot name="header"></slot>
-                    <BotonSalir @salir="handleLogout" /> 
-                </div>
-            </template> -->
-
+        <el-dialog v-model="dialogFormVisible" :draggable="draggable" :z-index="currentZIndex"
+            :close-on-click-modal="false" :show-close="botCerrar" :destroy-on-close="false"
+            :close-on-press-escape="pressEsc" class="my-responsive-dialog">
             <div class="my-dialog-content">
                 <slot></slot>
             </div>

@@ -635,13 +635,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
-            <el-form-item prop="Descripcion">
-              <template #label>
-                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
-              </template>
-              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
-                clearable maxlength="255" show-word-limit />
-            </el-form-item>
+
             <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
               <el-radio-group v-model="opcionNivel">
@@ -649,6 +643,15 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                 <el-radio value="inferior">Nivel inferior</el-radio>
               </el-radio-group>
             </div>
+
+            <el-form-item prop="Descripcion">
+              <template #label>
+                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
+              </template>
+              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
+                clearable maxlength="255" show-word-limit />
+            </el-form-item>
+            
           </el-form>
           
         </div>

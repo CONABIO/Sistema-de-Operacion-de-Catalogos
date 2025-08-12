@@ -90,7 +90,7 @@ const cerrarDialogo = () => {
             </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
-                    <el-form-item label="Descripcion" prop="Descripcion">
+                    <el-form-item label="Descripción" prop="Descripcion">
                         <el-input type="text" v-model="form.Descripcion" maxlength="255" show-word-limit />
                     </el-form-item>
                 </el-form>

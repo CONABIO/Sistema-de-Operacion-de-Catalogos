@@ -37,6 +37,10 @@ const formModal = ref({
 const props = defineProps({
     treeDataProp: { type: Array, required: true, default: () => [] },
     flatTreeDataProp: { type: Array, required: true, default: () => [] },
+    isModal: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const handleNodeExpand = (data) => {
@@ -129,17 +133,24 @@ const guardarDesdeModal = async () => {
         mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
     };
     const onError = (errors) => {
-        mostrarNotificacion("Error del Servidor", Object.values(errors).flat().join("\n"), "error");
+        mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
     };
 
     if (modalMode.value === "editar") {
-        const datosUpdate = { Descripcion: formModal.value.Descripcion.trim() };
+        const datosUpdate = { 
+            Descripcion: formModal.value.Descripcion.trim(),
+            isModal: props.isModal 
+        };
         const nodeId = nodoEnModal.value.IdTipoRegion;
         router.put(`/tipos-region/${nodeId}`, datosUpdate, { preserveState: true, preserveScroll: true, onSuccess, onError });
     } else {
         const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculoNiveles) return;
-        const datosInsert = { Descripcion: formModal.value.Descripcion.trim(), ...calculoNiveles.niveles };
+        const datosInsert = { 
+            Descripcion: formModal.value.Descripcion.trim(), 
+            ...calculoNiveles.niveles,
+            isModal: props.isModal 
+        };
         router.post("/tipos-region", datosInsert, { preserveState: true, preserveScroll: true, onSuccess, onError });
     }
 };
@@ -172,6 +183,7 @@ const handleEliminar = () => {
 const proceedWithDeletion = (nodeId, nombre) => {
     ElMessageBox.close();
     router.delete(`/tipos-region/${nodeId}`, {
+        data: { isModal: props.isModal }, 
         preserveScroll: true,
         onSuccess: () => {
             mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
@@ -237,11 +249,32 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
 };
 
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
+
+
+
+const handleNodeDoubleClick = (data) => {
+    if (props.isModal) {
+        // 'window.parent' es la ventana que contiene el iframe (indexRegion.vue)
+        // 'postMessage' es la forma segura de enviar datos entre ventanas.
+        window.parent.postMessage({
+            type: 'tipoRegionSeleccionado',
+            payload: {
+                id: data.IdTipoRegion,
+                descripcion: data.Descripcion,
+            }
+        }, '*'); 
+    }
+};
 </script>
 
 <template>
-    <AppLayout title="Tipos de Región">
-        <LayoutCuerpo :usar-app-layout="false" titulo-pag="Tipos de Región" titulo-area="Catálogo de tipos de región">
+    <component :is="isModal ? 'div' : AppLayout" :title="isModal ? null : 'Tipos de Región'">
+        
+        <component :is="isModal ? 'div' : LayoutCuerpo"
+                   :usar-app-layout="isModal ? true : false"
+                   :titulo-pag="isModal ? null : 'Tipos de Región'"
+                   :titulo-area="isModal ? null : 'Catálogo de tipos de región'"
+                   :class="{ 'modal-content-wrapper': isModal }">
 
             <el-card class="box-card tree-card">
                 <template #header>
@@ -255,7 +288,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                                <BotonSalir />
+                                
+                                <BotonSalir v-if="!isModal" />
                             </div>
                         </div>
                     </div>
@@ -265,7 +299,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRegion"
                     :current-node-key="selectedNode?.IdTipoRegion" :highlight-current="true"
                     :expand-on-click-node="true" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                    @node-click="handleNodeSelected" class="custom-element-tree">
+                    @node-click="handleNodeSelected"  @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRegion}`" class="custom-tree-node-content">
                             <span>{{ node.label }}</span>
@@ -277,40 +311,46 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                 </div>
             </el-card>
 
-        </LayoutCuerpo>
+        </component>
 
-        <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
-                <div class="dialog-header">
-                    <h3>{{ modalTitle }}</h3>
-                </div>
-                <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
-                        <el-form-item prop="Descripcion" label="Descripción del Tipo de Región:">
-                            <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                maxlength="255" show-word-limit />
-                        </el-form-item>
-                        <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                            <el-radio-group v-model="opcionNivel">
-                                <el-radio value="mismo">Mismo nivel</el-radio>
-                                <el-radio value="inferior">Nivel inferior</el-radio>
-                            </el-radio-group>
-                        </div>
-                    </el-form>
-                </div>
-                <div class="form-actions" style="padding: 0 30px 30px;">
-                    <BotonCancelar @click="cerrarModalOperacion" />
+    </component>
+
+
+    <Teleport to="body">
+        <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <div class="dialog-header">
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="dialog-body-container">
+                <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                    @submit.prevent="guardarDesdeModal">
+                   <div class="form-actions">
                     <GuardarButton @click="guardarDesdeModal" />
+                    <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
                 </div>
-            </DialogGeneral>
 
-            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                @close="notificacionVisible = false" />
-        </Teleport>
-    </AppLayout>
+                    <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                        <el-radio-group v-model="opcionNivel">
+                            <el-radio value="mismo">Mismo nivel</el-radio>
+                            <el-radio value="inferior">Nivel inferior</el-radio>
+                        </el-radio-group>
+                    </div>
+
+                    <el-form-item prop="Descripcion" label="Descripción del Tipo de Región:">
+                        <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                            maxlength="255" show-word-limit />
+                    </el-form-item>
+                    
+                </el-form>
+            </div>
+            
+        </DialogGeneral>
+
+        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+            @close="notificacionVisible = false" />
+    </Teleport>
 </template>
 
 <style>
@@ -410,10 +450,19 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
 <style scoped>
 .tree-card {
     width: 100%;
-    height: 726px;
+    height: v-bind("isModal ? 'auto' : '726px'"); 
+    min-height: v-bind("isModal ? '400px' : 'auto'"); 
     display: flex;
     flex-direction: column;
 }
+
+.modal-content-wrapper {
+    padding: 1rem;
+    height: 100%; 
+    overflow-y: auto; 
+    box-sizing: border-box; 
+}
+
 
 :deep(.el-card__header) {
     padding: 16px 24px !important;

@@ -1,5 +1,5 @@
 <template>
-    <el-tooltip content="Cambiar Ícono" :placement="toolPosicion">
+    <el-tooltip content="Cambiar ícono" :placement="toolPosicion">
         <el-button
             type="warning"
             circle

@@ -46,17 +46,17 @@ const props = defineProps({
 });
 
 const handleNodeExpand = (data) => {
-  expandedNodeIds.value.add(data.IdCategoria);
+  expandedNodeIds.value.add(data.IdCategoriaTaxonomica);
 };
 
 const handleNodeCollapse = (data) => {
-  expandedNodeIds.value.delete(data.IdCategoria);
+  expandedNodeIds.value.delete(data.IdCategoriaTaxonomica);
 };
 
 const handleNodeSelected = (data) => {
   if (esModalVisible.value) {
     ElMessage.info("Hay una operación en curso.");
-    treeRef.value?.setCurrentKey(selectedNode.value?.IdCategoria);
+    treeRef.value?.setCurrentKey(selectedNode.value?.IdCategoriaTaxonomica);
     return;
   }
   selectedNode.value = data;
@@ -71,7 +71,7 @@ const scrollToNode = (nodeId) => {
 
 const findNodeInTree = (nodes, nodeId) => {
   for (const node of nodes) {
-    if (String(node.IdCategoria) === String(nodeId)) return node;
+    if (String(node.IdCategoriaTaxonomica) === String(nodeId)) return node;
     if (node.children) {
       const found = findNodeInTree(node.children, nodeId);
       if (found) return found;
@@ -97,7 +97,7 @@ const page = usePage();
 watch(() => page.props.flash?.newNodeId, (newNodeId) => {
   if (newNodeId) {
     nextTick(() => {
-      const newNodeData = props.flatTreeDataProp.find(n => n.IdCategoria === newNodeId);
+      const newNodeData = props.flatTreeDataProp.find(n => n.IdCategoriaTaxonomica === newNodeId);
       if (newNodeData && newNodeData.IdAscendente) {
         expandedNodeIds.value.add(newNodeData.IdAscendente);
         const parentNode = treeRef.value.getNode(newNodeData.IdAscendente);
@@ -117,7 +117,7 @@ onMounted(() => {
   if (props.treeDataProp.length > 0 && !page.props.flash?.newNodeId) {
     const firstNode = props.treeDataProp[0];
     selectedNode.value = firstNode;
-    treeRef.value?.setCurrentKey(firstNode.IdCategoria);
+    treeRef.value?.setCurrentKey(firstNode.IdCategoriaTaxonomica);
   }
 });
 
@@ -150,10 +150,35 @@ const cerrarModalOperacion = () => {
   nodoEnModal.value = null;
 };
 
+
+
+// =========================================================================
+// ========================== INICIO DE LA MODIFICACIÓN ==========================
+// =========================================================================
+
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
+
+  // Lógica de validación de duplicados
+  const nombreNormalizado = formModal.value.NombreCategoriaTaxonomica.trim().toLowerCase();
+  const esEdicion = modalMode.value === 'editar';
+
+  const registroExistente = props.flatTreeDataProp.find(item => {
+    const mismoNombre = item.NombreCategoriaTaxonomica.trim().toLowerCase() === nombreNormalizado;
+    return esEdicion ? (mismoNombre && item.IdCategoriaTaxonomica !== nodoEnModal.value.IdCategoriaTaxonomica) : mismoNombre;
+  });
+
+  if (registroExistente) {
+    mostrarNotificacionError(
+      "Aviso",
+      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica}'`,
+      "error",
+      0 // Duración 0 para que no se cierre sola
+    );
+    return;
+  }
 
   const onSuccess = () => {
     cerrarModalOperacion();
@@ -162,15 +187,30 @@ const guardarDesdeModal = async () => {
   const onError = (e) => mostrarNotificacion("Error", Object.values(e).flat().join("\n"), "error");
 
   if (modalMode.value === "insertar") {
-    const niveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-    if (!niveles) return;
+    let nodoReferenciaActual = null;
+    if (treeRef.value) {
+      const currentNodeKey = treeRef.value.getCurrentKey();
+      if (currentNodeKey) {
+        nodoReferenciaActual = props.flatTreeDataProp.find(n => n.IdCategoriaTaxonomica === currentNodeKey);
+      }
+    }
+    const nodoParaCalcular = nodoReferenciaActual || selectedNode.value;
+
+    if (!nodoParaCalcular && opcionNivel.value !== 'raiz') {
+      return ElMessage.error("No se pudo determinar un nodo de referencia para la inserción.");
+    }
+    
+    const resultado = calcularNiveles_ADAPTADO_AL_CAOS(nodoParaCalcular, opcionNivel.value, props.flatTreeDataProp);
+    if (!resultado) return;
+    
     const datos = {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim(),
-      ...niveles.niveles
+      ...resultado.niveles,
+      IdAscendente: resultado.nuevoIdAscendente
     };
 
-    if (selectedNode.value) {
-      expandedNodeIds.value.add(selectedNode.value.IdCategoria);
+    if (nodoParaCalcular && opcionNivel.value === 'inferior') {
+      expandedNodeIds.value.add(nodoParaCalcular.IdCategoriaTaxonomica);
     }
 
     router.post("/categorias-taxonomicas", datos, {
@@ -182,15 +222,84 @@ const guardarDesdeModal = async () => {
     const datos = {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim()
     };
-
     const url = `/categorias-taxonomicas/${nodoEnModal.value.IdCategoriaTaxonomica}`;
-
     router.put(url, datos, {
       preserveScroll: true,
       onSuccess,
       onError
     });
   }
+};
+
+// =========================================================================
+// ============================ FIN DE LA MODIFICACIÓN ===========================
+// =========================================================================
+
+
+
+const MAX_NIVELES = 12;
+
+const calcularNiveles_ADAPTADO_AL_CAOS = (nodoReferencia, opcion, todosLosNodos) => {
+    const nuevosNiveles = {};
+    for (let i = 1; i <= MAX_NIVELES; i++) {
+        nuevosNiveles[`IdNivel${i}`] = 0;
+    }
+
+    if (opcion === "raiz" || !nodoReferencia) {
+        let maxRaiz = 0;
+        todosLosNodos.filter(n => !n.IdAscendente || n.IdAscendente === 0)
+                     .forEach(n => { maxRaiz = Math.max(maxRaiz, n.IdNivel1 || 0); });
+        nuevosNiveles.IdNivel1 = maxRaiz + 1;
+        return { niveles: nuevosNiveles, nuevoIdAscendente: null };
+    }
+
+    if (opcion === 'inferior') {
+        const padre = nodoReferencia;
+        const nuevoIdAscendente = padre.IdCategoriaTaxonomica;
+        
+        let profundidadPadre = 0;
+        let ancestroActual = padre;
+        const ancestroMap = new Map(todosLosNodos.map(n => [n.IdCategoriaTaxonomica, n]));
+        while(ancestroActual) {
+            profundidadPadre++;
+            ancestroActual = ancestroMap.get(ancestroActual.IdAscendente);
+        }
+        const nivelDelNuevoHijo = profundidadPadre + 1;
+
+        if (nivelDelNuevoHijo > MAX_NIVELES) {
+             mostrarNotificacion("Error", "Profundidad máxima excedida.", "error");
+             return null;
+        }
+
+        for (let i = 1; i <= profundidadPadre; i++) {
+            nuevosNiveles[`IdNivel${i}`] = padre[`IdNivel${i}`];
+        }
+        
+        const hermanos = todosLosNodos.filter(n => n.IdAscendente === nuevoIdAscendente);
+        let maxNivelHijo = 0;
+        hermanos.forEach(h => {
+            maxNivelHijo = Math.max(maxNivelHijo, h[`IdNivel${nivelDelNuevoHijo}`] || 0);
+        });
+        
+        nuevosNiveles[`IdNivel${nivelDelNuevoHijo}`] = maxNivelHijo + 1;
+        return { niveles: nuevosNiveles, nuevoIdAscendente: nuevoIdAscendente };
+    }
+
+    if (opcion === 'mismo') {
+        const nuevoIdAscendente = nodoReferencia.IdAscendente;
+        if (!nuevoIdAscendente) {
+            return calcularNiveles_ADAPTADO_AL_CAOS(null, 'raiz', todosLosNodos);
+        }
+        
+        const padre = todosLosNodos.find(n => n.IdCategoriaTaxonomica === nuevoIdAscendente);
+        if (!padre) {
+            mostrarNotificacion("Error", "No se pudo encontrar el nodo padre para crear un hermano.", "error");
+            return null;
+        }
+        
+        return calcularNiveles_ADAPTADO_AL_CAOS(padre, 'inferior', todosLosNodos);
+    }
+    return null;
 };
 
 const handleEliminar = () => {
@@ -257,8 +366,6 @@ const iconosSugeridos = [
   'mdi:calculator', 'mdi:database', 'mdi:server', 'mdi:cloud', 'mdi:code-tags',
   'mdi:weather-sunny', 'mdi:weather-night', 'mdi:weather-rainy', 'mdi:weather-cloudy', 'mdi:fire', 'mdi:water',
   'mdi:currency-usd', 'mdi:credit-card', 'mdi:cart', 'mdi:calendar', 'mdi:clock', 'mdi:tag',
-
-
   'heroicons:adjustments-horizontal-solid', 'heroicons:archive-box-arrow-down-solid', 'heroicons:backward-solid', 'heroicons:forward-solid',
   'heroicons:bars-3-solid', 'heroicons:bookmark-slash-solid', 'heroicons:clipboard-document-check-solid', 'heroicons:command-line-solid',
   'heroicons:cpu-chip-solid', 'heroicons:document-duplicate-solid', 'heroicons:finger-print-solid', 'heroicons:gift-solid',
@@ -364,7 +471,7 @@ const seleccionarIcono = async (iconName) => {
     router.put(`/categorias-taxonomicas/${nodeId}/update-icon`, { RutaIcono: svgContent }, {
       preserveScroll: true,
       onSuccess: () => {
-        mostrarNotificacion("¡Éxito!", "Ícono actualizado.", "success");
+        mostrarNotificacion("Éxito", "Ícono actualizado.", "success");
         cerrarModalIconos();
       },
       onError: (e) => mostrarNotificacion("Error", Object.values(e).flat().join("\n"), "error"),
@@ -392,10 +499,17 @@ const onInputBusquedaIcono = () => {
   }, 500);
 };
 
-const MAX_NIVELES = 12;
-const calcularNivelesParaNuevoNodo = (nodoRef, opcion, todos) => { const n = {}; for (let i = 1; i <= MAX_NIVELES; i++) n[`IdNivel${i}`] = 0; if (opcion === "raiz") { let max = 0; todos.forEach(nodo => { if (nodo.IdNivel1 > 0 && nodo.IdNivel2 === 0) max = Math.max(max, nodo.IdNivel1); }); n.IdNivel1 = max + 1; return { niveles: n }; } if (!nodoRef) { mostrarNotificacion("Error", "Se necesita un nodo de referencia.", "error"); return null; } if (opcion === "inferior") { let p = 0; for (let i = 1; i <= MAX_NIVELES; i++) { if (nodoRef[`IdNivel${i}`] > 0) { n[`IdNivel${i}`] = nodoRef[`IdNivel${i}`]; p = i; } else break; } const s = p + 1; if (s > MAX_NIVELES) { mostrarNotificacion("Error", "Profundidad máxima excedida.", "error"); return null; } let max = 0; todos.forEach(nodo => { let esHijo = true; for (let i = 1; i <= p; i++) if (nodo[`IdNivel${i}`] !== n[`IdNivel${i}`]) { esHijo = false; break; } if (esHijo) for (let i = s + 1; i <= MAX_NIVELES; i++) if (nodo[`IdNivel${i}`] > 0) { esHijo = false; break; } if (esHijo) max = Math.max(max, nodo[`IdNivel${s}`] || 0); }); n[`IdNivel${s}`] = max + 1; return { niveles: n }; } if (opcion === 'mismo') { let p = 0; for (let i = 1; i <= MAX_NIVELES; i++) if (nodoRef[`IdNivel${i}`] > 0) p = i; else break; if (p === 0) return null; if (p === 1) { let max = 0; todos.forEach(nodo => { if (nodo.IdNivel1 > 0 && nodo.IdNivel2 === 0) max = Math.max(max, nodo.IdNivel1); }); n.IdNivel1 = max + 1; return { niveles: n }; } for (let i = 1; i < p; i++) n[`IdNivel${i}`] = nodoRef[`IdNivel${i}`]; let max = 0; todos.forEach(nodo => { let esHermano = true; for (let i = 1; i < p; i++) if (nodo[`IdNivel${i}`] !== n[`IdNivel${i}`]) { esHermano = false; break; } if (esHermano) for (let i = p + 1; i <= MAX_NIVELES; i++) if (nodo[`IdNivel${i}`] > 0) { esHermano = false; break; } if (esHermano) max = Math.max(max, nodo[`IdNivel${p}`] || 0); }); n[`IdNivel${p}`] = max + 1; return { niveles: n }; } return null; };
-
 const mostrarNotificacion = (titulo, mensaje, tipo) => { notificacionTitulo.value = titulo; notificacionMensaje.value = mensaje; notificacionTipo.value = tipo; notificacionVisible.value = true; };
+
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
+    notificacionVisible.value = true;
+};
+
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
 
 
@@ -408,12 +522,12 @@ const isEditarDeshabilitado = computed(() => {
     return true;
   }
 
-  return false; 
+  return false;
 });
 
 const isCambiarIconoDeshabilitado = computed(() => {
   if (!selectedNode.value || esModalVisible.value) {
-    return true; 
+    return true;
   }
 
   if (selectedNode.value.IdCategoriaTaxonomica < 132 && selectedNode.value.RutaIcono === ICONO_POR_DEFECTO) {
@@ -424,7 +538,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
     return true;
   }
 
-  return false; 
+  return false;
 });
 </script>
 
@@ -461,7 +575,6 @@ const isCambiarIconoDeshabilitado = computed(() => {
           <template #default="{ data }">
             <span :id="`tree-node-${data.IdCategoriaTaxonomica}`" class="custom-tree-node-content">
 
-
               <img v-if="!data.RutaIcono" src="/storage/images/REvyORsYggrsOFexbUteuMmMhVzDTfKaZzDkAffD.png"
                 class="node-icon-wrapper" />
 
@@ -488,17 +601,14 @@ const isCambiarIconoDeshabilitado = computed(() => {
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
-         <div class="form-actions">
-            <GuardarButton @click="guardarDesdeModal" />
-            <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
-          </div>
+        <div class="form-actions">
+          <GuardarButton @click="guardarDesdeModal" />
+          <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+        </div>
         <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
-            <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
-              <el-input v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
-                maxlength="255" show-word-limit />
-            </el-form-item>
+
             <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
               <el-radio-group v-model="opcionNivel">
@@ -506,19 +616,26 @@ const isCambiarIconoDeshabilitado = computed(() => {
                 <el-radio value="inferior">Nivel inferior</el-radio>
               </el-radio-group>
             </div>
+
+            <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
+              <el-input v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
+                maxlength="255" show-word-limit />
+            </el-form-item>
+
+
           </el-form>
-         
+
         </div>
       </DialogGeneral>
 
       <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
         <div class="dialog-header">
-          <h3>Seleccione el ícono para la categoría  "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
+          <h3>Seleccione el ícono para la categoría "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
         </div>
         <div class="dialog-body-container">
           <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal')"
             @input="onInputBusquedaIcono" clearable />
-          <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la búsqueda' }}</h4>
+          <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la  búsqueda' }}</h4>
           <div v-loading="cargandoIconos" class="icon-grid mt-4">
             <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
               @click="seleccionarIcono(iconName)">
@@ -703,10 +820,10 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 24px;
-    gap: 25px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  gap: 25px;
 }
 
 :deep(.el-form-item) {
