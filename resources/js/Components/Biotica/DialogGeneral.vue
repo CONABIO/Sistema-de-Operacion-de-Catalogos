@@ -3,7 +3,7 @@ import { defineModel } from 'vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
 
-//Definición de variables 
+
 const props = defineProps({
     botCerrar: {
         type: Boolean,
@@ -18,11 +18,16 @@ const props = defineProps({
     width:{
         type: String,
         default: "80%",
+
+    draggable: {
+        type: Boolean,
+        default: false
+
     }
 });
 
 function handleLogout() {
-  router.get('/dashboard'); 
+    router.get('/dashboard');
 }
 
 const currentZIndex = 1000;
@@ -34,7 +39,8 @@ const dialogFormVisible = defineModel();
     <div>
         <el-dialog 
             v-model="dialogFormVisible" 
-            :z-index="currentZIndex" 
+            :z-index="currentZIndex"
+            :draggable="draggable"
             :close-on-click-modal="false" 
             :show-close="botCerrar"
             :destroy-on-close="false" 
@@ -49,6 +55,7 @@ const dialogFormVisible = defineModel();
                     <BotonSalir @salir="handleLogout" /> 
                 </div>
             </template>
+
 
             <div class="my-dialog-content">
                 <slot></slot>

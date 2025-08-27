@@ -17,9 +17,9 @@ const modalVisible = ref(false);
 const nombreComunEditado = ref(null);
 
 const columnasDefinidas = ref([
-    { prop: 'NomComun', label: 'NomComun', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'NomComun', label: 'Nombre común', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'Lengua', label: 'Lengua', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
     { prop: 'Observaciones', label: 'Observaciones', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
-    { prop: 'Lengua', label: 'Lengua', minWidth: '150', sortable: true, filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -33,6 +33,14 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
     notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+};
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -53,6 +61,27 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
+
+    const nombreNormalizado = datosDelFormulario.NomComun.trim().toLowerCase();
+    const lenguaNormalizada = datosDelFormulario.Lengua.trim().toLowerCase();
+    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+    const registroExistente = currentData.value.find(item => {  
+    const mismoNombre = item.NomComun.trim().toLowerCase() === nombreNormalizado;
+    const mismaLengua = item.Lengua.trim().toLowerCase() === lenguaNormalizada;
+        return esEdicion ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar) : (mismoNombre && mismaLengua);
+    });
+
+    if (registroExistente) {
+        mostrarNotificacionError(
+            "Aviso",
+            `Ya existe un nombre común con el nombre '${datosDelFormulario.NomComun}'`,
+            "error"
+        );
+        return; 
+    }
+
+
+
     const procederConGuardado = async () => {
         ElMessageBox.close();
         try {
@@ -104,17 +133,18 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarNombreComun = (idNomComun) => {
     const procederConEliminacion = async () => {
+        const nombreItem = itemAEliminar ? `"${itemAEliminar.NomComun}"` : 'el registro';
         try {
             ElMessageBox.close();
             const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
-            const nombreItem = itemAEliminar ? `"${itemAEliminar.NomComun}"` : 'el registro';
             await axios.delete(`/nombres-comunes/${idNomComun}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
             mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
         } catch (apiError) {
-            mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+            mostrarNotificacionError('Aviso', `El nombre común ${nombreItem} no se puede eliminar. Este nombre común esta asociado.`, 'success');
+
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };

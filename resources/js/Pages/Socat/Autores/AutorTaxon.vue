@@ -8,6 +8,7 @@ import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 <template>
     <AppLayout title="Catálogo de autoridades taxonómicas"> 
         <CuerpoAutor /> 
+
     </AppLayout>
 </template>
 

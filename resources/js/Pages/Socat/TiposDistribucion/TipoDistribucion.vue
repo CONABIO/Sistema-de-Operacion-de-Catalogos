@@ -16,7 +16,7 @@ const modalVisible = ref(false);
 const tipoDistribucionEditado = ref(null);
 
 const columnasDefinidas = ref([
-    { prop: 'Descripcion', label: 'Descripcion', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
+    { prop: 'Descripcion', label: 'Descripción', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -30,6 +30,14 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
     notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+};
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -50,6 +58,24 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
+
+    const descNormalizada = datosDelFormulario.Descripcion.trim().toLowerCase();
+    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+    const registroExistente = currentData.value.find(item => {
+        const mismaDescripcion = item.Descripcion.trim().toLowerCase() === descNormalizada;
+        return esEdicion ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar) : mismaDescripcion;
+    });
+
+    if (registroExistente) {
+        mostrarNotificacionError(
+            "Aviso",
+            `Ya existe un tipo de distribución con la descripción '${datosDelFormulario.Descripcion}'.`,
+            "error"
+        );
+        return; 
+    }
+
+
     const procederConGuardado = async () => {
         ElMessageBox.close();
         try {
@@ -96,17 +122,18 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
     const procederConEliminacion = async () => {
+        const nombreItem = itemAEliminar ? `"${itemAEliminar.Descripcion}"` : 'el registro';
         try {
             ElMessageBox.close();
             const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
-            const nombreItem = itemAEliminar ? `"${itemAEliminar.Descripcion}"` : 'el registro';
             await axios.delete(`/tipos-distribucion/${idTipoDistribucion}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
             mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
         } catch (apiError) {
-            mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+            mostrarNotificacionError('Aviso', `El tipo de distribución ${nombreItem} no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
+
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };

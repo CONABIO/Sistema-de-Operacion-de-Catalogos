@@ -12,10 +12,15 @@ use Illuminate\Support\Facades\Validator;
 
 class GrupoTaxonomicoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $isModal = $request->boolean('modal');
+        if ($isModal) {
+            Inertia::setRootView('modal');
+        }
         $grupo = GrupoScat::orderBy('GrupoSCAT')->paginate(100);
         return Inertia::render('Socat/Grupos/GrupoTaxonomico', [
+            'isModal' => $isModal,
             'datosGrupo' => [
                 'data' => $grupo->items(),
                 'totalItems' => $grupo->total(),
@@ -151,8 +156,8 @@ class GrupoTaxonomicoController extends Controller
             return response()->json(['message' => 'GrupoTaxonomico not found'], 404);
         }
 
-        $grupoTaxonomico->GrupoSCAT = $request->input('GrupoSCAT'); // Usa el campo correcto
-        $grupoTaxonomico->GrupoAbreviado = $request->input('GrupoAbreviado'); // Usa el campo correcto
+        $grupoTaxonomico->GrupoSCAT = $request->input('GrupoSCAT');
+        $grupoTaxonomico->GrupoAbreviado = $request->input('GrupoAbreviado');
         $grupoTaxonomico->GrupoSNIB = $request->input('GrupoSNIB');
 
         try {

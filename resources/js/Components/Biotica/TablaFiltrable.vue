@@ -7,6 +7,7 @@ import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const props = defineProps({
   columnas: { type: Array, required: true },
@@ -27,10 +28,12 @@ const emit = defineEmits([
   'row-click'
 ]);
 
+
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
 const tipoDeBusqueda = ref('inicia'); 
+
 
 watch(() => props.columnas, (nuevasColumnas) => {
   const nuevosFiltros = {};
@@ -43,6 +46,12 @@ watch(() => props.columnas, (nuevasColumnas) => {
   }
   filtros.value = nuevosFiltros;
 }, { immediate: true, deep: true });
+
+watch(tipoDeBusqueda, () => {
+    onFiltroInput(); 
+});
+
+
 
 const fetchData = async () => {
   try {
@@ -96,14 +105,12 @@ const handlePageChange = (page) => {
 
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
-const onRowDblClick = (row) => emit('row-dblclick', row);
 const onNuevo = () => emit('nuevo-item');
+const onRowDblClick = (row) => emit('row-dblclick', row); 
 
-watch(tipoDeBusqueda, () => {
-    onFiltroInput(); 
-});
 
 onMounted(fetchData);
+
 defineExpose({ fetchData });
 </script>
 
@@ -116,16 +123,24 @@ defineExpose({ fetchData });
             <TipoBusqueda v-model="tipoDeBusqueda" />
           </slot>
         </div>
-        <div class="left">
-          <slot name="header-actions">
-            <NuevoButton @crear="onNuevo" />
-          </slot>
+        <div class="left" >
+          <div class="form-actions">
+               <NuevoButton @crear="onNuevo" />
+               <BotonSalir />
+            </div>
         </div>
       </div>
     </template>
 
     <div class="table-responsive " >
-      <el-table :data="props.datos" :border="true" height="550" @sort-change="handleSortChange" @row-dblclick="onRowDblClick" @row-click="(row) => emit('row-click', row)">
+      <el-table 
+        :data="props.datos" 
+        :border="true" 
+        height="550" 
+        @sort-change="handleSortChange" 
+        @row-dblclick="onRowDblClick" 
+        @row-click="(row) => emit('row-click', row)"
+      >
         <slot name="expand-column"></slot>
         
         <el-table-column
@@ -241,7 +256,6 @@ defineExpose({ fetchData });
     justify-content: flex-start;
     padding-top: 20px;
 }
-
 :deep(.el-table) {
     border-radius: 0 !important;
     border-top: none !important;
@@ -295,7 +309,6 @@ defineExpose({ fetchData });
   transform: translateY(-50%); 
 }
 
-
 .custom-header {
   align-items: center;
   width: 100%;
@@ -309,5 +322,13 @@ defineExpose({ fetchData });
 }
 .header-filter-button {
   flex-shrink: 0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+    margin-right: 35px;
+    gap: 4px;
 }
 </style>

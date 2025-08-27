@@ -2,6 +2,8 @@
 import { ref, watch, defineProps, defineEmits, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     accion: {
@@ -66,6 +68,12 @@ const submitForm = () => {
     }
     emit('formSubmited', form.value);
 };
+
+
+const cerrarDialogo = () => {
+    emit('cerrar');
+};
+
 </script>
 
 <template>
@@ -78,6 +86,7 @@ const submitForm = () => {
                 <el-form :model="form" label-position="top" class="bibliografia-form">
                     <div class="form-actions" style="margin-top: -30px;">
                         <GuardarButton @click="submitForm" />
+                        <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                     </div>
                     <el-row :gutter="20">
                         <el-col :span="12">
@@ -87,7 +96,7 @@ const submitForm = () => {
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
-                            <el-form-item label="Anio" required>
+                            <el-form-item label="Año" required>
                                 <el-input v-model="form.Anio" maxlength="50" show-word-limit
                                     placeholder="Año de la publicación"></el-input>
                             </el-form-item>
@@ -95,13 +104,13 @@ const submitForm = () => {
                     </el-row>
                     <el-row :gutter="20">
                         <el-col :span="12">
-                            <el-form-item label="TituloSubPublicacion">
+                            <el-form-item label="Titulo de la subpublicacion">
                                 <el-input v-model="form.TituloSubPublicacion" maxlength="255" show-word-limit
                                 placeholder="Ej. Título del capítulo"></el-input>
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
-                            <el-form-item label="EditorialPaisPagina">
+                            <el-form-item label="Editorial, Pais, Pagina">
                                 <el-input v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
                                 placeholder="Datos de la editorial"></el-input>
                             </el-form-item>
@@ -109,7 +118,7 @@ const submitForm = () => {
                     </el-row>
                     <el-row :gutter="20">
                         <el-col :span="12">
-                            <el-form-item label="TituloPublicacion" required>
+                            <el-form-item label="Titulo de la publicacion" required>
                                 <el-input v-model="form.TituloPublicacion" maxlength="255" show-word-limit
                                     placeholder="Título principal"></el-input>
                             </el-form-item>
@@ -123,13 +132,13 @@ const submitForm = () => {
                     </el-row>
                     <el-row :gutter="20">
                         <el-col :span="12">
-                            <el-form-item label="NumeroVolumenAnio">
+                            <el-form-item label="Numero, Volumen , Año">
                                 <el-input v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit
                                     placeholder="Datos de la revista o serie"></el-input>
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
-                            <el-form-item label="EditoresCompiladores">
+                            <el-form-item label="Editores / Compiladores">
                                 <el-input v-model="form.EditoresCompiladores" maxlength="255" show-word-limit
                                     placeholder="Si aplica"></el-input>
                             </el-form-item>
@@ -137,7 +146,7 @@ const submitForm = () => {
                     </el-row>
                     <el-row :gutter="20">
                         <el-col :span="12">
-                            <el-form-item label="ISBNISSN">
+                            <el-form-item label="ISBN / ISSN">
                                 <el-input v-model="form.ISBNISSN" maxlength="100" show-word-limit
                                     placeholder="ISBN o ISSN"></el-input>
                             </el-form-item>
@@ -189,8 +198,11 @@ const submitForm = () => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 4px;
+    margin-right: 35px;
+    gap: 10px;
 }
+
 
 :deep(.el-form-item) {
     margin-bottom: 22px;

@@ -1,8 +1,10 @@
 <script setup>
-import { ref, watch, nextTick, computed } from 'vue';  
-import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue'; 
+import { ref, watch, nextTick, computed } from 'vue';
+import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue';
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
-import { ElMessage } from 'element-plus'; 
+import { ElMessage } from 'element-plus';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+
 
 const props = defineProps({
     visible: Boolean,
@@ -12,7 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'formSubmited']);
 
-const dialogVisible = ref(false); 
+const dialogVisible = ref(false);
 
 const form = ref({
     GrupoSCAT: '',
@@ -31,12 +33,12 @@ const rules = {
         { required: true, message: 'El nombre del grupo es obligatorio', trigger: 'blur' },
         { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
-    GrupoAbreviado: [{ max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }], 
+    GrupoAbreviado: [{ max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
     GrupoSNIB: [{ max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
 };
 
 watch(() => props.visible, (newVal) => {
-    dialogVisible.value = newVal; 
+    dialogVisible.value = newVal;
     if (newVal) {
         if (props.accion === 'editar' && props.gpoTaxEdit) {
             form.value = {
@@ -72,11 +74,16 @@ const intentarGuardar = async () => {
             };
             emit('formSubmited', datosParaEnviar);
         } else {
-             ElMessage.error('Por favor, corrija los errores en el formulario.');
+            ElMessage.error('Por favor, corrija los errores en el formulario.');
         }
     } catch (error) {
-       console.log('Validación fallida, no se emite evento.');
+        console.log('Validación fallida, no se emite evento.');
     }
+};
+
+
+const cerrarDialogo = () => {
+    emit('cerrar');
 };
 
 </script>
@@ -87,22 +94,25 @@ const intentarGuardar = async () => {
             <h3>{{ dialogTitle }}</h3>
         </div>
         <div class="header">
+           
             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar" />
+                <GuardarButton @click="intentarGuardar"/>
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
-                <el-form :model="form" :rules="rules" ref="formRef" label-position="top" @submit.prevent="intentarGuardar">
-                    <el-form-item label="GrupoSCAT" prop="GrupoSCAT">
+                <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
+                    @submit.prevent="intentarGuardar">
+                    <el-form-item label="Grupo SCAT" prop="GrupoSCAT">
                         <el-input v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="GrupoAbreviado" prop="GrupoAbreviado">
+                    <el-form-item label="Grupo abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="GrupoSNIB" prop="GrupoSNIB">
+                    <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
                         <el-input v-model="form.GrupoSNIB" maxlength="100" show-word-limit />
                     </el-form-item>
                 </el-form>
-                
+
             </div>
         </div>
     </DialogGeneral>
@@ -128,11 +138,11 @@ const intentarGuardar = async () => {
     border: 3px;
     text-align: left;
     border-radius: 10px;
-    background-color: #ffffff; 
+    background-color: #ffffff;
     padding: 20px 24px;
     text-align: left;
-    position: relative; 
-    z-index: 10; 
+    position: relative;
+    z-index: 10;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
@@ -152,6 +162,7 @@ const intentarGuardar = async () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
+    gap: 25px;
 }
 
 :deep(.el-form-item) {
