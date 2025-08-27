@@ -50,7 +50,8 @@ class NombresController extends Controller
 
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor', 
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor', 
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
             }else{
@@ -58,7 +59,8 @@ class NombresController extends Controller
 
                 $nombres = Nombre::filtraArbolTax($taxon)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
             }
@@ -73,7 +75,8 @@ class NombresController extends Controller
 
             $nombres = Nombre::filtraArbol($categ, $catalog)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
         }
@@ -81,7 +84,8 @@ class NombresController extends Controller
 
             $nombres = Nombre::where('IdCategoriaTaxonomica', '=','1')
                               ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                      'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                      'relNombreCat','categoria','scat', 'nombreRel',
+                                      'nombreRelVal','relNombreAutor',
                                       'relNombreRegion', 'scat.grupoScat'])
                               ->get();
         }
@@ -162,7 +166,7 @@ class NombresController extends Controller
     {
         $nombres = Nombre::cargaHijos($id)
                          ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                 'relNombreCat','categoria','scat', 'nombreRel',
+                                 'relNombreCat','categoria','scat', 'nombreRel','nombreRelVal',
                                  'relNombreAutor', 'scat.grupoScat', 'scat.grupoScat'])
                          ->get();
         
@@ -559,7 +563,7 @@ class NombresController extends Controller
                 DB::table('RelNombreAutor')->insert($autorNombre);
 
                 $nombres = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 
-                                         'relNombreCat', 'categoria', 'scat', 'nombreRel', 
+                                         'relNombreCat', 'categoria', 'scat', 'nombreRel', 'nombreRelVal',
                                          'relNombreAutor', 'relNombreRegion', 'scat.grupoScat'])
                                  ->find($nombre['IdNombre']);
 
@@ -723,7 +727,7 @@ class NombresController extends Controller
                     }
                     
                     $nombres = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 
-                                             'relNombreCat', 'categoria', 'scat', 'nombreRel', 
+                                             'relNombreCat', 'categoria', 'scat', 'nombreRel', 'nombreRelVal',
                                              'relNombreAutor', 'relNombreRegion', 'scat.grupoScat'])
                                         ->find($id);
 
@@ -862,7 +866,8 @@ class NombresController extends Controller
 
             $nombres = Nombre::filtraArbol($categ, $catalog)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);   
 

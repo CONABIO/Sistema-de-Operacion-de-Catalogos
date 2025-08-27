@@ -2,10 +2,9 @@
 import { ref, onMounted, triggerRef, h } from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; // Asegúrate de que la ruta sea correcta
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
-
-import DialogRelacionesTax from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
+import DialogRelaciones from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import { ElMessageBox } from 'element-plus';
@@ -18,7 +17,8 @@ import NotificacionExitoErrorModal from"@/Components/Biotica/NotificacionExitoEr
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-import { showConfirmMessage } from '@/Composables/mensajeConfirm'
+import { showConfirmMessage } from '@/Composables/mensajeConfirm';
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
 
 const { permisos } = usePermisos();
 
@@ -26,6 +26,7 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
+//Definición de variables
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -37,6 +38,33 @@ const props = defineProps({
   }
 });
 
+const totalRegNom = ref(0);
+
+const columnasDefinidas = ref([
+  { prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120', sortable: true, 
+            align: 'left', tipo:'imagenTexto', filtrable: true },
+  { prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250', sortable: true, 
+            align: 'left', tipo:'imagenTexto', filtrable: true },
+  { prop: 'Biblio', label: 'Ref.', minWidth: '55', sortable: false, align: 'center', 
+            tipo:'imagenTexto', filtrable: false }
+]);
+
+const opcionesFiltroNomenclatura = ref([
+  { label: 'TipoRelación', value: 'TipoRelacion' },
+  { label: 'NombreCompleto', value: 'Nombrecompleto' }
+]);
+
+const totalRegRef = ref(0);
+
+const columnasDefRef= ref([
+  { prop: 'Cita', label: 'Cita completa', minWidth: '250', sortable: true,
+           align: 'left', tipo:'textarea', filtrable: true},
+ ]);
+
+const opcionesFiltroRef = ref([
+  { label: 'Cita', value: 'Cita' }
+]);
+
 //variables del paginado
 const totalItems = ref(0);
 const currentPage = ref(1);
@@ -47,7 +75,6 @@ const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
 
-
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -56,7 +83,6 @@ const notificacionDuracion = ref(5000);
 
 const dialogFormVisibleAlta = ref(false); // Para controlar la visibilidad del modal
 const taxonAct = ref([]); // Agrega esta línea
-
 const data = ref([]);
 const categ = ref(null);
 const catalogos = ref('');
@@ -79,74 +105,8 @@ const selectedNodeKey = ref(null);
 const filterText = ref('');
 const catego = ref('');
 const tablaNomenclatura = ref([]);
-const columnasNom = ref([
-  {
-    prop: "TipoRelacion",
-    label: "Tipo",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  },
-  {
-    prop: "NombreCompleto",
-    label: "Nombre",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  },
-  {
-    prop: "estatus",
-    label: "Estatus",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  }
-]);
 const tablaReferencias = ref([]);
-const columnasRef = ref([
-  {
-    prop: "Autor",
-    label: "Autor",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  },
-  {
-    prop: "Anio",
-    label: "Año",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  },
-  {
-    prop: "Titulo",
-    label: "Tipo de publicación",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  },
-  {
-    prop: "Cita",
-    label: "Cita completa",
-    minWidth: 80,
-    sortable: true,
-    hidden: false,
-    align: 'left',
-    fixed: true
-  }
-]);
+
 
 //Declaración de Funciones
 const filtro_Catalogos = () => {
@@ -315,6 +275,7 @@ const handleChange = async (value) => {
       const response = await axios.get('/cargar-nomArb', { params });
 
       if (response.status === 200) {
+        
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
         paginas.value = response.data[1].last_page;
@@ -329,15 +290,6 @@ const handleChange = async (value) => {
 
 //Función para hacer la busqueda de los valores colocados en el input de busqueda
 const filterNode = async (value) => {
-  if (data.value.length === 0) {
-     mostrarNotificacion(
-      "Aviso",
-      "Se debe seleccionar una categoría taxonómica.",
-      "warning",
-      7000
-    );
-    return;
-  }
   mostrar.value = false;
 
   const loading = ElLoading.service({
@@ -389,9 +341,11 @@ const cerrarNotificacion = () => {
 
 //Funcion que se ejecuta para la expancion de un nodo
 const expande = async (draggingNode, nodeData, nodeComponent) => {
+  
   isMenuVisible.value = false;
   mostrar.value = true;
   taxonAct.value = draggingNode;
+  
   if (draggingNode.children.length === 0) {
     const loading = ElLoading.service({
       lock: true,
@@ -415,23 +369,13 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
     }
     loading.close();
   }
+  
   tablaNomenclatura.value = draggingNode.relaciones;
+  totalRegNom.value = draggingNode.relaciones.length;
   tablaReferencias.value = draggingNode.referencias;
+  totalRegRef.value = draggingNode.referencias.length
   selectedNodeKey.value = draggingNode.id;
 
-}
-
-//Función para cambiar el color de la columna referencias bibliograficas
-const classChecker = ({ row, column, rowIndex, columnIndex }) => {
-  if (column.property === 'Biblio') {
-
-    const val = row[column.property];
-    if (val > 0) {
-      return 'greenClass';
-    } else {
-      return 'redClass';
-    }
-  }
 }
 
 const proceder = ()=>
@@ -773,6 +717,8 @@ const handleNodeRightClick = (event, data, node) => {
   event.preventDefault(); // Prevenir el menú contextual del navegador
 
   tree.value.setCurrentKey(data.id);
+  
+  expande(data, node)
 
   taxAct.value = data;
   selectedNode.value = data;
@@ -837,7 +783,7 @@ const fetchFilteredData = async () => {
 };
 
   const abre_Relaciones = () => {
-    dialogFormVisibleRelTax.value = true;
+      dialogFormVisibleRel.value = true;
   }
 </script>
 
@@ -859,8 +805,19 @@ const fetchFilteredData = async () => {
               <!-- Segunda columna -->
               <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
                 <span class="block">Nivel taxonómico</span>
-                <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                  placeholder="Nivel taxonómico" @change="handleChange">
+                <el-cascader :options="categoriasTax" 
+                             clearable 
+                             filterable 
+                             v-model="categ"
+                             placeholder="Nivel taxonómico" 
+                             @change="handleChange">
+                  <template #default="{ data }">
+                    <span style="display: inline-flex; align-items: center;">
+                      <img :src="data.RutaIcono" alt="" 
+                            style="width: 16px; height: 16px; margin-right: 6px;" />
+                      <span>{{ data.label }}</span>
+                    </span>
+                  </template>           
                 </el-cascader>
               </el-col>
 
@@ -925,8 +882,8 @@ const fetchFilteredData = async () => {
           </div>
           <br>
           <div style="flex-grow: 1;">
-            <el-container style="height: 100%; border: 1px solid red;">
-              <el-aside width="650px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
+            <el-container style="height: 100%;">
+              <el-aside width="600px" style="background-color: rgb(238, 241, 246); height: 100%; overflow: auto;">
                 <div class="tree-container">
                   <el-scrollbar height="550px">
                   <el-tree 
@@ -983,23 +940,15 @@ const fetchFilteredData = async () => {
                         v-if="isMenuVisible">
                     <el-menu-item
                       class="item">
-                      <!--el-button @click="abre_Relaciones()" type="primary" round>
-                        <el-icon class="icono">
-                          <HelpFilled />
-                        </el-icon>
-                        <span class="hidden sm:inline">Relaciones</span>
-                      </el-button-->
                       <span  class="text-lg">  
                         <el-icon class="icono">
                           <HelpFilled />
                         </el-icon>
                       </span>
-                      <span class="hidden sm:inline mr-2 text-base">Relaciones taxonómicas</span> 
-                      <el-button @click="abre_Relaciones()" type="primary" circle size="default" >
-                        <el-icon><View /></el-icon>
-                      </el-button>
-                      <EditarButton v-if="hasPermisos('MnuAsociar', 'Cambios')" @editar="abre_Relaciones()" toolPosicion = 'top' 
-                                    :tamaño = "'default'"/>
+                      <span class="hidden sm:inline mr-2 text-base" 
+                            @click="abre_Relaciones()">
+                        Relaciones taxonómicas
+                      </span> 
                     </el-menu-item>
                     <el-menu-item
                       class="item">
@@ -1017,52 +966,43 @@ const fetchFilteredData = async () => {
                 </div>
               </el-aside>
               <el-container style="height: 500px; border: 1px;">
-                <el-header style="text-align: left; font-size: 12px; height: 70px;">
+                <el-header style="text-align: left; font-size: 12px; height: 35px;">
                   <div>
                     <br/>
-                    <br/>
-                    <p></p>
-                    <span class="demo-input-label">Categoria taxónomica: </span>
-                    <span class="demo-input-label">{{ taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica }}</span>
-                    <br/>
-                    <br/>
-                    <p></p>
-                    <span class="demo-input-label">Nombre completo: </span>
-                    <span class="demo-input-label">{{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}</span>
-                    <p></p>
-                    <br/>
-                    <span class="demo-input-label">Taxón:</span>
-                    <span class="demo-input-label">{{ taxonAct?.completo?.Nombre }}</span>
+                    <span class="demo-input-label" style="display: flex; align-items: center; font-size: 15px; font-weight: bold;">
+                      <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src = "taxonAct?.completo?.categoria?.RutaIcono" style="width: 25px; height: 25px">
+                      <span style="margin-left: 8px;">
+                        {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
+                      </span>
+                    </span>
                   </div>
-                </template>
-              </el-tree>
-          </el-aside>
-          
-          <el-container v-if="mostrar && taxonAct" class="p-4">
-            <el-main>
-                <div class="mb-6">
-                    <p><span class="font-semibold">Categoría:</span> {{ taxonAct.completo.categoria.NombreCategoriaTaxonomica }}</p>
-                    <p><span class="font-semibold">Nombre:</span> {{ taxonAct.completo.NombreCompleto }} {{ taxonAct.completo.NombreAutoridad }}</p>
-                    <p><span class="font-semibold">Taxón:</span> {{ taxonAct.completo.Nombre }}</p>
-                </div>
-                
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-2">Relaciones nomenclaturales</h3>
-                    <el-table :data="tablaNomenclatura" border height="200" style="width: 100%;">
-                      <el-table-column v-for="col in columnasNom" :key="col.prop" v-bind="col" />
-                      <el-table-column align="center" width="100" prop="Biblio" label="Referencia">
-                        <template #default><span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16"><path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span></template>
-                      </el-table-column>
-                      <template #empty><div>No hay datos para mostrar</div></template>
-                    </el-table>
-                </div>
-
-                <div>
-                    <h3 class="font-semibold mb-2">Referencias asociadas</h3>
-                    <el-table :data="tablaReferencias" border height="250" style="width: 100%;">
-                      <el-table-column v-for="col in columnasRef" :key="col.prop" v-bind="col" />
-                      <template #empty><div>No hay referencias asociadas</div></template>
-                    </el-table>
+                </el-header>
+                <el-main width="500px" style="height: 100%; display: flex; flex-direction: column;">
+                  <div style="flex-shrink: 0; height: 35px;">
+                    <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
+                  </div>
+                  <div style=" flex-direction: column; overflow-y: auto; flex-grow: 1; height: 1400px;">
+                    <TablaFiltrable class="flex-grow" 
+                                    :container-class="'main-section'" 
+                                    :columnas="columnasDefinidas"
+                                    v-model:datos="tablaNomenclatura" 
+                                    v-model:total-items="totalRegNom" 
+                                    :opciones-filtro="opcionesFiltroNomenclatura">
+                    </TablaFiltrable>
+                  </div>
+                  <br>
+                  <div style="flex-shrink: 0; height: 35px;">
+                    <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
+                  </div>
+                  <div style=" flex-direction: column; overflow-y: auto; flex-grow: 1; height: 1400px;">
+                    <TablaFiltrable class="flex-grow" 
+                                    :container-class="'main-section'" 
+                                    :columnas="columnasDefRef"
+                                    v-model:datos="tablaReferencias" 
+                                    v-model:total-items="totalRegRef" 
+                                    :opciones-filtro="opcionesFiltroRef">
+                    </TablaFiltrable>
+                  </div>
                 </el-main>                  
               </el-container>
             </el-container>
@@ -1081,8 +1021,7 @@ const fetchFilteredData = async () => {
       </el-container>
     
   </CuerpoGen>
-  
-  <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false">
+  <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false" :width="'35%'">
     <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
   </DialogForm>
 
@@ -1101,16 +1040,16 @@ const fetchFilteredData = async () => {
                 @resultadoBaja = "recibeTaxBaja"/>
   </DialogForm>
 
-  <DialogForm v-model="dialogFormVisibleRelTax" :botCerrar="true" :pressEsc="true" :width="'90%'">
+  <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'">
     <!--FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" /-->
-    <DialogRelacionesTax :taxonAct = "taxonAct" 
+    <DialogRelaciones :taxonAct = "taxonAct" 
                       :gruposTax = "gruposTax"
                       :categoriasTax = "categoriasTax"
                       :catalogPadre = "catalogos"
                       :gruposPadre = "grupos"
                       :idsGruposPadre = "idsGrupos"
                        @cerrar = "closeDialog">
-    </DialogRelacionesTax>
+    </DialogRelaciones>
   </DialogForm>
 
     <Teleport to="body">
@@ -1219,9 +1158,6 @@ const fetchFilteredData = async () => {
   height: 20px;
   flex-shrink: 0;
 }
-
-:deep(.el-table .greenClass) { background: rgb(90, 177, 90); }
-:deep(.el-table .redClass) { background: rgb(226, 119, 119); }
 
 .context-menu {
   position: absolute;

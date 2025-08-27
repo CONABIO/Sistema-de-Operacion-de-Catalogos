@@ -16,7 +16,22 @@ class CategoriaTaxonomicaController extends Controller
 
     public function index()
     {
-        $todosLosNodosPlanos = CategoriasTaxonomicas::all();
+        $todosLosNodosPlanos = CategoriasTaxonomicas::query()
+            ->orderBy('IdNivel1')
+            ->orderBy('IdNivel2')
+            ->orderBy('IdNivel3')
+            ->orderBy('IdNivel4')
+            ->orderBy('IdNivel5')
+            ->orderBy('IdNivel6')
+            ->orderBy('IdNivel7')
+            ->orderBy('IdNivel8')
+            ->orderBy('IdNivel9')
+            ->orderBy('IdNivel10')
+            ->orderBy('IdNivel11')
+            ->orderBy('IdNivel12')
+            ->get();
+
+
         $treeDataParaVisualizacion = $this->buildTreeFromParentId($todosLosNodosPlanos);
 
         return Inertia::render('Socat/Categorias/CategoriaTaxonomica', [
@@ -44,18 +59,20 @@ class CategoriaTaxonomicaController extends Controller
 
         foreach ($nodeMap as $nodeId => &$node) {
             $parentId = $node['IdAscendente'];
-            if (!empty($parentId) && isset($nodeMap[$parentId])) {
+            if ($parentId !== null && isset($nodeMap[$parentId])) {
                 $nodeMap[$parentId]['children'][] = &$node;
             } else {
                 $tree[] = &$node;
             }
         }
 
+        unset($node);
+
         $sortChildren = function (&$nodes) use (&$sortChildren) {
             usort($nodes, function ($a, $b) {
                 for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
                     $levelKey = "IdNivel{$i}";
-                    $diff = $a[$levelKey] <=> $b[$levelKey];
+                    $diff = ($a[$levelKey] ?? 0) <=> ($b[$levelKey] ?? 0);
                     if ($diff !== 0) {
                         return $diff;
                     }
@@ -68,8 +85,11 @@ class CategoriaTaxonomicaController extends Controller
                     $sortChildren($node['children']);
                 }
             }
+            unset($node);
         };
+
         $sortChildren($tree);
+
         return $tree;
     }
 
@@ -119,6 +139,7 @@ class CategoriaTaxonomicaController extends Controller
 
         $validatedData = $request->validate(array_merge([
             'NombreCategoriaTaxonomica' => ['required', 'string', 'max:255'],
+            'IdAscendente' => ['nullable', 'integer', 'exists:catcentral.CategoriaTaxonomica,IdCategoriaTaxonomica'],
         ], $levelRules));
 
         $validatedData['RutaIcono'] = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
@@ -126,7 +147,7 @@ class CategoriaTaxonomicaController extends Controller
         $categoria = CategoriasTaxonomicas::create($validatedData);
 
         return redirect()->route('categorias-taxonomicas.index')
-            ->with('flash', ['newNodeId' => $categoria->IdCategoria]);
+            ->with('flash', ['newNodeId' => $categoria->IdCategoriaTaxonomica]);
     }
 
     public function update(Request $request, CategoriasTaxonomicas $categoria_taxonomica)

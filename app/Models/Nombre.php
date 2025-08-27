@@ -65,6 +65,12 @@ class Nombre extends Model
         return $this->hasMany(Nombre_Relacion::class,'IdNombre');
     }
   
+    //Se declara la relacion de uno a muchos con la tabla Nombre_Relacion 
+    public function nombreRelVal()
+    {
+        return $this->hasOne(Nombre_Relacion::class,'IdNombreRel', 'IdNombre');
+    }
+
     public function relNombreAutor()
     {
         return $this->hasMany(RelNombreAutor::class, 'IdNombre');
@@ -142,13 +148,31 @@ class Nombre extends Model
     public function scopeCargaRelaciones($query, $id)
     {
         if ($id) {
-            $query->groupByRaw('Tipo_Relacion.Descripcion, Nombre.NombreCompleto, Nombre.Estatus')
-                  ->selectRaw('Tipo_Relacion.Descripcion, Nombre.NombreCompleto, Nombre.Estatus, 
-                                count(RelacionBibliografia.IdBibliografia) as Biblio')
-                  ->where('Nombre_Relacion.IdNombre', '=', $id)
+            $query->groupByRaw('Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono, 
+                                Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, 
+                                Nombre.Estatus, Nombre.SistClasCatDicc, Nombre.NombreAutoridad, 
+                                CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono, 
+                                Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion,
+                                Nombre_Relacion.Observaciones')
+                  ->selectRaw('Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono AS TipoRelIcono, 
+                                Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, 
+                                Nombre.Estatus, Nombre.SistClasCatDicc, Nombre.NombreAutoridad,
+                                count(RelacionBibliografia.IdBibliografia) as Biblio, 
+                                CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono AS CategIcono, 
+                                Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion,
+                                Nombre_Relacion.Observaciones' )
+                  ->where(function($q) use ($id){
+                        $q->where('Nombre_Relacion.IdNombre', '=', $id)
+                          ->orWhere('Nombre_Relacion.IdNombreRel', '=', $id);
+                  })
                   ->where('Nombre.EstadoRegistro', '=', 1)
+                  ->where('Nombre.IdNombre', '!=', $id)
                   ->OrderByRaw('Tipo_Relacion.IdTipoRelacion ASC, Nombre.NombreCompleto ASC')
-                  ->join('Nombre_Relacion', 'Nombre.IdNombre', '=', 'Nombre_Relacion.IdNombreRel')
+                  ->join('CategoriaTaxonomica', 'Nombre.IdCategoriaTaxonomica', '=', 'CategoriaTaxonomica.IdCategoriaTaxonomica')
+                  ->join('Nombre_Relacion', function($join){
+                            $join->on('Nombre.IdNombre', '=', 'Nombre_Relacion.IdNombre')
+                                 ->orOn('Nombre.IdNombre', '=', 'Nombre_Relacion.IdNombreRel');
+                  })
                   ->join('Tipo_Relacion', 'Tipo_Relacion.IdTipoRelacion','=', 'Nombre_Relacion.IdTipoRelacion')
                   ->join('RelacionBibliografia', function($join){
                                 $join->on('RelacionBibliografia.IdNombre','=','Nombre_Relacion.IdNombre');

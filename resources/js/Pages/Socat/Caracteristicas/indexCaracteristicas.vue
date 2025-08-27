@@ -9,6 +9,8 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import { ref, computed, watch, onMounted, nextTick, h } from "vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+
 import {
   ElTree,
   ElMessage,
@@ -597,6 +599,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                   :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                  <BotonSalir /> 
               </div>
             </div>
           </div>
@@ -625,16 +628,14 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
+        <div class="form-actions">
+            <GuardarButton @click="guardarDesdeModal" />
+            <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
+          </div>
         <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
-            <el-form-item prop="Descripcion">
-              <template #label>
-                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
-              </template>
-              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
-                clearable maxlength="255" show-word-limit />
-            </el-form-item>
+
             <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
               <el-radio-group v-model="opcionNivel">
@@ -642,10 +643,17 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                 <el-radio value="inferior">Nivel inferior</el-radio>
               </el-radio-group>
             </div>
+
+            <el-form-item prop="Descripcion">
+              <template #label>
+                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
+              </template>
+              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
+                clearable maxlength="255" show-word-limit />
+            </el-form-item>
+            
           </el-form>
-          <div class="form-actions">
-            <GuardarButton @click="guardarDesdeModal" />
-          </div>
+          
         </div>
       </DialogGeneral>
 
@@ -820,9 +828,10 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    gap: 10px;
 }
 
 :deep(.el-form-item) {

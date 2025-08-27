@@ -17,6 +17,9 @@ const routeMap = {
     '2-5': 'tipos-relacion.index', 
     '2-6': 'categorias-taxonomicas.index', 
     '2-7': 'caracteristicas-taxon.index',
+    '2-8': 'tipos-region.index',
+    '2-9': 'regiones.index',
+    '2-10': 'objetos-externos.index',
     '3-1': 'nombreTax.index',
     '4': 'bibliografias.index'
 };
@@ -79,12 +82,14 @@ watch(
                 <template #title>Catálogos</template>
                 <el-menu-item index="2-1" v-if="hasPermisos('MnuCatAutores')">Autoridades taxonómicas</el-menu-item>
                 <el-menu-item index="2-2" v-if="hasPermisos('MnuCatGrpTax')">Grupos taxonómicos</el-menu-item>
-                <el-menu-item index="2-3" v-if="hasPermisos('MnuCatNomCom')">Nombre común</el-menu-item>
-                <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipo de distribución</el-menu-item>
-                <el-menu-item index="2-5" v-if="hasPermisos('MnuCatTipRel')">Tipo de relación</el-menu-item>
-                <el-menu-item index="2-6" v-if="hasPermisos('MnuCatCatTax')">Categoría taxonómica</el-menu-item>
-                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCatTax')">Características asociadas al
-                    taxón</el-menu-item>
+                <el-menu-item index="2-3" v-if="hasPermisos('MnuCatNomCom')">Nombres comunes</el-menu-item>
+                <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipos de distribución</el-menu-item>
+                <el-menu-item index="2-5" v-if="hasPermisos('MnuCatTipRel')">Tipos de relaciones taxonómicas</el-menu-item>
+                <el-menu-item index="2-6" v-if="hasPermisos('MnuCatCatTax')">Categorías taxonómicas</el-menu-item>
+                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCatTax')">Características asociadas al taxón</el-menu-item>
+                <el-menu-item index="2-8" >Tipos de regiones</el-menu-item>
+                <el-menu-item index="2-9" >Regiones</el-menu-item>
+                <el-menu-item index="2-10">Objetos externos</el-menu-item>
             </el-sub-menu>
 
             <el-sub-menu index="3" v-if="hasPermisos('MnuNomenclatura')">

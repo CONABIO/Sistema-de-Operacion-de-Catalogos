@@ -14,6 +14,7 @@ import { ElTree, ElMessage, ElMessageBox, ElInput, ElRadioGroup, ElRadio, ElForm
 import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import CambiarIconoButton from "@/Components/Biotica/CambiarIconoButton.vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -30,6 +31,8 @@ const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
+
 
 const esModalIconosVisible = ref(false);
 const terminoBusquedaIcono = ref('');
@@ -51,6 +54,8 @@ const props = defineProps({
 });
 
 
+
+
 const iconosSugeridos = [
     'mdi:leaf', 'mdi:tree', 'mdi:flower', 'mdi:forest', 'mdi:pine-tree', 'mdi:sprout', 'mdi:seed', 'mdi:grass',
     'mdi:paw', 'mdi:fish', 'mdi:bug', 'mdi:bee', 'mdi:bird', 'mdi:dog', 'mdi:cat', 'mdi:cow', 'mdi:pig',
@@ -60,10 +65,10 @@ const iconosSugeridos = [
     'mdi:file-music', 'mdi:file-video', 'mdi:file-cloud', 'mdi:file-chart',
     'mdi:account', 'mdi:account-group', 'mdi:account-circle', 'mdi:account-plus', 'mdi:account-remove',
     'mdi:home', 'mdi:home-variant', 'mdi:pencil', 'mdi:trash-can', 'mdi:delete-forever', 'mdi:cog', 'mdi:cog-outline',
-    'mdi:check', 'mdi:check-bold', 'mdi:check-circle', 'mdi:close', 'mdi:close-thick', 
+    'mdi:check', 'mdi:check-bold', 'mdi:check-circle', 'mdi:close', 'mdi:close-thick',
     'mdi:plus', 'mdi:minus', 'mdi:plus-box', 'mdi:minus-box', 'mdi:magnify', 'mdi:zoom-in', 'mdi:zoom-out',
     'mdi:eye', 'mdi:eye-off', 'mdi:lock', 'mdi:lock-open-variant', 'mdi:key-variant', 'mdi:content-copy',
-    'mdi:upload', 'mdi:download', 'mdi:share-variant', 'mdi:link-variant','mdi:filter-variant',
+    'mdi:upload', 'mdi:download', 'mdi:share-variant', 'mdi:link-variant', 'mdi:filter-variant',
     'mdi:sort', 'mdi:refresh', 'mdi:undo', 'mdi:redo', 'mdi:history', 'mdi:dots-vertical', 'mdi:menu',
     'mdi:arrow-up', 'mdi:arrow-down', 'mdi:arrow-left', 'mdi:arrow-right', 'mdi:chevron-up', 'mdi:chevron-down',
     'mdi:chevron-left', 'mdi:chevron-right', 'mdi:arrow-expand-all', 'mdi:arrow-collapse-all',
@@ -80,12 +85,12 @@ const iconosSugeridos = [
     'mdi:currency-usd', 'mdi:credit-card', 'mdi:cart', 'mdi:calendar', 'mdi:clock', 'mdi:tag',
 
 
-     'heroicons:adjustments-horizontal-solid', 'heroicons:archive-box-arrow-down-solid', 'heroicons:backward-solid', 'heroicons:forward-solid',
+    'heroicons:adjustments-horizontal-solid', 'heroicons:archive-box-arrow-down-solid', 'heroicons:backward-solid', 'heroicons:forward-solid',
     'heroicons:bars-3-solid', 'heroicons:bookmark-slash-solid', 'heroicons:clipboard-document-check-solid', 'heroicons:command-line-solid',
     'heroicons:cpu-chip-solid', 'heroicons:document-duplicate-solid', 'heroicons:finger-print-solid', 'heroicons:gift-solid',
     'heroicons:hand-raised-solid', 'heroicons:inbox-arrow-down-solid', 'heroicons:lifebuoy-solid',
     'heroicons:receipt-refund-solid', 'heroicons:scale-solid', 'heroicons:server-stack-solid', 'heroicons:shield-exclamation-solid',
-    'heroicons:stop-circle-solid', 'heroicons:swatch-solid', 'heroicons:ticket-solid', 
+    'heroicons:stop-circle-solid', 'heroicons:swatch-solid', 'heroicons:ticket-solid',
     'heroicons:trophy-solid', 'heroicons:viewfinder-circle-solid', 'heroicons:wrench-screwdriver-solid',
     'tabler:2fa', 'tabler:3d-cube-sphere', 'tabler:abc', 'tabler:access-point', 'tabler:activity', 'tabler:adjustments-alt',
     'tabler:alarm', 'tabler:alert-triangle', 'tabler:alien', 'tabler:align-center', 'tabler:ambulance', 'tabler:anchor',
@@ -111,10 +116,10 @@ const iconosSugeridos = [
     'tabler:filter', 'tabler:fingerprint', 'tabler:fire-hydrant', 'tabler:firetruck', 'tabler:first-aid-kit', 'tabler:flag',
     'tabler:flame', 'tabler:flask', 'tabler:flip-horizontal', 'tabler:float-center', 'tabler:focus', 'tabler:forbid',
     'tabler:forklift', 'tabler:forms', 'tabler:frame', 'tabler:friends', 'tabler:gas-station', 'tabler:gauge',
-    'tabler:ghost', 'tabler:git-branch',  'tabler:git-compare', 'tabler:git-merge', 'tabler:git-pull-request',
+    'tabler:ghost', 'tabler:git-branch', 'tabler:git-compare', 'tabler:git-merge', 'tabler:git-pull-request',
     'tabler:glass-full', 'tabler:globe', 'tabler:gps', 'tabler:grid-dots', 'tabler:hand-stop', 'tabler:hanger',
     'tabler:hash', 'tabler:heading', 'tabler:headset', 'tabler:helicopter', 'tabler:highlight', 'tabler:ice-cream',
-    'tabler:id', 'tabler:inbox', 'tabler:info-circle', 'tabler:input-search', 'tabler:ironing', 
+    'tabler:id', 'tabler:inbox', 'tabler:info-circle', 'tabler:input-search', 'tabler:ironing',
     'tabler:key', 'tabler:keyboard', 'tabler:language', 'tabler:layers-difference', 'tabler:layout-2', 'tabler:leaf',
     'tabler:lego', 'tabler:letter-case', 'tabler:license', 'tabler:lifebuoy', 'tabler:line-height', 'tabler:link',
     'tabler:list-check', 'tabler:location', 'tabler:lock', 'tabler:login', 'tabler:logout', 'tabler:magnet',
@@ -151,7 +156,7 @@ const iconosSugeridos = [
     'carbon:play-outline', 'carbon:portfolio', 'carbon:power', 'carbon:presentation-file', 'carbon:purchase', 'carbon:query',
     'carbon:receipt', 'carbon:recommend', 'carbon:report', 'carbon:request-quote', 'carbon:reset',
     'carbon:review', 'carbon:save-image', 'carbon:scan', 'carbon:script', 'carbon:send-alt', 'carbon:service-desk',
-    'carbon:session-border-control', 'carbon:settings-adjust', 'carbon:shopping-catalog', 'carbon:skill-level', 
+    'carbon:session-border-control', 'carbon:settings-adjust', 'carbon:shopping-catalog', 'carbon:skill-level',
     'carbon:spell-check', 'carbon:split-screen', 'carbon:stamp', 'carbon:task', 'carbon:terminal', 'carbon:text-font',
     'carbon:thumbs-up', 'carbon:timer', 'carbon:tool-kit', 'carbon:traffic-cone', 'carbon:upgrade', 'carbon:user-avatar',
     'carbon:user-profile', 'carbon:video-chat', 'carbon:view-mode-2', 'carbon:virtual-machine', 'carbon:voice-activate',
@@ -211,7 +216,11 @@ const seleccionarIcono = async (iconName) => {
                 cerrarModalIconos();
             },
             onError: (errors) => {
-                mostrarNotificacion("Error al Guardar", Object.values(errors).flat().join("\n"), "error");
+                const errorMessage = errors.message || "Ocurrió un error desconocido al intentar eliminar.";
+                mostrarNotificacion("Acción no permitida", errorMessage, "error");
+            },
+            onFinish: () => {
+                nodeDataForDeleteConfirmation.value = null;
             }
         });
     } catch (error) {
@@ -241,7 +250,7 @@ const buscarIconos = async () => {
 
     cargandoIconos.value = true;
     try {
-        const response = await fetch(`https://api.iconify.design/search?query=${terminoDeBusqueda}&limit=48`); // Aumentamos el límite un poco
+        const response = await fetch(`https://api.iconify.design/search?query=${terminoDeBusqueda}&limit=48`);
         const data = await response.json();
         listaIconosEncontrados.value = data.icons || [];
     } catch (error) {
@@ -255,13 +264,11 @@ const buscarIconos = async () => {
 const onInputBusquedaIcono = () => {
     clearTimeout(debounceTimer);
 
-    // Si el usuario borró todo el texto, mostramos los sugeridos inmediatamente.
     if (terminoBusquedaIcono.value.trim() === '') {
         listaIconosEncontrados.value = iconosSugeridos;
         return;
     }
 
-    // Si no, esperamos para buscar.
     debounceTimer = setTimeout(() => {
         buscarIconos();
     }, 500);
@@ -338,6 +345,14 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
     notificacionVisible.value = true;
 };
 
+const mostrarNotificacionError = (titulo, mensaje, tipo = "error",) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
+    notificacionVisible.value = true;
+};
+
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
     if (nodeIdToScrollToAfterNotification.value) {
@@ -407,7 +422,7 @@ const handleNodeSelected = (data, node) => {
 
 const modalRules = {
     Descripcion: [{ required: true, message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "blur" }],
-    Direccionalidad: [{ required: true, message: "La direccionalidad es obligatoria.", trigger: "change" }],
+    Direccionalidad: [{ required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }],
 };
 
 const abrirModalParaInsertar = () => {
@@ -460,10 +475,10 @@ const guardarDesdeModal = async () => {
         ElMessageBox.close();
         const onSuccessHandler = (page) => {
             cerrarModalOperacion();
-            mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
+            mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
         };
         const onErrorHandler = (errors) => {
-            mostrarNotificacion("Error del Servidor", Object.values(errors).flat().join("\n"), "error");
+            mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
         };
 
         if (modalMode.value === "editar") {
@@ -475,9 +490,19 @@ const guardarDesdeModal = async () => {
                 onSuccess: onSuccessHandler, onError: onErrorHandler,
             });
         } else if (modalMode.value === "insertar") {
+            // Se calcula la posición del nuevo nodo
             const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
             if (!calculoNiveles) return;
-            const datosInsert = { Descripcion: formModal.value.Descripcion.trim(), Direccionalidad: formModal.value.Direccionalidad, ...calculoNiveles.niveles };
+
+            // CONSTRUIMOS LOS DATOS PARA INSERTAR
+            const datosInsert = {
+                Descripcion: formModal.value.Descripcion.trim(),
+                Direccionalidad: formModal.value.Direccionalidad,
+                ...calculoNiveles.niveles,
+                RutaIcono: ICONO_POR_DEFECTO // <--- SIEMPRE SE ASIGNA EL PUTO ICONO AQUÍ
+            };
+
+            // Se manda la petición POST
             router.post("/tipos-relacion", datosInsert, {
                 preserveState: true, preserveScroll: true,
                 onSuccess: (page) => {
@@ -511,6 +536,7 @@ const guardarDesdeModal = async () => {
         }).catch(() => { });
     }
 };
+
 
 const handleEliminar = () => {
     if (esModalVisible.value) return ElMessage.info("Cierre cualquier operación en curso.");
@@ -551,30 +577,35 @@ const handleEliminar = () => {
 };
 
 const proceedWithDeletion = async () => {
-    ElMessageBox.close();
-    if (!nodeDataForDeleteConfirmation.value) return;
+    try {
+        ElMessageBox.close();
+        if (!nodeDataForDeleteConfirmation.value) return;
 
-    const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
+        const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
 
-    const parentNode = findNodeInTree(localTreeData.value, nodeDataForDeleteConfirmation.value.IdAscendente);
+        const parentNode = findNodeInTree(localTreeData.value, nodeDataForDeleteConfirmation.value.IdAscendente);
 
-    router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
-        preserveScroll: true,
-        onSuccess: () => {
-            mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
-            if (parentNode) {
-                nodeIdToFocus.value = parentNode.IdTipoRelacion;
-            } else {
-                selectedNode.value = null;
+        router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
+                if (parentNode) {
+                    nodeIdToFocus.value = parentNode.IdTipoRelacion;
+                } else {
+                    selectedNode.value = null;
+                }
+            },
+            onError: (error) => {
+                mostrarNotificacionError('Aviso', `El tipo de relacion ${Descripcion} no se puede eliminar. Este tipo de relacion está en uso en otra parte del sistema.`, 'success');
+            },
+            onFinish: () => {
+                nodeDataForDeleteConfirmation.value = null;
             }
-        },
-        onError: (error) => {
-            mostrarNotificacion("Error al Eliminar", error.message || "Ocurrió un error.", "error");
-        },
-        onFinish: () => {
-            nodeDataForDeleteConfirmation.value = null;
-        }
-    });
+        });
+
+    } catch (apiError) {
+        ElMessageBox.alert('Ocurrió un error al intentar eliminar el registro.', 'Error', { type: 'error' });
+    }
 };
 
 const MAX_NIVELES = 5;
@@ -686,12 +717,17 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
 };
 
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
+
+const cerrarDialogo = () => {
+    emit('cerrar');
+};
+
 </script>
 
 <template>
     <AppLayout title="Tipos de Relación">
         <LayoutCuerpo :usar-app-layout="false" titulo-pag="Tipos de Relación"
-            titulo-area="Catálogo de tipos de relación taxonómica">
+            titulo-area="Catálogo de tipos de relaciones taxonómicas">
 
             <el-card class="box-card tree-card">
                 <template #header>
@@ -707,6 +743,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                <BotonSalir />
                             </div>
                         </div>
                     </div>
@@ -720,7 +757,17 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                     class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
-                            <span v-if="data.RutaIcono" v-html="data.RutaIcono" class="node-icon-wrapper"></span>
+
+                            <img v-if="!data.RutaIcono"
+                                src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
+                                class="node-icon-wrapper static-icon" alt="ícono por defecto" />
+
+                            <template v-else>
+                                <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono"
+                                    class="node-icon-wrapper"></span>
+                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon" alt="ícono">
+                            </template>
+
                             <span>{{ node.label }}</span>
                         </span>
                     </template>
@@ -737,11 +784,23 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                 <div class="dialog-header">
                     <h3>{{ modalTitle }}</h3>
                 </div>
+                <div class="form-actions">
+                    <GuardarButton @click="guardarDesdeModal" />
+                    <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+                </div>
                 <div class="dialog-body-container">
                     <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
                         @submit.prevent="guardarDesdeModal">
 
-                        <el-form-item prop="Descripcion" label="Descripción del Tipo de Relación:">
+                        <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                            <el-radio-group v-model="opcionNivel">
+                                <el-radio value="mismo">Mismo nivel</el-radio>
+                                <el-radio value="inferior">Nivel inferior</el-radio>
+                            </el-radio-group>
+                        </div>
+
+                        <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
                             <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
                                 maxlength="255" show-word-limit />
                         </el-form-item>
@@ -755,17 +814,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                             </el-select>
                         </el-form-item>
 
-                        <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                            <el-radio-group v-model="opcionNivel">
-                                <el-radio value="mismo">Mismo nivel</el-radio>
-                                <el-radio value="inferior">Nivel inferior</el-radio>
-                            </el-radio-group>
-                        </div>
+
                     </el-form>
-                    <div class="form-actions">
-                        <GuardarButton @click="guardarDesdeModal" />
-                    </div>
                 </div>
             </DialogGeneral>
 
@@ -776,7 +826,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
                 <div class="dialog-body-container">
                     <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal', 'flecha')"
                         @input="onInputBusquedaIcono" clearable />
-                    <!-- Título condicional -->
                     <h4 class="icon-section-title">
                         {{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la Búsqueda' }}
                     </h4>
@@ -969,6 +1018,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
     display: flex;
     justify-content: flex-end;
     margin-top: 24px;
+    gap: 10px;
 }
 
 :deep(.el-form-item) {
@@ -1033,5 +1083,11 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
     font-weight: 600;
     color: #909399;
     text-align: left;
+}
+
+.static-icon {
+    width: 1.2em;
+    height: 1.2em;
+    object-fit: contain;
 }
 </style>

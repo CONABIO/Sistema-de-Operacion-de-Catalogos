@@ -3,15 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tipo_Relacion;
-RelacionesTaxonomicas
-use Iluminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+
+
+use App\Models\Nombre;
+use App\Models\Nombre_Relacion;
+use App\Models\RelacionBibliografia;
 
 class TipoRelacionController extends Controller
 {
-    //
-    public function inicioTipRel()
+     public function inicioTipRel()
     {
+
         $arbolCompleto = $this->construirArbolRelaciones(0, 1);
 
         return response()->json($arbolCompleto);
@@ -22,6 +34,7 @@ class TipoRelacionController extends Controller
         $query = Tipo_Relacion::select(
             'IdTipoRelacion AS value',
             'Descripcion AS label',
+            'RutaIcono AS icono',
             'Nivel1',
             'Nivel2',
             'Nivel3',
@@ -60,32 +73,107 @@ class TipoRelacionController extends Controller
                 $registro->children = $this->construirArbolRelaciones(0, $nivelActual + 1, $nuevosValores);
             }
         }
-
+        
         return $registros;
     }
 
-    public function cargaRelacionesInicio(Request $request)
+    public function cargaRelaciones(Request $request)
     {
-        log::info("llegue al controlador de relaciones");
-        log::info($request->tipRel);
 
-        switch ($request->tipRel){
-            case 1:
-                if($request->status)
-                break;
+        $ids = collect($request->ids)->pluck('idNom')->toArray();
+
+        $tipRel = collect($request->ids)->pluck('idTipRel')->unique()->toArray();
+
+        $iconTipRel = Tipo_Relacion::whereIn('IdTipoRelacion', $tipRel)
+                                   ->get();
+
+        $nombres = Nombre::whereIn('IdNombre', $ids)
+                         ->with(['nombreRel', 'categoria'])
+                         ->get();
+
+        
+
+        $data = [];
+        foreach($nombres as $nombre)
+        {
+            $taxRel = collect($request->ids)->firstWhere('idNom', $nombre->IdNombre);
+            
+            $icoTip = collect($iconTipRel)->firstWhere('IdTipoRelacion', $taxRel['idTipRel']);
+
+            $biblio = RelacionBibliografia::where('IdNombre', $request->idAct)
+                                          ->where('IdNombreRel', $nombre->IdNombre)
+                                          ->where('IdTipoRelacion', $taxRel['idTipRel'])
+                                          ->with(['bibliografia'])
+                                          ->get();
+
+            $todasBiblio = $biblio->pluck('bibliografia')->filter()->values()->toArray();                                          
+                                          
+            if($nombre->EstadoRegistro === 1)
+            {
+                switch($nombre->Estatus )
+                {
+                    case 1:
+                        $status = "Sinonimo";     
+                    break;
+                    case 6;
+                        $status = "NA";     
+                    break;
+                    case -9:
+                        $status = "ND";     
+                    break;
+                    default:
+                        switch($nombre->Nombre)
+                        {
+                            case 'Animalia':
+                                $status = "Válido"; 
+                            break;
+                            case 'Plantae':
+                            case 'Fungi':
+                            case 'Protozoa':
+                            case 'Archaea':
+                            case 'Bacteria':
+                            case 'Chromista':   
+                                $status = "Correcto";
+                            break;                              
+                        default:
+                            if($nombre->categoria->IdNivel2 === 0)
+                            {
+                                $status = "Correcto";
+                            }else{
+                                $status = "Válido";
+                            }
+                        }
+                    break;
+                }
+
+                $nomCat = $nombre->categoria->NombreCategoriaTaxonomica.
+                        " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                    
+                $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
+                    
+                $newHijo = [ 'id' => $nombre->IdNombre, 
+                             'label' => $etiqueta, 
+                             'texto' => $nomCat,
+                             'estatus' => $status,
+                             'completo'=> $nombre,
+                             'iconoCat'=> $nombre->categoria->RutaIcono,
+                             'desIconCat'=> $nombre->categoria->NombreCategoriaTaxonomica,
+                             'iconoTipRel' => $icoTip->RutaIcono,
+                             'desIconTip' => $icoTip->Descripcion,
+                             'observaciones' => $taxRel['obser'] ?? null,
+                             'fechaCaptura' => $taxRel['fechaCap'] ?? null,
+                             'fechaModificacion' => $taxRel['fechaMod'] ?? null,
+                             'Bibliografia' => $todasBiblio
+                        ];
+                        
+                array_push($data, $newHijo);
+            }
         }
-    }
-=======
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
 
-class TipoRelacionController extends Controller
-{
+        return $data;
+    }
+
+//==============================================================================
     public function index()
     {
         $todosLosNodosPlanos = Tipo_Relacion::orderBy('Nivel1')
@@ -179,10 +267,9 @@ class TipoRelacionController extends Controller
     public function destroy(Tipo_Relacion $tipoRelacion)
     {
         if ($tipoRelacion->IdTipoRelacion <= 8) {
-            throw ValidationException::withMessages([
-                'protected' => 'La relación seleccionada no puede ser modificada por ser un registro protegido del sistema.'
-            ]);
-        } else {
+            return Redirect::back()->withErrors(['message' => 'La relación seleccionada no puede ser eliminada por ser un registro protegido del sistema.']);
+        }
+
         $query = Tipo_Relacion::query();
         $profundidad = 0;
         for ($i = 1; $i <= 5; $i++) {
@@ -193,37 +280,39 @@ class TipoRelacionController extends Controller
                 break;
             }
         }
-
         if ($profundidad < 5) {
             $query->where("Nivel" . ($profundidad + 1), '>', 0);
         }
-
-        $tieneHijos = $profundidad < 5 && $query->exists();
-
-        if ($tieneHijos) {
-            return redirect()->back()->with('error', 'No se puede eliminar un elemento que tiene subordinados.');
+        if ($profundidad < 5 && $query->exists()) {
+            return Redirect::back()->withErrors(['message' => 'No se puede eliminar un elemento que tiene subordinados en el árbol.']);
         }
 
-        $tipoRelacion->delete();
+        try {
+            $tipoRelacion->delete();
+            return Redirect::back()->with('success', 'Tipo de Relación eliminado con éxito.');
 
-        return redirect()->route('tipos-relacion.index')->with('success', 'Tipo de Relación eliminado con éxito.');
-    }
-    }
+        } catch (QueryException $e) {
+            $errorCode = $e->errorInfo[1];
+            if ($errorCode == 1451) {
+                return Redirect::back()->withErrors(['message' => 'No se puede eliminar. Este tipo de relación está en uso en otra parte del sistema.']);
+            }
 
+            return Redirect::back()->withErrors(['message' => 'Error de base de datos al intentar eliminar el registro.']);
+        }
+    }
 
 
     public function updateIcon(Request $request, Tipo_Relacion $tipoRelacion)
-{
-    $request->validate([
-        'RutaIcono' => 'nullable|string',
-    ]);
+    {
+        $request->validate([
+            'RutaIcono' => 'nullable|string',
+        ]);
 
-    $tipoRelacion->update([
-        'RutaIcono' => $request->RutaIcono,
-    ]);
+        $tipoRelacion->update([
+            'RutaIcono' => $request->RutaIcono,
+        ]);
 
-    return redirect()->route('tipos-relacion.index')
-        ->with('success', 'Ícono actualizado.');
-}
-
+        return redirect()->route('tipos-relacion.index')
+            ->with('success', 'Ícono actualizado.');
+    }
 }

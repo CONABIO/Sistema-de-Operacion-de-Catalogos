@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Bibliografia;
-use App\Models\RelBiblioGrupoSCAT;
-use App\Models\BibliografiaBorra;
-use App\Http\Requests\BibliografiaRequest;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -92,7 +89,7 @@ class BibliografiaController extends Controller
                                 case 'termina':
                                     $q->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
                                     break;
-                                default: // 'contiene'
+                                default:
                                     $q->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
                                     break;
                             }
@@ -127,7 +124,7 @@ class BibliografiaController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput(); // Devuelve los errores a la vista
+            return back()->withErrors($validator)->withInput();
         }
 
         try {
@@ -145,10 +142,10 @@ class BibliografiaController extends Controller
 
             $biblio->save();
 
-            return redirect()->route('bibliografias.index')->with('success', 'La bibliografia taxonómica se dio de alta con éxito'); // Redirige con mensaje de éxito
+            return redirect()->route('bibliografias.index')->with('success', 'La bibliografia taxonómica se dio de alta con éxito');
         } catch (\Exception $e) {
             Log::error("Error creating Bibliografia: " . $e->getMessage());
-            return back()->with('error', 'Error al crear la bibliografía: ' . $e->getMessage())->withInput(); // Redirige con mensaje de error
+            return back()->with('error', 'Error al crear la bibliografía: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -185,10 +182,217 @@ class BibliografiaController extends Controller
         try {
             $biblio = Bibliografia::findOrFail($id);
             $biblio->delete();
-            return response()->json(['status' => 200, 'message' => 'Bibliografia eliminada con éxito']);  // Enviar respuesta JSON
+            return response()->json(['status' => 200, 'message' => 'Bibliografia eliminada con éxito']);
         } catch (\Exception $e) {
             Log::error("Error deleting Bibliografia: {$e->getMessage()}");
-            return response()->json(['status' => 500, 'message' => 'Error al eliminar la bibliografía: ' . $e->getMessage()]); // Enviar respuesta JSON
+            return response()->json(['status' => 500, 'message' => 'Error al eliminar la bibliografía: ' . $e->getMessage()]);
+        }
+    }
+
+
+    public function getGruposTaxonomicos($bibliografiaId)
+    {
+        try {
+            $grupos = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->join('GrupoSCAT', 'RelBiblioGrupoSCAT.IdGrupoSCAT', '=', 'GrupoSCAT.IdGrupoSCAT')
+                ->where('RelBiblioGrupoSCAT.IdBibliografia', $bibliografiaId)
+                ->select(
+                    'RelBiblioGrupoSCAT.IdBibliografia',
+                    'RelBiblioGrupoSCAT.IdGrupoSCAT',
+                    'GrupoSCAT.GrupoSCAT as grupo',
+                    'RelBiblioGrupoSCAT.Observaciones as observaciones'
+                )
+                ->get();
+
+            return response()->json($grupos);
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Error en getGruposTaxonomicos: " . $e->getMessage());
+            return response()->json(['message' => 'Error en la consulta a la base de datos.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function asociarGrupo(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdGrupoSCAT' => 'required|integer|exists:catcentral.GrupoSCAT,IdGrupoSCAT',
+        ]);
+
+        $idBibliografia = $datosValidados['IdBibliografia'];
+        $idGrupoSCAT = $datosValidados['IdGrupoSCAT'];
+
+        try {
+            $existe = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->where('IdBibliografia', $idBibliografia)
+                ->where('IdGrupoSCAT', $idGrupoSCAT)
+                ->exists();
+            if ($existe) {
+                return response()->json(['message' => 'Este grupo ya está asociado a la bibliografía.'], 409);
+            }
+            DB::connection('catcentral')->table('RelBiblioGrupoSCAT')->insert([
+                'IdBibliografia' => $idBibliografia,
+                'IdGrupoSCAT' => $idGrupoSCAT,
+                'FechaCaptura' => now(),
+                'FechaModificacion' => now(),
+            ]);
+            $grupoAsociado = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->join('GrupoSCAT', 'RelBiblioGrupoSCAT.IdGrupoSCAT', '=', 'GrupoSCAT.IdGrupoSCAT')
+                ->where('RelBiblioGrupoSCAT.IdBibliografia', $idBibliografia)
+                ->where('RelBiblioGrupoSCAT.IdGrupoSCAT', $idGrupoSCAT)
+                ->select('GrupoSCAT.GrupoSCAT as grupo', 'RelBiblioGrupoSCAT.Observaciones as observaciones')
+                ->first();
+
+            return response()->json([
+                'message' => 'Grupo asociado correctamente.',
+                'grupo' => $grupoAsociado
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error("Error en asociarGrupo: " . $e->getMessage());
+            return response()->json(['message' => 'Error inesperado al asociar el grupo.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+
+
+    public function actualizarAsociacion(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdGrupoSCAT' => 'required|integer|exists:catcentral.GrupoSCAT,IdGrupoSCAT',
+            'Observaciones' => 'nullable|string',
+        ]);
+
+        try {
+            $affectedRows = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->where('IdBibliografia', $datosValidados['IdBibliografia'])
+                ->where('IdGrupoSCAT', $datosValidados['IdGrupoSCAT'])
+                ->update([
+                    'Observaciones' => $datosValidados['Observaciones'],
+                    'FechaModificacion' => now(),
+                ]);
+
+            if ($affectedRows === 0) {
+                return response()->json(['message' => 'No se encontró la asociación para actualizar.'], 404);
+            }
+
+            return response()->json(['message' => 'Observaciones actualizadas con éxito.'], 200);
+        } catch (\Exception $e) {
+            Log::error("Error en actualizarAsociacion: " . $e->getMessage());
+            return response()->json(['message' => 'Error al actualizar las observaciones.'], 500);
+        }
+    }
+
+
+    public function eliminarAsociacion(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdGrupoSCAT' => 'required|integer|exists:catcentral.GrupoSCAT,IdGrupoSCAT',
+        ]);
+
+        try {
+            $deletedRows = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->where('IdBibliografia', $datosValidados['IdBibliografia'])
+                ->where('IdGrupoSCAT', $datosValidados['IdGrupoSCAT'])
+                ->delete();
+
+            if ($deletedRows === 0) {
+                return response()->json(['message' => 'No se encontró la asociación para eliminar.'], 404);
+            }
+
+            return response()->json(['message' => 'Asociación eliminada con éxito.'], 200);
+        } catch (\Exception $e) {
+            Log::error("Error en eliminarAsociacion: " . $e->getMessage());
+            return response()->json(['message' => 'Error al eliminar la asociación.'], 500);
+        }
+    }
+
+
+    public function getObjetosExternos($bibliografiaId)
+    {
+        try {
+            if (!is_numeric($bibliografiaId)) {
+                return response()->json(['message' => 'ID de bibliografía inválido.'], 400);
+            }
+
+            $objetos = DB::connection('catcentral')
+                ->table('RelObjetoExternoBiblio')
+                ->join('ObjetoExterno', 'RelObjetoExternoBiblio.IdObjetoExterno', '=', 'ObjetoExterno.IdObjetoExterno')
+                ->where('RelObjetoExternoBiblio.IdBibliografia', $bibliografiaId)
+                ->select(
+                    'RelObjetoExternoBiblio.IdBibliografia',
+                    'RelObjetoExternoBiblio.IdObjetoExterno',
+                    'ObjetoExterno.NombreObjeto as objeto',
+                    'RelObjetoExternoBiblio.Observaciones as observaciones'
+                )
+                ->get();
+
+            return response()->json($objetos);
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Error de SQL en getObjetosExternos: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Error en la consulta a la base de datos al obtener objetos externos.',
+                'error_sql' => $e->getMessage() 
+            ], 500);
+        } catch (\Exception $e) {
+            Log::error("Error general en getObjetosExternos: " . $e->getMessage());
+            return response()->json(['message' => 'Ocurrió un error inesperado en el servidor.'], 500);
+        }
+    }
+
+
+    public function asociarObjetoExterno(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdObjetoExterno' => 'required|integer|exists:catcentral.ObjetoExterno,IdObjetoExterno',
+        ]);
+
+        $idBibliografia = $datosValidados['IdBibliografia'];
+        $idObjetoExterno = $datosValidados['IdObjetoExterno'];
+
+        try {
+            $existe = DB::connection('catcentral')->table('RelObjetoExternoBiblio')
+                ->where('IdBibliografia', $idBibliografia)
+                ->where('IdObjetoExterno', $idObjetoExterno)
+                ->exists();
+
+            if ($existe) {
+                return response()->json(['message' => 'Este objeto ya está asociado a la bibliografía.'], 409);
+            }
+
+            DB::connection('catcentral')->table('RelObjetoExternoBiblio')->insert([
+                'IdBibliografia' => $idBibliografia,
+                'IdObjetoExterno' => $idObjetoExterno,
+                'FechaCaptura' => now(),
+                'FechaModificacion' => now(),
+            ]);
+
+            return response()->json(['message' => 'Objeto externo asociado correctamente.'], 201);
+        } catch (\Exception $e) {
+            Log::error("Error en asociarObjetoExterno: " . $e->getMessage());
+            return response()->json(['message' => 'Error inesperado al asociar el objeto.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function eliminarAsociacionObjeto(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdObjetoExterno' => 'required|integer|exists:catcentral.ObjetoExterno,IdObjetoExterno',
+        ]);
+
+        try {
+            DB::connection('catcentral')->table('RelObjetoExternoBiblio')
+                ->where('IdBibliografia', $datosValidados['IdBibliografia'])
+                ->where('IdObjetoExterno', $datosValidados['IdObjetoExterno'])
+                ->delete();
+
+            return response()->json(['message' => 'Asociación de objeto externo eliminada con éxito.'], 200);
+        } catch (\Exception $e) {
+            Log::error("Error en eliminarAsociacionObjeto: " . $e->getMessage());
+            return response()->json(['message' => 'Error al eliminar la asociación del objeto.'], 500);
         }
     }
 }

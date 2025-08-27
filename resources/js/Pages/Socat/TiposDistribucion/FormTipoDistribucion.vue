@@ -3,6 +3,8 @@ import { ref, watch, nextTick, computed } from 'vue';
 import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue';
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
 import { ElMessage } from 'element-plus';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     visible: Boolean,
@@ -67,6 +69,11 @@ const intentarGuardar = async () => {
         ElMessage.error('Por favor, corrija los errores en el formulario.');
     }
 };
+
+
+const cerrarDialogo = () => {
+    emit('cerrar');
+};
 </script>
 
 <template>
@@ -78,11 +85,12 @@ const intentarGuardar = async () => {
             
 
             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar" />
+                <GuardarButton @click="intentarGuardar"/>
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
-                    <el-form-item label="Descripcion" prop="Descripcion">
+                    <el-form-item label="Descripción" prop="Descripcion">
                         <el-input type="text" v-model="form.Descripcion" maxlength="255" show-word-limit />
                     </el-form-item>
                 </el-form>
@@ -137,7 +145,9 @@ const intentarGuardar = async () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
+    gap: 25px;
 }
+
 
 :deep(.el-form-item) {
     margin-bottom: 22px;

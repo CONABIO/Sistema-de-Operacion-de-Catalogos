@@ -25,9 +25,9 @@ const datosDeAutores = ref([]);
 const totalAutores = ref(0);
 
 const columnasDefinidas = ref([
-  { prop: 'NombreAutoridad', label: 'NombreAutoridad', minWidth: '180', sortable: true, align: 'left', filtrable: true },
-  { prop: 'NombreCompleto', label: 'NombreCompleto', minWidth: '250', sortable: true, align: 'left', filtrable: true },
-  { prop: 'GrupoTaxonomico', label: 'GrupoTaxonomico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
+  { prop: 'NombreAutoridad', label: 'Nombre de la autoridad', minWidth: '180', sortable: true, align: 'left', filtrable: true },
+  { prop: 'NombreCompleto', label: 'Nombre completo', minWidth: '250', sortable: true, align: 'left', filtrable: true },
+  { prop: 'GrupoTaxonomico', label: 'Grupo taxonomico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
 ]);
 
 
@@ -200,6 +200,25 @@ const cerrarFormModal = () => {
 
 const handleFormAutorSubmited = (datosDelFormulario) => {
   cerrarFormModal();
+
+  if (datosDelFormulario.accionOriginal === 'editar') {
+    const autorExistente = datosDeAutores.value.find(autor => 
+      autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
+      autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
+      autor.IdAutorTaxon !== datosDelFormulario.idParaEditar 
+    );
+
+    if (autorExistente) {
+      mostrarNotificacionError(
+        "Aviso",
+        "Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.",
+        "error"
+      );
+      return; 
+    }
+  }
+
+
   const procederConGuardado = async () => {
     ElMessageBox.close();
     try {
@@ -229,7 +248,7 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
           let errorMsg = "Error de validación del servidor:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
           mostrarNotificacion("Error de Validación", errorMsg, "error", 0, true);
         } else {
-          mostrarNotificacion("Error del Servidor", error.response.data?.message || "Ocurrió un error.", "error");
+          mostrarNotificacionError("Aviso", "Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.");
         }
       } else {
         mostrarNotificacion("Error Inesperado", "Ocurrió un error.", "error");
@@ -275,9 +294,9 @@ const manejarEliminarItem = (itemId) => {
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion('¡Eliminación Exitosa!', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación Exitosa', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
     } catch (apiError) {
-      ElMessageBox.alert('Ocurrió un error al intentar eliminar el registro.', 'Error', { type: 'error' });
+      mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'success');
     }
   };
   const cancelarEliminacion = () => {
@@ -300,6 +319,8 @@ const manejarEliminarItem = (itemId) => {
     ])
   }).catch(() => { });
 };
+
+
 const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
@@ -307,6 +328,18 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
   notificacionDuracion.value = duracion;
   notificacionVisible.value = true;
 };
+
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 0;
+  notificacionVisible.value = true;
+};
+
+
+
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
