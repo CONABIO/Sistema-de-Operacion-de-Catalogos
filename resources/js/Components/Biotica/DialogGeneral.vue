@@ -9,13 +9,20 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    
     pressEsc: {
         type: Boolean,
         required: true,
     },
+
+    width:{
+        type: String,
+        default: "80%",
+
     draggable: {
         type: Boolean,
         default: false
+
     }
 });
 
@@ -30,9 +37,26 @@ const dialogFormVisible = defineModel();
 
 <template>
     <div>
-        <el-dialog v-model="dialogFormVisible" :draggable="draggable" :z-index="currentZIndex"
-            :close-on-click-modal="false" :show-close="botCerrar" :destroy-on-close="false"
-            :close-on-press-escape="pressEsc" class="my-responsive-dialog">
+        <el-dialog 
+            v-model="dialogFormVisible" 
+            :z-index="currentZIndex"
+            :draggable="draggable"
+            :close-on-click-modal="false" 
+            :show-close="botCerrar"
+            :destroy-on-close="false" 
+            :close-on-press-escape="pressEsc" 
+            class="my-responsive-dialog"
+            :fullscreen="false"
+            :style=" { width: width } "
+        >
+            <template #header="{ close, titleId, titleClass }">
+                <div class="my-dialog-header">
+                    <slot name="header"></slot>
+                    <BotonSalir @salir="handleLogout" /> 
+                </div>
+            </template>
+
+
             <div class="my-dialog-content">
                 <slot></slot>
             </div>
@@ -41,26 +65,33 @@ const dialogFormVisible = defineModel();
 </template>
 
 <style scoped>
+/* Contenido del diálogo */
 .my-dialog-content {
-    max-height: 70vh;
+    max-height: 80vh;
     overflow-y: auto;
-    padding: 10px;
+    padding: 20px;
 }
 
-.my-responsive-dialog {
-    width: 90%;
-    max-width: 500px;
+/* Estilos principales del diálogo */
+:deep(.el-dialog) {
+    max-width: none !important;   /* Elimina cualquier max-width previo */
+    margin: 5vh auto !important;  /* Centrado vertical y horizontal */
+}
+
+/* Ajustes responsivos */
+@media (max-width: 1500px) {
+    :deep(.el-dialog) {
+        width: 85% !important;    /* Un poco más ancho en pantallas grandes pero no enormes */
+    }
 }
 
 @media (max-width: 768px) {
-    .my-responsive-dialog {
-        width: 95%;
-        margin: 0 auto;
-        top: 2%;
+    :deep(.el-dialog) {
+        width: 90% !important;    /* Más ancho en móviles para mejor uso del espacio */
     }
-
     .my-dialog-content {
-        max-height: 60vh;
+        max-height: 75vh;
+        padding: 15px;
     }
 }
 </style>

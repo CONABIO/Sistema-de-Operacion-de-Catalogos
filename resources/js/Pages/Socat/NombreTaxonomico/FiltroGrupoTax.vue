@@ -120,6 +120,7 @@
                     <arbolCheck :datosArbol="datos" 
                                 :defaultProps="propiedades" 
                                 ref="arbolRef"
+                                default-expand-all
                                 @regresaMarcados="recibeGrupos"/>
                 </el-main>
             </el-container>

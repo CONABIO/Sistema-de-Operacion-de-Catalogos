@@ -19,7 +19,9 @@ use App\Http\Controllers\TipoRegionController;
 use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\RelNombresController;
 use App\Models\Mime;
+
 
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
@@ -116,6 +118,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
+    Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
+
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
     Route::put('/bibliografias/{id}', [BibliografiaController::class, 'update'])->name('bibliografias.update');
@@ -208,6 +212,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //---------------------------------------------------------
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
+
+    Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
+    
     Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
