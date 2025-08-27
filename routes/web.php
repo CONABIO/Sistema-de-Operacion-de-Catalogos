@@ -16,6 +16,7 @@ use App\Http\Controllers\NombresController;
 use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\RelNombresController;
 
 
 
@@ -113,6 +114,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
+
+    Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);

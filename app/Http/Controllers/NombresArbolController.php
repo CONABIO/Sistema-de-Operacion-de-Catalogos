@@ -30,7 +30,6 @@ class NombresArbolController extends Controller
 
         $categorias = $this->filtroCateg();
 
-
         return Inertia::render('Socat/NombreTaxonomico/Nombre',[
             'gruposTax' => $gruposTax, 
             'categoriasTax' => $categorias
@@ -284,13 +283,18 @@ class NombresArbolController extends Controller
                 $biblio = '/storage/images/Libro_Rojo.svg';
             }
             
-            $newRel = [ 'TipoRelacion' => ['texto' => $relacion->Descripcion, 
-                                             'svg' => $relacion->TipoRelIcono],                    
+            $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
+                                            'texto' => $relacion->Descripcion, 
+                                            'svg' => $relacion->TipoRelIcono],                    
                         'idNombre' => $relacion->IdNombre, 
                         'Nombrecompleto' => ['texto' => $relacion->NombreCompleto." ".$relacion->NombreAutoridad." - ".$status." - ".$relacion->SistClasCatDicc,
-                                               'url' => $relacion->CategIcono],
+                                               'url' => $relacion->CategIcono,
+                                               'estatus' => $status],
                         'Biblio' => ['texto'=> '',
-                                       'url'=>$biblio], 
+                                       'url'=>$biblio],
+                        'FechaCaptura' => $relacion->FechaCaptura,
+                        'FechaModificacion' => $relacion->FechaModificacion,
+                        'Observaciones' => $relacion->Observaciones  
                        ];
             
             array_push($reldata, $newRel);
@@ -343,11 +347,12 @@ class NombresArbolController extends Controller
 
     public function filtroCateg()
     {
-        $categ = CategoriasTaxonomicas::select('NombreCategoriaTaxonomica as label', 
-                                                DB::raw('group_concat(IdCategoriaTaxonomica) as value'))
-                                        ->groupBy('NombreCategoriaTaxonomica')
-                                        ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
-                                                      IdNivel4 ASC')
+        $categ = CategoriasTaxonomicas::select('NombreCategoriaTaxonomica as label',
+                                               'RutaIcono',
+                                                DB::raw('group_concat(IdCategoriaTaxonomica) as value')
+                                            )
+                                        ->groupBy('NombreCategoriaTaxonomica', 'RutaIcono')
+                                        ->orderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, IdNivel4 ASC')
                                         ->get();
         
         return $categ;

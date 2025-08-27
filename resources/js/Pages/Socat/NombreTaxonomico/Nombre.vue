@@ -805,8 +805,19 @@ const fetchFilteredData = async () => {
               <!-- Segunda columna -->
               <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
                 <span class="block">Nivel taxonómico</span>
-                <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                  placeholder="Nivel taxonómico" @change="handleChange">
+                <el-cascader :options="categoriasTax" 
+                             clearable 
+                             filterable 
+                             v-model="categ"
+                             placeholder="Nivel taxonómico" 
+                             @change="handleChange">
+                  <template #default="{ data }">
+                    <span style="display: inline-flex; align-items: center;">
+                      <img :src="data.RutaIcono" alt="" 
+                            style="width: 16px; height: 16px; margin-right: 6px;" />
+                      <span>{{ data.label }}</span>
+                    </span>
+                  </template>           
                 </el-cascader>
               </el-col>
 
@@ -976,8 +987,7 @@ const fetchFilteredData = async () => {
                                     :columnas="columnasDefinidas"
                                     v-model:datos="tablaNomenclatura" 
                                     v-model:total-items="totalRegNom" 
-                                    :opciones-filtro="opcionesFiltroNomenclatura"
-                                    endpoint="/busca-autor">
+                                    :opciones-filtro="opcionesFiltroNomenclatura">
                     </TablaFiltrable>
                   </div>
                   <br>
@@ -990,8 +1000,7 @@ const fetchFilteredData = async () => {
                                     :columnas="columnasDefRef"
                                     v-model:datos="tablaReferencias" 
                                     v-model:total-items="totalRegRef" 
-                                    :opciones-filtro="opcionesFiltroRef"
-                                    endpoint="/busca-autor">
+                                    :opciones-filtro="opcionesFiltroRef">
                     </TablaFiltrable>
                   </div>
                 </el-main>                  
@@ -1012,7 +1021,7 @@ const fetchFilteredData = async () => {
       </el-container>
     
   </CuerpoGen>
-  <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false">
+  <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false" :width="'35%'">
     <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
   </DialogForm>
 
@@ -1031,7 +1040,7 @@ const fetchFilteredData = async () => {
                 @resultadoBaja = "recibeTaxBaja"/>
   </DialogForm>
 
-  <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'90%'">
+  <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'">
     <!--FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" /-->
     <DialogRelaciones :taxonAct = "taxonAct" 
                       :gruposTax = "gruposTax"

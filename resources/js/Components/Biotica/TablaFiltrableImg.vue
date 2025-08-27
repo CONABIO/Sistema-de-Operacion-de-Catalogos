@@ -11,7 +11,7 @@ import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 
 const props = defineProps({
   columnas: { type: Array, required: true },
-  datos: { type: Array, required: true },
+  datos: { type: Array, required: true, default: [] },
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 4 },
   endpoint: { type: String, required: true },

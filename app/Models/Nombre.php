@@ -148,13 +148,19 @@ class Nombre extends Model
     public function scopeCargaRelaciones($query, $id)
     {
         if ($id) {
-            $query->groupByRaw('Tipo_Relacion.RutaIcono, Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, 
-                                Nombre.Estatus, Nombre.SistClasCatDicc, Nombre.NombreAutoridad, CategoriaTaxonomica.IdNivel2,
-                                CategoriaTaxonomica.RutaIcono')
-                  ->selectRaw('Tipo_Relacion.RutaIcono AS TipoRelIcono, Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, Nombre.Estatus,
-                                Nombre.SistClasCatDicc, Nombre.NombreAutoridad,
-                                count(RelacionBibliografia.IdBibliografia) as Biblio, CategoriaTaxonomica.IdNivel2, 
-                                CategoriaTaxonomica.RutaIcono AS CategIcono')
+            $query->groupByRaw('Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono, 
+                                Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, 
+                                Nombre.Estatus, Nombre.SistClasCatDicc, Nombre.NombreAutoridad, 
+                                CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono, 
+                                Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion,
+                                Nombre_Relacion.Observaciones')
+                  ->selectRaw('Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono AS TipoRelIcono, 
+                                Tipo_Relacion.Descripcion, Nombre.IdNombre, Nombre.NombreCompleto, 
+                                Nombre.Estatus, Nombre.SistClasCatDicc, Nombre.NombreAutoridad,
+                                count(RelacionBibliografia.IdBibliografia) as Biblio, 
+                                CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono AS CategIcono, 
+                                Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion,
+                                Nombre_Relacion.Observaciones' )
                   ->where(function($q) use ($id){
                         $q->where('Nombre_Relacion.IdNombre', '=', $id)
                           ->orWhere('Nombre_Relacion.IdNombreRel', '=', $id);
