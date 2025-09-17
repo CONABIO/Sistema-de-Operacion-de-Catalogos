@@ -18,11 +18,11 @@ const props = defineProps({
     width:{
         type: String,
         default: "80%",
+    },
 
     draggable: {
         type: Boolean,
         default: false
-
     }
 });
 
