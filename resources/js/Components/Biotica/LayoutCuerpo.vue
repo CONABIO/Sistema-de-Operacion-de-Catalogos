@@ -36,10 +36,10 @@ defineProps({
                             </el-card>
                         </div>
                     </div>
-
-                </div>
+                </el-card>
             </div>
         </div>
+
     </AppLayout>
 
     <template v-else>
