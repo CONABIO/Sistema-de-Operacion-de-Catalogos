@@ -13,24 +13,17 @@ class RegionController extends Controller
 {
     public function index()
     {
-        // 1. Obtener Regiones y construir su árbol
         $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->all();
         $treeData = $this->buildRegionTree($todosLosNodosRegiones);
-
-        // 2. Obtener Tipos de Región (ordenados para la construcción del árbol)
         $todosLosTiposDeRegion = TipoRegion::orderBy('Nivel1')->orderBy('Nivel2')->orderBy('Nivel3')->orderBy('Nivel4')->orderBy('Nivel5')->get();
-
-        // 3. ¡NUEVO Y ROBUSTO! Construir el árbol de Tipos de Región
         $tiposDeRegionTree = $this->buildTipoRegionTree($todosLosTiposDeRegion);
-
         return Inertia::render('Socat/Regiones/indexRegion', [
             'treeDataProp' => $treeData,
-            'tiposDeRegionProp' => $todosLosTiposDeRegion, // Mantenemos la lista plana para los modales
-            'tiposDeRegionTreeProp' => $tiposDeRegionTree, // <-- ¡NUEVA PROP!
+            'tiposDeRegionProp' => $todosLosTiposDeRegion, 
+            'tiposDeRegionTreeProp' => $tiposDeRegionTree, 
         ]);
     }
 
-    // Renombrado para mayor claridad
     private function buildRegionTree(array $elements): array
     {
         if (count($elements) === 0) {
@@ -55,25 +48,17 @@ class RegionController extends Controller
         return $rootNodes;
     }
 
-
-
-    // --- ALGORITMO ROBUSTO PARA CONSTRUIR ÁRBOL DESDE NIVELES ---
     private function buildTipoRegionTree(Collection $nodes): array
     {
         if ($nodes->isEmpty()) return [];
-
         $tree = [];
         $nodeMap = [];
-
-        // Primero, mapeamos todos los nodos por su clave única (ej: L1, L1_2, etc.)
         foreach ($nodes as $node) {
             $nodeArray = $node->toArray();
             $nodeArray['children'] = [];
             $key = $this->getNodeKeyFromLevels($node);
             $nodeMap[$key] = $nodeArray;
         }
-
-        // Segundo, conectamos los hijos con sus padres
         foreach ($nodeMap as $key => &$node) {
             $parentKey = $this->getParentKeyFromNodeKey($key);
             if ($parentKey && isset($nodeMap[$parentKey])) {
@@ -82,7 +67,6 @@ class RegionController extends Controller
                 $tree[] = &$node; // Si no tiene padre, es raíz
             }
         }
-
         return $tree;
     }
 
@@ -147,7 +131,7 @@ class RegionController extends Controller
             if ($node->{"Nivel{$i}"} > 0) {
                 $levels[] = $node->{"Nivel{$i}"};
             } else {
-                break; // Detenerse si un nivel es 0
+                break; 
             }
         }
         return 'L' . implode('_', $levels);
@@ -199,7 +183,6 @@ class RegionController extends Controller
 
     public function destroy(Region $region)
     {
-        // Verifica si tiene hijos
         if (Region::where('IdRegionAsc', $region->IdRegion)->exists()) {
             throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene regiones dependientes.']);
         }

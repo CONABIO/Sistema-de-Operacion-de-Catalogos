@@ -1,6 +1,5 @@
 <script setup>
 import { defineModel } from 'vue';
-import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
 
 
@@ -15,14 +14,19 @@ const props = defineProps({
         required: true,
     },
 
+
+    width: {
+        type: String,
+        default: "80%",
+    },
+
     width:{
         type: String,
         default: "80%",
-
+      
     draggable: {
         type: Boolean,
         default: false
-
     }
 });
 
@@ -37,6 +41,7 @@ const dialogFormVisible = defineModel();
 
 <template>
     <div>
+
         <el-dialog 
             v-model="dialogFormVisible" 
             :z-index="currentZIndex"
@@ -72,22 +77,28 @@ const dialogFormVisible = defineModel();
     padding: 20px;
 }
 
-/* Estilos principales del diálogo */
+
 :deep(.el-dialog) {
-    max-width: none !important;   /* Elimina cualquier max-width previo */
-    margin: 5vh auto !important;  /* Centrado vertical y horizontal */
+    max-width: none !important;
+    margin: 5vh auto !important;
 }
 
-/* Ajustes responsivos */
 @media (max-width: 1500px) {
     :deep(.el-dialog) {
-        width: 85% !important;    /* Un poco más ancho en pantallas grandes pero no enormes */
+        width: 85% !important;
+    }
+
+    .my-responsive-dialog {
+        width: 90%;
+        max-width: 500px;
+
     }
 }
 
+
 @media (max-width: 768px) {
     :deep(.el-dialog) {
-        width: 90% !important;    /* Más ancho en móviles para mejor uso del espacio */
+        width: 90% !important;   
     }
     .my-dialog-content {
         max-height: 75vh;
