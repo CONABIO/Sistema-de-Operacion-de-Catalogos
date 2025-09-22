@@ -588,16 +588,15 @@
         let idsNombreVal = 0;
         let params = {};
         let listAct = {};
-
+        
         if(value != undefined)
         {
-            const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
+           const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
 
             if(etiqueta != undefined)
             {
-                tipRelSelec.value = etiqueta.value 
+              tipRelSelec.value = etiqueta.value;
             }
-            console.log("Este es el valor del tipo de relacion seleccionado: ", props.taxonAct.id);
 
             const params= {
                   taxAct: props.taxonAct.id
@@ -641,6 +640,23 @@
         }
     };
 
+    const buscaTipoRelacion = async(tiposRelacion, valor) => {
+      for(const nodo of tiposRelacion){
+
+        if(nodo.value === valor){
+          return nodo;
+        }
+        //console.log("Nodo revisado:", nodo);
+        if(nodo?.children && nodo?.children.length > 0){
+          const encontrado = await buscaTipoRelacion(nodo.children, valor);
+          if(encontrado){
+            return encontrado;
+          }
+        }
+      }
+       return null;
+    }
+
     const traspasaDatos = async() => {
         
         let sinonimos = false;
@@ -657,7 +673,7 @@
                 7000
             );
         }   
-        
+
         switch (tipRelSelec.value){
             case 1:
                 sinonimos = validacionSinonimos();
@@ -678,6 +694,13 @@
             case 3:
                 equivalencia = validacionEquivalencia();
                 if(equivalencia)
+                {
+                  altaRelacion();
+                }
+              break;
+            case 7:
+                huesped = validacionHuesped();
+                if(huesped)
                 {
                   altaRelacion();
                 }
@@ -842,6 +865,38 @@
       return true;
     } 
 
+    const validacionHuesped = async () => {
+      const gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
+                          "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
+                          "MONOG", "PROT", "MYXOZ", "TREMA"];
+      const gruposVert = ["ANFIB", "AVES", "MAMIF", "PECES", "REPTI"];   
+      const estatusPermitidos = ["Válido", 'Aceptado'] 
+      
+
+      if(!estatusPermitidos.includes(props.taxonAct.estatus) || !estatusPermitidos.includes(taxonActRel.value.estatus)){
+        mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relación ya que uno o ambos taxones tienen estatus diferente de válido/correcto",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(!(gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+          gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
+          !(gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+           gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))){
+            mostrarNotificacion(
+                "Alerta",
+                "El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
+                "error",
+                7000
+            ); 
+            return false;
+           }
+    }
+
     const altaRelacion = async() => {
         
         const params= {
@@ -927,7 +982,7 @@
     // Inicialización de datos
     onMounted( async () => {
         const response = await axios.get('/cargar-tipoRel');
-        
+
         if (response.status === 200) {            
             tiposRel.value = response.data;
             tiposRel.value.unshift({
