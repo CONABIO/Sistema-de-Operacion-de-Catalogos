@@ -64,6 +64,10 @@ const onFiltroInput = () => {
   }, 500);
 };
 
+const handleRowClick = (row, column, event) => {
+  console.log("Este es el row seleccionado: ", row);
+  emit('row-click', row);
+}
 
 const limpiarFiltro = (campo) => {
   if (filtros.value[campo]) {
@@ -104,6 +108,10 @@ onMounted(() => {
   datosTabla.value = props.datos;
   console.log(datosTabla.value);
 });
+
+const emit = defineEmits([
+  'row-click'
+]);
 
 /*
 const emit = defineEmits([
@@ -187,7 +195,12 @@ watch(tipoDeBusqueda, () => {
     </template>
 
     <div class="table-responsive " >
-        <el-table :data="paginatedDatos" :border="true" height="100%" @sort-change="handleSortChange" @row-dblclick="onRowDblClick" @row-click="(row) => emit('row-click', row)">
+        <el-table 
+            :data="paginatedDatos" 
+            :border="true" height="100%" 
+            @sort-change="handleSortChange" 
+            @row-dblclick="onRowDblClick" 
+            @row-click="handleRowClick">
             <slot name="expand-column"></slot>
 
             <el-table-column

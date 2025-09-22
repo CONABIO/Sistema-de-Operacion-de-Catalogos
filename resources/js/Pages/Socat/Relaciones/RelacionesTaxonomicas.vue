@@ -207,7 +207,7 @@
                                   height: 100%">
                     <div style="flex-shrink: 0;">
                         <el-input
-                            v-model="textarea"
+                            v-model="observ"
                             style="width: 100%"
                             :rows="2"
                             type="textarea"
@@ -224,7 +224,8 @@
                         :columnas="columnasDefinidas" 
                         v-model:datos="tablaNomenclatura" 
                         v-model:total-items="totalRegNom" 
-                        :opciones-filtro="opcionesFiltroNomenclatura">
+                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        @row-click="filaSeleccion">
 
                         <template #expand-column>
                             <el-table-column type="expand">
@@ -232,15 +233,6 @@
                                     <div class="expand-content-detail">
                                         <p><strong>Fecha de alta:</strong>{{ row.FechaCaptura }}</p>
                                         <p><strong>Fecha de modificación:</strong>{{ row.FechaModificacion }}</p>
-                                        <p><strong>Observaciones:</strong>
-                                            <el-input
-                                                v-model = row.Observaciones
-                                                style="width: 100%"
-                                                :rows="2"
-                                                type="textarea"
-                                                placeholder="Observaciones"
-                                            />
-                                        </p>
                                     </div>
                                 </template>
                             </el-table-column>
@@ -314,6 +306,7 @@
     const notificacionMensaje = ref("");
     const notificacionTipo = ref("info");
     const notificacionDuracion = ref(5000);
+    const observ = ref("");
 
     const filterText = ref('');
     const mostrar = ref(false);
@@ -321,6 +314,7 @@
     const paginas = ref('');
     const currentPage = ref(1);
     const itemsPerPage = ref(150);
+    const taxonAct = ref([]);
     const taxonActRel = ref([]);
     const tree = ref(null);
     const selectedNodeKey = ref(null);
@@ -405,6 +399,11 @@
         { label: 'TipoRelación', value: 'TipoRelacion' },
         { label: 'NombreCompleto', value: 'Nombrecompleto' }
     ]);
+
+    const filaSeleccion = async(row) =>{
+      console.log("Esta es la fila seleccionada desde el padre: ", row);
+      observ.value = row.Observaciones;
+    }
 
     //Funcion para recibir los datos de los grupos y catalogos selccionados
     const recibeGrupos = async (data) => {
@@ -589,17 +588,29 @@
         let idsNombreVal = 0;
         let params = {};
         let listAct = {};
-
         
         if(value != undefined)
         {
-            const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
+           const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
 
             if(etiqueta != undefined)
             {
-                tipRelSelec.value = etiqueta.value 
+              tipRelSelec.value = etiqueta.value;
             }
-            console.log("Este es el valor de tipRelSelec: ", tipRelSelec.value);
+
+            const params= {
+                  taxAct: props.taxonAct.id
+              };                  
+
+        const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+          const response = await axios.get('/carga-RelacionesTax', { params });
+
             if(tipRelSelec.value > 0)
             {
                 for (const child of tiposRel.value) {
@@ -608,10 +619,8 @@
                     } 
                 }
                 
-                let filtrados =props.taxonAct.relaciones.filter(item => 
+                let filtrados = response.data.filter(item => 
                                 item.TipoRelacion?.idTipoRel === tipRelSelec.value)
-
-                console.log("Este es el resultado de existeValor: ", filtrados);
 
                 tablaNomenclatura.value = filtrados ?? [];
 
@@ -619,21 +628,40 @@
                 habTraspaso.value = false;
             }
             else{
-                tablaNomenclatura.value = props.taxonAct.relaciones;
-                totalRegNom.value = props.taxonAct.relaciones.length
+                tablaNomenclatura.value = response.data;
+                totalRegNom.value = response.data.length;
                 habTraspaso.value = false;
             }
+            loading.close();
         }
         else {
             tablaNomenclatura.value = [];
             totalRegNom.value = 0;
         }
-
     };
+
+    const buscaTipoRelacion = async(tiposRelacion, valor) => {
+      for(const nodo of tiposRelacion){
+
+        if(nodo.value === valor){
+          return nodo;
+        }
+        //console.log("Nodo revisado:", nodo);
+        if(nodo?.children && nodo?.children.length > 0){
+          const encontrado = await buscaTipoRelacion(nodo.children, valor);
+          if(encontrado){
+            return encontrado;
+          }
+        }
+      }
+       return null;
+    }
 
     const traspasaDatos = async() => {
         
-        let relacionar = false;
+        let sinonimos = false;
+        let basonimos = false;
+        let equivalencia = false;
 
         if(taxonActRel.value.length === 0)
         {
@@ -646,26 +674,62 @@
             );
         }   
 
-        console.log("Este es tipo Relacion: ", tipRelSelec.value);
-        
         switch (tipRelSelec.value){
             case 1:
-                relacionar = validacionSinonimos();
-                if(relacionar){
-                    console.log("Entre a la funcion de para dar de alta las relaciones");
+                sinonimos = validacionSinonimos();
+
+                if(sinonimos){
                     altaRelacion();
                 }
                 break;
+            case 2:
+                sinonimos = validacionSinonimos();
+                if (sinonimos){
+                  basonimos = validacionBasonimos();
+                  if(basonimos){
+                    altaRelacion();
+                  }
+                }
+              break;
+            case 3:
+                equivalencia = validacionEquivalencia();
+                if(equivalencia)
+                {
+                  altaRelacion();
+                }
+              break;
+            case 7:
+                huesped = validacionHuesped();
+                if(huesped)
+                {
+                  altaRelacion();
+                }
+              break;
         }
-
-        
-
     } 
-
+    
     const validacionSinonimos = async () => {
         
-        const contValido = props.taxonAct.relaciones.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
-                                                                 rel.Nombrecompleto?.estatus === "Correcto");
+      if(tipRelSelec.value === 2)
+      {
+        let filtraVal = props.taxonAct.relaciones.filter(item => 
+                                item.TipoRelacion?.idTipoRel === 1);
+
+        let filtraRel = taxonActRel.value.relaciones.filter(item => 
+                                item.TipoRelacion?.idTipoRel === 1);
+      }else{
+        let filtraVal = props.taxonAct.relaciones.filter(item => 
+                                  item.TipoRelacion?.idTipoRel === tipRelSelec.value);
+
+        let filtraRel = taxonActRel.value.relaciones.filter(item => 
+                                  item.TipoRelacion?.idTipoRel === tipRelSelec.value);
+      }
+      const contValidoAct = filtraVal.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
+                                                  rel.Nombrecompleto?.estatus === "Correcto");
+
+      const conValidoRel = filtraRel.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
+                                                 rel.Nombrecompleto?.estatus === "Correcto");                                                      
+
         //Se valida que el taxon no sea del mismo estatus 
         if(taxonActRel.value.estatus === props.taxonAct.estatus)
         {
@@ -676,14 +740,14 @@
                 7000
             ); 
             return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-        }else if((props.taxonAct.estatus === "Sinonimo" && contValido) && taxonActRel.value.estatus === 'Válido'){
+        }else if(contValidoAct || conValidoRel){
             mostrarNotificacion(
                 "Alerta",
-                "El taxón actual ya tiene una relacion con un taxon válido ",
+                "El taxón sinonimo seleccionado ya cuenta con un valido relacionado ",
                 "error",
                 7000
             );
-            return false;//Se valida que el taxon de origen no sea de estatus ND
+            return false;//Se valida que el taxon a relacionar no tenga validos asociados
         }else if(props.taxonAct.estatus === "ND"){
             mostrarNotificacion(
                 "Alerta",
@@ -695,7 +759,7 @@
         }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || taxonActRel.value.completo.categoria.IdNivel1 < 5){
             mostrarNotificacion(
                 "Alerta",
-                "No se puede tener relaciones de sinonimia en taxones de cateria superior a familia",
+                "No se puede tener relaciones de sinonimia en taxones de categoria superior a familia",
                 "error",
                 7000
             );
@@ -705,16 +769,141 @@
         return true;
     }
 
+    const validacionBasonimos = async () => {
+
+      let filtraVal = props.taxonAct.relaciones;
+
+      let filtraRel = taxonActRel.value.relaciones;
+
+      const contValidoAct = filtraVal.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
+                                                  rel.Nombrecompleto?.estatus === "Correcto" ||
+                                                  rel.TipoRelacion.idTipoRel === 2);
+
+      const conValidoRel = filtraRel.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
+                                                 rel.Nombrecompleto?.estatus === "Correcto" ||
+                                                 rel.TipoRelacion.idTipoRel === 2);      
+
+      if((props.taxonAct.estatus === 'Válido' || props.taxonAct.estatus === 'Correcto') && props.taxonAct.completo.categoria.IdNivel1 < 7){
+         mostrarNotificacion(
+                "Alerta",
+                "El taxón actual es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if((taxonActRel.value.estatus === 'Válido' || taxonActRel.value.estatus === 'Correcto') && taxonActRel.value.completo.categoria.IdNivel1 < 7){
+         mostrarNotificacion(
+                "Alerta",
+                "El taxón a relacionar es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(contValidoAct || conValidoRel){
+        mostrarNotificacion(
+                "Alerta",
+                "El taxón ya cuenta con una relación de basonimia o el taxon sinonimo ya cuenta con una relacion valida",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      return true;
+    }
+
+    const validacionEquivalencia = async () => {
+
+      if(props.taxonAct.completo.SistClasCatDicc === taxonActRel.value.completo.SistClasCatDicc){
+            mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relacion ya que el sistema de clasificación es el mismo en ambos taxones",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(props.taxonAct.completo.SistClasCatDicc === 'NA' || 
+         props.taxonAct.completo.SistClasCatDicc === 'ND' || 
+         taxonActRel.value.completo.SistClasCatDicc === 'NA' || 
+         taxonActRel.value.completo.SistClasCatDicc === 'ND'){
+          mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relación porque el sistema de clasificación de uno de los taxones es NA o ND",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica === taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
+          mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relación porque la categoria taxonomica no es la misma en ambos taxones",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if((props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.idNivel3 === 0) ||
+         (taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
+          mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relación porque la debe ser género o superior",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      return true;
+    } 
+
+    const validacionHuesped = async () => {
+      const gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
+                          "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
+                          "MONOG", "PROT", "MYXOZ", "TREMA"];
+      const gruposVert = ["ANFIB", "AVES", "MAMIF", "PECES", "REPTI"];   
+      const estatusPermitidos = ["Válido", 'Aceptado'] 
+      
+
+      if(!estatusPermitidos.includes(props.taxonAct.estatus) || !estatusPermitidos.includes(taxonActRel.value.estatus)){
+        mostrarNotificacion(
+                "Alerta",
+                "No se puede generar la relación ya que uno o ambos taxones tienen estatus diferente de válido/correcto",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(!(gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+          gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
+          !(gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+           gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))){
+            mostrarNotificacion(
+                "Alerta",
+                "El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
+                "error",
+                7000
+            ); 
+            return false;
+           }
+    }
+
     const altaRelacion = async() => {
         
-        console.log("Si voy a dar de alta la relacion entre taxones");
         const params= {
                         taxonAct: props.taxonAct, 
                         taxonActRel: taxonActRel.value,
                         tipRelacion: tipRelSelec.value
-                    };
-
-        console.log("Estos son los parametros: ", params);                    
+                    };                  
 
         const loading = ElLoading.service({
             lock: true,
@@ -722,20 +911,38 @@
             spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
             backgroud: 'rgba(255,255,255,0.85)',
         });
-        
-        const response = await axios.post('/alta-RelacionesTax', { params });
-        console.log("Esta es la respuesta del servidor: ", response);
-        /*
-        if (response.status === 200) {
+        try{
+          const response = await axios.post('/alta-RelacionesTax', { params });
+
+           mostrarNotificacion(
+                "Alerta",
+                "La relación se genero correctamente",
+                "info",
+                7000
+            );
+
+          tablaNomenclatura.value = response.data;
+          loading.close();
+        }catch(error){
+          if (error.response && error.response.status === 422) {
+              // Aquí están los errores de validación
+              console.log("Este es el error completo: ", error.response.data.message);
+              
+              mostrarNotificacion(
+                "Alerta",
+                error.response.data.message,
+                "info",
+                7000
+            );
             
-            data.value = response.data[0];
-            totalItems.value = response.data[1].total;
-            paginas.value = response.data[1].last_page;
-        }
-        else {
-            console.log("Se presentó un error en la recuperación de los datos");
-        }*/
-        loading.close();
+          } else {
+              // Otros errores inesperados
+              console.error("Error inesperado:", error);
+              ElMessage.error("Ocurrió un error en el servidor");
+          }
+
+          loading.close();
+        }      
     }
 
     const mostrarNotificacion = (
@@ -775,7 +982,7 @@
     // Inicialización de datos
     onMounted( async () => {
         const response = await axios.get('/cargar-tipoRel');
-        
+
         if (response.status === 200) {            
             tiposRel.value = response.data;
             tiposRel.value.unshift({
@@ -785,6 +992,7 @@
         }
        await cargaGrupos();
         gruposTax.value = props.gruposTax;
+        taxonAct.value = props.taxonAct;
     });
 
     // Watcher para cambios en los props
