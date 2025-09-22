@@ -30,7 +30,6 @@ class NombresArbolController extends Controller
 
         $categorias = $this->filtroCateg();
 
-
         return Inertia::render('Socat/NombreTaxonomico/Nombre',[
             'gruposTax' => $gruposTax, 
             'categoriasTax' => $categorias
@@ -53,7 +52,8 @@ class NombresArbolController extends Controller
 
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor', 
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor', 
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
             }else{
@@ -61,7 +61,8 @@ class NombresArbolController extends Controller
 
                 $nombres = Nombre::filtraArbolTax($taxon)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
             }
@@ -76,7 +77,8 @@ class NombresArbolController extends Controller
 
             $nombres = Nombre::filtraArbol($categ, $catalog)
                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                     'relNombreCat','categoria','scat', 'nombreRel',
+                                     'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
         }
@@ -84,7 +86,8 @@ class NombresArbolController extends Controller
 
             $nombres = Nombre::where('IdCategoriaTaxonomica', '=','1')
                               ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                      'relNombreCat','categoria','scat', 'nombreRel','relNombreAutor',
+                                      'relNombreCat','categoria','scat', 'nombreRel',
+                                      'nombreRelVal','relNombreAutor',
                                       'relNombreRegion', 'scat.grupoScat'])
                               ->get();
         }
@@ -149,7 +152,7 @@ class NombresArbolController extends Controller
 
                     $relaciones = Nombre::cargaRelaciones($nombre->IdNombre)
                             ->get();  
-
+                    
                     $reldata = $this->relacionNombre($relaciones);
 
                     $newHijo = [ 'id' => $nombre->IdNombre, 
@@ -175,7 +178,7 @@ class NombresArbolController extends Controller
     {
         $nombres = Nombre::cargaHijos($id)
                          ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                 'relNombreCat','categoria','scat', 'nombreRel',
+                                 'relNombreCat','categoria','scat', 'nombreRel','nombreRelVal',
                                  'relNombreAutor', 'scat.grupoScat', 'scat.grupoScat'])
                          ->get();
         
@@ -207,7 +210,7 @@ class NombresArbolController extends Controller
             $nomCat = $nombre->NombreCategoriaTaxonomica.
                         " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
             
-            $etiqueta = $nombre->TaxonCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
+            $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
 
             $query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
@@ -219,12 +222,22 @@ class NombresArbolController extends Controller
            
             $resp = DB::connection('catcentral')->select($query);
             
+            $referencias = Nombre::cargaReferencias($nombre->IdNombre)
+                             ->get();
+
+            $relaciones = Nombre::cargaRelaciones($nombre->IdNombre)
+                            ->get();  
+                    
+            $reldata = $this->relacionNombre($relaciones);
+
             $newHijo = [ 'id' => $nombre->IdNombre, 
                          'label' => $etiqueta, 
                          'children' => [],
                          'texto' => $nomCat,
                          'estatus' => $status,
                          'numEjemp' => $resp[0]->conteo,
+                         'referencias' => $referencias,
+                         'relaciones' => $reldata,
                          'completo'=>$nombre
                         ];
 
@@ -252,7 +265,7 @@ class NombresArbolController extends Controller
                     $status = "ND";     
                 break;
                 default:
-                    if($relacion->categoria->IdNivel2 === 0)
+                    if($relacion->IdNivel2 === 0)
                     {
                         $status = "Correcto";
                     }else{
@@ -261,11 +274,28 @@ class NombresArbolController extends Controller
                 break;
             }
 
-            $newRel = [ 'TipoRelacion' => $relacion->Descripcion, 
-                         'estatus' => $status, 
-                         'Nombrecompleto' => $relacion->NombreCompleto,
-                         'Biblio' => $relacion->Biblio 
-                        ];
+            if($relacion->Biblio > 0)
+            {
+                $biblio = '/storage/images/Libro_Verde.svg';
+            }
+            else
+            {
+                $biblio = '/storage/images/Libro_Rojo.svg';
+            }
+            
+            $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
+                                            'texto' => $relacion->Descripcion, 
+                                            'svg' => $relacion->TipoRelIcono],                    
+                        'idNombre' => $relacion->IdNombre, 
+                        'Nombrecompleto' => ['texto' => $relacion->NombreCompleto." ".$relacion->NombreAutoridad." - ".$status." - ".$relacion->SistClasCatDicc,
+                                               'url' => $relacion->CategIcono,
+                                               'estatus' => $status],
+                        'Biblio' => ['texto'=> '',
+                                       'url'=>$biblio],
+                        'FechaCaptura' => $relacion->FechaCaptura,
+                        'FechaModificacion' => $relacion->FechaModificacion,
+                        'Observaciones' => $relacion->Observaciones  
+                       ];
             
             array_push($reldata, $newRel);
         }
@@ -317,11 +347,12 @@ class NombresArbolController extends Controller
 
     public function filtroCateg()
     {
-        $categ = CategoriasTaxonomicas::select('NombreCategoriaTaxonomica as label', 
-                                                DB::raw('group_concat(IdCategoriaTaxonomica) as value'))
-                                        ->groupBy('NombreCategoriaTaxonomica')
-                                        ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
-                                                      IdNivel4 ASC')
+        $categ = CategoriasTaxonomicas::select('NombreCategoriaTaxonomica as label',
+                                               'RutaIcono',
+                                                DB::raw('group_concat(IdCategoriaTaxonomica) as value')
+                                            )
+                                        ->groupBy('NombreCategoriaTaxonomica', 'RutaIcono')
+                                        ->orderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, IdNivel4 ASC')
                                         ->get();
         
         return $categ;
@@ -605,6 +636,7 @@ class NombresArbolController extends Controller
                     'categoria',
                     'scat',
                     'nombreRel',
+                    'nombreRelVal',
                     'relNombreAutor',
                     'relNombreRegion',
                     'scat.grupoScat'
@@ -803,6 +835,7 @@ Log::info("Se realizo correctamente la insercion de datos");
                         'categoria',
                         'scat',
                         'nombreRel',
+                        'nombreRelVal',
                         'relNombreAutor',
                         'relNombreRegion',
                         'scat.grupoScat'
@@ -946,6 +979,7 @@ Log::info("Se realizo correctamente la insercion de datos");
                     'categoria',
                     'scat',
                     'nombreRel',
+                    'nombreRelVal',
                     'relNombreAutor',
                     'relNombreRegion',
                     'scat.grupoScat'

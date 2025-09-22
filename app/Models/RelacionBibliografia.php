@@ -9,7 +9,7 @@ class RelacionBibliografia extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql';
+    protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
 
     //Con esta instruccion se omite el ingreso de fechas en el modelo 
     public $timestamps = false;
@@ -27,7 +27,7 @@ class RelacionBibliografia extends Model
     //Se declara la relacion de uno a uno de las categorias 
     public function bibliografia()
     {
-        return $this->belongsToMany(Bibliografia::class, 'IdBibliografia');
+        return $this->belongsTo(Bibliografia::class, 'IdBibliografia', 'IdBibliografia');
     }
 
     /*En Eloquent no se puede agregar las relaciones por llaves compuestas por lo que

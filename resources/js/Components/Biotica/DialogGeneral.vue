@@ -8,18 +8,26 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    
     pressEsc: {
         type: Boolean,
         required: true,
     },
 
+
     width: {
         type: String,
         default: "80%",
     },
+
+    width:{
+        type: String,
+        default: "80%",
+      
     draggable: {
         type: Boolean,
         default: false
+
     }
 });
 
@@ -34,14 +42,23 @@ const dialogFormVisible = defineModel();
 
 <template>
     <div>
-        <el-dialog v-model="dialogFormVisible" :z-index="currentZIndex" :draggable="draggable"
-            :close-on-click-modal="false" :show-close="botCerrar" :destroy-on-close="false"
-            :close-on-press-escape="pressEsc" class="my-responsive-dialog" :fullscreen="false"
-            :style="{ width: width }">
+
+        <el-dialog 
+            v-model="dialogFormVisible" 
+            :z-index="currentZIndex"
+            :draggable="draggable"
+            :close-on-click-modal="false" 
+            :show-close="botCerrar"
+            :destroy-on-close="false" 
+            :close-on-press-escape="pressEsc" 
+            class="my-responsive-dialog"
+            :fullscreen="false"
+            :style=" { width: width } "
+        >
             <template #header="{ close, titleId, titleClass }">
                 <div class="my-dialog-header">
                     <slot name="header"></slot>
-
+                    <BotonSalir @salir="handleLogout" /> 
                 </div>
             </template>
 
@@ -54,11 +71,13 @@ const dialogFormVisible = defineModel();
 </template>
 
 <style scoped>
+/* Contenido del diálogo */
 .my-dialog-content {
-    max-height: 70vh;
+    max-height: 80vh;
     overflow-y: auto;
-    padding: 10px;
+    padding: 20px;
 }
+
 
 :deep(.el-dialog) {
     max-width: none !important;
@@ -73,16 +92,18 @@ const dialogFormVisible = defineModel();
     .my-responsive-dialog {
         width: 90%;
         max-width: 500px;
+
     }
+}
 
-    @media (max-width: 768px) {
-        :deep(.el-dialog) {
-            width: 90% !important;
-        }
 
-        .my-dialog-content {
-            max-height: 60vh;
-        }
+@media (max-width: 768px) {
+    :deep(.el-dialog) {
+        width: 90% !important;   
+    }
+    .my-dialog-content {
+        max-height: 75vh;
+        padding: 15px;
     }
 }
 </style>

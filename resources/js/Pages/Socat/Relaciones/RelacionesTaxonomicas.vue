@@ -1,125 +1,273 @@
 <template>
-    <div class="common-layout">
-        <div class="table-wrapper">
-            <el-card class="box-card">
-                <el-container>
-                    <el-header class="header">
-                        <h3 class="titulo">
-                            Relaciones taxonómicas
-                        </h3>
-                        
-                    </el-header>
-                    <el-main class="contenido">                        
-                        <div>
-                            <h1 class="subtitulo">
-                                <span style="color: red;">{{ props.taxonAct.label }}</span>
-                            </h1>
-                            <el-row style="display: flex; flex-wrap: wrap; padding: 8px;">
-                                <el-col style="padding: 12px; flex: 0 0 auto;">
-                                    <span style="display: block; margin-bottom: 2px;">Relaciones nomenclaturales</span>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <el-cascader
-                                            :options="tiposRel"
-                                            clearable
-                                            filterable
-                                            v-model="tipRel"
-                                            placeholder="Seleccione"
-                                            @change="cargaRelaciones"
-                                            style="flex-grow: 1; font-size: 14px;">
-                                        </el-cascader>
-                                        <el-tooltip class="item" 
-                                                        effect="dark" 
-                                                        content="Catálogo de Relaciones taxonómicas" 
-                                                        placement="bottom">
-                                            <el-button 
-                                                @click="catalogoRelTax()" 
-                                                type="primary" 
-                                                circle
-                                                color="#2420b4">
-                                                <el-icon><Rompecabezas /></el-icon>
-                                            </el-button>
-                                        </el-tooltip>
-                                    </div>
-                                </el-col>
-                                <el-col style="padding: 8px; flex: 1;">
-                                    <el-row :gutter="16" style="margin: 0 10px;">
-                                        <el-col :span="11" style="padding: 8px;">
-                                            <div style="margin-left: 8px;"> 
-                                                <span class="demo-input-label">Catálogo(s)</span>
-                                                <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true">
-                                                </el-input>
-                                            </div>
-                                        </el-col>
-                                        <el-col :span="11" style="padding: 8px;">
-                                            <div style="margin-left: 8px;">
-                                                <span class="demo-input-label">Grupo SCAT</span>
-                                                <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true">
-                                                </el-input>
-                                            </div>
-                                        </el-col> 
-                                        <el-col :span="2" style="padding: 8px;display: flex; align-items: center; justify-content: center;">
-                                        <el-tooltip class="item" 
-                                                    effect="dark" 
-                                                    content="Catálogo de Grupos taxonómicos" 
-                                                    placement="bottom">
-                                                <el-button @click="filtro_Catalogos()" 
-                                                        type="primary" 
-                                                        circle 
-                                                        color="#5bb1f0">
-                                                    <el-icon><Conectado /></el-icon>
-                                                </el-button>
-                                            </el-tooltip>
-                                        </el-col> 
-                                    </el-row>
-                                </el-col>
-                            </el-row>  
-                            Este es el 2: {{ mensajes.validaciones.nombreRequerido }}
-
-                            <el-row style="padding: 8px;">
-                                <el-col :xs="24" :sm="12" :md="6" style="padding: 8px; display: flex; flex-direction: column;">
-                                    <span class="block">Nivel taxonómico</span>
-                                    <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                                        placeholder="Seleccione" @change="handleChange">
-                                    </el-cascader>
-                                </el-col>
-                            </el-row>
-                            <el-row>                                
-                                <div style="text-align: center">
-                                    <el-transfer
-                                        v-model="selectedValues"
-                                        :data="transferData"
-                                        filterable
-                                        :titles="[etiquetaList1, etiquetaList2]">
-                                        <template #default="{ option }">
-                                            <div style="display: flex; align-items: center;">
-                                                <i class = "icon">
-                                                    <img :src = "'/storage/images/7lYNZw1WlcDnyANR1mr6IlrlbZT2f4WHlSpK3mKH.png'" style="width: 18px; height: 18px">
-                                                </i>
-
-                                                <el-tooltip content="Información">
-                                                    <el-icon @click.prevent="openDialog(option)">
-                                                        <!-- Agregamos el @click.stop y el openDialog -->
-                                                        <InfoFilled />
-                                                    </el-icon>
-                                                </el-tooltip>
-
-                                                <span style="margin-left: 8px;">{{ option.label }}</span>
-                                            </div>
-                                        </template>
-                                    </el-transfer>
+  <div>
+    <el-card class="box-card">
+      <div class="common-layout">
+        <el-container style="min-height: 300px;">
+          <el-header style="background: #f5f5f5; padding: 10px;">
+            <el-row :gutter="10" align="middle">
+              <h2 class="titulo">Relaciones taxonómicas</h2>
+            </el-row>
+          </el-header>
+          <el-main style="padding: 20px; background: #fff;">
+            <el-row>
+                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                    {{ props.taxonAct.label }}
+                </span>
+            </el-row>
+            <el-row>
+              <el-col :xs="24" :sm="24" :md="12" :lg="8" style="padding: 12px;">
+                <span>Relaciones nomenclaturales</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <el-cascader 
+                    :options="tiposRel" 
+                    :props="cascaderProps" 
+                    clearable 
+                    filterable 
+                    v-model="tipRel" 
+                    placeholder="Seleccione" 
+                    @change="cargaRelaciones"
+                    style="flex-grow: 1; font-size: 14px;"
+                  >
+                    <template #default="{ data }">
+                      <span style="display: inline-flex; align-items: center;">
+                        <span v-if="typeof data.icono === 'string' && data.icono.trim().startsWith('<svg')" v-html="data.icono" style="width: 16px; height: 16px; display: inline-block; margin-right: 6px;" />
+                        <img v-else-if="typeof data.icono === 'string'" :src="data.icono" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                        <span>{{ data.label }}</span>
+                      </span>
+                    </template>
+                  </el-cascader>
+                  <el-tooltip class="item" effect="dark" content="Catálogo de Relaciones taxonómicas" placement="bottom">
+                    <el-button @click="catalogoRelTax()" type="primary" circle color="#2420b4">
+                      <el-icon><Rompecabezas /></el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </div>
+              </el-col>
+            </el-row>
+            
+            <el-row>
+              <el-card class="main-content-card">
+                <div>
+                    <el-input
+                        v-model="textarea"
+                        style="width: 100%"
+                        :rows="2"
+                        type="textarea"
+                        placeholder="Observaciones"
+                    />
+                </div>
+                <br/>
+                <div class="dual-panel-container">
+                  <!-- Panel del Árbol -->
+                  <el-card class="tree-panel">
+                    <el-container style="display: flex; flex-direction: column; height: 100%;">
+                      <el-header style="resize: vertical; overflow: auto; min-height: 80px; max-height: 400px; height: auto;">
+                        <el-row :gutter="16" style="display: flex; flex-wrap: wrap;">
+                          <el-col :xs="24" :sm="12" :md="7" style="display: flex; flex-direction: column;">
+                            <span>Ir a:</span>
+                            <el-input clearable placeholder="" v-model="filterText" @change="filterNode" style="height: 28px;" size="small" />
+                          </el-col>
+                          <el-col :xs="24" :sm="12" :md="5" style="display: flex; flex-direction: column;">
+                            <span class="block">Nivel taxonómico</span>
+                            <el-cascader 
+                              :options="categoriasTax" 
+                              clearable 
+                              filterable 
+                              v-model="categ" 
+                              placeholder="Nivel taxonómico" 
+                              @change="handleChange"
+                            >
+                              <template #default="{ data }">
+                                <span style="display: inline-flex; align-items: center;">
+                                  <img :src="data.RutaIcono" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                                  <span>{{ data.label }}</span>
+                                </span>
+                              </template>
+                            </el-cascader>
+                          </el-col>
+                          <el-col :span="12">
+                            <el-row :gutter="10" style="display: flex; align-items: flex-start;">
+                              <el-col :span="11">
+                                <div style="display: flex; flex-direction: column;">
+                                  <span class="demo-input-label" style="margin-bottom: 4px;">Catálogo(s)</span>
+                                  <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true" />
                                 </div>
+                              </el-col>
+                              <el-col :span="11">
+                                <div style="display: flex; flex-direction: column;">
+                                  <span class="demo-input-label" style="margin-bottom: 4px;">Grupo SCAT</span>
+                                  <el-input type="textarea" :rows="2" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
+                                </div>
+                              </el-col>
+                              <el-col :span="2" style="display: flex; align-items: flex-start;">
+                                <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
+                                  <el-button @click="filtro_Catalogos()" type="primary" circle style="margin-top: 4px;">
+                                    <el-icon><filtroGrupos /></el-icon>
+                                  </el-button>
+                                </el-tooltip>
+                              </el-col>
                             </el-row>
+                          </el-col>
+                        </el-row>
+                      </el-header>
+                      
+                      <el-main style="flex: 1; overflow: auto;">
+                        <div style="flex-grow: 1;">
+                          <el-container style="height: 650px;">
+                            <el-aside width="600px" style="height: 470px; display: flex; flex-direction: column;">
+                              <div style="flex: 1; overflow: auto;">
+                                <el-scrollbar height="100%">
+                                  <el-tree 
+                                    class="filter-tree" 
+                                    :data="data" 
+                                    node-key="id" 
+                                    @node-click="expande" 
+                                    :expand-on-click-node="true" 
+                                    :filter-node-method="filterNode" 
+                                    :draggable="false" 
+                                    empty-text='' 
+                                    ref="tree" 
+                                    :highlight-current="true" 
+                                    :current-node-key="selectedNodeKey" 
+                                    :props="defaultProps" 
+                                    @node-contextmenu="handleNodeRightClick"
+                                  >
+                                    <template #default="{ node }">
+                                      <div class="tree-node-wrapper">
+                                        <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+                                        <span class="tree-node-label" :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
+                                          {{ node.label }}
+                                        </span>
+                                      </div>
+                                    </template>
+                                  </el-tree>
+                                </el-scrollbar>
+                              </div>
+                              
+                              <br/>
+                              
+                              <div v-if="totalItems > 0" style="padding: 10px; border-top: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between;">
+                                <el-pagination 
+                                  :current-page="currentPage" 
+                                  :page-size="itemsPerPage" 
+                                  :total="totalItems" 
+                                  @current-change="handlePageChange" 
+                                  layout="prev, pager, next, total" 
+                                  background
+                                />
+                                <span v-show="numHijos > 0" style="margin-left: auto;">
+                                  Num. Hijos: {{ numHijos }}
+                                </span>
+                              </div>
+                            </el-aside>
+                          </el-container>
                         </div>
-                        
-                    </el-main>
-                </el-container>
-            </el-card>
-        </div>
-        <DialogForm v-model="dialogFormVisibleCat" :botCerrar="true" :pressEsc="true">
-            <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
-        </DialogForm>
-    </div>
+                      </el-main>
+                    </el-container>
+                  </el-card>
+                  <el-card class="table-panel1" style="display: flex; flex-direction: column;
+                                  height: 100%">
+                    <el-tooltip
+                        class="box-item"
+                        effect="dark"
+                        content="Relaciona taxón"
+                        placement="right"
+                    >
+                        <el-button  @click = "traspasaDatos"
+                                        circle
+                                        type="primary"
+                                        :disabled = "habTraspaso">
+                            <el-icon>
+                                <traspasoInfo />
+                            </el-icon>
+                        </el-button>
+                    </el-tooltip>
+                    <br/>
+                    <br/>
+                    <el-button  @click = "traspasaDatos"
+                                    circle
+                                    type="primary">
+                        <el-icon>
+                            <regresoInfo />
+                        </el-icon>
+                    </el-button>
+                    <br/>
+                    <br/>
+                    <el-button  @click = "traspasaDatos"
+                                    circle
+                                    type="primary">
+                        <el-icon>
+                            <reemplazo />
+                        </el-icon>
+                    </el-button>
+                    <br/>
+                  </el-card>
+                  <!-- Panel de la Tabla -->
+                  <el-card class="table-panel" style="display: flex; flex-direction: column;
+                                  height: 100%">
+                    <div style="flex-shrink: 0;">
+                        <el-input
+                            v-model="textarea"
+                            style="width: 100%"
+                            :rows="2"
+                            type="textarea"
+                            placeholder="Observaciones"
+                        />
+                    </div>
+                    <br/>
+                    <div ref="scrollContainer"
+                            style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; 
+                                    border-radius: 4px; margin-top: 10px;">
+                      <TablaFiltrable 
+                        class="flex-grow" 
+                        :container-class="'main-section'" 
+                        :columnas="columnasDefinidas" 
+                        v-model:datos="tablaNomenclatura" 
+                        v-model:total-items="totalRegNom" 
+                        :opciones-filtro="opcionesFiltroNomenclatura">
+
+                        <template #expand-column>
+                            <el-table-column type="expand">
+                                <template #default="{ row }">
+                                    <div class="expand-content-detail">
+                                        <p><strong>Fecha de alta:</strong>{{ row.FechaCaptura }}</p>
+                                        <p><strong>Fecha de modificación:</strong>{{ row.FechaModificacion }}</p>
+                                        <p><strong>Observaciones:</strong>
+                                            <el-input
+                                                v-model = row.Observaciones
+                                                style="width: 100%"
+                                                :rows="2"
+                                                type="textarea"
+                                                placeholder="Observaciones"
+                                            />
+                                        </p>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                        </template>
+                     </TablaFiltrable>
+                    </div>
+                  </el-card>
+                </div>
+              </el-card>
+            </el-row>
+          </el-main>
+        </el-container>
+      </div>
+    </el-card>
+
+    <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false" :width="'35%'">
+      <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
+    </DialogForm>
+
+    <Teleport to="body">
+            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+                @close="cerrarNotificacion" />
+    </Teleport>
+  </div>
 </template>
+
 <script setup>
     import {ref, onMounted, watchEffect} from 'vue';
     import { Setting, User, Location, ShoppingCart, InfoFilled } from '@element-plus/icons-vue';
@@ -129,7 +277,24 @@
     import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
     import Conectado from '@/Components/Biotica/Icons/Conectado.vue';
     import { mensajes } from '@/Composables/mensajes';
+    import FiltroGrupo from '@/Components/Biotica/FiltroGrupoTax.vue';
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+    import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
+    import { ElLoading } from 'element-plus';
+    import usePermisos from '@/composables/usePermisos';
+    import { usePage } from '@inertiajs/vue3';
+    import traspasoInfo from '@/Components/Biotica/Icons/TraspasoInfo.vue';
+    import regresoInfo from '@/Components/Biotica/Icons/RegresoInfo.vue';
+    import reemplazo from '@/Components/Biotica/Icons/Reemplazar.vue';
+    import NotificacionExitoErrorModal from"@/Components/Biotica/NotificacionExitoErrorModal.vue";
+    import axios from 'axios';
 
+    const { permisos } = usePermisos();
+
+    const page = usePage();
+    const authUser = page.props.auth.user || [];
+
+    // Datos reactivos
     const tiposRel = ref([]);
     const tipRel = ref("");
     const dialogFormVisibleCat = ref(false);
@@ -138,36 +303,58 @@
     const catalogos = ref('');
     const grupos = ref('');
     const idsGrupos = ref('');
-    const etiquetaList1 = ref('');
-    const etiquetaList2 = ref('');
-//------------------------------------------------
+    const tipRelSelec = ref('');
+    const gruposTax = ref([]);
+    const relDetalle = ref([]);
+    const totalItems = ref(0);
+
+    const habTraspaso = ref(true);
+    const notificacionVisible = ref(false);
+    const notificacionTitulo = ref("");
+    const notificacionMensaje = ref("");
+    const notificacionTipo = ref("info");
+    const notificacionDuracion = ref(5000);
+
+    const filterText = ref('');
+    const mostrar = ref(false);
+    const data = ref([]);
+    const paginas = ref('');
+    const currentPage = ref(1);
+    const itemsPerPage = ref(150);
+    const taxonActRel = ref([]);
+    const tree = ref(null);
+    const selectedNodeKey = ref(null);
+    const numHijos = ref(0);
+    const totalReg = ref(0);
+
+    // Datos de ejemplo para el transfer
     const leftValue = ref([]);
     const selectedValues = ref([]);
     const transferData = [
-  {
-    key: 1,
-    label: 'Usuario',
-    icon: User, // Icono de Element Plus
-  },
-  {
-    key: 2,
-    label: 'Ubicación',
-    icon: Location,
-  },
-  {
-    key: 3,
-    label: 'Carrito',
-    icon: ShoppingCart,
-  },
-];
+        {
+            key: 1,
+            label: 'Usuario',
+            icon: User,
+        },
+        {
+            key: 2,
+            label: 'Ubicación',
+            icon: Location,
+        },
+        {
+            key: 3,
+            label: 'Carrito',
+            icon: ShoppingCart,
+        },
+    ];
 
-const openDialog = async (nodo) => {
-    console.log(nodo.label);    
-    alert("Estoy mandando " + nodo.label);
-};
-//-------------------------------------------------
+    // Función para abrir diálogo
+    const openDialog = async (nodo) => {
+        console.log(nodo.label);    
+        alert("Estoy mandando " + nodo.label);
+    };
 
-
+    // Props del componente
     const props = defineProps({
         taxonAct: {
             type: Object
@@ -194,40 +381,30 @@ const openDialog = async (nodo) => {
         }
     });
 
-    // Función para cargar las variables del componente padre en el hijo 
-    const cargaGrupos = async () => {
-        tipRel.value = "";
-        categ.value = "";
-        etiquetaList1.value = "Categoría";
-        etiquetaList2.value = "Relación";
-        catalogos.value = props.catalogPadre;
-        grupos.value = props.gruposPadre;
-        idsGrupos.value = props.idsGruposPadre;
+    const cascaderProps = {
+        label: 'label',
+        value: 'value',
+        children: 'children'
     };
 
-    onMounted(async () => {
-        console.log("Ya estoy aqui");
-        const response = await axios.get('/cargar-tipoRel');
-        console.log("Esta es la respuesta: ", response);
-        if (response.status === 200) {
-            tiposRel.value = response.data;
-        }
-        
-        cargaGrupos();
-    });
+    const scrollContainer = ref(null);
+    const tablaNomenclatura = ref([]);
 
-    watchEffect(() => {
-        if (props.gruposPadre) {
-            cargaGrupos();
-        }
-    });
+    const totalRegNom = ref(0);
 
-    //Declaración de Funciones
-    const filtro_Catalogos = () => {
-        //Funcion para abrir el modal que muestra los catalogos taxonómicos
-        dialogFormVisibleCat.value = true;
-        console.log("Estoy en el llamado de lista de grupos");
-    };
+    const columnasDefinidas = ref([
+        { prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120', sortable: true, 
+                    align: 'left', tipo:'imagenTexto', filtrable: true },
+        { prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250', sortable: true, 
+                    align: 'left', tipo:'imagenTexto', filtrable: true },
+        { prop: 'Biblio', label: 'Ref.', minWidth: '55', sortable: false, align: 'center', 
+                    tipo:'imagenTexto', filtrable: false }
+    ]);
+
+    const opcionesFiltroNomenclatura = ref([
+        { label: 'TipoRelación', value: 'TipoRelacion' },
+        { label: 'NombreCompleto', value: 'Nombrecompleto' }
+    ]);
 
     //Funcion para recibir los datos de los grupos y catalogos selccionados
     const recibeGrupos = async (data) => {
@@ -237,100 +414,353 @@ const openDialog = async (nodo) => {
 
         if (categ.value === '') {
             open("Se debe seleccionar una categoría taxonómica.");
-        }else{
+        } else {
             let categ = [];
-            categ.push(catego.value)  
-            handleChange(categ); 
+            categ.push(catego.value)
+            handleChange(categ);
         }
     };
 
-    //Esta funcion se dispara una vez que se selecciona una categia taxonomica
     const handleChange = async (value) => {
-        console.log(value);
-         console.log(props.categoriasTax);
-        const etiqueta = props.categoriasTax.find(categoria => categoria.value === value[0]);
-        etiquetaList1.value = etiqueta.label;
-        console.log("Se dispara para cargar la lista de taxones");
+        if (value != undefined) {
+            filterText.value = "";
+            mostrar.value = false;
+            catego.value = value[0];
+
+            if (idsGrupos.value != '') {
+            const params = {
+                categ: value[0],
+                catalog: idsGrupos.value
+            };
+
+            const loading = ElLoading.service({
+                lock: true,
+                text: "Loading",
+                spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+                backgroud: 'rgba(255,255,255,0.85)',
+            });
+
+            //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
+            const response = await axios.get('/cargar-nomArb', { params });
+
+            if (response.status === 200) {
+                
+                data.value = response.data[0];
+                totalItems.value = response.data[1].total;
+                paginas.value = response.data[1].last_page;
+            }
+            else {
+                console.log("Se presentó un error en la recuperación de los datos");
+            }
+            loading.close();
+            }
+        }
+    }
+
+    const filtro_Catalogos = () => {
+        //Funcion para abrir el modal que muestra los catalogos taxonómicos
+        dialogFormVisibleCat.value = true;
     };
 
-    //Funcion para recuperar la relacion taxonomica 
+    // Función para cargar grupos iniciales
+    const cargaGrupos = () => {
+        catalogos.value = props.catalogPadre;
+        grupos.value = props.gruposPadre;
+        idsGrupos.value = props.idsGruposPadre;
+    };
+
+    //Funcion que se ejecuta para la expancion de un nodo
+    const expande = async (draggingNode, nodeData, nodeComponent) => {
+
+        mostrar.value = true;
+        taxonActRel.value = draggingNode;
+        
+        if (draggingNode.children.length === 0) {
+            const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+            });
+
+            const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
+
+            if (response.status === 200) {
+                if (draggingNode.children.length === 0) {
+                    for (let i = 0; i < response.data[0].length; i++) {
+                    draggingNode.children.push(response.data[0][i]);
+                    }
+                }
+
+                const node = tree.value.getNode(draggingNode);
+                node.expanded = true;
+
+            }
+            loading.close();
+        }
+        
+        numHijos.value = draggingNode.children.length;
+        selectedNodeKey.value = draggingNode.id;
+
+    }
+
+    //Función para hacer la busqueda de los valores colocados en el input de busqueda
+    const filterNode = async (value) => {
+        mostrar.value = false;
+
+        const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+        if (value != '' && idsGrupos.value != '' && categ.value != null) {
+            const params = {
+            categ: categ.value[0],
+            catalog: idsGrupos.value,
+            taxon: value
+            };
+
+            const response = await axios.get('/cargar-nomArb',
+            { params });
+
+            if (response.status === 200) {
+            data.value = response.data[0];
+            totalReg.value = response.data[1].total;
+            paginas.value = response.data[1].last_page;
+            loading.close();
+            }
+        }
+
+        loading.close();
+    }
+    //Funcion para validae la visbilidad de los objetos 
+    const hasPermisos = (etiqueta, modulo) => {
+
+        const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+        return permiso[modulo];
+    };
+
+    const handlePageChange = (page) => {
+        console.log("Este es el valor de page:", page);
+        currentPage.value = page;
+        fetchFilteredData();
+    };
+
+    const fetchFilteredData = async () => {
+        console.log("estoy en esta funcion");
+        const params = {
+            categ: catego.value,
+            catalog: idsGrupos.value,
+            page: currentPage.value
+        };
+        const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+        const response = await axios.get("/cargar-nomArb", { params });
+        if (response.status === 200) {
+            data.value = response.data[0];
+        }
+
+        loading.close();        
+    };
+
+    // Función para recibir grupos del componente hijo
+    const recibirGrupos = (payload) => {
+        catalogos.value = payload.catalogos;
+        grupos.value = payload.grupos;
+        idsGrupos.value = payload.idsGrupos;
+    };
+
+    // Función para cerrar diálogo
+    const cerrarDialog = (valor) => {
+        dialogFormVisibleCat.value = valor;
+    };
+
+    // Función para cargar relaciones taxonómicas
     const cargaRelaciones = async(value) => {
         let idsNombreSin = 0;
         let idsNombreVal = 0;
         let params = {};
-        console.log("Aqui se cargan las relaciones");
-        const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
+        let listAct = {};
+
         
-        if(etiqueta != undefined)
+        if(value != undefined)
         {
-            etiquetaList2.value = etiqueta.label 
+            const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
+
+            if(etiqueta != undefined)
+            {
+                tipRelSelec.value = etiqueta.value 
+            }
+            console.log("Este es el valor de tipRelSelec: ", tipRelSelec.value);
+            if(tipRelSelec.value > 0)
+            {
+                for (const child of tiposRel.value) {
+                    if (child.children && child.children.length > 0) {
+                        const found = await updateChildNode(child.children, value[value.length - 1]);
+                    } 
+                }
+                
+                let filtrados =props.taxonAct.relaciones.filter(item => 
+                                item.TipoRelacion?.idTipoRel === tipRelSelec.value)
+
+                console.log("Este es el resultado de existeValor: ", filtrados);
+
+                tablaNomenclatura.value = filtrados ?? [];
+
+                totalRegNom.value = filtrados.length;
+                habTraspaso.value = false;
+            }
+            else{
+                tablaNomenclatura.value = props.taxonAct.relaciones;
+                totalRegNom.value = props.taxonAct.relaciones.length
+                habTraspaso.value = false;
+            }
+        }
+        else {
+            tablaNomenclatura.value = [];
+            totalRegNom.value = 0;
         }
 
-        for (const child of tiposRel.value) {
-            if (child.children && child.children.length > 0) {
-                const found = await updateChildNode(child.children, value[value.length - 1]);
-            } 
-        }
-        //Aqui se valida la recuperación de los sinonimos o validos confirmando si es un objeto o un array
-        if (props.taxonAct?.completo?.nombre_rel !== undefined && 
-            props.taxonAct.completo.nombre_rel !== null) 
-        {     
-            // Convertir a array si no lo es
-            const relaciones = Array.isArray(props.taxonAct.completo.nombre_rel) 
-                ? props.taxonAct.completo.nombre_rel 
-                : [props.taxonAct.completo.nombre_rel];
-            
-            // Filtrar y mapear
-            idsNombreSin = relaciones
-                .filter(r => r.IdTipoRelacion === 1)
-                .map(r => r.IdNombreRel);
-            
-            console.log("Estas son los sinonimos: ", idsNombreSin.length);
-        }
-        
-        if (props.taxonAct?.completo?.nombre_rel_val !== undefined && 
-            props.taxonAct.completo.nombre_rel_val !== null) 
-        {            
-            // Convertir a array si no lo es
-            const relaciones = Array.isArray(props.taxonAct.completo.nombre_rel_val) 
-                ? props.taxonAct.completo.nombre_rel_val 
-                : [props.taxonAct.completo.nombre_rel_val];
-            
-            // Filtrar y mapear
-            idsNombreVal = relaciones
-                .filter(r => r.IdTipoRelacion === 1)
-                .map(r => r.IdNombre);
-            
-            console.log("Estas son los validos: ", idsNombreVal.length);
-        }
-        if(idsNombreSin.length > 0)
-        {
-            params = {ids: idsNombreSin};
-        }
-        else
-        {
-            params = {ids: idsNombreVal};
-        }
-        console.log("Estos son los parametros a pasar: ", params);
+    };
 
-        const response = await axios.get('/cargar-relaciones', { params });
-      
+    const traspasaDatos = async() => {
+        
+        let relacionar = false;
+
+        if(taxonActRel.value.length === 0)
+        {
+            console.log("No a seleccionado ningun taxon");
+             mostrarNotificacion(
+                "Alerta",
+                "Se debe selccionar al menos un taxón a relacionar",
+                "error",
+                7000
+            );
+        }   
+
+        console.log("Este es tipo Relacion: ", tipRelSelec.value);
+        
+        switch (tipRelSelec.value){
+            case 1:
+                relacionar = validacionSinonimos();
+                if(relacionar){
+                    console.log("Entre a la funcion de para dar de alta las relaciones");
+                    altaRelacion();
+                }
+                break;
+        }
+
+        
+
+    } 
+
+    const validacionSinonimos = async () => {
+        
+        const contValido = props.taxonAct.relaciones.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
+                                                                 rel.Nombrecompleto?.estatus === "Correcto");
+        //Se valida que el taxon no sea del mismo estatus 
+        if(taxonActRel.value.estatus === props.taxonAct.estatus)
+        {
+            mostrarNotificacion(
+                "Alerta",
+                "El taxón actual y el taxon a relacionar o pueden tener el mismo estatus",
+                "error",
+                7000
+            ); 
+            return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
+        }else if((props.taxonAct.estatus === "Sinonimo" && contValido) && taxonActRel.value.estatus === 'Válido'){
+            mostrarNotificacion(
+                "Alerta",
+                "El taxón actual ya tiene una relacion con un taxon válido ",
+                "error",
+                7000
+            );
+            return false;//Se valida que el taxon de origen no sea de estatus ND
+        }else if(props.taxonAct.estatus === "ND"){
+            mostrarNotificacion(
+                "Alerta",
+                "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
+                "error",
+                7000
+            );
+            return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
+        }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || taxonActRel.value.completo.categoria.IdNivel1 < 5){
+            mostrarNotificacion(
+                "Alerta",
+                "No se puede tener relaciones de sinonimia en taxones de cateria superior a familia",
+                "error",
+                7000
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    const altaRelacion = async() => {
+        
+        console.log("Si voy a dar de alta la relacion entre taxones");
+        const params= {
+                        taxonAct: props.taxonAct, 
+                        taxonActRel: taxonActRel.value,
+                        tipRelacion: tipRelSelec.value
+                    };
+
+        console.log("Estos son los parametros: ", params);                    
+
+        const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+        });
+        
+        const response = await axios.post('/alta-RelacionesTax', { params });
+        console.log("Esta es la respuesta del servidor: ", response);
+        /*
         if (response.status === 200) {
+            
             data.value = response.data[0];
-            totalReg.value = response.data[1].total;
+            totalItems.value = response.data[1].total;
             paginas.value = response.data[1].last_page;
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");
-        }
+        }*/
+        loading.close();
     }
 
-    //Funcion recursiva para encontrar el elemento de la relacion taxonomica en los hijos
+    const mostrarNotificacion = (
+        titulo,
+        mensaje,
+        tipo = "warning",
+        duracion = 5000,
+        dangerouslyUseHTML = false
+    ) => {
+        notificacionTitulo.value = titulo;
+        notificacionMensaje.value = mensaje;
+        notificacionTipo.value = tipo;
+        notificacionDuracion.value = duracion;
+        notificacionVisible.value = true;
+    };
+
+    const cerrarNotificacion = () => {
+        notificacionVisible.value = false;
+    };
+
+    // Función recursiva para buscar nodos hijos
     const updateChildNode = async (children, res) => {
         for (const child of children) {
             if (child.value === res) {
-                console.log("Lo encontre: ", child);
-                etiquetaList2.value = child.label;
+                tipRelSelec.value = child.value;
                 return true; 
             }
             
@@ -339,109 +769,139 @@ const openDialog = async (nodo) => {
                 if (found) return true;
             }
         }
-        return false; // Nodo no encontrado en los hijos
+        return false;
     };
 
-    const cerrarDialog = (valor) => {
-        dialogFormVisibleCat.value = valor; // Cambia la visibilidad del diálogo
-    };
+    // Inicialización de datos
+    onMounted( async () => {
+        const response = await axios.get('/cargar-tipoRel');
+        
+        if (response.status === 200) {            
+            tiposRel.value = response.data;
+            tiposRel.value.unshift({
+                label: "Todos",
+                value: 0
+            });
+        }
+       await cargaGrupos();
+        gruposTax.value = props.gruposTax;
+    });
+
+    // Watcher para cambios en los props
+    watchEffect(() => {
+        if (props.gruposPadre) {
+            cargaGrupos();
+        }
+    });
 
 </script>
 
-<style>
-    .titulo {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem; /* Añadir margen inferior para separar del contenido */
-        }
+<style scoped>
+/* Estilos generales */
+.box-card {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
 
-    .subtitulo {
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem; /* Añadir margen inferior para separar del contenido */
-    }
+.common-layout {
+  width: 100%;
+  height: 100%;
+}
 
-    .header {
-        text-align: left;
-        padding: 0.5rem; /* Reducir el padding en móviles */
-        background-color: #f5f5f5;
-        border-bottom: 1px solid #ddd;
-    }
-    /* Aumentar el ancho del panel derecho */
-    .el-transfer-panel:last-child {
-        width: 220px; /* Ajusta este valor según necesites */
-    }
+.titulo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
 
-    /* Asegurar que el contador tenga espacio */
-    .el-transfer-panel__header .el-checkbox__label span {
-        min-width: 10px;
-        display: inline-block;
-    }
+/* Contenedor principal de dos paneles */
+.main-content-card {
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  padding: 15px;
+}
 
-    /*Estos son los estilos para reescribir los botones el el-transfer */
-    .el-transfer {
-        display: flex;
-        flex-direction: row; /* alineación horizontal */
-        justify-content: center;
-        align-items: center;
-        gap: 16px; /* espacio entre listas y botones */
-    }
+.dual-panel-container {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 15px;
+}
 
-    /* Paso 2: Comportamiento responsivo si el espacio es pequeño */
-    @media (max-width: 600px) {
-        .el-transfer {
-            flex-direction: column; /* vertical en pantallas pequeñas */
-            align-items: center;
-        }
-    }
+.tree-panel, .table-panel {
+  flex: 0 0 auto;
+  width: 680px;
+  height: 600px;
+}
 
-    /* Paso 3: Tus estilos para botones */
-    .el-transfer__buttons {
-        display: flex;
-        flex-direction: row; /* horizontal por defecto */
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-    }
+.table-panel1 {
+  flex: 0 0 auto;
+  width: 80px !important;
+  height: 600px;
+}
 
-    .el-transfer__buttons .el-button {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        flex-shrink: 0;
-        width: 32px;
-        height: 32px;
-        padding: 0;
-    }
+/* Estilos para la barra de scroll */
+.dual-panel-container::-webkit-scrollbar {
+  height: 8px;
+}
 
-    .el-transfer__buttons .el-button .el-icon {
-        display: none !important;
-    }
+.dual-panel-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
 
-    .el-transfer__buttons .el-button:first-child::after {
-        content: '';
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        background: url('/storage/images/punto-de-la-mano-hacia-atras-a-la-izquierda.svg') no-repeat center center;
-        background-size: contain;
-    }
+.dual-panel-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
 
-    .el-transfer__buttons .el-button:last-child::after {
-        content: '';
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        background: url('/storage/images/traspaso.svg') no-repeat center center;
-        background-size: contain;
-    }
+.dual-panel-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
 
-    .el-cascader .el-input__inner {
+/* Estilos para el árbol */
+.tree-node-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
   font-size: 14px;
 }
 
-.el-cascader-panel {
-  font-size: 14px;
+.tree-node-logo {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.tree-node-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.highlight-node {
+  color: #a52f2f !important;
+}
+
+/* Estilos para pantallas muy pequeñas (ajustes mínimos) */
+@media (max-width: 600px) {
+  .tree-panel, .table-panel {
+    width: 95%;
+    min-width: 95%;
+  }
+  
+  .dual-panel-container {
+    gap: 10px;
+  }
+}
+
+/* Estilo para el nodo seleccionado en el árbol */
+:deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
 }
 </style>
