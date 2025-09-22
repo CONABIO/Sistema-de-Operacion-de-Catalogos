@@ -15,7 +15,6 @@ import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 
-// --- PROPS ---
 const props = defineProps({
     treeDataProp: { type: Array, required: true, default: () => [] },
     tiposDeRegionProp: { type: Array, required: true, default: () => [] },
@@ -44,35 +43,22 @@ const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 
 const isTipoRegionReadonly = computed(() => {
-    // Solo es readonly si estamos insertando y se elige "mismo nivel"
-    return modalMode.value === 'insertar' && opcionNivel.value === 'mismo';
+    return modalMode.value === 'editar'; // Hacer que el tipo de región sea de solo lectura en modo edición
 });
 
 
 const opcionesTipoRegionDisponibles = computed(() => {
-    // Para modo edición, o si no hay un nodo de referencia, mostrar todo.
     if (modalMode.value === 'editar' || !selectedNode.value) {
         return listaTiposDeRegion.value;
     }
-
-    // --- Lógica para modo Inserción ---
-
     if (opcionNivel.value === 'mismo') {
-        // En "mismo nivel", el select está deshabilitado.
-        // Nos aseguramos de que la lista contenga SOLO el tipo de región del nodo de referencia.
-        // Esto garantiza que el select pueda mostrar el nombre correcto.
         const tipoRegionId = selectedNode.value.IdTipoRegion;
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === tipoRegionId);
     }
-
     if (opcionNivel.value === 'inferior') {
-        // En "nivel inferior", buscamos el "Tipo de Región" del nodo seleccionado en el árbol de tipos...
         const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
-        // ...y devolvemos solo sus hijos directos.
         return tipoRegionActual?.children || [];
     }
-
-    // Caso por defecto (ej. al insertar en la raíz)
     return listaTiposDeRegion.value;
 });
 
@@ -80,7 +66,6 @@ watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(J
 watch(() => props.tiposDeRegionTreeProp, (newVal) => { tiposRegionTreeData.value = JSON.parse(JSON.stringify(newVal)); }, { immediate: true, deep: true });
 watch(() => props.tiposDeRegionProp, (newVal) => { listaTiposDeRegion.value = newVal; }, { immediate: true, deep: true });
 watch(filterText, (val) => {
-    // Solo intentar filtrar si la referencia al árbol existe
     if (treeRef.value) {
         treeRef.value.filter(val);
     }
@@ -95,14 +80,13 @@ const onOpcionNivelChange = (newVal) => {
 };
 
 
-// MODIFICAMOS la función de filtro para que sea más robusta
 const filterNodeMethod = (value, data) => {
     if (!value) return true;
-    // Nos aseguramos de que 'data.NombreRegion' exista antes de llamar a toLowerCase()
     return data.NombreRegion && data.NombreRegion.toLowerCase().includes(value.toLowerCase());
 };
 
 
+// Modificación para encontrar un nodo por ID y, opcionalmente, obtener su IdAscendente
 function findNodeById(nodes, id) {
     for (const node of nodes) {
         if (node.IdRegion === id) return node;
@@ -114,7 +98,28 @@ function findNodeById(nodes, id) {
     return null;
 }
 
-// Función para buscar un nodo en el árbol de TIPOS de región por su ID
+// Nueva función para encontrar el IdAscendente de un nodo específico
+function getAscendantId(nodeId, tree) {
+    let ascendantId = null;
+    function search(nodes, parentId = null) {
+        for (const node of nodes) {
+            if (node.IdRegion === nodeId) {
+                ascendantId = parentId;
+                return true;
+            }
+            if (node.children && node.children.length > 0) {
+                if (search(node.children, node.IdRegion)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    search(tree);
+    return ascendantId;
+}
+
+
 function findNodeInTipoRegionTree(nodes, id) {
     for (const node of nodes) {
         if (node.IdTipoRegion === id) return node;
@@ -126,47 +131,38 @@ function findNodeInTipoRegionTree(nodes, id) {
     return null;
 }
 
-// --- NUEVA PROPIEDAD COMPUTADA ---
-// Determina si la opción "Nivel inferior" debe estar disponible
 const puedeTenerNivelInferior = computed(() => {
-    // Si no hay nodo seleccionado, no se puede determinar.
     if (!selectedNode.value) {
         return false;
     }
-    // Buscamos el tipo de región del nodo actual en el árbol de tipos
     const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
-
-    // La opción solo está disponible si el tipo de región actual tiene 'children' (hijos)
     return !!(tipoRegionActual && tipoRegionActual.children && tipoRegionActual.children.length > 0);
 });
 
-
-const getAllChildIds = (node) => {
-    let ids = [node.IdTipoRegion];
-    if (node.children?.length) {
-        node.children.forEach(child => {
-            ids = ids.concat(getAllChildIds(child));
-        });
-    }
-    return ids;
-};
-
 const filteredRegionsTree = computed(() => {
     if (!selectedTipoRegionNode.value) {
-        return [];
+        return []; 
     }
-    const allowedIds = getAllChildIds(selectedTipoRegionNode.value);
-    const filterTree = (nodes) => {
-        return nodes.reduce((acc, node) => {
-            const filteredChildren = node.children?.length ? filterTree(node.children) : [];
-            if (allowedIds.includes(node.IdTipoRegion) || filteredChildren.length > 0) {
-                acc.push({ ...node, children: filteredChildren });
+
+    const targetTypeId = selectedTipoRegionNode.value.IdTipoRegion;
+
+    const filterAndPruneTree = (nodes) => {
+        return nodes.reduce((accumulator, node) => {
+            if (node.IdTipoRegion === targetTypeId) {
+                accumulator.push({ ...node, children: [] });
+                return accumulator;
             }
-            return acc;
+            if (node.children && node.children.length > 0) {
+                const filteredChildren = filterAndPruneTree(node.children);
+                if (filteredChildren.length > 0) {
+                    accumulator.push({ ...node, children: filteredChildren });
+                }
+            }
+
+            return accumulator;
         }, []);
     };
-
-    return filterTree(JSON.parse(JSON.stringify(localTreeData.value)));
+    return filterAndPruneTree(JSON.parse(JSON.stringify(localTreeData.value)));
 });
 
 
@@ -245,11 +241,56 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     await formModalRef.value.validate();
+
+    // --- Lógica de validación para nombre de región único por ascendente ---
+    const isNameTakenBySibling = (parentId, regionName, currentRegionId = null) => {
+        let siblings = [];
+        if (parentId === null) { // Regiones de nivel raíz
+            siblings = localTreeData.value.filter(node => node.IdAscendente === null || node.IdAscendente === undefined);
+        } else {
+            const parentNode = findNodeById(localTreeData.value, parentId);
+            if (parentNode && parentNode.children) {
+                siblings = parentNode.children;
+            }
+        }
+        return siblings.some(node =>
+            node.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
+            (currentRegionId === null || node.IdRegion !== currentRegionId) // Excluir el nodo actual si estamos editando
+        );
+    };
+
+    let parentIdForValidation = null;
+
+    if (modalMode.value === "insertar") {
+        if (opcionNivel.value === 'mismo' && selectedNode.value) {
+            // El nuevo nodo será hermano del seleccionado, busca el ascendente del seleccionado
+            parentIdForValidation = getAscendantId(selectedNode.value.IdRegion, localTreeData.value);
+        } else if (opcionNivel.value === 'inferior' && selectedNode.value) {
+            // El nuevo nodo será hijo del seleccionado, el seleccionado es su ascendente
+            parentIdForValidation = selectedNode.value.IdRegion;
+        } else { // 'raiz'
+            parentIdForValidation = null;
+        }
+    } else if (modalMode.value === "editar" && nodoEnModal.value) {
+        // Al editar, el ascendente del nodo no cambia.
+        parentIdForValidation = getAscendantId(nodoEnModal.value.IdRegion, localTreeData.value);
+    }
+
+    if (isNameTakenBySibling(parentIdForValidation, formModal.value.NombreRegion, modalMode.value === 'editar' ? nodoEnModal.value.IdRegion : null)) {
+        mostrarNotificacion("Error de Validación", "Ya existe una región con el mismo nombre en este nivel.", "error");
+        return; // Detener el proceso
+    }
+    // --- Fin de la lógica de validación ---
+
     const onSuccess = () => {
         cerrarModalOperacion();
         mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
+        // Aquí podrías recargar la parte del árbol afectada o todo el árbol
+        router.reload({ only: ['treeDataProp'] }); 
     };
     const onError = (errors) => {
+        // En caso de que el backend también devuelva errores de validación, se mostrarán aquí.
+        // Si el backend te devuelve un mensaje específico sobre el nombre duplicado, lo verás.
         mostrarNotificacion("Error del Servidor", Object.values(errors).flat().join("\n"), "error");
     };
 
@@ -264,7 +305,7 @@ const guardarDesdeModal = async () => {
 const handleEliminar = () => {
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione una región para eliminar.");
     if (selectedNode.value.children?.length > 0) {
-        return mostrarNotificacion("Acción no permitida", "No se puede eliminar porque tiene regiones dependientes.", "error");
+        return mostrarNotificacion("Acción no permitida", "No se puede borrar la región por qué tiene regiones asociadas.", "error");
     }
 
     const nombre = selectedNode.value.NombreRegion;
@@ -293,6 +334,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         onSuccess: () => {
             mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
             selectedNode.value = null;
+            router.reload({ only: ['treeDataProp'] }); // Recargar el árbol después de eliminar
         },
         onError: (error) => mostrarNotificacion("Error al Eliminar", error.message || "Ocurrió un error.", "error"),
     });
@@ -371,7 +413,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                 <div class="dialog-body-container">
                     <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
                         @submit.prevent="guardarDesdeModal">
-                        <div v-if="modalMode === 'insertar'" class="mb-4">
+                        <div v-if="modalMode === 'insertar'" class="mb-4"> 
                             <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
                             <el-radio-group v-model="opcionNivel" @change="onOpcionNivelChange">
                                 <el-radio v-if="selectedNode" value="mismo">Mismo nivel</el-radio>
@@ -383,7 +425,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                         <el-form-item prop="IdTipoRegion" label="Tipo de región:" class="form-item-con-boton">
                             <el-select v-model="formModal.IdTipoRegion" class="main-input"
-                                placeholder="Seleccione un tipo" :disabled="isTipoRegionReadonly">
+                                placeholder="Seleccione un tipo" :disabled="isTipoRegionReadonly"> 
                                 <el-option v-for="tipo in opcionesTipoRegionDisponibles" :key="tipo.IdTipoRegion"
                                     :label="tipo.Descripcion" :value="tipo.IdTipoRegion" />
                             </el-select>
@@ -481,7 +523,6 @@ const proceedWithDeletion = (nodeId, nombre) => {
     margin-bottom: 1rem;
 }
 
-/* Estilos para los modales */
 :deep(.el-dialog__body) {
     padding: 0 !important;
 }

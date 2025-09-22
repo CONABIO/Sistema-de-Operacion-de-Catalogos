@@ -15,9 +15,10 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'formSubmited']);
 
-const inputFileRef = ref(null); 
+const inputFileRef = ref(null);
 const dialogVisible = ref(false);
 const formRef = ref(null);
+const selectedOption = ref('localFile');
 const form = ref({
     IdMime: null,
     NombreObjeto: '',
@@ -32,6 +33,7 @@ const form = ref({
     Institucion: '',
     Fecha: null,
     Observaciones: '',
+    UrlExterna: '',
 });
 
 const abrirExploradorArchivos = () => {
@@ -39,7 +41,6 @@ const abrirExploradorArchivos = () => {
         inputFileRef.value.click();
     }
 };
-
 
 const manejarSeleccionArchivo = (event) => {
     const archivos = event.target.files;
@@ -62,24 +63,30 @@ const manejarSeleccionArchivo = (event) => {
     }
 };
 
-
 const opcionesProtocolo = ref(['HTTP', 'HTTPS', 'FTP', 'FILE']);
-const opcionesTipoArchivo = ref([]); 
+const opcionesTipoArchivo = ref([]);
 
-const rules = {
-    NombreObjeto: [{ required: true, message: 'El nombre del archivo es obligatorio', trigger: 'blur' }],
-    IdMime: [{ required: true, message: 'El tipo de archivo es obligatorio', trigger: 'change' }],
-    Titulo: [{ required: true, message: 'El título es obligatorio', trigger: 'blur' }],
-};
+const rules = computed(() => {
+    const baseRules = {
+        IdMime: [{ required: true, message: 'El tipo de archivo es obligatorio', trigger: 'change' }],
+        Titulo: [{ required: true, message: 'El título es obligatorio', trigger: 'blur' }],
+    };
+
+    if (selectedOption.value === 'localFile') {
+        baseRules.NombreObjeto = [{ required: true, message: 'El nombre del archivo es obligatorio', trigger: 'blur' }];
+    } else {
+        baseRules.UrlExterna = [{ required: true, message: 'La URL externa es obligatoria', trigger: 'blur' }];
+    }
+    return baseRules;
+});
 
 const dialogTitle = computed(() => {
     return props.accion === 'crear' ? 'Ingresar un nuevo objeto externo' : 'Modificar el objeto externo seleccionado';
 });
 
-
 const cargarTiposArchivo = async () => {
     try {
-        const response = await axios.get('/api/mimes'); 
+        const response = await axios.get('/api/mimes');
         opcionesTipoArchivo.value = response.data;
     } catch (error) {
         console.error("Error al cargar los tipos de archivo:", error);
@@ -96,6 +103,11 @@ watch(() => props.visible, (newVal) => {
     if (newVal) {
         if (props.accion === 'editar' && props.objetoExternoEdit) {
             form.value = { ...props.objetoExternoEdit };
+            if (form.value.UrlExterna) {
+                selectedOption.value = 'webPage';
+            } else {
+                selectedOption.value = 'localFile';
+            }
         } else {
             form.value = {
                 IdMime: null,
@@ -111,7 +123,9 @@ watch(() => props.visible, (newVal) => {
                 Institucion: '',
                 Fecha: null,
                 Observaciones: '',
+                UrlExterna: '',
             };
+            selectedOption.value = 'localFile';
         }
         nextTick(() => {
             formRef.value?.clearValidate();
@@ -124,6 +138,50 @@ watch(dialogVisible, (newVal) => {
         emit('cerrar');
     }
 });
+
+watch(selectedOption, (newVal) => {
+    if (newVal === 'localFile') {
+        form.value.UrlExterna = '';
+    } else { 
+        form.value.NombreObjeto = '';
+        form.value.NombreSitio = '';
+        form.value.Ruta = '';
+        form.value.Protocolo = 'HTTP';
+        form.value.UnidadLogica = '';
+        form.value.Usuario = '';
+        form.value.Password = '';
+    }
+    nextTick(() => {
+        formRef.value?.clearValidate();
+    });
+});
+
+watch(() => form.value.UrlExterna, (newUrl) => {
+    if (newUrl && selectedOption.value === 'webPage') {
+        try {
+            const url = new URL(newUrl);
+            const protocol = url.protocol.replace(':', '').toUpperCase();
+            if (opcionesProtocolo.value.includes(protocol)) {
+                form.value.Protocolo = protocol;
+            }
+            form.value.NombreSitio = url.hostname;
+            form.value.Ruta = url.pathname;
+            const htmlFileType = opcionesTipoArchivo.value.find(
+                opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase() === 'htmlfile'
+            );
+            if (htmlFileType) {
+                form.value.IdMime = htmlFileType.IdMime;
+            }
+
+        } catch (error) {
+            console.warn('URL inválida, esperando a que sea completa:', error.message);
+            form.value.Protocolo = 'HTTP';
+            form.value.NombreSitio = '';
+            form.value.Ruta = '';
+        }
+    }
+});
+
 
 const intentarGuardar = async () => {
     if (!formRef.value) return;
@@ -143,7 +201,6 @@ const intentarGuardar = async () => {
 const cerrarDialogo = () => {
     emit('cerrar');
 };
-
 </script>
 
 <template>
@@ -153,72 +210,90 @@ const cerrarDialogo = () => {
         </div>
         <div class="header-form">
             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar"/>
+                <GuardarButton @click="intentarGuardar" />
                 <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
-                    <el-form-item label="Buscar archivo">
-                        <el-input placeholder="Haga clic en la lupa para seleccionar un archivo local" :model-value="form.NombreObjeto" readonly>
-                            <template #append>
-                                <el-button :icon="Search" @click="abrirExploradorArchivos" />
-                            </template>
-                        </el-input>
-                        <input type="file" ref="inputFileRef" @change="manejarSeleccionArchivo" style="display: none;" />
+
+                    <el-form-item label="Origen del objeto" style="margin-bottom: 20px;">
+                        <el-radio-group v-model="selectedOption">
+                            <el-radio label="localFile">Archivo local</el-radio>
+                            <el-radio label="webPage">Página web (URL)</el-radio>
+                        </el-radio-group>
                     </el-form-item>
+
+                    <div v-if="selectedOption === 'localFile'">
+                        <el-form-item label="Buscar archivo" prop="NombreObjeto">
+                            <el-input placeholder="Haga clic en la lupa para seleccionar un archivo local"
+                                :model-value="form.NombreObjeto" readonly>
+                                <template #append>
+                                    <el-button :icon="Search" @click="abrirExploradorArchivos" />
+                                </template>
+                            </el-input>
+                            <input type="file" ref="inputFileRef" @change="manejarSeleccionArchivo"
+                                style="display: none;" />
+                        </el-form-item>
+                        <el-form-item label="Nombre del archivo" prop="NombreObjeto">
+                            <el-input v-model="form.NombreObjeto" placeholder="nombre.extension" />
+                        </el-form-item>
+                    </div>
+
+
+                    <el-form-item label="URL de la página web" prop="UrlExterna" v-else>
+                        <el-input v-model="form.UrlExterna" placeholder="Ej: https://www.ejemplo.com/pagina" />
+                    </el-form-item>
+
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Protocolo" prop="Protocolo">
-                                <el-select v-model="form.Protocolo" placeholder="Seleccione un protocolo" style="width: 100%;">
-                                    <el-option v-for="item in opcionesProtocolo" :key="item" :label="item" :value="item" />
+                                <el-select v-model="form.Protocolo" placeholder="Seleccione"
+                                    style="width: 100%;" :disabled="selectedOption === 'localFile'">
+                                    <el-option v-for="item in opcionesProtocolo" :key="item" :label="item"
+                                        :value="item" />
                                 </el-select>
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="Unidad lógica" prop="UnidadLogica">
-                                <el-input v-model="form.UnidadLogica" placeholder="Ej: c, d, etc." />
+                                <el-input v-model="form.UnidadLogica" placeholder="Ej: c, d, etc." :disabled="selectedOption === 'webPage'"/>
                             </el-form-item>
                         </el-col>
                     </el-row>
-
-                    <el-form-item label="Nombre del archivo" prop="NombreObjeto">
-                        <el-input v-model="form.NombreObjeto" placeholder="nombre.extension" />
-                    </el-form-item>
                     
                     <el-form-item label="Nombre del sitio" prop="NombreSitio">
-                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com" />
+                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com" :disabled="selectedOption === 'localFile'" />
                     </el-form-item>
-                    
+
                     <el-form-item label="Ruta" prop="Ruta">
-                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales" />
+                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales" :disabled="selectedOption === 'webPage'" />
                     </el-form-item>
-                    
+
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Tipo de archivo" prop="IdMime">
-                                <el-select v-model="form.IdMime" placeholder="Seleccione un tipo"  style="width: 100%;">
-                                    <el-option v-for="item in opcionesTipoArchivo" :key="item.IdMime" :label="`${item.Extension} - ${item.MIME}`" :value="item.IdMime" />
+                                <el-select v-model="form.IdMime" placeholder="Seleccione un tipo" style="width: 100%;">
+                                    <el-option v-for="item in opcionesTipoArchivo" :key="item.IdMime"
+                                        :label="`${item.Extension} - ${item.MIME}`" :value="item.IdMime" />
                                 </el-select>
                             </el-form-item>
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Usuario" prop="Usuario">
-                                <el-input v-model="form.Usuario" />
+                                <el-input v-model="form.Usuario" :disabled="selectedOption === 'webPage'"/>
                             </el-form-item>
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Contraseña" prop="Password">
-                                <el-input v-model="form.Password" type="password" show-password />
+                                <el-input v-model="form.Password" type="password" show-password :disabled="selectedOption === 'webPage'"/>
                             </el-form-item>
                         </el-col>
                     </el-row>
-                    
-                    <!-- Fila 6 -->
+
                     <el-form-item label="Observaciones" prop="Observaciones">
                         <el-input v-model="form.Observaciones" type="textarea" :rows="3" />
                     </el-form-item>
 
-                    <!-- Sección de Cita -->
                     <el-divider content-position="center">Cita del objeto externo</el-divider>
 
                     <el-form-item label="Título" prop="Titulo">
@@ -228,7 +303,7 @@ const cerrarDialogo = () => {
                     <el-form-item label="Institución" prop="Institucion">
                         <el-input v-model="form.Institucion" />
                     </el-form-item>
-                    
+
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Autor" prop="Autor">
@@ -237,7 +312,8 @@ const cerrarDialogo = () => {
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="Fecha de creación" prop="Fecha">
-                                <el-date-picker v-model="form.Fecha" type="date" placeholder="Seleccione una fecha" style="width: 100%;" />
+                                <el-date-picker v-model="form.Fecha" type="date" placeholder="Seleccione una fecha"
+                                    style="width: 100%;" />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -248,7 +324,6 @@ const cerrarDialogo = () => {
 </template>
 
 <style scoped>
-/* Copia y pega aquí los estilos que tenías en FormNombreComun.vue */
 :deep(.el-dialog__body) {
     padding: 0 !important;
 }
@@ -268,11 +343,11 @@ const cerrarDialogo = () => {
     border: 3px;
     text-align: left;
     border-radius: 10px;
-    background-color: #ffffff; 
+    background-color: #ffffff;
     padding: 20px 24px;
     text-align: left;
-    position: relative; 
-    z-index: 10; 
+    position: relative;
+    z-index: 10;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 

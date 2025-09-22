@@ -1,6 +1,5 @@
 <script setup>
 import { defineModel } from 'vue';
-import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
 
 
@@ -12,6 +11,11 @@ const props = defineProps({
     pressEsc: {
         type: Boolean,
         required: true,
+    },
+
+    width: {
+        type: String,
+        default: "80%",
     },
     draggable: {
         type: Boolean,
@@ -30,9 +34,18 @@ const dialogFormVisible = defineModel();
 
 <template>
     <div>
-        <el-dialog v-model="dialogFormVisible" :draggable="draggable" :z-index="currentZIndex"
+        <el-dialog v-model="dialogFormVisible" :z-index="currentZIndex" :draggable="draggable"
             :close-on-click-modal="false" :show-close="botCerrar" :destroy-on-close="false"
-            :close-on-press-escape="pressEsc" class="my-responsive-dialog">
+            :close-on-press-escape="pressEsc" class="my-responsive-dialog" :fullscreen="false"
+            :style="{ width: width }">
+            <template #header="{ close, titleId, titleClass }">
+                <div class="my-dialog-header">
+                    <slot name="header"></slot>
+
+                </div>
+            </template>
+
+
             <div class="my-dialog-content">
                 <slot></slot>
             </div>
@@ -47,20 +60,29 @@ const dialogFormVisible = defineModel();
     padding: 10px;
 }
 
-.my-responsive-dialog {
-    width: 90%;
-    max-width: 500px;
+:deep(.el-dialog) {
+    max-width: none !important;
+    margin: 5vh auto !important;
 }
 
-@media (max-width: 768px) {
-    .my-responsive-dialog {
-        width: 95%;
-        margin: 0 auto;
-        top: 2%;
+@media (max-width: 1500px) {
+    :deep(.el-dialog) {
+        width: 85% !important;
     }
 
-    .my-dialog-content {
-        max-height: 60vh;
+    .my-responsive-dialog {
+        width: 90%;
+        max-width: 500px;
+    }
+
+    @media (max-width: 768px) {
+        :deep(.el-dialog) {
+            width: 90% !important;
+        }
+
+        .my-dialog-content {
+            max-height: 60vh;
+        }
     }
 }
 </style>

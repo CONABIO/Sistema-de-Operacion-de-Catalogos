@@ -7,7 +7,7 @@ import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import { ElMessageBox } from 'element-plus';
 import { ElLoading } from 'element-plus';
-import AutorTaxon from '../Autores/AutorTaxon.vue';
+import AutorTaxon from '@/Pages/Socat/Autores/AutorTaxon.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import { usePage } from '@inertiajs/vue3';
 import usePermisos from '@/composables/usePermisos';
