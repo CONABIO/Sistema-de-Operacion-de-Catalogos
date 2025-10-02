@@ -662,6 +662,7 @@
         let sinonimos = false;
         let basonimos = false;
         let equivalencia = false;
+        let parental = false;
 
         if(taxonActRel.value.length === 0)
         {
@@ -704,6 +705,9 @@
                 {
                   altaRelacion();
                 }
+              break;
+            case 5:
+                parental = validacionParental();
               break;
         }
     } 
@@ -895,6 +899,23 @@
             ); 
             return false;
            }
+
+      return true;
+    }
+
+    const validacionParental = async () => {
+      console.log(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica);
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != "híbrido"){
+         mostrarNotificacion(
+                "Alerta",
+                "No es posible asociar un parental a un taxón que no es un híbrido",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      //if((props.taxonAct.completo.categoria.IdNivel1 != 6 && props.taxonAct.completo.categoria.IdNivel1 != 6 )
     }
 
     const altaRelacion = async() => {
