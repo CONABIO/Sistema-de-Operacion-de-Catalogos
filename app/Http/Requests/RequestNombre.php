@@ -75,7 +75,7 @@ class RequestNombre extends FormRequest
             'nombreTaxon.NombreTax.otrasObservaciones.max' => 'El campo otras observaciones debe ser de maximo 255 caracteres.',
             'nombreTaxon.NombreTax.sistClassDicc.max' => 'No es posible ingresar un taxón sin el dato del sistema de clasificación, catálogo de autoridad o diccionario',
             'nombreTaxon.NombreTax.sistClassDicc.required' => 'No es posible ingresar un taxón sin el dato del sistema de clasificación, catálogo de autoridad o diccionario.',
-            'nombreTaxon.alias.required' => 'El susuario que realiza el Alta o cambio se debe indicar.',
+            'nombreTaxon.alias.required' => 'El usuario que realiza el Alta o cambio se debe indicar.',
             'nombreTaxon.categoria.id.required' => 'La categoría taxonómica es obligatoria.',
             'nombreTaxon.categoria.id.integer' => 'El ID de la categoría taxonómica debe de ser de tipo numérico.',
             'nombreTaxon.categoria.id.exists' => 'El ID de la categoría taxonómica no existe.',

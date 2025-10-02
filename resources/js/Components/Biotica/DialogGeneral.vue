@@ -20,10 +20,6 @@ const props = defineProps({
         default: "80%",
     },
 
-    width:{
-        type: String,
-        default: "80%",
-      
     draggable: {
         type: Boolean,
         default: false

@@ -24,6 +24,24 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
+                  <div v-if="muestraGrd">
+                    <el-popconfirm confirm-button-text="Si" 
+                                    cancel-button-text="No" 
+                                    :icon="InfoFilled" 
+                                    icon-color="#E6A23C"
+                                    title="¿Realmente desea guardar los cambios?" 
+                                    @confirm="Guardar('nombreTax', accion)">
+                      <template #reference>
+                        <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                          <el-button circle type="warning">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                            </svg>
+                          </el-button>
+                        <!--/el-tooltip-->
+                      </template>
+                    </el-popconfirm>
+                  </div>
                 </el-space>
               </el-col>
           </el-row>
@@ -200,7 +218,7 @@
                       
                       <el-col :span="7">
                         <el-form-item label="Publico" prop="estado" label-position="top">
-                          <el-radio-group v-model="nombreTax.estado" :disabled="autorAct">
+                          <el-radio-group v-model.number="nombreTax.estado" :disabled="autorAct">
                             <el-radio :disabled="estPubS" :value="1">Si</el-radio>
                             <el-radio :disabled="estPubN" :value="0">No</el-radio>
                           </el-radio-group>
@@ -448,6 +466,12 @@ const dialogFormVisibleGrupos = ref(false);
 const dialogFormVisibleComentarios = ref(false);
 const dialogFormVisibleAutor = ref(false);
 
+const notificacionTitulo = ref('');
+const notificacionMensaje = ref('');
+const notificacionTipo = ref('info');
+const notificacionDuracion = ref(5000);
+const notificacionVisible = ref(false);
+
 const emit = defineEmits(['regresaTaxMod', 'cerrar', 
                           'resultadoAlta', 'resultadoBaja']);
 //Se declara una referencia a nuestro formulario
@@ -520,6 +544,7 @@ const carga_inicio = () => {
   estSin.value = true;
   estNa.value = true;
   estNd.value = true;
+  
   Object.assign(nombreTax, {
     nombreTaxon : props.taxonAct?.completo?.Nombre || '',
     nombreAutoridad : props.taxonAct?.completo?.NombreAutoridad || '',
@@ -529,7 +554,7 @@ const carga_inicio = () => {
     otrasObservaciones : props.taxonAct?.completo?.otrasObservaciones || '',
     catTax : props.taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica || '',
     estatusTax : props.taxonAct?.completo?.Estatus || '',
-    estado : props.taxonAct?.completo?.scat?.Publico || ''
+    estado : props.taxonAct?.completo?.scat?.Publico
   });
   idNombre.value = props.taxonAct?.completo?.IdNombre || '';
   idCat.value = props.taxonAct?.completo?.scat?.IDCAT || '';
@@ -884,7 +909,7 @@ const CambioEstatus = () => {
 };
 
 const borrarDatos = async () => {
-  console.log("Este es taxon: ",props.taxonAct.completo.nombre_rel.length);
+
   let rel = props.taxonAct.completo.nombre_rel.length;
   let hijos = props.taxonAct.completo.hijos.length;
   let catRel = props.taxonAct.completo.rel_nombre_cat.length;
@@ -1037,6 +1062,7 @@ const cerrarNotificacion = () => {
 
 //Función para guardar los cambios en el taxón
 const Guardar = async () =>{
+  
   if (!formRef.value) return;
   
   const esValido = await formRef.value.validate().then(() => true).catch(() => false);
@@ -1093,10 +1119,9 @@ const Guardar = async () =>{
   
   let params;
   let res;
-  console.log("Accion: ", accion.value);
+
   switch(accion.value){
               case 'crear':
-                console.log("Entre a la función guardar nuevo");
               if(Array.isArray(listAutorTax.value) && 
                                        listAutorTax.value.length === 0){
                   await mostrarNotificacion(
@@ -1107,7 +1132,6 @@ const Guardar = async () =>{
                   );
                   return;
                 }
-
                 params = {
                   scat:{
                     Grupo: grupoScat,
@@ -1135,6 +1159,8 @@ const Guardar = async () =>{
                 };
                 
                 try{
+
+                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
 
                     const response = await axios.post(`/nombres-store`, params);
                     

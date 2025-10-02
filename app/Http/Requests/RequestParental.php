@@ -9,8 +9,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\DB;
 
-class RequestHuesped
- extends FormRequest
+class RequestParental extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -49,10 +48,10 @@ class RequestHuesped
                                                     $fail("El $attribute no existe en la base de datos.");
                                                 }
                                             }],
-            'params.taxonAct.estatus' => ['required', 'string'],
-            'params.taxonActRel.estatus' => ['required', 'string'],
-            'params.taxonAct.completo.scat.grupo_scat.GrupoAbreviado' => ['required', 'string'],
-            'params.taxonActRel.completo.scat.grupo_scat.GrupoAbreviado' => ['required', 'string'],
+            'params.taxonAct.completo.categoria.IdNivel1' => ['required', 'integer'],
+            'params.taxonActRel.completo.categoria.IdNivel1' => ['required', 'integer'],
+            'params.taxonAct.completo.categoria.IdNivel3' => ['required', 'integer'],
+            'params.taxonActRel.completo.categoria.IdNivel3' => ['required', 'integer'],
         ];
     }
 
@@ -61,23 +60,8 @@ class RequestHuesped
 
         $validator->after(function ($validator){
 
-            $gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
-                          "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
-                          "MONOG", "PROT", "MYXOZ", "TREMA"];
-            
-            $gruposVert = ["ANFIB", "AVES", "MAMIF", "PECES", "REPTI"];
-            
-            $estatusPermitido = ["Válido", "Aceptado"];
-
-            $taxonActGrp = $this->input('params.taxonAct.completo.scat.grupo_scat.GrupoAbreviado', []); 
-            $taxonRelGrp = $this->input('params.taxonActRel.completo.scat.grupo_scat.GrupoAbreviado', []);
-            $taxonActEst = $this->input('params.taxonAct.estatus', '');
-            $taxonRelEst = $this->input('params.taxonActRel.estatus','');
-            $taxonAct = $this->input('params.taxonAct', []); 
-            $taxonRel = $this->input('params.taxonActRel', []);
-
-            $idAct = data_get($taxonAct, 'id');
-            $idRel = data_get($taxonRel, 'id');
+            $taxonAct = $this->input('params.taxonAct.completo.categoria', []); 
+            $taxonRel = $this->input('params.taxonActRel.completo.categoria', []);
             $idTipoRel = $this->input('params.tipRelacion', 0);
 
             $exists = DB::connection('catcentral')
@@ -93,21 +77,21 @@ class RequestHuesped
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 
-            //Valida que el estatus sea válido o aceptado 
-            if(!(in_array($taxonActEst, $estatusPermitido)) || !(in_array($taxonRelEst, $estatusPermitido)))
-            {
-                $validator->errors()->add('validos', "No se puede generar la relación ya que uno o ambos taxones tienen estatus diferente de válido/correcto");
+            //Valida que el taxon Actual sea un híbrido
+            if(($taxonAct['NombreCategoriaTaxonomica'] ?? '') !== "híbrido"){
+                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón que no es un híbrido');
             }
 
-            //Valida que los grupos pertenecen a los vertebrados o parasitos aceptados
-            if(!(
-                    (in_array($taxonActGrp, $gruposPara) && in_array($taxonRelGrp, $gruposVert)) ||
-                    (in_array($taxonActGrp, $gruposVert) && in_array($taxonRelGrp, $gruposPara))
-                )
-            ){
-                     $validator->errors()->add('validos', "El vertebrado o parásito no pertenece a un grupo válido. 
-                                                            Vertebrados: ANFIB, AVES, MAMIF, PECES, REPTI. 
-                                                            Parásitos: ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA.");
+            //Valida el nivel taxonomico 
+            $validaTaxon = (
+                (($taxonAct['IdNivel1'] ?? 0) != 6 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
+                (($taxonAct['IdNivel1'] ?? 0) != 7 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
+                (($taxonActRel['IdNivel1'] ?? 0) != 6 && ($taxonActRel['IdNivel3'] ?? 0) != 0) ||
+                (($taxonActRel['IdNivel1'] ?? 0) != 7 && ($taxonActRel['IdNivel3'] ?? 0) != 0)
+            );
+
+            if($validaTaxon){
+                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón cuya categoría taxonómica sea diferente de género o especie');
             }
         });
     }
