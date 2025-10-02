@@ -10,6 +10,10 @@ use App\Models\RelNombreAutor;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RequestSinonimos;
+use App\Http\Requests\RequestBasonimos;
+use App\Http\Requests\RequestEquivalencia;
+use App\Http\Requests\RequestHuesped;
+use App\Http\Requests\RequestParental;
 use Exception;
 
 
@@ -31,6 +35,8 @@ class RelNombresController extends Controller
     {   
 
         $idTipoRel =  $request['params']['tipRelacion'];
+
+        Log::info("Esta es la relación que acaba de pasar " . $idTipoRel);
 
         switch($idTipoRel){
             case 1: 
@@ -74,12 +80,52 @@ class RelNombresController extends Controller
                 }
             break;
             case 3:
-                $reqSinonimos = app(RequestSinonimos::class);
+                $reqSinonimos = app(RequestEquivalencia::class);
                 
                 $reqSinonimos->validateResolved();
                   
                 $data= $reqSinonimos->validated();
 
+                $idNombre = $data['params']['taxonAct']['id'];
+                
+                $idNombreRel = $data['params']['taxonActRel']['id'];
+
+                break;
+            case 7:
+                Log::info('Entre a la validacion de Huesped ');
+
+                $reqHuesped = app(RequestHuesped::class);
+                
+                $reqHuesped->validateResolved();
+                  
+                $data= $reqHuesped->validated();
+
+                Log::info("Esto es lo que llego a data");
+
+                $gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
+                               "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
+                               "MONOG", "PROT", "MYXOZ", "TREMA"];
+
+                $taxonActGrp = $this->input('params.taxonAct.completo.scat.grupo_scat.GrupoAbreviado', []); 
+
+                Log::info("Este es el vaor del grupo en el controlador");
+
+                 if(in_array($taxonActGrp, $gruposPara))
+                 {
+                    Log::info("Es parasito");
+                 }else{
+                    Log::info("Es vertebrado");
+                 }
+
+                Log::info($data);
+
+                break;
+            case 5:
+                 $reqParental = app(RequestParental::class);
+                
+                $reqParental->validateResolved();
+                  
+                $data= $reqParental->validated();
                 
                 break;
         }
