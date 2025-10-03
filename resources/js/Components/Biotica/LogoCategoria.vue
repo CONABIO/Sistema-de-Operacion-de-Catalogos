@@ -9,6 +9,6 @@
 
 <template>
     <i class = "icon">
-        <img :src = "rutaCategoria" style="width: 28px; height: 28px">
+        <img :src = "rutaCategoria" style="width: 25px; height: 25px;">
     </i>
 </template>
