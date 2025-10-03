@@ -514,54 +514,6 @@ const cerrarDialog = (valor) => {
 };
 
 // Función para cargar relaciones taxonómicas
-const cargaRelaciones = async (value) => {
-  let idsNombreSin = 0;
-  let idsNombreVal = 0;
-  let params = {};
-  let listAct = {};
-
-
-  if (value != undefined) {
-    const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
-
-    if (etiqueta != undefined) {
-      tipRelSelec.value = etiqueta.value
-    }
-    console.log("Este es el valor de tipRelSelec: ", tipRelSelec.value);
-    if (tipRelSelec.value > 0) {
-      for (const child of tiposRel.value) {
-        if (child.children && child.children.length > 0) {
-          const found = await updateChildNode(child.children, value[value.length - 1]);
-        }
-      }
-
-      let filtrados = props.taxonAct.relaciones.filter(item =>
-        item.TipoRelacion?.idTipoRel === tipRelSelec.value)
-
-      console.log("Este es el resultado de existeValor: ", filtrados);
-
-      tablaNomenclatura.value = filtrados ?? [];
-
-      totalRegNom.value = filtrados.length;
-      habTraspaso.value = false;
-    }
-    else {
-      tablaNomenclatura.value = props.taxonAct.relaciones;
-      totalRegNom.value = props.taxonAct.relaciones.length
-      habTraspaso.value = false;
-    }
-  }
-  else {
-    tablaNomenclatura.value = [];
-    totalRegNom.value = 0;
-  }
-
-};
-
-const traspasaDatos = async () => {
-
-  let relacionar = false;
-    // Función para cargar relaciones taxonómicas
     const cargaRelaciones = async(value) => {
         let idsNombreSin = 0;
         let idsNombreVal = 0;
@@ -754,17 +706,9 @@ const traspasaDatos = async () => {
             return false;
         }
 
-  if (taxonActRel.value.length === 0) {
-    console.log("No a seleccionado ningun taxon");
-    mostrarNotificacion(
-      "Alerta",
-      "Se debe selccionar al menos un taxón a relacionar",
-      "error",
-      7000
-    );
-  }
+        return true;
+    }
 
-  console.log("Este es tipo Relacion: ", tipRelSelec.value);
     const validacionBasonimos = async () => {
 
       let filtraVal = props.taxonAct.relaciones;
@@ -933,7 +877,35 @@ const traspasaDatos = async () => {
       return true;
     }
 
-    const altaRelacion = async() => {
+  switch (tipRelSelec.value) {
+    case 1:
+      relacionar = validacionSinonimos();
+      if (relacionar) {
+        console.log("Entre a la funcion de para dar de alta las relaciones");
+        altaRelacion();
+      }
+      break;
+  }
+
+
+
+    // Inicialización de datos
+    onMounted( async () => {
+        const response = await axios.get('/cargar-tipoRel');
+
+        if (response.status === 200) {            
+            tiposRel.value = response.data;
+            tiposRel.value.unshift({
+                label: "Todos",
+                value: 0
+            });
+        }
+       await cargaGrupos();
+        gruposTax.value = props.gruposTax;
+        taxonAct.value = props.taxonAct;
+    });
+
+const altaRelacion = async() => {
         
         const params= {
                         taxonAct: props.taxonAct, 
@@ -980,109 +952,6 @@ const traspasaDatos = async () => {
           loading.close();
         }      
     }
-
-  switch (tipRelSelec.value) {
-    case 1:
-      relacionar = validacionSinonimos();
-      if (relacionar) {
-        console.log("Entre a la funcion de para dar de alta las relaciones");
-        altaRelacion();
-      }
-      break;
-  }
-
-
-
-    // Inicialización de datos
-    onMounted( async () => {
-        const response = await axios.get('/cargar-tipoRel');
-
-        if (response.status === 200) {            
-            tiposRel.value = response.data;
-            tiposRel.value.unshift({
-                label: "Todos",
-                value: 0
-            });
-        }
-       await cargaGrupos();
-        gruposTax.value = props.gruposTax;
-        taxonAct.value = props.taxonAct;
-    });
-
-const validacionSinonimos = async () => {
-
-  const contValido = props.taxonAct.relaciones.some(rel => rel.Nombrecompleto?.estatus === "Válido" ||
-    rel.Nombrecompleto?.estatus === "Correcto");
-  //Se valida que el taxon no sea del mismo estatus 
-  if (taxonActRel.value.estatus === props.taxonAct.estatus) {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual y el taxon a relacionar o pueden tener el mismo estatus",
-      "error",
-      7000
-    );
-    return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-  } else if ((props.taxonAct.estatus === "Sinonimo" && contValido) && taxonActRel.value.estatus === 'Válido') {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual ya tiene una relacion con un taxon válido ",
-      "error",
-      7000
-    );
-    return false;//Se valida que el taxon de origen no sea de estatus ND
-  } else if (props.taxonAct.estatus === "ND") {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
-      "error",
-      7000
-    );
-    return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-  } else if (props.taxonAct.completo.categoria.IdNivel1 < 5 || taxonActRel.value.completo.categoria.IdNivel1 < 5) {
-    mostrarNotificacion(
-      "Alerta",
-      "No se puede tener relaciones de sinonimia en taxones de cateria superior a familia",
-      "error",
-      7000
-    );
-    return false;
-  }
-
-  return true;
-}
-
-const altaRelacion = async () => {
-
-  console.log("Si voy a dar de alta la relacion entre taxones");
-  const params = {
-    taxonAct: props.taxonAct,
-    taxonActRel: taxonActRel.value,
-    tipRelacion: tipRelSelec.value
-  };
-
-  console.log("Estos son los parametros: ", params);
-
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  const response = await axios.post('/alta-RelacionesTax', { params });
-  console.log("Esta es la respuesta del servidor: ", response);
-  /*
-  if (response.status === 200) {
-      
-      data.value = response.data[0];
-      totalItems.value = response.data[1].total;
-      paginas.value = response.data[1].last_page;
-  }
-  else {
-      console.log("Se presentó un error en la recuperación de los datos");
-  }*/
-  loading.close();
-}
 
 const mostrarNotificacion = (
   titulo,
