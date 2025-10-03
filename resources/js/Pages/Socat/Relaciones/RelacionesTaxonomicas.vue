@@ -687,7 +687,7 @@
             case 2:
                 sinonimos = validacionSinonimos();
                 if (sinonimos){
-                  basonimos = validacionBasonimos();
+                    basonimos = validacionBasonimos();
                   if(basonimos){
                     altaRelacion();
                   }
@@ -830,6 +830,7 @@
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 1");
             return false;
       }
 
@@ -843,27 +844,30 @@
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 2");
             return false;
       }
 
-      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica === taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la categoria taxonomica no es la misma en ambos taxones",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 3");
             return false;
       }
 
-      if((props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.idNivel3 === 0) ||
-         (taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
+      if(!(props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.IdNivel3 === 0) ||
+         !(taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la debe ser género o superior",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 4");
             return false;
       }
 

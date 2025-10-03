@@ -70,13 +70,13 @@ class RequestBasonimos extends FormRequest
             $filtraRel = $taxonRel['relaciones'];
 
             // === Conteo de registros validos ===
-            $contValidoAct = $filtraVal->contains(function ($rel) {
+            $contValidoAct = collect($filtraVal)->contains(function ($rel) {
                 return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
                         || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
             });
 
             // === Conteo de registros relacionados ===
-            $conValidoRel = $filtraRel->contains(function ($rel) {
+            $conValidoRel = collect($filtraRel)->contains(function ($rel) {
                 return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
                         || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
             });
