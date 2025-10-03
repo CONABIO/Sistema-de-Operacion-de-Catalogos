@@ -688,6 +688,10 @@ const traspasaDatos = async () => {
               break;
             case 5:
                 parental = validacionParental();
+                if(parental)
+                {
+                  console.log("Pase los filtros de validacion parental");
+                }
               break;
         }
     } 
@@ -925,6 +929,8 @@ const traspasaDatos = async () => {
             ); 
             return false; 
       }
+
+      return true;
     }
 
     const altaRelacion = async() => {
