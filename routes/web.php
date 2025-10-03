@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
     Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
+    Route::get('/carga-RelacionesTax', [RelNombresController::class, 'cargaRelaciones']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);

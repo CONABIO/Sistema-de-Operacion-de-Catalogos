@@ -23,7 +23,6 @@ const props = defineProps({
     draggable: {
         type: Boolean,
         default: false
-
     }
 });
 
