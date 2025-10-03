@@ -537,6 +537,9 @@ class NombresArbolController extends Controller
     //Funcion para dar de alta un taxon 
     public function store(Request $request)
     {
+        log::info('Esto es lo que llego en el request: ');
+        Log::info($request);
+        
         // Validar por separado usando los FormRequest
         $datosNombre = Validator::make(
             $request->all(), 

@@ -10,6 +10,10 @@ use App\Models\RelNombreAutor;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RequestSinonimos;
+use App\Http\Requests\RequestBasonimos;
+use App\Http\Requests\RequestEquivalencia;
+use App\Http\Requests\RequestHuesped;
+use App\Http\Requests\RequestParental;
 use Exception;
 
 
@@ -32,6 +36,8 @@ class RelNombresController extends Controller
 
         $idTipoRel =  $request['params']['tipRelacion'];
 
+        Log::info("Esta es la relación que acaba de pasar " . $idTipoRel);
+
         switch($idTipoRel){
             case 1: 
                 $reqSinonimos = app(RequestSinonimos::class);
@@ -41,14 +47,15 @@ class RelNombresController extends Controller
                 $data= $reqSinonimos->validated();
 
                 $estatus = $data['params']['taxonAct']['estatus'];
-
-                if($estatus === 'Válido'){
+                
+                if($estatus === 'Válido' || $estatus === 'Correcto'){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
                     $idNombre = $data['params']['taxonActRel']['id'];
                     $idNombreRel = $data['params']['taxonAct']['id'];
                 }
+
             break;
             case 2: 
                 $reqSinonimos = app(RequestSinonimos::class);
@@ -64,8 +71,8 @@ class RelNombresController extends Controller
                 $data= $reqBasonimos->validated();
 
                 $estatus = $data['params']['taxonAct']['estatus'];
-
-                if($estatus === 'Válido'){
+                
+                if($estatus === 'Válido' || $estatus === 'Correcto'){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
@@ -74,12 +81,55 @@ class RelNombresController extends Controller
                 }
             break;
             case 3:
-                $reqSinonimos = app(RequestSinonimos::class);
+                $reqEquivalencia= app(RequestEquivalencia::class);
                 
-                $reqSinonimos->validateResolved();
+                $reqEquivalencia->validateResolved();
                   
-                $data= $reqSinonimos->validated();
+                $data= $reqEquivalencia->validated();
 
+                $idNombre = $data['params']['taxonAct']['id'];
+                
+                $idNombreRel = $data['params']['taxonActRel']['id'];
+
+                $idNombre = $data['params']['taxonAct']['id'];
+                $idNombreRel = $data['params']['taxonActRel']['id'];
+
+                break;
+            case 7:
+                $reqHuesped = app(RequestHuesped::class);
+                
+                $reqHuesped->validateResolved();
+                  
+                $data= $reqHuesped->validated();
+
+                $gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
+                               "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
+                               "MONOG", "PROT", "MYXOZ", "TREMA"];
+                
+                $taxonActGrp = $data['params']['taxonAct']['completo']['scat']['grupo_scat']['GrupoAbreviado'];
+                
+                 if(in_array($taxonActGrp, $gruposPara))
+                 {
+                   $idNombre = $data['params']['taxonAct']['id'];
+ 
+                   $idNombreRel =  $data['params']['taxonActRel']['id'];
+
+                 }else{
+                    $idNombre = $data['params']['taxonActRel']['id'];
+ 
+                    $idNombreRel =  $data['params']['taxonAct']['id'];
+                 }
+
+                Log::info("Esta es la validación de huesped");
+                break;
+            case 5:
+                 $reqParental = app(RequestParental::class);
+                
+                $reqParental->validateResolved();
+                  
+                $data= $reqParental->validated();
+
+                Log::info("Esta es la validación de parental");
                 
                 break;
         }

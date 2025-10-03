@@ -641,6 +641,8 @@ const traspasaDatos = async () => {
         let sinonimos = false;
         let basonimos = false;
         let equivalencia = false;
+        let huesped = false;
+        let parental = false;
 
         if(taxonActRel.value.length === 0)
         {
@@ -664,7 +666,7 @@ const traspasaDatos = async () => {
             case 2:
                 sinonimos = validacionSinonimos();
                 if (sinonimos){
-                  basonimos = validacionBasonimos();
+                    basonimos = validacionBasonimos();
                   if(basonimos){
                     altaRelacion();
                   }
@@ -681,8 +683,11 @@ const traspasaDatos = async () => {
                 huesped = validacionHuesped();
                 if(huesped)
                 {
-                  altaRelacion();
+                   altaRelacion();
                 }
+              break;
+            case 5:
+                parental = validacionParental();
               break;
         }
     } 
@@ -812,6 +817,7 @@ const traspasaDatos = async () => {
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 1");
             return false;
       }
 
@@ -825,27 +831,30 @@ const traspasaDatos = async () => {
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 2");
             return false;
       }
 
-      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica === taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la categoria taxonomica no es la misma en ambos taxones",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 3");
             return false;
       }
 
-      if((props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.idNivel3 === 0) ||
-         (taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
+      if(!(props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.IdNivel3 === 0) ||
+         !(taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la debe ser género o superior",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 4");
             return false;
       }
 
@@ -853,6 +862,9 @@ const traspasaDatos = async () => {
     } 
 
     const validacionHuesped = async () => {
+      console.log('Este es el taxon actual: ', props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado);
+      console.log('Este es el taxon relacionado: ', taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado);
+
       const gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
                           "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
                           "MONOG", "PROT", "MYXOZ", "TREMA"];
@@ -870,18 +882,49 @@ const traspasaDatos = async () => {
             return false;
       }
 
-      if(!(gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-          gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
-          !(gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-           gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))){
+      if(!(
+              (gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+               gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
+              (gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+               gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))
+            )
+          ){
+            console.log("Entre a la validacion en el vue");
             mostrarNotificacion(
                 "Alerta",
-                "El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
+                "***El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
                 "error",
                 7000
             ); 
             return false;
            }
+
+      return true;
+    }
+
+    const validacionParental = async () => {
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != "híbrido"){
+         mostrarNotificacion(
+                "Alerta",
+                "No es posible asociar un parental a un taxón que no es un híbrido",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      if(((props.taxonAct.completo.categoria.IdNivel1 != 6 && props.taxonAct.completo.categoria.IdNivel3 != 0) ||
+          (props.taxonAct.completo.categoria.IdNivel1 != 7 && props.taxonAct.completo.categoria.IdNivel3 != 0)) ||
+         ((taxonActRel.value.completo.categoria.IdNivel1 != 6 && taxonActRel.value.completo.categoria.IdNivel3 != 0) ||
+          (taxonActRel.value.completo.categoria.IdNivel1 != 7 && taxonActRel.value.completo.categoria.IdNivel3 != 0))){
+           mostrarNotificacion(
+                "Alerta",
+                "No es posible asociar un parental a un taxón que su categoria taxonomica sea diferente de género o especie",
+                "error",
+                7000
+            ); 
+            return false; 
+      }
     }
 
     const altaRelacion = async() => {

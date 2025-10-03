@@ -36,9 +36,7 @@ defineProps({
                                 </el-card>
                             </div>
                         </div>
-
-                    </div>
-                </el-card>
+                     </el-card>
             </div>
         </div>
 

@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\DB;
 
-class RequestEquivalencia extends FormRequest
+class RequestParental extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -48,10 +48,10 @@ class RequestEquivalencia extends FormRequest
                                                     $fail("El $attribute no existe en la base de datos.");
                                                 }
                                             }],
-            'params.taxonAct.estatus' => ['required', 'string'],
-            'params.taxonActRel.estatus' => ['required', 'string'],
             'params.taxonAct.completo.categoria.IdNivel1' => ['required', 'integer'],
             'params.taxonActRel.completo.categoria.IdNivel1' => ['required', 'integer'],
+            'params.taxonAct.completo.categoria.IdNivel3' => ['required', 'integer'],
+            'params.taxonActRel.completo.categoria.IdNivel3' => ['required', 'integer'],
         ];
     }
 
@@ -60,39 +60,9 @@ class RequestEquivalencia extends FormRequest
 
         $validator->after(function ($validator){
 
-            $taxonAct = $this->input('params.taxonAct', []); 
-            $taxonRel = $this->input('params.taxonActRel', []);
+            $taxonAct = $this->input('params.taxonAct.completo.categoria', []); 
+            $taxonRel = $this->input('params.taxonActRel.completo.categoria', []);
             $idTipoRel = $this->input('params.tipRelacion', 0);
-
-            // === Filtrado de registros validos ===
-            $filtraVal = $taxonAct['relaciones'];
-
-             // === Filtrado de registros relacionados ===
-            $filtraRel = $taxonRel['relaciones'];
-
-            // === Conteo de registros validos ===
-            $contValidoAct = collect($filtraVal)->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
-                        || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
-            });
-
-            // === Conteo de registros relacionados ===
-            $conValidoRel = collect($filtraRel)->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
-                        || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
-            });
-
-            $sistClasAct = data_get($taxonAct, 'completo.SistClasCatDicc');
-            $sistClasRel = data_get($taxonRel, 'completo.SistClasCatDicc');
-            $categoriaAct = data_get($taxonAct, 'completo.categoria.NombreCategoriaTaxonomica');
-            $categoriaRel = data_get($taxonRel, 'completo.categoria.NombreCategoriaTaxonomica');
-            $nivelActNiv1 = data_get($taxonAct, 'completo.categoria.IdNivel1');
-            $nivelRelNiv1 = data_get($taxonRel, 'completo.categoria.IdNivel1');
-            $nivelActNiv3 = data_get($taxonAct, 'completo.categoria.IdNivel3');
-            $nivelRelNiv3 = data_get($taxonRel, 'completo.categoria.IdNivel3');
-
-            $idAct = data_get($taxonAct, 'id');
-            $idRel = data_get($taxonRel, 'id');
 
             $exists = DB::connection('catcentral')
                 ->table('Nombre_Relacion')
@@ -107,25 +77,21 @@ class RequestEquivalencia extends FormRequest
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 
-            //Valida que el sistema de clasificación no sea el mismo en ambos taxones
-            if($sistClasAct === $sistClasRel){
-                $validator->errors()->add('validos', 'El sistema de clasifición no debe de ser igual en ambos taxones');
+            //Valida que el taxon Actual sea un híbrido
+            if(($taxonAct['NombreCategoriaTaxonomica'] ?? '') !== "híbrido"){
+                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón que no es un híbrido');
             }
 
-            //Valida que el sistema de clasificación no se a NA o ND 
-            if($sistClasAct === 'NA' || $sistClasAct === 'ND' ||
-               $sistClasRel === 'NA' || $sistClasRel === 'ND'){
-                $validator->errors()->add('validos', 'El sistema de clasificación no debe de ser NA o ND en alguno de los dos taxones');
-            }
+            //Valida el nivel taxonomico 
+            $validaTaxon = (
+                (($taxonAct['IdNivel1'] ?? 0) != 6 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
+                (($taxonAct['IdNivel1'] ?? 0) != 7 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
+                (($taxonActRel['IdNivel1'] ?? 0) != 6 && ($taxonActRel['IdNivel3'] ?? 0) != 0) ||
+                (($taxonActRel['IdNivel1'] ?? 0) != 7 && ($taxonActRel['IdNivel3'] ?? 0) != 0)
+            );
 
-            //Valida que la categoria taxonomica sea la misma en ambos taxones
-            if ($categoriaAct != $categoriaRel){
-                $validator->errors()->add('validos', 'La categoria taxonomica no es la misma en ambos taxones');
-            } 
-
-            //Valida que ambos taxones sean de categoria genero o superiores
-            if(!($nivelActNiv1 < 7 && $nivelActNiv3 === 0) || ($nivelRelNiv1 < 7 && $nivelRelNiv1 === 0)){
-                $validator->errors()->add('validos', 'La categoria de ambos taxones debe ser genero o superior');
+            if($validaTaxon){
+                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón cuya categoría taxonómica sea diferente de género o especie');
             }
         });
     }
