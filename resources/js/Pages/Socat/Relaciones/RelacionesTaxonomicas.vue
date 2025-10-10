@@ -45,11 +45,6 @@
 
             <el-row>
               <el-card class="main-content-card">
-                <div>
-                  <el-input v-model="textarea" style="width: 100%" :rows="2" type="textarea"
-                    placeholder="Observaciones" />
-                </div>
-                <br />
                 <div class="dual-panel-container">
                   <el-card class="tree-panel">
                     <el-container style="display: flex; flex-direction: column; height: 100%;">
@@ -128,13 +123,13 @@
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <el-tooltip effect="dark" content="Regresar relación" placement="right">
+                    <!--el-tooltip effect="dark" content="Regresar relación" placement="right">
                       <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
                         <el-icon>
                           <regresoInfo />
                         </el-icon>
                       </el-button>
-                    </el-tooltip>
+                    </el-tooltip-->
                     <el-tooltip effect="dark" content="Reemplazar taxón" placement="right">
                       <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
                         <el-icon>
@@ -147,25 +142,39 @@
                   <!-- Panel de la Tabla -->
                   <el-card class="table-panel">
                     <div style="display: flex; flex-direction: column; height: 100%;">
-                      <div style="flex-shrink: 0;">
-                        <el-input v-model="textarea" style="width: 100%" :rows="2" type="textarea"
+                      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <el-input v-model="observacionesRel" style="width: 100%" :rows="2" type="textarea"
                           placeholder="Observaciones" />
+                        <el-popconfirm confirm-button-text="Si" 
+                                        cancel-button-text="No" 
+                                        :icon="InfoFilled" 
+                                        icon-color="#E6A23C"
+                                        title="¿Realmente desea guardar los cambios?" 
+                                        @confirm="Guardar()">
+                          <template #reference>
+                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                              <el-button circle type="warning">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                                </svg>
+                              </el-button>
+                            <!--/el-tooltip-->
+                          </template>
+                        </el-popconfirm>
                       </div>
                       <div
                         style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                         <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
                           v-model:datos="tablaNomenclatura" v-model:total-items="totalRegNom"
-                          :opciones-filtro="opcionesFiltroNomenclatura">
+                          :opciones-filtro="opcionesFiltroNomenclatura"
+                          @eliminar-item = "manejarEliminarItem"
+                          @row-click = "manejaClick">
                           <template #expand-column>
                             <el-table-column type="expand">
                               <template #default="{ row }">
                                 <div class="expand-content-detail">
                                   <p><strong>Fecha de alta:</strong>{{ row.FechaCaptura }}</p>
                                   <p><strong>Fecha de modificación:</strong>{{ row.FechaModificacion }}</p>
-                                  <p><strong>Observaciones:</strong>
-                                    <el-input v-model=row.Observaciones style="width: 100%" :rows="2" type="textarea"
-                                      placeholder="Observaciones" />
-                                  </p>
                                 </div>
                               </template>
                             </el-table-column>
@@ -195,7 +204,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watchEffect } from 'vue';
+//import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElCard, ElCollapse, ElCollapseItem, ElScrollbar, ElTable, ElTableColumn, ElTooltip, ElButton, ElIcon, ElPagination, ElRadioGroup, ElRadioButton } from "element-plus";
+//import { ref, onMounted, watch, h } from "vue";
+import { ref, onMounted, watchEffect, h } from 'vue';
 import { Setting, User, Location, ShoppingCart, InfoFilled } from '@element-plus/icons-vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
@@ -206,7 +217,7 @@ import { mensajes } from '@/Composables/mensajes';
 import FiltroGrupo from '@/Components/Biotica/FiltroGrupoTax.vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import { ElLoading } from 'element-plus';
+import { ElLoading, ElMessageBox } from 'element-plus';
 import usePermisos from '@/composables/usePermisos';
 import { usePage } from '@inertiajs/vue3';
 import traspasoInfo from '@/Components/Biotica/Icons/TraspasoInfo.vue';
@@ -214,6 +225,8 @@ import regresoInfo from '@/Components/Biotica/Icons/RegresoInfo.vue';
 import reemplazo from '@/Components/Biotica/Icons/Reemplazar.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import axios from 'axios';
+import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
 const { permisos } = usePermisos();
 
@@ -250,6 +263,8 @@ const tree = ref(null);
 const selectedNodeKey = ref(null);
 const numHijos = ref(0);
 const totalReg = ref(0);
+const observacionesRel = ref('');
+const relacionAct = ref([]);
 
 // Datos de ejemplo para el transfer
 const leftValue = ref([]);
@@ -349,6 +364,57 @@ const recibeGrupos = async (data) => {
     categ.push(catego.value)
     handleChange(categ);
   }
+};
+
+const manejarEliminarItem = (item) => {
+  
+  const procederConEliminacion = async () => {
+
+    try {
+      ElMessageBox.close();
+
+      const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+                                                                              taxAct: props.taxonAct.id}});
+      
+      tablaNomenclatura.value = response.data;
+
+      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+    }
+  };
+  const cancelarEliminacion = () => {
+    ElMessageBox.close();
+  };
+  
+  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${item.Biblio.contBiblio} referencia(s) asociadas(s). ¿Realmente desea relizarlo?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+};
+
+const manejaClick = (row) => {
+  observacionesRel.value = row.Observaciones;
+   relacionAct.value = row;
+}
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 0;
+  notificacionVisible.value = true;
 };
 
 const handleChange = async (value) => {
@@ -513,6 +579,43 @@ const cerrarDialog = (valor) => {
   dialogFormVisibleCat.value = valor;
 };
 
+const Guardar = async() => {
+  console.log("Esta es la relacion actual: ", relacionAct.value);
+  console.log("Estas son las observaciones: ", observacionesRel.value);
+  const procederConEliminacion = async () => {
+    try {
+      ElMessageBox.close();
+      const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
+                                                                              observacion: observacionesRel.value,
+                                                                              taxAct: props.taxonAct.id}});
+      
+      /*tablaNomenclatura.value = response.data;*/
+      mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `Las observaciones no se pueden actualizar.`, 'success');
+    }
+  };
+  const cancelarActualizacion = () => {
+    ElMessageBox.close();
+  };
+  
+  const mensaje = ` Las observaciones seran actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarActualizacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+}
+
 // Función para cargar relaciones taxonómicas
     const cargaRelaciones = async(value) => {
         let idsNombreSin = 0;
@@ -520,6 +623,8 @@ const cerrarDialog = (valor) => {
         let params = {};
         let listAct = {};
         
+        observacionesRel.value = "" 
+
         if(value != undefined)
         {
            const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
@@ -541,6 +646,8 @@ const cerrarDialog = (valor) => {
         });
 
           const response = await axios.get('/carga-RelacionesTax', { params });
+
+          console.log("Esto es lo que hay en response: ", response);
 
             if(tipRelSelec.value > 0)
             {
@@ -569,6 +676,8 @@ const cerrarDialog = (valor) => {
             tablaNomenclatura.value = [];
             totalRegNom.value = 0;
         }
+
+        console.log("Esto es lo que hay en la tabla Nomenclatura: ", tablaNomenclatura.value);
     };
 
     const buscaTipoRelacion = async(tiposRelacion, valor) => {
@@ -595,6 +704,7 @@ const cerrarDialog = (valor) => {
         let equivalencia = false;
         let huesped = false;
         let parental = false;
+        let homonimo = false;
 
         if(taxonActRel.value.length === 0)
         {
@@ -642,7 +752,14 @@ const cerrarDialog = (valor) => {
                 parental = validacionParental();
                 if(parental)
                 {
-                  console.log("Pase los filtros de validacion parental");
+                  altaRelacion();
+                }
+              break;
+            case 8:
+                homonimo = validaHomonimos();
+                if(homonimo)
+                {
+                   altaRelacion();
                 }
               break;
         }
@@ -810,9 +927,6 @@ const cerrarDialog = (valor) => {
     } 
 
     const validacionHuesped = async () => {
-      console.log('Este es el taxon actual: ', props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado);
-      console.log('Este es el taxon relacionado: ', taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado);
-
       const gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
                           "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
                           "MONOG", "PROT", "MYXOZ", "TREMA"];
@@ -861,10 +975,10 @@ const cerrarDialog = (valor) => {
             return false;
       }
 
-      if(((props.taxonAct.completo.categoria.IdNivel1 != 6 && props.taxonAct.completo.categoria.IdNivel3 != 0) ||
-          (props.taxonAct.completo.categoria.IdNivel1 != 7 && props.taxonAct.completo.categoria.IdNivel3 != 0)) ||
-         ((taxonActRel.value.completo.categoria.IdNivel1 != 6 && taxonActRel.value.completo.categoria.IdNivel3 != 0) ||
-          (taxonActRel.value.completo.categoria.IdNivel1 != 7 && taxonActRel.value.completo.categoria.IdNivel3 != 0))){
+      const categPerm = ["género", "especie", "híbrido"];
+    
+          if(!categPerm.includes(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica) || 
+             !categPerm.includes(taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica)){
            mostrarNotificacion(
                 "Alerta",
                 "No es posible asociar un parental a un taxón que su categoria taxonomica sea diferente de género o especie",
@@ -874,6 +988,31 @@ const cerrarDialog = (valor) => {
             return false; 
       }
 
+      return true;
+    }
+
+    const validaHomonimos = async () => {
+      console.log("Este es el taxon Actual: ", props.taxonAct);
+      console.log("Este es el taxon relacionado: ", taxonActRel.value);
+      if(props.taxonAct.id === taxonActRel.value.id){
+        console.log("Entre a la validacion de taxones que son el mismo id");
+        mostrarNotificacion(
+                "Alerta",
+                "Está tratando de relacionar el nombre a sí mismo, lo cual no es posible",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+      if(props.taxonAct.completo.TaxonCompleto != taxonActRel.value.completo.TaxonCompleto){
+        mostrarNotificacion(
+                "Alerta",
+                "Está tratando de relacionar dos taxones con diferente nombre esto no es posible",
+                "error",
+                7000
+            ); 
+            return false;
+      }
       return true;
     }
 

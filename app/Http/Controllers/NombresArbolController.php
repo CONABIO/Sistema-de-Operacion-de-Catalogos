@@ -708,7 +708,7 @@ class NombresArbolController extends Controller
                     'completo' => $nombres
                 ];
             }
-Log::info("Se realizo correctamente la insercion de datos");
+
             return  response()->json([
                 'status' => 200,
                 'message' => 'El taxon se dio de alta con exito',

@@ -65,7 +65,6 @@ const onFiltroInput = () => {
 };
 
 const handleRowClick = (row, column, event) => {
-  console.log("Este es el row seleccionado: ", row);
   emit('row-click', row);
 }
 
@@ -110,7 +109,8 @@ onMounted(() => {
 });
 
 const emit = defineEmits([
-  'row-click'
+  'row-click',
+  'eliminar-item',
 ]);
 
 /*
@@ -160,10 +160,12 @@ const handleSortChange = ({ prop, order }) => {
 
 
 const onEditar = (item) => emit('editar-item', item);
-const onEliminar = (id) => emit('eliminar-item', id);
+
 const onRowDblClick = (row) => emit('row-dblclick', row);
 const onNuevo = () => emit('nuevo-item');
 */
+const onEliminar = (row) => emit('eliminar-item', row);
+
 watch(tipoDeBusqueda, () => {
     onFiltroInput(); 
 });
@@ -272,7 +274,7 @@ watch(tipoDeBusqueda, () => {
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
                     <!--EditarButton @editar="onEditar(row)" /-->
-                    <EliminarButton @eliminar="onEliminar(row[props.idKey])" />
+                    <EliminarButton @eliminar="onEliminar(row)" />
                     </slot>
                 </div>
                 </template>
