@@ -387,7 +387,9 @@ const manejarEliminarItem = (item) => {
     ElMessageBox.close();
   };
   
-  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${item.Biblio.contBiblio} referencia(s) asociadas(s). ¿Realmente desea relizarlo?. Esta acción no se puede revertir`;
+  const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
+
+  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
   
   ElMessageBox({
     title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',

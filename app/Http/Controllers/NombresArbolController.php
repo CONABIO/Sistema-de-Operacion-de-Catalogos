@@ -307,8 +307,10 @@ class NombresArbolController extends Controller
     {
         $grupoSnib = GrupoScat::select('GrupoSNIB')
                               ->distinct()
-                              ->Orderby('GrupoSCAT')                              
+                              ->Orderby('GrupoSNIB')                              
                               ->get();
+        log::info("Esto es lo que llega en Grupos Snib");
+        log::info($grupoSnib);
 
         $data = [];
         $numCat = 1;
@@ -537,7 +539,6 @@ class NombresArbolController extends Controller
     //Funcion para dar de alta un taxon 
     public function store(Request $request)
     {
-        log::info('Esto es lo que llego en el request: ');
         Log::info($request);
         
         // Validar por separado usando los FormRequest
