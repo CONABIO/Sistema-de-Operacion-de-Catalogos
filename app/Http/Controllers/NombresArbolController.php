@@ -309,8 +309,6 @@ class NombresArbolController extends Controller
                               ->distinct()
                               ->Orderby('GrupoSNIB')                              
                               ->get();
-        log::info("Esto es lo que llega en Grupos Snib");
-        log::info($grupoSnib);
 
         $data = [];
         $numCat = 1;

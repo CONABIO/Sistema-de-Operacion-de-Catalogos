@@ -15,7 +15,8 @@ const props = defineProps({
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 4 },
   endpoint: { type: String, required: true },
-  idKey: { type: String, required: false }
+  idKey: { type: String, required: false },
+  origen: { type: Boolean, default: false }
 });
 
 const filtros = ref({});
@@ -111,6 +112,7 @@ onMounted(() => {
 const emit = defineEmits([
   'row-click',
   'eliminar-item',
+  'editar-item'
 ]);
 
 /*
@@ -157,14 +159,12 @@ const handleSortChange = ({ prop, order }) => {
   //fetchData();
 };
 
-
-
-const onEditar = (item) => emit('editar-item', item);
-
 const onRowDblClick = (row) => emit('row-dblclick', row);
 const onNuevo = () => emit('nuevo-item');
 */
 const onEliminar = (row) => emit('eliminar-item', row);
+
+const onEditar = (item) => emit('editar-item', item);
 
 watch(tipoDeBusqueda, () => {
     onFiltroInput(); 
@@ -273,7 +273,7 @@ watch(tipoDeBusqueda, () => {
                 <template #default="{ row }">
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
-                    <!--EditarButton @editar="onEditar(row)" /-->
+                    <EditarButton @editar="onEditar(row)" v-if="props.origen"  />
                     <EliminarButton @eliminar="onEliminar(row)" />
                     </slot>
                 </div>
