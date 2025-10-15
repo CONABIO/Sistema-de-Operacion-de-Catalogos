@@ -307,7 +307,7 @@ class NombresArbolController extends Controller
     {
         $grupoSnib = GrupoScat::select('GrupoSNIB')
                               ->distinct()
-                              ->Orderby('GrupoSCAT')                              
+                              ->Orderby('GrupoSNIB')                              
                               ->get();
 
         $data = [];
@@ -537,7 +537,6 @@ class NombresArbolController extends Controller
     //Funcion para dar de alta un taxon 
     public function store(Request $request)
     {
-        log::info('Esto es lo que llego en el request: ');
         Log::info($request);
         
         // Validar por separado usando los FormRequest
@@ -708,7 +707,7 @@ class NombresArbolController extends Controller
                     'completo' => $nombres
                 ];
             }
-Log::info("Se realizo correctamente la insercion de datos");
+
             return  response()->json([
                 'status' => 200,
                 'message' => 'El taxon se dio de alta con exito',

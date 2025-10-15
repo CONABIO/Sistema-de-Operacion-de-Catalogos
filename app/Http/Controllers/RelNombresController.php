@@ -14,6 +14,9 @@ use App\Http\Requests\RequestBasonimos;
 use App\Http\Requests\RequestEquivalencia;
 use App\Http\Requests\RequestHuesped;
 use App\Http\Requests\RequestParental;
+use App\Http\Requests\RequestHomonimo;
+use App\Http\Requests\RequestBorradoNombreRel;
+use App\Http\Requests\RequestActualizaNombreRel;
 use Exception;
 
 
@@ -31,8 +34,7 @@ class RelNombresController extends Controller
 
     }
 
-    public function altaRelaciones(Request $request)
-    {   
+    public function altaRelaciones(Request $request){   
 
         $idTipoRel =  $request['params']['tipRelacion'];
 
@@ -120,17 +122,30 @@ class RelNombresController extends Controller
                     $idNombreRel =  $data['params']['taxonAct']['id'];
                  }
 
-                Log::info("Esta es la validación de huesped");
                 break;
             case 5:
-                 $reqParental = app(RequestParental::class);
+                $reqParental = app(RequestParental::class);
                 
                 $reqParental->validateResolved();
                   
                 $data= $reqParental->validated();
 
-                Log::info("Esta es la validación de parental");
+                $idNombre = $data['params']['taxonAct']['id'];
+ 
+                $idNombreRel =  $data['params']['taxonActRel']['id'];
                 
+                break;
+            case 8:
+                $reqHomonimo = app(RequestHomonimo::class);
+
+                $reqHomonimo->validateResolved();
+                  
+                $data= $reqHomonimo->validated();
+
+                $idNombre = $data['params']['taxonAct']['id'];
+ 
+                $idNombreRel =  $data['params']['taxonActRel']['id'];
+
                 break;
         }
         
@@ -195,13 +210,19 @@ class RelNombresController extends Controller
             
             $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
                                             'texto' => $relacion->Descripcion, 
-                                            'svg' => $relacion->TipoRelIcono],                    
+                                            'svg' => $relacion->TipoRelIcono,
+                                            'relCompleta'=>[
+                                                'relIdNombre' => $relacion->RelIdNom,
+                                                'relIdNombreRel' => $relacion->RelIdNomRel,
+                                                'tipoRel' => $relacion->IdTipoRelacion
+                                            ]],                    
                         'idNombre' => $relacion->IdNombre, 
                         'Nombrecompleto' => ['texto' => $relacion->NombreCompleto." ".$relacion->NombreAutoridad." - ".$status." - ".$relacion->SistClasCatDicc,
                                                'url' => $relacion->CategIcono,
                                                'estatus' => $status],
-                        'Biblio' => ['texto'=> '',
-                                       'url'=>$biblio],
+                        'Biblio' => ['texto' => '',
+                                       'url' => $biblio,
+                                       'contBiblio' => $relacion->Biblio],
                         'FechaCaptura' => $relacion->FechaCaptura,
                         'FechaModificacion' => $relacion->FechaModificacion,
                         'Observaciones' => $relacion->Observaciones  
@@ -211,5 +232,63 @@ class RelNombresController extends Controller
         }
 
         return $reldata;
+    }
+
+    public function destroy(RequestBorradoNombreRel $request){
+
+        DB::beginTransaction();
+
+        try {
+            Nombre_Relacion::where('IdNombre', $request->relCompleta['relIdNombre'])
+                ->where('IdNombreRel', $request->relCompleta['relIdNombreRel'])
+                ->where('IdTipoRelacion', $request->relCompleta['tipoRel'])
+                ->delete();
+
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($request->taxAct)
+                            ->get();  
+
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        }        
+    }
+
+    public function update(RequestActualizaNombreRel $request){
+        
+        $data = $data = $request->input('data');
+
+        DB::beginTransaction();
+
+        try {
+            log::info("Estoy antes de la busqueda");
+            $relacion = Nombre_Relacion::where('IdNombre', $data['relCompleta']['relIdNombre'])
+                                      ->where('IdNombreRel', $data['relCompleta']['relIdNombreRel'])
+                                      ->where('IdTipoRelacion', $data['relCompleta']['tipoRel'])
+                                      ->first();
+
+            if($relacion){
+                $relacion->update(['Observaciones'=> $data['observacion']]);
+            }
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($data['taxAct'])
+                            ->get();  
+
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        }      
     }
 }

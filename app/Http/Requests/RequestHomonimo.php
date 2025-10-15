@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\DB;
 
-class RequestParental extends FormRequest
+class RequestHomonimo extends FormRequest   
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -48,8 +48,8 @@ class RequestParental extends FormRequest
                                                     $fail("El $attribute no existe en la base de datos.");
                                                 }
                                             }],
-            'params.taxonAct.completo.categoria.NombreCategoriaTaxonomica' => ['required', 'string'],
-            'params.taxonActRel.completo.categoria.NombreCategoriaTaxonomica' => ['required', 'string']
+            'params.taxonAct.completo.TaxonCompleto' => ['required', 'string'],
+            'params.taxonActRel.completo.TaxonCompleto' => ['required', 'string']
         ];
     }
 
@@ -59,8 +59,8 @@ class RequestParental extends FormRequest
 
             $taxonAct = $this->input('params.taxonAct', []); 
             $taxonRel = $this->input('params.taxonActRel', []);
-            $categAct = $this->input('params.taxonAct.completo.categoria.NombreCategoriaTaxonomica', []); 
-            $categRel = $this->input('params.taxonActRel.completo.categoria.NombreCategoriaTaxonomica', []);
+            $nomAct = $this->input('params.taxonAct.completo.TaxonCompleto'); 
+            $nomRel = $this->input('params.taxonActRel.completo.TaxonCompleto');
             $idTipoRel = $this->input('params.tipRelacion', 0);
 
             $idAct = data_get($taxonAct, 'id');
@@ -73,30 +73,18 @@ class RequestParental extends FormRequest
                 ->where('IdTipoRelacion', $idTipoRel)
                 ->exists();
 
-            $categPerm = ["género", "especie", "híbrido"];
-
             //Valida que la relacion no exista 
             if($exists){
-                log::info("La relación que intenta crear ya existe");
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 
             //Valida que el taxon Actual sea un híbrido
-            if($categAct !== "híbrido"){
-                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón que no es un híbrido');
+            if($idAct === $idRel){
+                $validator->errors()->add('validos', 'Está tratando de relacionar el nombre a sí mismo, lo cual no es posible');
             }
 
-            /*Valida el nivel taxonomico 
-            
-            $validaTaxon = (
-                (($taxonAct['IdNivel1'] ?? 0) != 6 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
-                (($taxonAct['IdNivel1'] ?? 0) != 7 && ($taxonAct['IdNivel3'] ?? 0) != 0) ||
-                (($taxonActRel['IdNivel1'] ?? 0) != 6 && ($taxonActRel['IdNivel3'] ?? 0) != 0) ||
-                (($taxonActRel['IdNivel1'] ?? 0) != 7 && ($taxonActRel['IdNivel3'] ?? 0) != 0)
-            );*/
-
-            if(!(in_array($categAct, $categPerm)) || !(in_array($categRel, $categPerm)) ){
-                $validator->errors()->add('validos', 'No es posible asociar un parental a un taxón cuya categoría taxonómica sea diferente de género o especie');
+            if($nomAct !== $nomRel ){
+                $validator->errors()->add('validos', 'Está tratando de relacionar dos taxones con diferente nombre esto no es posible');
             }
         });
     }
