@@ -28,236 +28,273 @@ class NombresController extends Controller
         $categorias = $this->filtroCateg();
 
 
-        return Inertia::render('Socat/NombreTaxonomico/Nombre',[
-            'gruposTax' => $gruposTax, 
+        return Inertia::render('Socat/NombreTaxonomico/Nombre', [
+            'gruposTax' => $gruposTax,
             'categoriasTax' => $categorias
         ]);
     }
 
     public function fetchNomArb(Request $request)
     {
-        
-        $valor = $request->categ; 
 
-        if($request->has('taxon'))
-        {
-            
-            if($request->categ != '')
-            {
-                $categ = explode(',',$request->categ);
-                $catalog = explode(',',$request->catalog);
+        $valor = $request->categ;
+
+        if ($request->has('taxon')) {
+
+            if ($request->categ != '') {
+                $categ = explode(',', $request->categ);
+                $catalog = explode(',', $request->catalog);
                 $taxon = $request->taxon;
 
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
-                                     'nombreRelVal','relNombreAutor', 
-                                     'relNombreRegion', 'scat.grupoScat'])
-                             ->paginate(150);
-            }else{
+                    ->with([
+                        'padre',
+                        'hijos',
+                        'ascendOblig',
+                        'ascendObligHijos',
+                        'relNombreCat',
+                        'categoria',
+                        'scat',
+                        'nombreRel',
+                        'nombreRelVal',
+                        'relNombreAutor',
+                        'relNombreRegion',
+                        'scat.grupoScat'
+                    ])
+                    ->paginate(150);
+            } else {
                 $taxon = $request->taxon;
 
                 $nombres = Nombre::filtraArbolTax($taxon)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
-                                     'nombreRelVal','relNombreAutor',
-                                     'relNombreRegion', 'scat.grupoScat'])
-                             ->paginate(150);
+                    ->with([
+                        'padre',
+                        'hijos',
+                        'ascendOblig',
+                        'ascendObligHijos',
+                        'relNombreCat',
+                        'categoria',
+                        'scat',
+                        'nombreRel',
+                        'nombreRelVal',
+                        'relNombreAutor',
+                        'relNombreRegion',
+                        'scat.grupoScat'
+                    ])
+                    ->paginate(150);
             }
+        } elseif ($request->has('catalog')) {
 
-        }
-        elseif($request->has('catalog')){
+            $valor = $request->categ;
 
-            $valor = $request->categ;  
-            
-            $categ = explode(',',$request->categ);
-            $catalog= explode(',',$request->catalog);
+            $categ = explode(',', $request->categ);
+            $catalog = explode(',', $request->catalog);
 
             $nombres = Nombre::filtraArbol($categ, $catalog)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
-                                     'nombreRelVal','relNombreAutor',
-                                     'relNombreRegion', 'scat.grupoScat'])
-                             ->paginate(150);
-        }
-        else{
+                ->with([
+                    'padre',
+                    'hijos',
+                    'ascendOblig',
+                    'ascendObligHijos',
+                    'relNombreCat',
+                    'categoria',
+                    'scat',
+                    'nombreRel',
+                    'nombreRelVal',
+                    'relNombreAutor',
+                    'relNombreRegion',
+                    'scat.grupoScat'
+                ])
+                ->paginate(150);
+        } else {
 
-            $nombres = Nombre::where('IdCategoriaTaxonomica', '=','1')
-                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                      'relNombreCat','categoria','scat', 'nombreRel',
-                                      'nombreRelVal','relNombreAutor',
-                                      'relNombreRegion', 'scat.grupoScat'])
-                              ->get();
+            $nombres = Nombre::where('IdCategoriaTaxonomica', '=', '1')
+                ->with([
+                    'padre',
+                    'hijos',
+                    'ascendOblig',
+                    'ascendObligHijos',
+                    'relNombreCat',
+                    'categoria',
+                    'scat',
+                    'nombreRel',
+                    'nombreRelVal',
+                    'relNombreAutor',
+                    'relNombreRegion',
+                    'scat.grupoScat'
+                ])
+                ->get();
         }
-        
-            $data = [];
-            foreach($nombres as $nombre)
-            {
-                if($nombre->EstadoRegistro === 1)
-                {
-                    switch($nombre->Estatus )
-                    {
-                        case 1:
-                            $status = "Sinonimo";     
+
+        $data = [];
+        foreach ($nombres as $nombre) {
+            if ($nombre->EstadoRegistro === 1) {
+                switch ($nombre->Estatus) {
+                    case 1:
+                        $status = "Sinonimo";
                         break;
-                        case 6;
-                            $status = "NA";     
+                    case 6;
+                        $status = "NA";
                         break;
-                        case -9:
-                            $status = "ND";     
+                    case -9:
+                        $status = "ND";
                         break;
-                        default:
-                            switch($nombre->Nombre)
-                            {
-                                case 'Animalia':
-                                    $status = "Válido"; 
+                    default:
+                        switch ($nombre->Nombre) {
+                            case 'Animalia':
+                                $status = "Válido";
                                 break;
-                                case 'Plantae':
-                                case 'Fungi':
-                                case 'Protozoa':
-                                case 'Archaea':
-                                case 'Bacteria':
-                                case 'Chromista':   
-                                    $status = "Correcto";
-                                break;                              
+                            case 'Plantae':
+                            case 'Fungi':
+                            case 'Protozoa':
+                            case 'Archaea':
+                            case 'Bacteria':
+                            case 'Chromista':
+                                $status = "Correcto";
+                                break;
                             default:
-                                if($nombre->categoria->IdNivel2 === 0)
-                                {
+                                if ($nombre->categoria->IdNivel2 === 0) {
                                     $status = "Correcto";
-                                }else{
+                                } else {
                                     $status = "Válido";
                                 }
-                            }
+                        }
                         break;
-                    }
+                }
 
-                    $nomCat = $nombre->categoria->NombreCategoriaTaxonomica.
-                            " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
-                    
-                    $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
-                    
-                    $query = "select count(1) as conteo 
+                $nomCat = $nombre->categoria->NombreCategoriaTaxonomica .
+                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+
+                $etiqueta = $nombre->NombreCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
+
+                $query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
-                              Where (t.IdNombreRel = ".$nombre->IdNombre." Or nt.IdNombre = ".$nombre->IdNombre.") ". 
-                                "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
+                              Where (t.IdNombreRel = " . $nombre->IdNombre . " Or nt.IdNombre = " . $nombre->IdNombre . ") " .
+                    "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
-                    $resp = DB::connection('catcentral')->select($query);
+                $resp = DB::connection('catcentral')->select($query);
 
-                    $newHijo = [ 'id' => $nombre->IdNombre, 
-                                 'label' => $etiqueta, 
-                                 'children' => [],
-                                 'texto' => $nomCat,
-                                 'estatus' => $status,
-                                 'numEjemp' => $resp[0]->conteo,
-                                 'completo'=>$nombre
-                            ];
-                        
-                    array_push($data, $newHijo);
-                }
+                $newHijo = [
+                    'id' => $nombre->IdNombre,
+                    'label' => $etiqueta,
+                    'children' => [],
+                    'texto' => $nomCat,
+                    'estatus' => $status,
+                    'numEjemp' => $resp[0]->conteo,
+                    'completo' => $nombre
+                ];
+
+                array_push($data, $newHijo);
             }
-        
+        }
+
         return response()->json([$data, $nombres, $valor]);
-        
     }
 
     public function fetchHijos($id)
     {
         $nombres = Nombre::cargaHijos($id)
-                         ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                 'relNombreCat','categoria','scat', 'nombreRel','nombreRelVal',
-                                 'relNombreAutor', 'scat.grupoScat', 'scat.grupoScat'])
-                         ->get();
-        
+            ->with([
+                'padre',
+                'hijos',
+                'ascendOblig',
+                'ascendObligHijos',
+                'relNombreCat',
+                'categoria',
+                'scat',
+                'nombreRel',
+                'nombreRelVal',
+                'relNombreAutor',
+                'scat.grupoScat',
+                'scat.grupoScat'
+            ])
+            ->get();
+
         $relaciones = Nombre::cargaRelaciones($id)
-                            ->get();                 
-        
+            ->get();
+
         $referencias = Nombre::cargaReferencias($id)
-                             ->get();
-        
-        
-        $data=[];
-        foreach($nombres as $nombre)
-        {
-            switch($nombre->Estatus )
-            {
+            ->get();
+
+
+        $data = [];
+        foreach ($nombres as $nombre) {
+            switch ($nombre->Estatus) {
                 case 1:
-                    $status = "Sinonimo";     
-                break;
+                    $status = "Sinonimo";
+                    break;
                 case 6;
-                    $status = "NA";     
-                break;
+                    $status = "NA";
+                    break;
                 case -9:
-                    $status = "ND";     
-                break;
+                    $status = "ND";
+                    break;
                 default:
-                    if($nombre->categoria->IdNivel2 === 0)
-                    {
+                    if ($nombre->categoria->IdNivel2 === 0) {
                         $status = "Correcto";
-                    }else{
+                    } else {
                         $status = "Válido";
                     }
-                break;
+                    break;
             }
 
-            $nomCat = $nombre->NombreCategoriaTaxonomica.
-                        " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
-            
-            $etiqueta = $nombre->TaxonCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
+            $nomCat = $nombre->NombreCategoriaTaxonomica .
+                " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+
+            $etiqueta = $nombre->TaxonCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
 
             $query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
-                              Where (t.IdNombreRel = ".$nombre->IdNombre." Or nt.IdNombre = ".$nombre->IdNombre.") ". 
-                                "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
-        
-           
+                              Where (t.IdNombreRel = " . $nombre->IdNombre . " Or nt.IdNombre = " . $nombre->IdNombre . ") " .
+                "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
+
+
             $resp = DB::connection('catcentral')->select($query);
-            
-            $newHijo = [ 'id' => $nombre->IdNombre, 
-                         'label' => $etiqueta, 
-                         'children' => [],
-                         'texto' => $nomCat,
-                         'estatus' => $status,
-                         'numEjemp' => $resp[0]->conteo,
-                         'completo'=>$nombre
-                        ];
+
+            $newHijo = [
+                'id' => $nombre->IdNombre,
+                'label' => $etiqueta,
+                'children' => [],
+                'texto' => $nomCat,
+                'estatus' => $status,
+                'numEjemp' => $resp[0]->conteo,
+                'completo' => $nombre
+            ];
 
             array_push($data, $newHijo);
         }
 
-        $reldata= [];
-        foreach($relaciones as $relacion)
-        {
-            switch($relacion->Estatus )
-            {
+        $reldata = [];
+        foreach ($relaciones as $relacion) {
+            switch ($relacion->Estatus) {
                 case 1:
-                    $status = "Sinonimo";     
-                break;
+                    $status = "Sinonimo";
+                    break;
                 case 6;
-                    $status = "NA";     
-                break;
+                    $status = "NA";
+                    break;
                 case -9:
-                    $status = "ND";     
-                break;
+                    $status = "ND";
+                    break;
                 default:
-                    if($relacion->categoria->IdNivel2 === 0)
-                    {
+                    if ($relacion->categoria->IdNivel2 === 0) {
                         $status = "Correcto";
-                    }else{
+                    } else {
                         $status = "Válido";
                     }
-                break;
+                    break;
             }
 
-            $newRel = [ 'TipoRelacion' => $relacion->Descripcion, 
-                         'estatus' => $status, 
-                         'Nombrecompleto' => $relacion->NombreCompleto,
-                         'Biblio' => $relacion->Biblio 
-                        ];
-            
+            $newRel = [
+                'TipoRelacion' => $relacion->Descripcion,
+                'estatus' => $status,
+                'Nombrecompleto' => $relacion->NombreCompleto,
+                'Biblio' => $relacion->Biblio
+            ];
+
             array_push($reldata, $newRel);
         }
 
@@ -267,39 +304,40 @@ class NombresController extends Controller
     public function filtroGruposSCAT()
     {
         $grupoSnib = GrupoScat::select('GrupoSNIB')
-                              ->distinct()
-                              ->Orderby('GrupoSCAT')                              
-                              ->get();
+            ->distinct()
+            ->Orderby('GrupoSCAT')
+            ->get();
 
         $data = [];
         $numCat = 1;
 
-        foreach($grupoSnib as $grupo)
-        {
-            $hijos = GrupoScat::select('IdGrupoSCAT','GrupoSCAT')
-                              ->where('GrupoSNIB','=',$grupo->GrupoSNIB)
-                              ->orderBy('GrupoSCAT')
-                              ->get();
+        foreach ($grupoSnib as $grupo) {
+            $hijos = GrupoScat::select('IdGrupoSCAT', 'GrupoSCAT')
+                ->where('GrupoSNIB', '=', $grupo->GrupoSNIB)
+                ->orderBy('GrupoSCAT')
+                ->get();
 
             $childrens = [];
-            
-            foreach($hijos as $hijo)
-            {
-                $newChildren = ['id' => $hijo->IdGrupoSCAT,
-                               'label' => $hijo->GrupoSCAT,
-                               'catalogo' => $grupo->GrupoSNIB];
-                
+
+            foreach ($hijos as $hijo) {
+                $newChildren = [
+                    'id' => $hijo->IdGrupoSCAT,
+                    'label' => $hijo->GrupoSCAT,
+                    'catalogo' => $grupo->GrupoSNIB
+                ];
+
                 array_push($childrens, $newChildren);
             }
 
-            $newHijo = [ 'id' => 'A'.$numCat, 
-                         'label' => $grupo->GrupoSNIB, 
-                         'children' => $childrens,
-                         'catalogo' => $grupo->GrupoSNIB
-                        ];
-            
+            $newHijo = [
+                'id' => 'A' . $numCat,
+                'label' => $grupo->GrupoSNIB,
+                'children' => $childrens,
+                'catalogo' => $grupo->GrupoSNIB
+            ];
+
             array_push($data, $newHijo);
-            
+
             $numCat++;
         }
 
@@ -308,30 +346,32 @@ class NombresController extends Controller
 
     public function filtroCateg()
     {
-        $categ = CategoriasTaxonomicas::select('NombreCategoriaTaxonomica as label', 
-                                                DB::raw('group_concat(IdCategoriaTaxonomica) as value'))
-                                        ->groupBy('NombreCategoriaTaxonomica')
-                                        ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+        $categ = CategoriasTaxonomicas::select(
+            'NombreCategoriaTaxonomica as label',
+            DB::raw('group_concat(IdCategoriaTaxonomica) as value')
+        )
+            ->groupBy('NombreCategoriaTaxonomica')
+            ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
                                                       IdNivel4 ASC')
-                                        ->get();
-        
+            ->get();
+
         return $categ;
     }
 
     public function cargaListGrupos()
     {
-        
+
         $listGrupos =  GrupoScat::orderByRaw('GrupoSCAT')->get();
 
         $lista = [];
 
-        foreach($listGrupos as $regList)
-        {
-            
-            $newReg = [ 'id' => $regList->IdGrupoSCAT, 
-                        'label' => $regList->GrupoSCAT.'-'.$regList->GrupoAbreviado.'-'.$regList->GrupoSNIB
-                      ];
-   
+        foreach ($listGrupos as $regList) {
+
+            $newReg = [
+                'id' => $regList->IdGrupoSCAT,
+                'label' => $regList->GrupoSCAT . '-' . $regList->GrupoAbreviado . '-' . $regList->GrupoSNIB
+            ];
+
             array_push($lista, $newReg);
         }
 
@@ -343,61 +383,57 @@ class NombresController extends Controller
         switch ($request->estatusInicio) {
             case 1:
                 $tiposRel = Nombre_Relacion::where('IdNombre', '=', $request->nomAct)
-                                           ->whereIn('IdTipoRelacion', [1, 2])
-                                           ->count();
+                    ->whereIn('IdTipoRelacion', [1, 2])
+                    ->count();
 
-                if($tiposRel > 0)
-                {
+                if ($tiposRel > 0) {
                     return false;
-                }             
-                     
+                }
+
                 return true;
 
-            break;
+                break;
             case 2:
                 $hijos = Nombre::where('IdNombreAscendente', '=', $request->nomAct)
-                ->where('Estatus', '=', 2)
-                ->count();
+                    ->where('Estatus', '=', 2)
+                    ->count();
 
                 $tipoRel = Nombre_Relacion::where('IdNombre', '=', $request->nomAct)
-                                          ->whereIn('IdTipoRelacion', [1,2])
-                                          ->count();
-                
-                if($hijos > 0 || $tipoRel > 0)
-                {
+                    ->whereIn('IdTipoRelacion', [1, 2])
+                    ->count();
+
+                if ($hijos > 0 || $tipoRel > 0) {
                     return false;
-                }                
-                
+                }
+
                 return true;
-                
-            break;
+
+                break;
 
             case 6:
                 $tipoRel = Nombre_Relacion::where('IdNombre', '=', $request->nomAct)
-                                          ->whereIn('IdTipoRelacion', [1,2])
-                                          ->count();
-                
-                if($tipoRel > 0)
-                {
+                    ->whereIn('IdTipoRelacion', [1, 2])
+                    ->count();
+
+                if ($tipoRel > 0) {
                     return false;
                 }
 
                 return true;
 
-            break;
+                break;
             case -9:
                 $tipoRel = Nombre_Relacion::where('IdNombre', '=', $request->nomAct)
-                                          ->whereIn('IdTipoRelacion', [1,2])
-                                          ->count();   
+                    ->whereIn('IdTipoRelacion', [1, 2])
+                    ->count();
 
-                if($tipoRel > 0)
-                {
+                if ($tipoRel > 0) {
                     return false;
                 }
 
                 return true;
 
-            break;
+                break;
         }
     }
 
@@ -406,105 +442,106 @@ class NombresController extends Controller
 
         //Aqui se define un inner join con la segunda base de datos en el mismo servidor 
         $resultado = DB::connection('snib')->table('nombre_taxonomia')
-                        ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
-                        ->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
-                        ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre)
-                        ->count();
+            ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
+            ->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
+            ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre)
+            ->count();
 
         return $resultado;
     }
 
     //carga comentarios del snib 
-    public function cargaComAcum(Request $request){
-        
+    public function cargaComAcum(Request $request)
+    {
+
         $resultado = DB::connection('mysql2')->table('snib.nombre_taxonomia')
-                        ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
-                        ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, count(1) AS Conteo'))
-                        ->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
-                        ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre)
-                        ->groupBy('nombre_taxonomia.idnombre', 'nombre_taxonomia.comentarioscat')
-                        ->get();
+            ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
+            ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, count(1) AS Conteo'))
+            ->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
+            ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre)
+            ->groupBy('nombre_taxonomia.idnombre', 'nombre_taxonomia.comentarioscat')
+            ->get();
 
         return $resultado;
     }
-    
+
     //carga comentarios detalle del snib
-    public function cargaComDet(Request $request){
+    public function cargaComDet(Request $request)
+    {
 
         //return $request->idNombre;
         //En esta condicion se maneja una condicion entre parentesis 
-        
+
         $resultado = DB::connection('mysql2')->table('snib.nombre_taxonomia')
-                        ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
-                        ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, nombre_taxonomia.llavenombre'))
-                        ->where('nombre_taxonomia.comentarioscat', '=', $request->comentarios)
-                        ->where( function($query) use ($request) {
-                            /*$query->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
+            ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
+            ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, nombre_taxonomia.llavenombre'))
+            ->where('nombre_taxonomia.comentarioscat', '=', $request->comentarios)
+            ->where(function ($query) use ($request) {
+                /*$query->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
                         ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre);*/
-                            $query->where('nombre_taxonomia.idnombre', '=', $request->idNombre);
-                    })->distinct()->get();
-          
+                $query->where('nombre_taxonomia.idnombre', '=', $request->idNombre);
+            })->distinct()->get();
+
         return response()->json($resultado);
     }
 
     //Carga lista de categorias taxonomicas descendentes 
-    public function cargaCategorias(Request $request){
+    public function cargaCategorias(Request $request)
+    {
 
-        if($request->idNombre === '1')
-        {
+        if ($request->idNombre === '1') {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
-                                               ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
-                                               ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                                               ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
+                ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
+                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
                                                              IdNivel4 ASC')
-                                               ->get();
-        }
-        else{
+                ->get();
+        } else {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
-                                               ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
-                                               ->where('IdNivel2', '=', $request->IdNivel2)
-                                               ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                                               ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
+                ->where('IdNivel2', '=', $request->IdNivel2)
+                ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
+                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
                                                              IdNivel4 ASC')
-                                               ->get();
+                ->get();
 
-            if($request->IdNivel1 < 7){
+            if ($request->IdNivel1 < 7) {
                 $idNiv = $request->IdNivel1 + 1;
                 $categ = CategoriasTaxonomicas::where('IdNivel1', '=', $idNiv)
-                                              ->where('IdNivel2', '=', $request->IdNivel2)
-                                              ->where('IdNivel3', '=', '0')
-                                              ->where('IdNivel4', '=', '0')
-                                              ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                                              ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                    ->where('IdNivel2', '=', $request->IdNivel2)
+                    ->where('IdNivel3', '=', '0')
+                    ->where('IdNivel4', '=', '0')
+                    ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
+                    ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
                                                              IdNivel4 ASC')
-                                               ->get();
-                
+                    ->get();
+
                 $categorias = $categorias->merge($categ);
             }
         }
 
         $lista = [];
 
-        foreach($categorias as $regList)
-        {
-            
-            $newReg = [ 'id' => $regList->IdCategoriaTaxonomica, 
-                        'label' => $regList->NombreCategoriaTaxonomica
-                      ];
-    
+        foreach ($categorias as $regList) {
+
+            $newReg = [
+                'id' => $regList->IdCategoriaTaxonomica,
+                'label' => $regList->NombreCategoriaTaxonomica
+            ];
+
             array_push($lista, $newReg);
         }
 
         return $lista;
-        
     }
-    
+
     //Funcion para dar de alta un taxon 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         try {
 
-            DB::transaction(function() use ($request, &$nombres) {
-                
+            DB::transaction(function () use ($request, &$nombres) {
+
                 $nomAscendente = Nombre::find($request['IdAscendente']);
 
                 $grupoScat =  GrupoScat::find($request['Grupo']);
@@ -521,7 +558,7 @@ class NombresController extends Controller
                     'SistClasCatDicc' => $request->NombreTax['sistClassDicc'],
                     'Anotacion' => $request->NombreTax['anotacionTaxon'],
                     'EstadoRegistro' => '1',
-                    'Fuente'=> 'SOCAT',
+                    'Fuente' => 'SOCAT',
                     'FechaModificacion' => now()->toDateTimeString()
                 ]);
 
@@ -529,7 +566,7 @@ class NombresController extends Controller
                 $ascenOblig = Helpers::listaAscenOblig($nombre);
                 $nomComp = Helpers::nombreCompleto($nombre);
                 $taxonComp = Helpers::taxonCompleto($nombre);
-       
+
                 $nombre->update([
                     'Ascendentes' => $ascen,
                     'AscendentesObligatorios' => $ascenOblig,
@@ -539,7 +576,7 @@ class NombresController extends Controller
 
                 $nombre->scat()->create([
                     'IdNombre' => $nombre->IdNombre,
-                    'IDCAT' => $grupoScat['IdGrupoSCAT'].$grupoScat['GrupoAbreviado'],
+                    'IDCAT' => $grupoScat['IdGrupoSCAT'] . $grupoScat['GrupoAbreviado'],
                     'Nivel_de_revision' => $request['NivelRevision'],
                     'HomonimiaSNIB' => $request['HomonimiaSnib'],
                     'ValidacionSNIB' => $request['ValidacionSnib'],
@@ -549,87 +586,95 @@ class NombresController extends Controller
                     'FechaModificacion' => now()->toDateTimeString()
                 ]);
 
-                $autorNombre=[];
+                $autorNombre = [];
 
-                foreach($request->listAutor as $autor)
-                {      
-                            
-                    $newReg = ['IdNombre' => $nombre->IdNombre, 
-                               'IdAutorTaxon' => $autor['IdAutorTaxon']];
-                    
+                foreach ($request->listAutor as $autor) {
+
+                    $newReg = [
+                        'IdNombre' => $nombre->IdNombre,
+                        'IdAutorTaxon' => $autor['IdAutorTaxon']
+                    ];
+
                     array_push($autorNombre, $newReg);
                 }
 
                 DB::table('RelNombreAutor')->insert($autorNombre);
 
-                $nombres = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 
-                                         'relNombreCat', 'categoria', 'scat', 'nombreRel', 'nombreRelVal',
-                                         'relNombreAutor', 'relNombreRegion', 'scat.grupoScat'])
-                                 ->find($nombre['IdNombre']);
-
+                $nombres = Nombre::with([
+                    'padre',
+                    'hijos',
+                    'ascendOblig',
+                    'ascendObligHijos',
+                    'relNombreCat',
+                    'categoria',
+                    'scat',
+                    'nombreRel',
+                    'nombreRelVal',
+                    'relNombreAutor',
+                    'relNombreRegion',
+                    'scat.grupoScat'
+                ])
+                    ->find($nombre['IdNombre']);
             });
 
             DB::commit(); // Confirma la transacción
 
-            if($nombres->EstadoRegistro === 1)
-                {
-                    switch($nombres->Estatus )
-                    {
-                        case 1:
-                            $status = "Sinonimo";     
+            if ($nombres->EstadoRegistro === 1) {
+                switch ($nombres->Estatus) {
+                    case 1:
+                        $status = "Sinonimo";
                         break;
-                        case 6;
-                            $status = "NA";     
+                    case 6;
+                        $status = "NA";
                         break;
-                        case -9:
-                            $status = "ND";     
+                    case -9:
+                        $status = "ND";
                         break;
-                        default:
-                            switch($nombres->Nombre)
-                            {
-                                case 'Animalia':
-                                    $status = "Válido"; 
+                    default:
+                        switch ($nombres->Nombre) {
+                            case 'Animalia':
+                                $status = "Válido";
                                 break;
-                                case 'Plantae':
-                                case 'Fungi':
-                                case 'Protozoa':
-                                case 'Archaea':
-                                case 'Bacteria':
-                                case 'Chromista':   
-                                    $status = "Correcto";
-                                break;                              
+                            case 'Plantae':
+                            case 'Fungi':
+                            case 'Protozoa':
+                            case 'Archaea':
+                            case 'Bacteria':
+                            case 'Chromista':
+                                $status = "Correcto";
+                                break;
                             default:
-                                if($nombres->categoria->IdNivel2 === 0)
-                                {
+                                if ($nombres->categoria->IdNivel2 === 0) {
                                     $status = "Correcto";
-                                }else{
+                                } else {
                                     $status = "Válido";
                                 }
-                            }
+                        }
                         break;
-                    }
+                }
 
-                    $nomCat = $nombres->categoria->NombreCategoriaTaxonomica.
-                            " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
-                    $etiqueta = $nombres->NombreCompleto." ".$nombres->NombreAutoridad." - ".$status." - ".$nombres->SistClasCatDicc; 
-                    
-                    $query = "select count(1) as conteo 
+                $nomCat = $nombres->categoria->NombreCategoriaTaxonomica .
+                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
+
+                $query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
-                              Where (t.IdNombreRel = ".$nombres->IdNombre." Or nt.IdNombre = ".$nombres->IdNombre.") ". 
-                                "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
-        
-                    $resp = DB::select(DB::raw($query));
+                              Where (t.IdNombreRel = " . $nombres->IdNombre . " Or nt.IdNombre = " . $nombres->IdNombre . ") " .
+                    "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
-                    $newHijo = [ 'id' => $nombres->IdNombre, 
-                                 'label' => $etiqueta, 
-                                 'children' => [],
-                                 'texto' => $nomCat,
-                                 'estatus' => $status,
-                                 'numEjemp' => $resp[0]->conteo,
-                                 'completo'=>$nombres
-                            ];
+                $resp = DB::select(DB::raw($query));
+
+                $newHijo = [
+                    'id' => $nombres->IdNombre,
+                    'label' => $etiqueta,
+                    'children' => [],
+                    'texto' => $nomCat,
+                    'estatus' => $status,
+                    'numEjemp' => $resp[0]->conteo,
+                    'completo' => $nombres
+                ];
             }
 
             return  response()->json([
@@ -637,8 +682,7 @@ class NombresController extends Controller
                 'message' => 'El taxon se dio de alta con exito',
                 'nombreNuevo' => $newHijo
             ]);
-
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack(); // Realiza el rollback si hay un error
 
             return  response()->json([
@@ -649,31 +693,32 @@ class NombresController extends Controller
     }
 
     //Funcion para guardar la imagen
-    public function guardaImagen(Request $request){
+    public function guardaImagen(Request $request)
+    {
 
         if ($request->hasFile('image')) {
 
             $imagePath = $request->file('image')->store('images', 'public');
-            
-            return response()->json(['image_path' => $imagePath]);
 
+            return response()->json(['image_path' => $imagePath]);
         }
 
         return response()->json(['error' => 'No se ha proporcionado ninguna imagen'], 400);
-        
     }
 
     //Funcion para actualizar el nombre del taxon 
-    public function update(Request $request, $id){
-        
+    public function update(Request $request, $id)
+    {
+
         try {
             // Aquí comienza la transacción
-            DB::transaction(function () use ($request, $id, &$nombres) {
+            DB::transaction(
+                function () use ($request, $id, &$nombres) {
 
-               
-                
+
+
                     $nombre = Nombre::find($id);
-                    
+
                     $nombre->update([
                         'Estatus' => $request->model['Estatus'],
                         'IdNombreAscendente' => $request->model['IdAscendente'],
@@ -684,9 +729,9 @@ class NombresController extends Controller
                         'NumeroFilogenetico' => $request->model['NombreTax']['numeroFilogenetico'],
                         'SistClasCatDicc' => $request->model['NombreTax']['sistClassDicc'],
                         'IdCategoriaTaxonomica' => $request->model['categoria'],
-                        'ModificadoPor' => $nombre->ModificadoPor. ','. $request->model['alias']
+                        'ModificadoPor' => $nombre->ModificadoPor . ',' . $request->model['alias']
                     ]);
-                    
+
                     $nomComp = Helpers::nombreCompleto($nombre);
                     $taxonComp = Helpers::taxonCompleto($nombre);
 
@@ -706,219 +751,233 @@ class NombresController extends Controller
                         'ListaInvasoras' => $request->model['IdInvasora'],
                     ]);
 
-                    if(count($request->model['listAutor']) > 0)
-                    {
-                        
+                    if (count($request->model['listAutor']) > 0) {
+
                         $relAutor = RelNombreAutor::where('IdNombre', '=',  $id);
                         $relAutor->delete();
 
-                        $autorNombre=[];
+                        $autorNombre = [];
 
-                        foreach($request->model['listAutor'] as $autor)
-                        {      
-                            $newReg = ['IdNombre' => $nombre->IdNombre, 
-                                    'IdAutorTaxon' => $autor['IdAutorTaxon'], 
-                                    'FechaModificacion' => now()->toDateTimeString()];
+                        foreach ($request->model['listAutor'] as $autor) {
+                            $newReg = [
+                                'IdNombre' => $nombre->IdNombre,
+                                'IdAutorTaxon' => $autor['IdAutorTaxon'],
+                                'FechaModificacion' => now()->toDateTimeString()
+                            ];
 
                             array_push($autorNombre, $newReg);
                         }
 
                         DB::table('RelNombreAutor')->insert($autorNombre);
                     }
-                    
-                    $nombres = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 
-                                             'relNombreCat', 'categoria', 'scat', 'nombreRel', 'nombreRelVal',
-                                             'relNombreAutor', 'relNombreRegion', 'scat.grupoScat'])
-                                        ->find($id);
 
-                    }
-                );
-                
-                DB::commit(); // Confirma la transacción
+                    $nombres = Nombre::with([
+                        'padre',
+                        'hijos',
+                        'ascendOblig',
+                        'ascendObligHijos',
+                        'relNombreCat',
+                        'categoria',
+                        'scat',
+                        'nombreRel',
+                        'nombreRelVal',
+                        'relNombreAutor',
+                        'relNombreRegion',
+                        'scat.grupoScat'
+                    ])
+                        ->find($id);
+                }
+            );
 
-                if($nombres->EstadoRegistro === 1)
-                {
-                    switch($nombres->Estatus )
-                    {
-                        case 1:
-                            $status = "Sinonimo";     
+            DB::commit(); // Confirma la transacción
+
+            if ($nombres->EstadoRegistro === 1) {
+                switch ($nombres->Estatus) {
+                    case 1:
+                        $status = "Sinonimo";
                         break;
-                        case 6;
-                            $status = "NA";     
+                    case 6;
+                        $status = "NA";
                         break;
-                        case -9:
-                            $status = "ND";     
+                    case -9:
+                        $status = "ND";
                         break;
-                        default:
-                            switch($nombres->Nombre)
-                            {
-                                case 'Animalia':
-                                    $status = "Válido"; 
+                    default:
+                        switch ($nombres->Nombre) {
+                            case 'Animalia':
+                                $status = "Válido";
                                 break;
-                                case 'Plantae':
-                                case 'Fungi':
-                                case 'Protozoa':
-                                case 'Archaea':
-                                case 'Bacteria':
-                                case 'Chromista':   
-                                    $status = "Correcto";
-                                break;                              
+                            case 'Plantae':
+                            case 'Fungi':
+                            case 'Protozoa':
+                            case 'Archaea':
+                            case 'Bacteria':
+                            case 'Chromista':
+                                $status = "Correcto";
+                                break;
                             default:
-                                if($nombres->categoria->IdNivel2 === 0)
-                                {
+                                if ($nombres->categoria->IdNivel2 === 0) {
                                     $status = "Correcto";
-                                }else{
+                                } else {
                                     $status = "Válido";
                                 }
-                            }
+                        }
                         break;
-                    }
-                        
-                    $nomCat = $nombres->categoria->NombreCategoriaTaxonomica.
-                            " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
-                    $etiqueta = $nombres->NombreCompleto." ".$nombres->NombreAutoridad." - ".$status." - ".$nombres->SistClasCatDicc; 
-                    
-                    $query = "select count(1) as conteo 
+                }
+
+                $nomCat = $nombres->categoria->NombreCategoriaTaxonomica .
+                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
+
+                $query = "select count(1) as conteo 
                                 from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
-                                Where (t.IdNombreRel = ".$nombres->IdNombre." Or nt.IdNombre = ".$nombres->IdNombre.") ". 
-                                "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
-        
-                    $resp = DB::select(DB::raw($query));
+                                Where (t.IdNombreRel = " . $nombres->IdNombre . " Or nt.IdNombre = " . $nombres->IdNombre . ") " .
+                    "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
-                    $newHijo = [ 'id' => $nombres->IdNombre, 
-                                    'label' => $etiqueta, 
-                                    'children' => [],
-                                    'texto' => $nomCat,
-                                    'estatus' => $status,
-                                    'numEjemp' => $resp[0]->conteo,
-                                    'completo'=>$nombres
-                            ];
-                }
+                $resp = DB::select(DB::raw($query));
 
-                return  response()->json([
-                    'status' => 200,
-                    'message' => 'El taxon fue modificado con exito',
-                    'nombreMod' => $newHijo 
-                ]);
-                            
+                $newHijo = [
+                    'id' => $nombres->IdNombre,
+                    'label' => $etiqueta,
+                    'children' => [],
+                    'texto' => $nomCat,
+                    'estatus' => $status,
+                    'numEjemp' => $resp[0]->conteo,
+                    'completo' => $nombres
+                ];
+            }
 
-        }catch(Exception $e) {
-        // Si hay un error, Laravel hace un ROLLBACK automáticamente
+            return  response()->json([
+                'status' => 200,
+                'message' => 'El taxon fue modificado con exito',
+                'nombreMod' => $newHijo
+            ]);
+        } catch (Exception $e) {
+            // Si hay un error, Laravel hace un ROLLBACK automáticamente
             return response()->json([
                 'status' => 400,
                 'message' => 'Error: ' . $e->getMessage(),
             ]);
         }
     }
- 
-    public function mueveTaxa(Request $request){
 
-        $nombre = Nombre::with(['padre','hijos','ascendOblig','ascendObligHijos','categoria'])
-                              ->find($request->model['taxonRecibir']);
+    public function mueveTaxa(Request $request)
+    {
 
-        $nombreAct = Nombre::with(['padre','hijos','ascendOblig','ascendObligHijos','categoria'])
-                             ->find($request->model['taxonMover']); 
+        $nombre = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 'categoria'])
+            ->find($request->model['taxonRecibir']);
+
+        $nombreAct = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 'categoria'])
+            ->find($request->model['taxonMover']);
 
         DB::begintransaction();
 
-        try{
+        try {
 
-            if($nombre->categoria->IdNivel3 === 0)
-            {
+            if ($nombre->categoria->IdNivel3 === 0) {
                 $nombreAct->update([
                     'IdNombreAscendente' => $nombre['IdNombre'],
                     'IdAscendObligatorio' => $nombre['IdNombre'],
                     'ModificadoPor' => $nombreAct->ModificadoPor . ", " . $request->model['alias']
-                ]); 
-
-            }else{
+                ]);
+            } else {
                 $nombreAct->update([
                     'IdNombreAscendente' => $nombre['IdNombre'],
                     'IdAscendObligatorio' => $nombre['IdAscendObligatorio'],
                     'ModificadoPor' => $nombreAct->ModificadoPor . ", " . $request->model['alias']
                 ]);
-
             }
 
-            $nombreAct = Nombre::with(['padre','hijos','ascendOblig','ascendObligHijos','categoria'])
-                             ->find($request->model['taxonMover']); 
+            $nombreAct = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 'categoria'])
+                ->find($request->model['taxonMover']);
 
             $ascen = Helpers::listaAscen($nombreAct);
             $ascenOblig = Helpers::listaAscenOblig($nombreAct);
             $nomComp = Helpers::nombreCompleto($nombreAct);
-            $taxonComp = Helpers::taxonCompleto($nombreAct);                 
+            $taxonComp = Helpers::taxonCompleto($nombreAct);
 
             $nombreAct->update([
-                    'Ascendentes' => $ascen,
-                    'AscendentesObligatorios' => $ascenOblig, 
-                    'NombreCompleto' => $nomComp,
-                    'TaxonCompleto' => $taxonComp
-                ]); 
+                'Ascendentes' => $ascen,
+                'AscendentesObligatorios' => $ascenOblig,
+                'NombreCompleto' => $nomComp,
+                'TaxonCompleto' => $taxonComp
+            ]);
 
             $this->actualizaHijos($nombreAct);
 
             DB::commit();
 
-            $categ = explode(',',$request->model['categorias']);
-            $catalog= explode(',',$request->model['grupos']);
+            $categ = explode(',', $request->model['categorias']);
+            $catalog = explode(',', $request->model['grupos']);
 
             $nombres = Nombre::filtraArbol($categ, $catalog)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
-                                     'nombreRelVal','relNombreAutor',
-                                     'relNombreRegion', 'scat.grupoScat'])
-                             ->paginate(150);   
+                ->with([
+                    'padre',
+                    'hijos',
+                    'ascendOblig',
+                    'ascendObligHijos',
+                    'relNombreCat',
+                    'categoria',
+                    'scat',
+                    'nombreRel',
+                    'nombreRelVal',
+                    'relNombreAutor',
+                    'relNombreRegion',
+                    'scat.grupoScat'
+                ])
+                ->paginate(150);
 
             return  response()->json([
                 'status' => 200,
                 'message' => 'Los taxones se movieron con exito',
                 'nombre' => $nombres
             ]);
-
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             //Si se presenta un error se aplicara un rollback
             DB::rollback();
             return $e;
             return  response()->json([
-                    'status' => 400,
-                    'message' => 'No se puede hacer el movimiento del taxon',
-                ]);
+                'status' => 400,
+                'message' => 'No se puede hacer el movimiento del taxon',
+            ]);
         }
     }
 
-    public function actualizaHijos($nombre){
+    public function actualizaHijos($nombre)
+    {
 
-        foreach ($nombre->hijos as $hijo){
+        foreach ($nombre->hijos as $hijo) {
 
             $ascen = Helpers::listaAscen($hijo);
             $ascenOblig = Helpers::listaAscenOblig($hijo);
             $nomComp = Helpers::nombreCompleto($hijo);
-            $taxonComp = Helpers::taxonCompleto($hijo);    
+            $taxonComp = Helpers::taxonCompleto($hijo);
 
             $hijo->update([
-                    'Ascendentes' => $ascen,
-                    'AscendentesObligatorios' => $ascenOblig, 
-                    'NombreCompleto' => $nomComp,
-                    'TaxonCompleto' => $taxonComp
+                'Ascendentes' => $ascen,
+                'AscendentesObligatorios' => $ascenOblig,
+                'NombreCompleto' => $nomComp,
+                'TaxonCompleto' => $taxonComp
             ]);
 
             $this->actualizaHijos($hijo);
         }
     }
 
-    public function actualizaNombreHijos($nombre){
+    public function actualizaNombreHijos($nombre)
+    {
 
-        foreach ($nombre->hijos as $hijo){
+        foreach ($nombre->hijos as $hijo) {
 
             $nomComp = Helpers::nombreCompleto($hijo);
 
-            $taxonComp = Helpers::taxonCompleto($hijo);    
+            $taxonComp = Helpers::taxonCompleto($hijo);
 
             $hijo->update([
-                    'NombreCompleto' => $nomComp,
-                    'TaxonCompleto' => $taxonComp
+                'NombreCompleto' => $nomComp,
+                'TaxonCompleto' => $taxonComp
             ]);
 
             $this->actualizaHijos($hijo);
@@ -927,13 +986,13 @@ class NombresController extends Controller
 
     public function bajaTax(Request $request, $id)
     {
-         
+
         $nombre = Nombre::find($id);
 
-        if($nombre){
-            
+        if ($nombre) {
+
             $nombre->EstadoRegistro = 0;
-            $nombre->ModificadoPor =$nombre->ModificadoPor . ",Eliminado por " . $request->alias;
+            $nombre->ModificadoPor = $nombre->ModificadoPor . ",Eliminado por " . $request->alias;
 
             $nombre->save();
 
@@ -942,12 +1001,54 @@ class NombresController extends Controller
                 'Id' => $id,
                 'message' => 'El taxon fue eliminado con exito',
             ]);
-        }else{
+        } else {
             return response()->json([
                 'status' => 404,
                 'message' => 'Registro no encontrado',
             ]);
         }
-    }        
-    
+    }
+
+
+    public function cargarAscendentes(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+
+        $ids = $validated['ids'];
+
+        if (empty($ids)) {
+            return response()->json([]);
+        }
+        $nombreTable = (new Nombre())->getTable();
+        $categoriasTable = (new CategoriasTaxonomicas())->getTable();
+        $nombres = Nombre::whereIn("{$nombreTable}.IdNombre", $ids)
+            ->with('categoria')
+            ->join($categoriasTable, "{$nombreTable}.IdCategoriaTaxonomica", '=', "{$categoriasTable}.IdCategoriaTaxonomica")
+            ->orderBy("{$categoriasTable}.IdNivel1", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel2", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel3", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel4", 'asc')
+            ->select("{$nombreTable}.*")
+            ->get();
+        $formattedNombres = $nombres->map(function ($nombre) {
+            $rutaIcono = optional($nombre->categoria)->RutaIcono ?? '/images/icons/default.svg';
+            return [
+                'id' => $nombre->IdNombre,
+                'label' => trim($nombre->Nombre . ' ' . $nombre->NombreAutoridad),
+                'children' => [],
+                'completo' => [
+                    'NombreCompleto' => $nombre->Nombre,
+                    'NombreAutoridad' => $nombre->NombreAutoridad,
+                    'categoria' => [
+                        'RutaIcono' => $rutaIcono
+                    ]
+                ]
+            ];
+        });
+
+        return response()->json($formattedNombres);
+    }
 }

@@ -8,14 +8,12 @@
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <!-- Texto del taxón -->
               <el-col :span="20">
                 <span class="subtitulo" style="color: red;">
                   Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
                 </span>
               </el-col>
 
-              <!-- Botones -->
               <el-col :span="2" style="display: flex;">
                 <el-space>
                   <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
@@ -24,6 +22,22 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
+                  <div v-if="muestraGrd">
+                    <el-popconfirm confirm-button-text="Si" 
+                                    cancel-button-text="No" 
+                                    :icon="InfoFilled" 
+                                    icon-color="#E6A23C"
+                                    title="¿Realmente desea guardar los cambios?" 
+                                    @confirm="Guardar('nombreTax', accion)">
+                      <template #reference>
+                          <el-button circle type="warning">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                            </svg>
+                          </el-button>
+                      </template>
+                    </el-popconfirm>
+                  </div>
                 </el-space>
               </el-col>
           </el-row>
@@ -200,7 +214,7 @@
                       
                       <el-col :span="7">
                         <el-form-item label="Publico" prop="estado" label-position="top">
-                          <el-radio-group v-model="nombreTax.estado" :disabled="autorAct">
+                          <el-radio-group v-model.number="nombreTax.estado" :disabled="autorAct">
                             <el-radio :disabled="estPubS" :value="1">Si</el-radio>
                             <el-radio :disabled="estPubN" :value="0">No</el-radio>
                           </el-radio-group>
@@ -352,7 +366,6 @@ const page = usePage();
 
 const taxon = ref('');
 
-//Funcion para validae la visbilidad de los objetos 
 const hasPermisos = (etiqueta, modulo) => {
     
     const permiso = permisos.find(item => item.NombreModulo === etiqueta);
@@ -448,9 +461,14 @@ const dialogFormVisibleGrupos = ref(false);
 const dialogFormVisibleComentarios = ref(false);
 const dialogFormVisibleAutor = ref(false);
 
+const notificacionTitulo = ref('');
+const notificacionMensaje = ref('');
+const notificacionTipo = ref('info');
+const notificacionDuracion = ref(5000);
+const notificacionVisible = ref(false);
+
 const emit = defineEmits(['regresaTaxMod', 'cerrar', 
                           'resultadoAlta', 'resultadoBaja']);
-//Se declara una referencia a nuestro formulario
 const formRef = ref(null);
 const nombreTax = reactive({
   nombreTaxon: '',
@@ -520,6 +538,7 @@ const carga_inicio = () => {
   estSin.value = true;
   estNa.value = true;
   estNd.value = true;
+  
   Object.assign(nombreTax, {
     nombreTaxon : props.taxonAct?.completo?.Nombre || '',
     nombreAutoridad : props.taxonAct?.completo?.NombreAutoridad || '',
@@ -529,7 +548,7 @@ const carga_inicio = () => {
     otrasObservaciones : props.taxonAct?.completo?.otrasObservaciones || '',
     catTax : props.taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica || '',
     estatusTax : props.taxonAct?.completo?.Estatus || '',
-    estado : props.taxonAct?.completo?.scat?.Publico || ''
+    estado : props.taxonAct?.completo?.scat?.Publico
   });
   idNombre.value = props.taxonAct?.completo?.IdNombre || '';
   idCat.value = props.taxonAct?.completo?.scat?.IDCAT || '';
@@ -589,7 +608,6 @@ const comentarios_Snib = () => {
 };
 
 const cargaListGrp = async () => {
-  //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
   const response = await axios.get('/carga-list-grp');
 
   if (response.status === 200) {
@@ -853,7 +871,6 @@ const CambioEstatus = () => {
   }
 
   axios.get("/valCamEstatus", { params }).then((response) => {
-    // Actualiza correctamente las variables ref
     switch (props.taxonAct.completo.Estatus) {
       case 1:
         estCor.value = response.data != 1 ? true : false;
@@ -884,7 +901,7 @@ const CambioEstatus = () => {
 };
 
 const borrarDatos = async () => {
-  console.log("Este es taxon: ",props.taxonAct.completo.nombre_rel.length);
+
   let rel = props.taxonAct.completo.nombre_rel.length;
   let hijos = props.taxonAct.completo.hijos.length;
   let catRel = props.taxonAct.completo.rel_nombre_cat.length;
@@ -968,7 +985,6 @@ const borrarDatos = async () => {
 
 };
 
-//Se abre el dialog para lo autores 
 const carga_autor = () => {
   dialogFormVisibleAutor.value = true;
 };
@@ -1035,8 +1051,8 @@ const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-//Función para guardar los cambios en el taxón
 const Guardar = async () =>{
+  
   if (!formRef.value) return;
   
   const esValido = await formRef.value.validate().then(() => true).catch(() => false);
@@ -1093,10 +1109,9 @@ const Guardar = async () =>{
   
   let params;
   let res;
-  console.log("Accion: ", accion.value);
+
   switch(accion.value){
               case 'crear':
-                console.log("Entre a la función guardar nuevo");
               if(Array.isArray(listAutorTax.value) && 
                                        listAutorTax.value.length === 0){
                   await mostrarNotificacion(
@@ -1107,7 +1122,6 @@ const Guardar = async () =>{
                   );
                   return;
                 }
-
                 params = {
                   scat:{
                     Grupo: grupoScat,
@@ -1135,6 +1149,8 @@ const Guardar = async () =>{
                 };
                 
                 try{
+
+                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
 
                     const response = await axios.post(`/nombres-store`, params);
                     
@@ -1230,9 +1246,7 @@ watch(
   ()=> props.taxonAct,
   (newValue, oldValue) => {
     carga_inicio();
-    //console.log("Entre al watch");
   },
-  //carga_inicio(),
   { deep: true, inmediate: true }
 );
 
@@ -1251,12 +1265,11 @@ onMounted(() => {
 <style scoped>
 .form-nombre-container {
   padding: 20px;
-  /* Otros estilos si los tienes */
 }
 
 .header {
     text-align: left;
-    padding: 0.5rem; /* Reducir el padding en móviles */
+    padding: 0.5rem; 
     background-color: #f5f5f5;
     border-bottom: 1px solid #ddd;
   }
@@ -1288,14 +1301,11 @@ onMounted(() => {
 
 .filter-tree .el-tree-node.is-current .el-tree-node__children {
   background-color: transparent !important;
-  /* Sin fondo en los nodos hijos */
   color: inherit !important;
-  /* Mantener el color original de los hijos */
 }
 
 .highlight-node {
   color: #a52f2f !important;
-  /* Fondo */
 }
 
 .greenClass {
@@ -1315,13 +1325,9 @@ onMounted(() => {
   border: 1px solid #dcdfe6;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  /* Añade un relleno para que no se vea tan estrecho */
   min-width: 190px;
-  /* Ajusta el ancho mínimo */
   height: auto;
-  /* Asegúrate de que la altura se ajuste al contenido */
   box-sizing: border-box;
-  /* Asegura que el padding no afecte el ancho del menú */
 }
 
 .el-menu-item {
@@ -1365,8 +1371,6 @@ onMounted(() => {
   margin-right: 2px;
   vertical-align: middle;
 }
-
-/* --------------------------------------------------------- */
 
 .custom-form-item .el-form-item__content {
   display: flex;

@@ -126,7 +126,7 @@ const cerrarDialogo = () => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
