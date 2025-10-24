@@ -123,15 +123,10 @@
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <!--el-tooltip effect="dark" content="Regresar relación" placement="right">
-                      <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
-                        <el-icon>
-                          <regresoInfo />
-                        </el-icon>
-                      </el-button>
-                    </el-tooltip-->
-                    <el-tooltip effect="dark" content="Reemplazar taxón" placement="right">
-                      <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
+                    <el-tooltip effect="dark" content="Cambio de relación" placement="right">
+                      <el-button @click="CambioBasSin" circle type="warning" 
+                                  style="margin-left: 10px;"
+                                  :disabled = "habCambioSinBas">
                         <el-icon>
                           <reemplazo />
                         </el-icon>
@@ -170,9 +165,12 @@
                           v-model:datos = "tablaNomenclatura" v-model:total-items="totalRegNom"
                           :opciones-filtro = "opcionesFiltroNomenclatura"
                           :origen = "true"
+                          :mostrarBiblio = "true"
+                          :mostrarAcci = "true"
                           @eliminar-item = "manejarEliminarItem"
                           @editar-item = "manejarEditar"
-                          @row-click = "manejaClick">
+                          @row-click = "manejaClick"
+                          @abrir-Biblio = "abrirBiblio">
                           <template #expand-column>
                             <el-table-column type="expand">
                               <template #default="{ row }">
@@ -199,6 +197,11 @@
       <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
+    <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
+                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog" />
+    </DialogForm>
+
     <Teleport to="body">
       <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
         :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
@@ -208,11 +211,10 @@
 </template>
 
 <script setup>
-//import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElCard, ElCollapse, ElCollapseItem, ElScrollbar, ElTable, ElTableColumn, ElTooltip, ElButton, ElIcon, ElPagination, ElRadioGroup, ElRadioButton } from "element-plus";
-//import { ref, onMounted, watch, h } from "vue";
-import { ref, onMounted, watchEffect, h } from 'vue';
+import { ref, onMounted, watchEffect, h, nextTick  } from 'vue';
 import { Setting, User, Location, ShoppingCart, InfoFilled } from '@element-plus/icons-vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
+import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
@@ -239,6 +241,7 @@ const authUser = page.props.auth.user || [];
 const tiposRel = ref([]);
 const tipRel = ref("");
 const dialogFormVisibleCat = ref(false);
+const dialogFormVisibleBiblio = ref(false);
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -249,6 +252,8 @@ const gruposTax = ref([]);
 const relDetalle = ref([]);
 const totalItems = ref(0);
 const habObservaciones = ref(true);
+const relDetectada = ref([]);
+const taxActBiblio = ref([]);
 
 const habTraspaso = ref(true);
 const notificacionVisible = ref(false);
@@ -270,6 +275,8 @@ const numHijos = ref(0);
 const totalReg = ref(0);
 const observacionesRel = ref('');
 const relacionAct = ref([]);
+const habCambioSinBas = ref(true);
+const taxBiblio = ref([]);
 
 // Datos de ejemplo para el transfer
 const leftValue = ref([]);
@@ -412,15 +419,41 @@ const manejarEliminarItem = (item) => {
 };
 
 const manejarEditar = (item) => {
+  event.stopPropagation()
   habObservaciones.value = false;
-  console.log("Este no es el item: ", item);
+  relDetectada.value = item;
 }
 
 const manejaClick = (row) => {
   observacionesRel.value = row.Observaciones;
   relacionAct.value = row;
-  console.log("Este no es el row: ", row);
-  //habObservaciones.value = true;
+
+  if(JSON.stringify(relDetectada.value) != JSON.stringify(row))
+  {
+    habObservaciones.value = true;
+  }
+
+  if(row.TipoRelacion.idTipoRel === 1 || row.TipoRelacion.idTipoRel === 2){
+    habCambioSinBas.value = false;
+  }else{
+    habCambioSinBas.value = true;
+  }
+}
+
+const abrirBiblio = async () => {
+  
+  const params= {
+                  taxAct: props.taxonAct.id
+                };       
+  const response = await axios.get('/carga-RelacionesTax', { params });
+
+  taxBiblio.value = response.data;
+
+  taxActBiblio.value = props.taxonAct;
+
+  dialogFormVisibleBiblio.value = true;
+
+  console.log("Estos son los taxones de bibliografia: ", taxBiblio.value);
 }
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -594,21 +627,19 @@ const cerrarDialog = (valor) => {
 };
 
 const Guardar = async() => {
-  console.log("Esta es la relacion actual: ", relacionAct.value);
-  console.log("Estas son las observaciones: ", observacionesRel.value);
-  const procederConEliminacion = async () => {
+  const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
       const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
                                                                               observacion: observacionesRel.value,
                                                                               taxAct: props.taxonAct.id}});
       
-      /*tablaNomenclatura.value = response.data;*/
       mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `Las observaciones no se pueden actualizar.`, 'success');
     }
   };
+
   const cancelarActualizacion = () => {
     ElMessageBox.close();
   };
@@ -624,7 +655,7 @@ const Guardar = async() => {
       ]),
       h('div', { class: 'footer-buttons' }, [
         h(BotonCancelar, { onClick: cancelarActualizacion }),
-        h(BotonAceptar, { onClick: procederConEliminacion }),
+        h(BotonAceptar, { onClick: procederConActualizacion }),
       ])
     ])
   }).catch(() => { });
@@ -638,7 +669,7 @@ const Guardar = async() => {
         let listAct = {};
         
         observacionesRel.value = "" 
-        //habObservaciones.value = true;
+        habCambioSinBas.value = true;
 
         if(value != undefined)
         {
@@ -659,7 +690,7 @@ const Guardar = async() => {
             spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
             backgroud: 'rgba(255,255,255,0.85)',
         });
-
+          
           const response = await axios.get('/carga-RelacionesTax', { params });
 
             if(tipRelSelec.value > 0)
@@ -1029,7 +1060,7 @@ const Guardar = async() => {
       return true;
     }
 
-  switch (tipRelSelec.value) {
+   switch (tipRelSelec.value) {
     case 1:
       relacionar = validacionSinonimos();
       if (relacionar) {
@@ -1039,127 +1070,215 @@ const Guardar = async() => {
       break;
   }
 
+  const CambioBasSin = async() => {
+    let mensaje = "";
+    let relActualizada = 0;
+    let valBasonimo = false;
 
+    if(relacionAct.value.TipoRelacion.idTipoRel === 2){
+      mensaje = "¿Realmente desea cambiar la relación de BASONIMIA a SINONIMIA?";
+      relActualizada = 1;
+    }else{
+      if(props.taxonAct.id === relacionAct.value.TipoRelacion.relCompleta.relIdNombre){
+        let params = {
+          idNombre: relacionAct.value.TipoRelacion.relCompleta.relIdNombreRel
+        };
+
+        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
+        const response = await axios.get('/cargar-nomArb', { params });
+        console.log ("Esta es la respuesta del servidor: ", response.data[0]);
+        taxonActRel.value = response.data[0][0];
+         
+        await nextTick();
+      }else{
+        let params = {
+          idNombre: relacionAct.value.TipoRelacion.relCompleta.relIdNombreRel
+        };
+
+        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
+        const response = await axios.get('/cargar-nomArb', { params });
+        console.log ("Esta es la respuesta del servidor: ", response.data);
+        taxonActRel.value = response.data[0][0];
+         
+        await nextTick();
+      }
+
+      const contValidoAct = props.taxonAct.relaciones.some(rel => rel.TipoRelacion.idTipoRel === 2);
+
+      const conValidoRel = taxonActRel.value.relaciones.some(rel => rel.TipoRelacion.idTipoRel === 2);
+
+      if(contValidoAct || conValidoRel){
+        mostrarNotificacion(
+                "Alerta",
+                "El taxón ya cuenta con una relación de basonimia o el taxon sinonimo ya cuenta con una relacion valida",
+                "error",
+                7000
+            ); 
+            return ;
+      }
+
+      mensaje = "¿Realmente desea cambiar la relación de SINONIMIA a BASONIMIA?";
+
+      relActualizada = 2;
+
+    }
+
+    const procederConActBasSin = async () => {
+      try {
+        ElMessageBox.close();
+        const response = await axios.put('/actualiza-RelBasSin', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
+                                                                                nuevaRelacion: relActualizada,
+                                                                                taxAct: props.taxonAct.id}});
+        
+        tablaNomenclatura.value = response.data;
+        mostrarNotificacion('Actualización Exitosa', `El tipo de relación ha sido actualizado correctamente.`, 'success');
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `El tipo de relación no se puede actualizar.`, 'success');
+      }
+    };
+
+    const cancelarActBasSin = () => {
+      ElMessageBox.close();
+    };
+    
+    //const mensaje = ` Las observaciones seran actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir`;
+    
+    ElMessageBox({
+      title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarActBasSin }),
+          h(BotonAceptar, { onClick: procederConActBasSin }),
+        ])
+      ])
+    }).catch(() => { });
+  }
 
     // Inicialización de datos
-    onMounted( async () => {
-        const response = await axios.get('/cargar-tipoRel');
-
-        if (response.status === 200) {            
-            tiposRel.value = response.data;
-            tiposRel.value.unshift({
-                label: "Todos",
-                value: 0
-            });
-        }
-       await cargaGrupos();
-        gruposTax.value = props.gruposTax;
-        taxonAct.value = props.taxonAct;
-    });
-
-const altaRelacion = async() => {
-        
-        const params= {
-                        taxonAct: props.taxonAct, 
-                        taxonActRel: taxonActRel.value,
-                        tipRelacion: tipRelSelec.value
-                    };                  
-
-        const loading = ElLoading.service({
-            lock: true,
-            text: "Loading",
-            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-            backgroud: 'rgba(255,255,255,0.85)',
+  onMounted( async () => {
+    const response = await axios.get('/cargar-tipoRel');
+    if (response.status === 200) {            
+        tiposRel.value = response.data;
+        tiposRel.value.unshift({
+            label: "Todos",
+            value: 0
         });
-        try{
-          const response = await axios.post('/alta-RelacionesTax', { params });
+    }
+    await cargaGrupos();
+    gruposTax.value = props.gruposTax;
+    taxonAct.value = props.taxonAct;
+  });
 
-           mostrarNotificacion(
-                "Alerta",
-                "La relación se genero correctamente",
-                "info",
-                7000
-            );
+  const altaRelacion = async() => {
+          
+          const params= {
+                          taxonAct: props.taxonAct, 
+                          taxonActRel: taxonActRel.value,
+                          tipRelacion: tipRelSelec.value
+                      };                  
 
-          tablaNomenclatura.value = response.data;
-          loading.close();
-        }catch(error){
-          if (error.response && error.response.status === 422) {
-              // Aquí están los errores de validación
-              console.log("Este es el error completo: ", error.response.data.message);
+          const loading = ElLoading.service({
+              lock: true,
+              text: "Loading",
+              spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+              backgroud: 'rgba(255,255,255,0.85)',
+          });
+          try{
+            const response = await axios.post('/alta-RelacionesTax', { params });
+
+            mostrarNotificacion(
+                  "Alerta",
+                  "La relación se genero correctamente",
+                  "info",
+                  7000
+              );
+
+            tablaNomenclatura.value = response.data;
+            loading.close();
+          }catch(error){
+            if (error.response && error.response.status === 422) {
+                // Aquí están los errores de validación
+                console.log("Este es el error completo: ", error.response.data.message);
+                
+                mostrarNotificacion(
+                  "Alerta",
+                  error.response.data.message,
+                  "info",
+                  7000
+              );
               
-              mostrarNotificacion(
-                "Alerta",
-                error.response.data.message,
-                "info",
-                7000
-            );
-            
-          } else {
-              // Otros errores inesperados
-              console.error("Error inesperado:", error);
-              ElMessage.error("Ocurrió un error en el servidor");
-          }
+            } else {
+                // Otros errores inesperados
+                console.error("Error inesperado:", error);
+                ElMessage.error("Ocurrió un error en el servidor");
+            }
 
-          loading.close();
-        }      
+            loading.close();
+          }      
+      }
+
+  const mostrarNotificacion = (
+    titulo,
+    mensaje,
+    tipo = "warning",
+    duracion = 5000,
+    dangerouslyUseHTML = false
+  ) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+  };
+
+  const cerrarNotificacion = () => {
+    notificacionVisible.value = false;
+  };
+
+  // Función recursiva para buscar nodos hijos
+  const updateChildNode = async (children, res) => {
+    for (const child of children) {
+      if (child.value === res) {
+        tipRelSelec.value = child.value;
+        return true;
+      }
+
+      if (child.children && child.children.length > 0) {
+        const found = await updateChildNode(child.children, res);
+        if (found) return true;
+      }
+    }
+    return false;
+  };
+
+  // Inicialización de datos
+  onMounted(async () => {
+    const response = await axios.get('/cargar-tipoRel');
+    
+    habCambioSinBas.value = true;
+
+    if (response.status === 200) {
+      tiposRel.value = response.data;
+      tiposRel.value.unshift({
+        label: "Todos",
+        value: 0
+      });
+    }
+    await cargaGrupos();
+    gruposTax.value = props.gruposTax;
+  });
+
+  watchEffect(() => {
+    if (props.gruposPadre) {
+      cargaGrupos();
     }
 
-const mostrarNotificacion = (
-  titulo,
-  mensaje,
-  tipo = "warning",
-  duracion = 5000,
-  dangerouslyUseHTML = false
-) => {
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
-// Función recursiva para buscar nodos hijos
-const updateChildNode = async (children, res) => {
-  for (const child of children) {
-    if (child.value === res) {
-      tipRelSelec.value = child.value;
-      return true;
-    }
-
-    if (child.children && child.children.length > 0) {
-      const found = await updateChildNode(child.children, res);
-      if (found) return true;
-    }
-  }
-  return false;
-};
-
-// Inicialización de datos
-onMounted(async () => {
-  const response = await axios.get('/cargar-tipoRel');
-
-  if (response.status === 200) {
-    tiposRel.value = response.data;
-    tiposRel.value.unshift({
-      label: "Todos",
-      value: 0
-    });
-  }
-  await cargaGrupos();
-  gruposTax.value = props.gruposTax;
-  //habObservaciones.value = true;
-});
-
-watchEffect(() => {
-  if (props.gruposPadre) {
-    cargaGrupos();
-  }
-});
+    habCambioSinBas.value = true;
+  });
 
 </script>
 

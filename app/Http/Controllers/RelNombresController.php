@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Nombre_Relacion;
 use App\Models\RelNombreAutor;
+use App\Models\RelacionBibliografia;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RequestSinonimos;
@@ -17,16 +18,39 @@ use App\Http\Requests\RequestParental;
 use App\Http\Requests\RequestHomonimo;
 use App\Http\Requests\RequestBorradoNombreRel;
 use App\Http\Requests\RequestActualizaNombreRel;
+use App\Http\Requests\RequestActualizaBasSin;
 use Exception;
 
 
 class RelNombresController extends Controller
 {
-    public function cargaRelaciones(Request $request)
-    {
+    public function cargaRelaciones(Request $request){
         
         $relaciones = Nombre::cargaRelaciones($request->taxAct)
                             ->get();  
+        
+        $relaciones = $relaciones->map(function ($relacion){
+            $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                $relacion['RelIdNom'],
+                $relacion['RelIdNomRel'],
+                $relacion['IdTipoRelacion']
+            )->get();
+
+            $relacion->bibliografia = $bibliografia;
+
+            return $relacion;
+        });
+
+        log::info("Estas son todas las relaciones");
+        Log::info($relaciones);
+        /*foreach ($relaciones as $relacion) {
+            $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                                                                $relacion['IdNombre'], 
+                                                                $relacion['RelIdNomRel'],
+                                                                $relacion['IdTipoRelacion'])
+                                                 ->get();
+            log::info($bibliografia);
+        }*/
 
         $reldata = $this->relacionNombre($relaciones);
         
@@ -225,7 +249,8 @@ class RelNombresController extends Controller
                                        'contBiblio' => $relacion->Biblio],
                         'FechaCaptura' => $relacion->FechaCaptura,
                         'FechaModificacion' => $relacion->FechaModificacion,
-                        'Observaciones' => $relacion->Observaciones  
+                        'Observaciones' => $relacion->Observaciones,  
+                        'bibliografia' => $relacion->bibliografia
                        ];
             
             array_push($reldata, $newRel);
@@ -262,7 +287,7 @@ class RelNombresController extends Controller
 
     public function update(RequestActualizaNombreRel $request){
         
-        $data = $data = $request->input('data');
+        $data = $request->input('data');
 
         DB::beginTransaction();
 
@@ -281,6 +306,38 @@ class RelNombresController extends Controller
             $relaciones = Nombre::cargaRelaciones($data['taxAct'])
                             ->get();  
 
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        }      
+    }
+
+    public function relBasSin(RequestActualizaBasSin $request){
+        
+        $data = $request->input('data');
+
+        DB::beginTransaction();
+
+        try {
+            $relacion = Nombre_Relacion::where('IdNombre', $data['relCompleta']['relIdNombre'])
+                                      ->where('IdNombreRel', $data['relCompleta']['relIdNombreRel'])
+                                      ->where('IdTipoRelacion', $data['relCompleta']['tipoRel'])
+                                      ->first();
+
+            if($relacion){
+                $relacion->update(['IdTipoRelacion'=> $data['nuevaRelacion']]);
+            }
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($data['taxAct'])
+                            ->get();  
+            Log::info("Esto es lo que tiene en relaciones");
+            Log::info($relaciones);
             $reldata = $this->relacionNombre($relaciones);
 
             return $reldata;

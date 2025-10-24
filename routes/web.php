@@ -122,6 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/carga-RelacionesTax', [RelNombresController::class, 'cargaRelaciones']);
     Route::delete('/elimina-RelacionesTax', [RelNombresController::class, 'destroy']);
     Route::put('/actualiza-RelacionesTax', [RelNombresController::class, 'update']);
+    Route::put('/actualiza-RelBasSin', [RelNombresController::class, 'relBasSin']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
