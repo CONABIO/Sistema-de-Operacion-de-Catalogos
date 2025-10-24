@@ -137,19 +137,19 @@ const guardarDesdeModal = async () => {
     };
 
     if (modalMode.value === "editar") {
-        const datosUpdate = { 
+        const datosUpdate = {
             Descripcion: formModal.value.Descripcion.trim(),
-            isModal: props.isModal 
+            isModal: props.isModal
         };
         const nodeId = nodoEnModal.value.IdTipoRegion;
         router.put(`/tipos-region/${nodeId}`, datosUpdate, { preserveState: true, preserveScroll: true, onSuccess, onError });
     } else {
         const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculoNiveles) return;
-        const datosInsert = { 
-            Descripcion: formModal.value.Descripcion.trim(), 
+        const datosInsert = {
+            Descripcion: formModal.value.Descripcion.trim(),
             ...calculoNiveles.niveles,
-            isModal: props.isModal 
+            isModal: props.isModal
         };
         router.post("/tipos-region", datosInsert, { preserveState: true, preserveScroll: true, onSuccess, onError });
     }
@@ -183,11 +183,11 @@ const handleEliminar = () => {
 const proceedWithDeletion = (nodeId, nombre) => {
     ElMessageBox.close();
     router.delete(`/tipos-region/${nodeId}`, {
-        data: { isModal: props.isModal }, 
+        data: { isModal: props.isModal },
         preserveScroll: true,
         onSuccess: () => {
             mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
-            selectedNode.value = null; 
+            selectedNode.value = null;
         },
         onError: (error) => mostrarNotificacion("Error al Eliminar", error.message || "Ocurrió un error.", "error"),
     });
@@ -254,27 +254,23 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
 
 const handleNodeDoubleClick = (data) => {
     if (props.isModal) {
-        // 'window.parent' es la ventana que contiene el iframe (indexRegion.vue)
-        // 'postMessage' es la forma segura de enviar datos entre ventanas.
         window.parent.postMessage({
             type: 'tipoRegionSeleccionado',
             payload: {
                 id: data.IdTipoRegion,
                 descripcion: data.Descripcion,
             }
-        }, '*'); 
+        }, '*');
     }
 };
 </script>
 
 <template>
     <component :is="isModal ? 'div' : AppLayout" :title="isModal ? null : 'Tipos de Región'">
-        
-        <component :is="isModal ? 'div' : LayoutCuerpo"
-                   :usar-app-layout="isModal ? true : false"
-                   :titulo-pag="isModal ? null : 'Tipos de Región'"
-                   :titulo-area="isModal ? null : 'Catálogo de tipos de región'"
-                   :class="{ 'modal-content-wrapper': isModal }">
+
+        <component :is="isModal ? 'div' : LayoutCuerpo" :usar-app-layout="isModal ? true : false"
+            :titulo-pag="isModal ? null : 'Tipos de Región'"
+            :titulo-area="isModal ? null : 'Catálogo de tipos de región'" :class="{ 'modal-content-wrapper': isModal }">
 
             <el-card class="box-card tree-card">
                 <template #header>
@@ -288,7 +284,7 @@ const handleNodeDoubleClick = (data) => {
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                                
+
                                 <BotonSalir v-if="!isModal" />
                             </div>
                         </div>
@@ -299,7 +295,7 @@ const handleNodeDoubleClick = (data) => {
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRegion"
                     :current-node-key="selectedNode?.IdTipoRegion" :highlight-current="true"
                     :expand-on-click-node="true" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                    @node-click="handleNodeSelected"  @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
+                    @node-click="handleNodeSelected" @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRegion}`" class="custom-tree-node-content">
                             <span>{{ node.label }}</span>
@@ -321,30 +317,31 @@ const handleNodeDoubleClick = (data) => {
             <div class="dialog-header">
                 <h3>{{ modalTitle }}</h3>
             </div>
-            <div class="dialog-body-container">
-                <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                    @submit.prevent="guardarDesdeModal">
-                   <div class="form-actions">
-                    <GuardarButton @click="guardarDesdeModal" />
-                    <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+            <div class="content-wrapper-custom">
+                <div class="dialog-body-container">
+                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                        @submit.prevent="guardarDesdeModal">
+                        <div class="form-actions">
+                            <GuardarButton @click="guardarDesdeModal" />
+                            <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+                        </div>
+
+                        <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                            <el-radio-group v-model="opcionNivel">
+                                <el-radio value="mismo">Mismo nivel</el-radio>
+                                <el-radio value="inferior">Nivel inferior</el-radio>
+                            </el-radio-group>
+                        </div>
+
+                        <el-form-item prop="Descripcion" label="Descripción del Tipo de Región:">
+                            <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                                maxlength="255" show-word-limit />
+                        </el-form-item>
+
+                    </el-form>
                 </div>
-
-                    <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                        <el-radio-group v-model="opcionNivel">
-                            <el-radio value="mismo">Mismo nivel</el-radio>
-                            <el-radio value="inferior">Nivel inferior</el-radio>
-                        </el-radio-group>
-                    </div>
-
-                    <el-form-item prop="Descripcion" label="Descripción del Tipo de Región:">
-                        <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                            maxlength="255" show-word-limit />
-                    </el-form-item>
-                    
-                </el-form>
             </div>
-            
         </DialogGeneral>
 
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
@@ -450,17 +447,17 @@ const handleNodeDoubleClick = (data) => {
 <style scoped>
 .tree-card {
     width: 100%;
-    height: v-bind("isModal ? 'auto' : '726px'"); 
-    min-height: v-bind("isModal ? '400px' : 'auto'"); 
+    height: v-bind("isModal ? 'auto' : '726px'");
+    min-height: v-bind("isModal ? '400px' : 'auto'");
     display: flex;
     flex-direction: column;
 }
 
 .modal-content-wrapper {
     padding: 1rem;
-    height: 100%; 
-    overflow-y: auto; 
-    box-sizing: border-box; 
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 
@@ -506,10 +503,22 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.content-wrapper-custom {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+    /* La sombra que faltaba */
+    max-height: 65vh;
+    overflow-y: auto;
 }
 
 .dialog-header h3 {

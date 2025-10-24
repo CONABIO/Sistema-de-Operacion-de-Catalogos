@@ -141,7 +141,7 @@ const puedeTenerNivelInferior = computed(() => {
 
 const filteredRegionsTree = computed(() => {
     if (!selectedTipoRegionNode.value) {
-        return []; 
+        return [];
     }
 
     const targetTypeId = selectedTipoRegionNode.value.IdTipoRegion;
@@ -286,7 +286,7 @@ const guardarDesdeModal = async () => {
         cerrarModalOperacion();
         mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
         // Aquí podrías recargar la parte del árbol afectada o todo el árbol
-        router.reload({ only: ['treeDataProp'] }); 
+        router.reload({ only: ['treeDataProp'] });
     };
     const onError = (errors) => {
         // En caso de que el backend también devuelva errores de validación, se mostrarán aquí.
@@ -406,42 +406,44 @@ const proceedWithDeletion = (nodeId, nombre) => {
                 <div class="dialog-header">
                     <h3>{{ modalTitle }}</h3>
                 </div>
-                <div class="form-actions">
-                    <GuardarButton @click="guardarDesdeModal" />
-                    <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
-                </div>
-                <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
-                        <div v-if="modalMode === 'insertar'" class="mb-4"> 
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                            <el-radio-group v-model="opcionNivel" @change="onOpcionNivelChange">
-                                <el-radio v-if="selectedNode" value="mismo">Mismo nivel</el-radio>
-                                <el-radio v-if="selectedNode" value="inferior" :disabled="!puedeTenerNivelInferior">
-                                    Nivel inferior
-                                </el-radio>
-                            </el-radio-group>
-                        </div>
+                <div class="content-wrapper-custom">
+                    <div class="form-actions">
+                        <GuardarButton @click="guardarDesdeModal" />
+                        <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+                    </div>
+                    <div class="dialog-body-container">
+                        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                            @submit.prevent="guardarDesdeModal">
+                            <div v-if="modalMode === 'insertar'" class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                                <el-radio-group v-model="opcionNivel" @change="onOpcionNivelChange">
+                                    <el-radio v-if="selectedNode" value="mismo">Mismo nivel</el-radio>
+                                    <el-radio v-if="selectedNode" value="inferior" :disabled="!puedeTenerNivelInferior">
+                                        Nivel inferior
+                                    </el-radio>
+                                </el-radio-group>
+                            </div>
 
-                        <el-form-item prop="IdTipoRegion" label="Tipo de región:" class="form-item-con-boton">
-                            <el-select v-model="formModal.IdTipoRegion" class="main-input"
-                                placeholder="Seleccione un tipo" :disabled="isTipoRegionReadonly"> 
-                                <el-option v-for="tipo in opcionesTipoRegionDisponibles" :key="tipo.IdTipoRegion"
-                                    :label="tipo.Descripcion" :value="tipo.IdTipoRegion" />
-                            </el-select>
+                            <el-form-item prop="IdTipoRegion" label="Tipo de región:" class="form-item-con-boton">
+                                <el-select v-model="formModal.IdTipoRegion" class="main-input"
+                                    placeholder="Seleccione un tipo" :disabled="isTipoRegionReadonly">
+                                    <el-option v-for="tipo in opcionesTipoRegionDisponibles" :key="tipo.IdTipoRegion"
+                                        :label="tipo.Descripcion" :value="tipo.IdTipoRegion" />
+                                </el-select>
 
-                        </el-form-item>
+                            </el-form-item>
 
-                        <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
-                                v-model="formModal.NombreRegion" clearable /></el-form-item>
+                            <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
+                                    v-model="formModal.NombreRegion" clearable /></el-form-item>
 
 
-                        <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado"
-                                clearable /></el-form-item>
+                            <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado"
+                                    clearable /></el-form-item>
 
-                        <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
-                                clearable /></el-form-item>
-                    </el-form>
+                            <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
+                                    clearable /></el-form-item>
+                        </el-form>
+                    </div>
                 </div>
             </DialogGeneral>
 
@@ -528,9 +530,22 @@ const proceedWithDeletion = (nodeId, nombre) => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
+    text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.content-wrapper-custom {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+    /* La sombra que faltaba */
+    max-height: 65vh;
+    overflow-y: auto;
 }
 
 .dialog-header h3 {

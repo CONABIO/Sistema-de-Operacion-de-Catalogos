@@ -199,10 +199,10 @@ const guardarDesdeModal = async () => {
     if (!nodoParaCalcular && opcionNivel.value !== 'raiz') {
       return ElMessage.error("No se pudo determinar un nodo de referencia para la inserción.");
     }
-    
+
     const resultado = calcularNiveles_ADAPTADO_AL_CAOS(nodoParaCalcular, opcionNivel.value, props.flatTreeDataProp);
     if (!resultado) return;
-    
+
     const datos = {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim(),
       ...resultado.niveles,
@@ -240,66 +240,66 @@ const guardarDesdeModal = async () => {
 const MAX_NIVELES = 12;
 
 const calcularNiveles_ADAPTADO_AL_CAOS = (nodoReferencia, opcion, todosLosNodos) => {
-    const nuevosNiveles = {};
-    for (let i = 1; i <= MAX_NIVELES; i++) {
-        nuevosNiveles[`IdNivel${i}`] = 0;
+  const nuevosNiveles = {};
+  for (let i = 1; i <= MAX_NIVELES; i++) {
+    nuevosNiveles[`IdNivel${i}`] = 0;
+  }
+
+  if (opcion === "raiz" || !nodoReferencia) {
+    let maxRaiz = 0;
+    todosLosNodos.filter(n => !n.IdAscendente || n.IdAscendente === 0)
+      .forEach(n => { maxRaiz = Math.max(maxRaiz, n.IdNivel1 || 0); });
+    nuevosNiveles.IdNivel1 = maxRaiz + 1;
+    return { niveles: nuevosNiveles, nuevoIdAscendente: null };
+  }
+
+  if (opcion === 'inferior') {
+    const padre = nodoReferencia;
+    const nuevoIdAscendente = padre.IdCategoriaTaxonomica;
+
+    let profundidadPadre = 0;
+    let ancestroActual = padre;
+    const ancestroMap = new Map(todosLosNodos.map(n => [n.IdCategoriaTaxonomica, n]));
+    while (ancestroActual) {
+      profundidadPadre++;
+      ancestroActual = ancestroMap.get(ancestroActual.IdAscendente);
+    }
+    const nivelDelNuevoHijo = profundidadPadre + 1;
+
+    if (nivelDelNuevoHijo > MAX_NIVELES) {
+      mostrarNotificacion("Error", "Profundidad máxima excedida.", "error");
+      return null;
     }
 
-    if (opcion === "raiz" || !nodoReferencia) {
-        let maxRaiz = 0;
-        todosLosNodos.filter(n => !n.IdAscendente || n.IdAscendente === 0)
-                     .forEach(n => { maxRaiz = Math.max(maxRaiz, n.IdNivel1 || 0); });
-        nuevosNiveles.IdNivel1 = maxRaiz + 1;
-        return { niveles: nuevosNiveles, nuevoIdAscendente: null };
+    for (let i = 1; i <= profundidadPadre; i++) {
+      nuevosNiveles[`IdNivel${i}`] = padre[`IdNivel${i}`];
     }
 
-    if (opcion === 'inferior') {
-        const padre = nodoReferencia;
-        const nuevoIdAscendente = padre.IdCategoriaTaxonomica;
-        
-        let profundidadPadre = 0;
-        let ancestroActual = padre;
-        const ancestroMap = new Map(todosLosNodos.map(n => [n.IdCategoriaTaxonomica, n]));
-        while(ancestroActual) {
-            profundidadPadre++;
-            ancestroActual = ancestroMap.get(ancestroActual.IdAscendente);
-        }
-        const nivelDelNuevoHijo = profundidadPadre + 1;
+    const hermanos = todosLosNodos.filter(n => n.IdAscendente === nuevoIdAscendente);
+    let maxNivelHijo = 0;
+    hermanos.forEach(h => {
+      maxNivelHijo = Math.max(maxNivelHijo, h[`IdNivel${nivelDelNuevoHijo}`] || 0);
+    });
 
-        if (nivelDelNuevoHijo > MAX_NIVELES) {
-             mostrarNotificacion("Error", "Profundidad máxima excedida.", "error");
-             return null;
-        }
+    nuevosNiveles[`IdNivel${nivelDelNuevoHijo}`] = maxNivelHijo + 1;
+    return { niveles: nuevosNiveles, nuevoIdAscendente: nuevoIdAscendente };
+  }
 
-        for (let i = 1; i <= profundidadPadre; i++) {
-            nuevosNiveles[`IdNivel${i}`] = padre[`IdNivel${i}`];
-        }
-        
-        const hermanos = todosLosNodos.filter(n => n.IdAscendente === nuevoIdAscendente);
-        let maxNivelHijo = 0;
-        hermanos.forEach(h => {
-            maxNivelHijo = Math.max(maxNivelHijo, h[`IdNivel${nivelDelNuevoHijo}`] || 0);
-        });
-        
-        nuevosNiveles[`IdNivel${nivelDelNuevoHijo}`] = maxNivelHijo + 1;
-        return { niveles: nuevosNiveles, nuevoIdAscendente: nuevoIdAscendente };
+  if (opcion === 'mismo') {
+    const nuevoIdAscendente = nodoReferencia.IdAscendente;
+    if (!nuevoIdAscendente) {
+      return calcularNiveles_ADAPTADO_AL_CAOS(null, 'raiz', todosLosNodos);
     }
 
-    if (opcion === 'mismo') {
-        const nuevoIdAscendente = nodoReferencia.IdAscendente;
-        if (!nuevoIdAscendente) {
-            return calcularNiveles_ADAPTADO_AL_CAOS(null, 'raiz', todosLosNodos);
-        }
-        
-        const padre = todosLosNodos.find(n => n.IdCategoriaTaxonomica === nuevoIdAscendente);
-        if (!padre) {
-            mostrarNotificacion("Error", "No se pudo encontrar el nodo padre para crear un hermano.", "error");
-            return null;
-        }
-        
-        return calcularNiveles_ADAPTADO_AL_CAOS(padre, 'inferior', todosLosNodos);
+    const padre = todosLosNodos.find(n => n.IdCategoriaTaxonomica === nuevoIdAscendente);
+    if (!padre) {
+      mostrarNotificacion("Error", "No se pudo encontrar el nodo padre para crear un hermano.", "error");
+      return null;
     }
-    return null;
+
+    return calcularNiveles_ADAPTADO_AL_CAOS(padre, 'inferior', todosLosNodos);
+  }
+  return null;
 };
 
 const handleEliminar = () => {
@@ -503,11 +503,11 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => { notificacionTitulo.valu
 
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-    notificacionTitulo.value = titulo;
-    notificacionMensaje.value = mensaje;
-    notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
-    notificacionVisible.value = true;
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 0;
+  notificacionVisible.value = true;
 };
 
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
@@ -601,30 +601,32 @@ const isCambiarIconoDeshabilitado = computed(() => {
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
-        <div class="form-actions">
-          <GuardarButton @click="guardarDesdeModal" />
-          <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
-        </div>
-        <div class="dialog-body-container">
-          <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-            @submit.prevent="guardarDesdeModal">
+        <div class="content-wrapper-custom">
+          <div class="form-actions">
+            <GuardarButton @click="guardarDesdeModal" />
+            <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+          </div>
+          <div class="dialog-body-container">
+            <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+              @submit.prevent="guardarDesdeModal">
 
-            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-              <el-radio-group v-model="opcionNivel">
-                <el-radio value="mismo">Mismo nivel</el-radio>
-                <el-radio value="inferior">Nivel inferior</el-radio>
-              </el-radio-group>
-            </div>
+              <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                <el-radio-group v-model="opcionNivel">
+                  <el-radio value="mismo">Mismo nivel</el-radio>
+                  <el-radio value="inferior">Nivel inferior</el-radio>
+                </el-radio-group>
+              </div>
 
-            <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
-              <el-input v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
-                maxlength="255" show-word-limit />
-            </el-form-item>
+              <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
+                <el-input v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
+                  maxlength="255" show-word-limit />
+              </el-form-item>
 
 
-          </el-form>
+            </el-form>
 
+          </div>
         </div>
       </DialogGeneral>
 
@@ -635,7 +637,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
         <div class="dialog-body-container">
           <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal')"
             @input="onInputBusquedaIcono" clearable />
-          <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la  búsqueda' }}</h4>
+          <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la búsqueda' }}</h4>
           <div v-loading="cargandoIconos" class="icon-grid mt-4">
             <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
               @click="seleccionarIcono(iconName)">
@@ -802,10 +804,22 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .dialog-header {
-  background-color: #f1f7ff;
+  background-color: #f5f5f5;
   padding: 20px 24px;
   border-bottom: 1px solid #e4e7ed;
   text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.content-wrapper-custom {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+  /* La sombra que faltaba */
+  max-height: 65vh;
+  overflow-y: auto;
 }
 
 .dialog-header h3 {

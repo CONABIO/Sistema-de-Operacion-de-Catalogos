@@ -2,7 +2,7 @@
 import { ref, onMounted, triggerRef, h, computed, onUnmounted } from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogRelaciones from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
@@ -26,7 +26,6 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -75,12 +74,15 @@ const opcionesFiltroRef = ref([
   { label: 'Cita', value: 'Cita' }
 ]);
 
-//variables del paginado
 const totalItems = ref(0);
 const currentPage = ref(1);
 const itemsPerPage = ref(150);
 
 const tree = ref(null);
+const ascendantsTree = ref(null);
+
+const treeDataAscendentes = ref([]);
+
 const selectedNode = ref([]);
 const menuPosition = ref({ x: 0, y: 0 });
 const isMenuVisible = ref(false);
@@ -92,6 +94,7 @@ const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
 
 const dialogFormVisibleAlta = ref(false);
+const dialogFormVisibleAscendentes = ref(false);
 const taxonAct = ref([]);
 const data = ref([]);
 const categ = ref(null);
@@ -121,20 +124,20 @@ const currentPageNomenclatura = ref(1);
 const pageSizeNomenclatura = ref(2);
 
 
-const scrollbarHeight = ref('550px');
+const scrollbarHeight = ref('450px');
 const dialogWidth = ref('35%');
 
 const updateLayout = () => {
   if (window.innerHeight < 820) {
-    scrollbarHeight.value = '300px';
+    scrollbarHeight.value = '800px';
   } else {
-    scrollbarHeight.value = '350px';
+    scrollbarHeight.value = '450px';
   }
 
   if (window.innerWidth <= 1440) {
     dialogWidth.value = '55%';
   } else {
-    dialogWidth.value = '35%';
+    dialogWidth.value = '40%';
   }
 };
 
@@ -179,9 +182,9 @@ const hasPermisos = (etiqueta, modulo) => {
 
 const openDialog = (nodeData) => {
   console.log(nodeData);
-
   emit('reset-form');
-  dialogFormVisibleAlta.value = true;
+  taxonAct.value = nodeData;
+  dialogFormVisibleAlta.value = true; 
 };
 
 const emit = defineEmits(['reset-form']);
@@ -212,7 +215,6 @@ const recibeGrupos = async (data) => {
   }
 };
 
-//Funcion para los cambios recibidos
 const recibeTaxMod = async (res) => {
 
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
@@ -220,7 +222,7 @@ const recibeTaxMod = async (res) => {
   for (const node of data.value) {
     if (node.id === res.id) {
       Object.assign(node, res);
-      return true;  
+      return true;
     }
 
     if (node.children && node.children.length > 0) {
@@ -234,17 +236,16 @@ const updateChildNode = async (children, res) => {
   for (const child of children) {
     if (child.id === res.id) {
       Object.assign(child, res);
-      return true; 
+      return true;
     }
     if (child.children && child.children.length > 0) {
       const found = await updateChildNode(child.children, res);
       if (found) return true;
     }
   }
-  return false; 
+  return false;
 };
 
-//Función para recibir los nuevos taxones 
 const recibeTaxNuevo = async (res) => {
 
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
@@ -257,7 +258,6 @@ const recibeTaxNuevo = async (res) => {
   }
 };
 
-//Función para recibir los taxones que dan de baja
 const recibeTaxBaja = async (res) => {
 
   const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
@@ -288,20 +288,17 @@ const deleteChildNode = async (children, res) => {
   return false;
 };
 
-//Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
 onMounted(() => {
   dialogFormVisibleCat.value = true;
   console.log(authUser);
 });
 
-//Funcion para el envio de mensajes en pantalla
 const open = (mensaje) => {
   ElMessageBox.alert(mensaje, 'Nombres taxonómicos', {
     confirmButtonText: 'OK',
   });
 }
 
-//Esta funcion se dispara una vez que se selecciona una categia taxonomica
 const handleChange = async (value) => {
 
   if (value != undefined) {
@@ -322,7 +319,6 @@ const handleChange = async (value) => {
         backgroud: 'rgba(255,255,255,0.85)',
       });
 
-      //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
       const response = await axios.get('/cargar-nomArb', { params });
 
       if (response.status === 200) {
@@ -339,7 +335,6 @@ const handleChange = async (value) => {
   }
 }
 
-//Función para hacer la busqueda de los valores colocados en el input de busqueda
 const filterNode = async (value) => {
   mostrar.value = false;
 
@@ -390,7 +385,6 @@ const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-//Funcion que se ejecuta para la expancion de un nodo
 const expande = async (draggingNode, nodeData, nodeComponent) => {
 
   isMenuVisible.value = false;
@@ -436,7 +430,7 @@ const proceder = () => {
 const cancelar = () => {
   console.log("Evite el movimeinto");
 }
-//Función para mover un taxón y reasignarlo a otro 
+
 const mover = async (node) => {
 
   if (taxMov.value.length === 0) {
@@ -508,8 +502,6 @@ const mover = async (node) => {
 
         try {
           const response = await axios.get('/valCamEstatus', params);
-
-          //Lógica para validación de estatus
           switch (taxMov.value.data.completo.Estatus) {
             case 1:
               switch (node.data.completo.Estatus) {
@@ -753,7 +745,6 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
       backgroud: 'rgba(255,255,255,0.85)',
     });
 
-    //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
     const response = await axios.put('/mueveTaxones', requestData);
 
     if (response.status === 200) {
@@ -791,7 +782,6 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
 
   } catch (error) {
-    // El usuario canceló la operación
     console.log(error);
     console.log('Operación cancelada por el usuario');
   }
@@ -800,7 +790,7 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
 const handleNodeRightClick = (event, data, node) => {
 
-  event.preventDefault(); // Prevenir el menú contextual del navegador
+  event.preventDefault(); 
 
   tree.value.setCurrentKey(data.id);
 
@@ -818,21 +808,17 @@ const handleNodeRightClick = (event, data, node) => {
   document.addEventListener('keydown', handleEscKey);
 };
 
-// Manejador de acciones del menú
 const handleMenuClick = (action) => {
   isMenuVisible.value = false;
-  // Aquí puedes agregar lógica específica para cada acción
   console.log('Acción seleccionada:', action);
 };
 
-// Cerrar menú
 const closeMenu = () => {
   isMenuVisible.value = false;
   document.removeEventListener('click', closeMenu);
   document.removeEventListener('keydown', handleEscKey);
 };
 
-// Manejador de tecla Escape
 const handleEscKey = (event) => {
   if (event.key === 'Escape' || event.key === 'Esc') {
     closeMenu();
@@ -864,14 +850,68 @@ const fetchFilteredData = async () => {
   }
 
   loading.close();
-  /*currentData.value = response.data.data || [];
-  totalItems.value = response.data.total || response.data.totalItems || 0;*/
 };
 
 const abre_Relaciones = () => {
   dialogFormVisibleRel.value = true;
 }
+
+
+const showAscendants = async () => {
+  if (!taxonAct.value?.completo?.Ascendentes) {
+    ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
+    return;
+  }
+  const ascendantsString = taxonAct.value.completo.Ascendentes;
+  const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+  if (ascendantIds.length === 0) {
+    ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
+    return;
+  }
+
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Cargando ascendentes...',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+
+  try {
+    const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
+    if (response.status === 200 && Array.isArray(response.data)) {
+      const ascendantTaxa = response.data;
+      let nestedTree = [];
+      if (ascendantTaxa.length > 0) {
+        nestedTree.push(ascendantTaxa[0]);
+        let currentNode = nestedTree[0];
+        for (let i = 1; i < ascendantTaxa.length; i++) {
+          const nextNode = ascendantTaxa[i];
+          currentNode.children = [nextNode];
+          currentNode = nextNode; 
+        }
+      }
+
+      treeDataAscendentes.value = nestedTree; 
+      dialogFormVisibleAscendentes.value = true; 
+    } else {
+      ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
+    }
+  } catch (error) {
+    console.error("Error al cargar los ascendentes:", error);
+    ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
+  } finally {
+    loading.close(); 
+  }
+};
+
+
+
+const closeAscendantsDialog = () => {
+  dialogFormVisibleAscendentes.value = false;
+};
+
 </script>
+
+
 
 
 <template>
@@ -880,7 +920,6 @@ const abre_Relaciones = () => {
       <el-header class="main-header-override">
         <div>
           <el-row :gutter="16">
-            <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
               <span>Ir a:</span>
               <el-input clearable placeholder="" v-model="filterText" @change="filterNode" style="height: 28px;"
@@ -888,7 +927,6 @@ const abre_Relaciones = () => {
               </el-input>
             </el-col>
 
-            <!-- Segunda columna -->
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
               <el-cascader :options="categoriasTax" clearable filterable v-model="categ" placeholder="Nivel taxonómico"
@@ -906,7 +944,6 @@ const abre_Relaciones = () => {
 
             <el-col :xs="24" :md="12" class="form-item-col">
               <el-row :gutter="10">
-                <!-- Catálogo(s) -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -916,7 +953,6 @@ const abre_Relaciones = () => {
                   </div>
                 </el-col>
 
-                <!-- Grupo SCAT -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -926,7 +962,6 @@ const abre_Relaciones = () => {
                   </div>
                 </el-col>
 
-                <!-- Botón -->
                 <el-col :xs="24" :sm="2">
                   <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
                     <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
@@ -948,7 +983,7 @@ const abre_Relaciones = () => {
           <el-container class="main-content-container">
             <el-aside width="600px" class="aside-tree">
               <div class="tree-container">
-                <el-scrollbar height="550px">
+                <el-scrollbar height="470px">
                   <el-tree class="filter-tree" :data="data" node-key="id" @node-click="expande"
                     :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
                     empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
@@ -996,11 +1031,11 @@ const abre_Relaciones = () => {
                     </el-icon>
                     <span>Catálogos asociados</span>
                   </el-menu-item>
-                  <el-menu-item class="item">
+                  <el-menu-item class="item" @click="showAscendants">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                       class="bi bi-bar-chart-steps" viewBox="0 0 16 16">
                       <path
-                        d="M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.safe.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z" />
+                        d="M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z" />
                     </svg>
                     <span>Ascendentes</span>
                   </el-menu-item>
@@ -1058,6 +1093,29 @@ const abre_Relaciones = () => {
         </el-footer>
       </el-header>
     </el-container>
+
+    <DialogForm v-model="dialogFormVisibleAscendentes" @close="closeAscendantsDialog" :botCerrar="true" :pressEsc="true"
+      custom-class="dialog-ascendentes-diseno"> 
+      <div class="dialog-header-custom">
+        <h3>Ascendentes del taxón</h3>
+      </div>
+      <div class="content-wrapper-custom">
+        <el-tree class="filter-tree" :data="treeDataAscendentes" node-key="id" @node-click="expande"
+          :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+          empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
+          :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
+          default-expand-all>
+          <template #default="{ node }">
+            <div class="tree-node-wrapper">
+              <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+              <span class="tree-node-label">
+                {{ node.label }}
+              </span>
+            </div>
+          </template>
+        </el-tree>
+      </div>
+    </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false" custom-class="responsive-dialog"
       :width="dialogWidth">
@@ -1175,8 +1233,6 @@ const abre_Relaciones = () => {
 }
 
 
-
-
 @media (min-width: 992px) {
   .content-wrapper {
     max-height: 500px;
@@ -1202,7 +1258,7 @@ const abre_Relaciones = () => {
     padding-left: 20px;
     display: flex;
     flex-direction: column;
-    height: 520px;
+    height: 720px;
   }
 
   .el-scrollbar {
@@ -1344,12 +1400,52 @@ const abre_Relaciones = () => {
 
 @media (max-width: 1280px) and (min-width: 992px) {
   .aside-tree {
-    width: 420px !important;
+    width: 520px !important;
   }
 
   .content-wrapper {
     max-height: 350px;
   }
 
+}
+
+:deep(.dialog-ascendentes-diseno .el-dialog__body) {
+  padding: 0 !important;
+}
+
+:deep(.dialog-ascendentes-diseno .el-dialog__header) {
+  display: none;
+}
+
+.dialog-header-custom {
+  background-color: #f1f7ff;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+}
+
+.dialog-header-custom h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #303133;
+}
+
+.dialog-header-custom {
+  background-color: #f5f5f5;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.content-wrapper-custom {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08); 
+    max-height: 65vh;
+    overflow-y: auto;
 }
 </style>
