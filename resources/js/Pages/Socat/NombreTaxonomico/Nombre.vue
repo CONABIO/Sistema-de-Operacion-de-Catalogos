@@ -665,6 +665,46 @@ const mover = async (node) => {
   }
 }
 
+const manejarEliminarRel = (item) => {
+  
+  const procederConEliminacion = async () => {
+
+    try {
+      ElMessageBox.close();
+
+      const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+                                                                              taxAct: props.taxonAct.id}});
+      
+      tablaNomenclatura.value = response.data;
+
+      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+    }
+  };
+  const cancelarEliminacion = () => {
+    ElMessageBox.close();
+  };
+
+  const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
+
+  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+};
+
 const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
   if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
@@ -1002,7 +1042,7 @@ const closeAscendantsDialog = () => {
                 </el-menu>
               </div>
             </el-aside>
-            <el-container class="details-container">
+            <el-container class="details-container" style="height: 470px;">
               <el-scrollbar :height="scrollbarHeight">
                 <el-header class="details-header">
                   <div class="details-title" style="margin-bottom: 20px;">
@@ -1013,13 +1053,12 @@ const closeAscendantsDialog = () => {
                     </span>
                   </div>
                 </el-header>
-
-                <el-main class="details-main" style="margin-top: -50px;">
-
+                <el-main class="details-main" style="margin-top: -40px;">
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
                     <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
-                      :opciones-filtro="opcionesFiltroNomenclatura">
+                      :opciones-filtro="opcionesFiltroNomenclatura"
+                      @eliminar-item = "manejarEliminarRel">
                     </TablaFiltrable>
 
                     <div v-if="totalRegNom > pageSizeNomenclatura"
@@ -1036,7 +1075,6 @@ const closeAscendantsDialog = () => {
                       v-model:total-items="totalRegRef" :opciones-filtro="opcionesFiltroRef" :items-por-pagina="2">
                     </TablaFiltrable>
                   </div>
-
                 </el-main>
               </el-scrollbar>
             </el-container>
@@ -1084,11 +1122,13 @@ const closeAscendantsDialog = () => {
       <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" @reset-form="resetFormNombre" :botCerrar="true"
-      :pressEsc="true" custom-class="responsive-dialog">
-      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" :catalogos="idsGrupos.value"
+    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
+                @reset-form="resetFormNombre" :botCerrar="true"
+                :pressEsc="true" custom-class="responsive-dialog">
+      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
+                  :catalogos="idsGrupos.value" :active-tab.sync="activeTab" 
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
-        @resultadoBaja="recibeTaxBaja" />
+        @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"

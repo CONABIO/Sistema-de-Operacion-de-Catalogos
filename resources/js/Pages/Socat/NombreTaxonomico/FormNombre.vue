@@ -30,11 +30,13 @@
                                     title="¿Realmente desea guardar los cambios?" 
                                     @confirm="Guardar('nombreTax', accion)">
                       <template #reference>
+                        <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
                           <el-button circle type="warning">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
                                 <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
                             </svg>
                           </el-button>
+                        <!--/el-tooltip-->
                       </template>
                     </el-popconfirm>
                   </div>
@@ -62,8 +64,8 @@
               </el-radio-group>
             </div>
           </el-form-item>
-          <el-tabs type="card">
-            <el-tab-pane label="Taxón">
+          <el-tabs type="card" v-model="tabInicial">
+            <el-tab-pane label="Taxón" name="taxon">
               <el-form-item label = "Taxón" prop = "nombreTaxon">
                 <el-input type="text" 
                                 maxlength="100" 
@@ -131,7 +133,7 @@
               </el-form-item>
             </el-tab-pane>
 
-            <el-tab-pane label="SCAT">
+            <el-tab-pane label="SCAT" name="scat">
                     <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
                       <el-col :span="10">
                         <table style="border: 1px solid black; width: 100%;">
@@ -341,7 +343,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue';
+import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
 import { usePage } from '@inertiajs/inertia-vue3';
 import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
 import axios from 'axios';
@@ -359,6 +361,7 @@ import usePermisos from '@/composables/usePermisos';
 import autoridades from '@/Components/Biotica/Icons/Autor.vue';
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
+import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 
 const { permisos, usuario } = usePermisos();
 
@@ -405,6 +408,7 @@ const listGrp = ref([]);
 const listAutorTax = ref([]);
 const autorComp = ref("");
 const listAutores = ref([]);
+const tabInicial = ref("taxon");
 
 const opcSnib = ref([{
   id: 'si',
@@ -413,7 +417,7 @@ const opcSnib = ref([{
   id: 'no',
   label: 'No'
 }, {
-  id: 'vacio',
+  id: '',
   label: 'Vacío'
 }
 ]);
@@ -533,6 +537,7 @@ const recibeAutores = (autores, autoridadTax) =>{
 }
 
 const carga_inicio = () => {
+  tabInicial.value = "taxon";
   muestraGrd.value = props.muestraGuardar;
   estCor.value = true;
   estSin.value = true;
@@ -603,7 +608,6 @@ const carga_Grupos = () => {
 };
 
 const comentarios_Snib = () => {
-  console.log("Estoy en comentarios_Snib");
   dialogFormVisibleComentarios.value = true;
 };
 
@@ -671,18 +675,18 @@ const cargaCategorias = async () => {
 
 const cargaValSnib = async () => {
 
-  if (props?.taxonAct?.completo?.scat) {
+  valSnib.value = '';
 
+  if (props?.taxonAct?.completo?.scat) {
+    
     let valSnibValue = props.taxonAct.completo.scat.ValidacionSNIB;
  
     if(valSnibValue !== null)
     {
-      console.log("Entre al NULL");
       let resp = opcSnib.value.find(niv => niv.id === valSnibValue);
 
       if (typeof resp === 'undefined') {
         valSnib.value = '';
-
       } else {
         valSnib.value = resp.label;
       }
@@ -1032,14 +1036,8 @@ const cambioPublico = async (estadoTaxon)=> {
      return true;
 }
 
-const mostrarNotificacion = (
-  titulo,
-  mensaje,
-  tipo = "warning",
-  duracion = 5000,
-  dangerouslyUseHTML = false
-) => {
-  console.log("Entre a mostrar la notificación");
+const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  console.log("Entre a mostrar la notificación 321");
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
   notificacionTipo.value = tipo;
@@ -1240,7 +1238,7 @@ const Guardar = async () =>{
 
 }
 
-defineExpose({ resetForm });
+defineExpose({ resetForm, carga_inicio, tabInicial });
 
 watch(
   ()=> props.taxonAct,

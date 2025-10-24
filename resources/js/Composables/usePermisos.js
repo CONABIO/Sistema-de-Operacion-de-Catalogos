@@ -8,6 +8,8 @@ export default function usePermisos() {
     const permisos = page.props.permisos || [];
     const usuario =  page.props.auth || [];
 
+    console.log('usuario: ', usuario);
+
   return {
     permisos,
     usuario

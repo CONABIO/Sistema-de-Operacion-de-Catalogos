@@ -10,6 +10,13 @@ use App\Models\RelNombreAutor;
 use App\Models\Nombre;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RequestSinonimos;
+use App\Http\Requests\RequestBasonimos;
+use App\Http\Requests\RequestEquivalencia;
+use App\Http\Requests\RequestHuesped;
+use App\Http\Requests\RequestParental;
+use App\Http\Requests\RequestHomonimo;
+use App\Http\Requests\RequestBorradoNombreRel;
+use App\Http\Requests\RequestActualizaNombreRel;
 use Exception;
 
 
@@ -27,10 +34,11 @@ class RelNombresController extends Controller
 
     }
 
-    public function altaRelaciones(Request $request)
-    {   
+    public function altaRelaciones(Request $request){   
 
         $idTipoRel =  $request['params']['tipRelacion'];
+
+        Log::info("Esta es la relación que acaba de pasar " . $idTipoRel);
 
         switch($idTipoRel){
             case 1: 
@@ -41,14 +49,15 @@ class RelNombresController extends Controller
                 $data= $reqSinonimos->validated();
 
                 $estatus = $data['params']['taxonAct']['estatus'];
-
-                if($estatus === 'Válido'){
+                
+                if($estatus === 'Válido' || $estatus === 'Correcto'){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
                     $idNombre = $data['params']['taxonActRel']['id'];
                     $idNombreRel = $data['params']['taxonAct']['id'];
                 }
+
             break;
             case 2: 
                 $reqSinonimos = app(RequestSinonimos::class);
@@ -64,8 +73,8 @@ class RelNombresController extends Controller
                 $data= $reqBasonimos->validated();
 
                 $estatus = $data['params']['taxonAct']['estatus'];
-
-                if($estatus === 'Válido'){
+                
+                if($estatus === 'Válido' || $estatus === 'Correcto'){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
@@ -74,13 +83,69 @@ class RelNombresController extends Controller
                 }
             break;
             case 3:
-                $reqSinonimos = app(RequestSinonimos::class);
+                $reqEquivalencia= app(RequestEquivalencia::class);
                 
-                $reqSinonimos->validateResolved();
+                $reqEquivalencia->validateResolved();
                   
-                $data= $reqSinonimos->validated();
+                $data= $reqEquivalencia->validated();
 
+                $idNombre = $data['params']['taxonAct']['id'];
                 
+                $idNombreRel = $data['params']['taxonActRel']['id'];
+
+                $idNombre = $data['params']['taxonAct']['id'];
+                $idNombreRel = $data['params']['taxonActRel']['id'];
+
+                break;
+            case 7:
+                $reqHuesped = app(RequestHuesped::class);
+                
+                $reqHuesped->validateResolved();
+                  
+                $data= $reqHuesped->validated();
+
+                $gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
+                               "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
+                               "MONOG", "PROT", "MYXOZ", "TREMA"];
+                
+                $taxonActGrp = $data['params']['taxonAct']['completo']['scat']['grupo_scat']['GrupoAbreviado'];
+                
+                 if(in_array($taxonActGrp, $gruposPara))
+                 {
+                   $idNombre = $data['params']['taxonAct']['id'];
+ 
+                   $idNombreRel =  $data['params']['taxonActRel']['id'];
+
+                 }else{
+                    $idNombre = $data['params']['taxonActRel']['id'];
+ 
+                    $idNombreRel =  $data['params']['taxonAct']['id'];
+                 }
+
+                break;
+            case 5:
+                $reqParental = app(RequestParental::class);
+                
+                $reqParental->validateResolved();
+                  
+                $data= $reqParental->validated();
+
+                $idNombre = $data['params']['taxonAct']['id'];
+ 
+                $idNombreRel =  $data['params']['taxonActRel']['id'];
+                
+                break;
+            case 8:
+                $reqHomonimo = app(RequestHomonimo::class);
+
+                $reqHomonimo->validateResolved();
+                  
+                $data= $reqHomonimo->validated();
+
+                $idNombre = $data['params']['taxonAct']['id'];
+ 
+                $idNombreRel =  $data['params']['taxonActRel']['id'];
+
                 break;
         }
         
@@ -145,13 +210,19 @@ class RelNombresController extends Controller
             
             $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
                                             'texto' => $relacion->Descripcion, 
-                                            'svg' => $relacion->TipoRelIcono],                    
+                                            'svg' => $relacion->TipoRelIcono,
+                                            'relCompleta'=>[
+                                                'relIdNombre' => $relacion->RelIdNom,
+                                                'relIdNombreRel' => $relacion->RelIdNomRel,
+                                                'tipoRel' => $relacion->IdTipoRelacion
+                                            ]],                    
                         'idNombre' => $relacion->IdNombre, 
                         'Nombrecompleto' => ['texto' => $relacion->NombreCompleto." ".$relacion->NombreAutoridad." - ".$status." - ".$relacion->SistClasCatDicc,
                                                'url' => $relacion->CategIcono,
                                                'estatus' => $status],
-                        'Biblio' => ['texto'=> '',
-                                       'url'=>$biblio],
+                        'Biblio' => ['texto' => '',
+                                       'url' => $biblio,
+                                       'contBiblio' => $relacion->Biblio],
                         'FechaCaptura' => $relacion->FechaCaptura,
                         'FechaModificacion' => $relacion->FechaModificacion,
                         'Observaciones' => $relacion->Observaciones  
@@ -161,5 +232,63 @@ class RelNombresController extends Controller
         }
 
         return $reldata;
+    }
+
+    public function destroy(RequestBorradoNombreRel $request){
+
+        DB::beginTransaction();
+
+        try {
+            Nombre_Relacion::where('IdNombre', $request->relCompleta['relIdNombre'])
+                ->where('IdNombreRel', $request->relCompleta['relIdNombreRel'])
+                ->where('IdTipoRelacion', $request->relCompleta['tipoRel'])
+                ->delete();
+
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($request->taxAct)
+                            ->get();  
+
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        }        
+    }
+
+    public function update(RequestActualizaNombreRel $request){
+        
+        $data = $data = $request->input('data');
+
+        DB::beginTransaction();
+
+        try {
+            log::info("Estoy antes de la busqueda");
+            $relacion = Nombre_Relacion::where('IdNombre', $data['relCompleta']['relIdNombre'])
+                                      ->where('IdNombreRel', $data['relCompleta']['relIdNombreRel'])
+                                      ->where('IdTipoRelacion', $data['relCompleta']['tipoRel'])
+                                      ->first();
+
+            if($relacion){
+                $relacion->update(['Observaciones'=> $data['observacion']]);
+            }
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($data['taxAct'])
+                            ->get();  
+
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        }      
     }
 }

@@ -45,11 +45,6 @@
 
             <el-row>
               <el-card class="main-content-card">
-                <div>
-                  <el-input v-model="textarea" style="width: 100%" :rows="2" type="textarea"
-                    placeholder="Observaciones" />
-                </div>
-                <br />
                 <div class="dual-panel-container">
                   <el-card class="tree-panel">
                     <el-container style="display: flex; flex-direction: column; height: 100%;">
@@ -128,13 +123,13 @@
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <el-tooltip effect="dark" content="Regresar relación" placement="right">
+                    <!--el-tooltip effect="dark" content="Regresar relación" placement="right">
                       <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
                         <el-icon>
                           <regresoInfo />
                         </el-icon>
                       </el-button>
-                    </el-tooltip>
+                    </el-tooltip-->
                     <el-tooltip effect="dark" content="Reemplazar taxón" placement="right">
                       <el-button @click="traspasaDatos" circle type="primary" style="margin-left: 10px;">
                         <el-icon>
@@ -147,25 +142,43 @@
                   <!-- Panel de la Tabla -->
                   <el-card class="table-panel">
                     <div style="display: flex; flex-direction: column; height: 100%;">
-                      <div style="flex-shrink: 0;">
-                        <el-input v-model="textarea" style="width: 100%" :rows="2" type="textarea"
+                      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <el-input v-model="observacionesRel" style="width: 100%" 
+                          :rows="2" type="textarea"
+                          :disabled = "habObservaciones"
                           placeholder="Observaciones" />
+                        <el-popconfirm confirm-button-text="Si" 
+                                        cancel-button-text="No" 
+                                        :icon="InfoFilled" 
+                                        icon-color="#E6A23C"
+                                        title="¿Realmente desea guardar los cambios?" 
+                                        @confirm="Guardar()">
+                          <template #reference>
+                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                              <el-button circle type="warning" :disabled="habObservaciones">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                                </svg>
+                              </el-button>
+                            <!--/el-tooltip-->
+                          </template>
+                        </el-popconfirm>
                       </div>
                       <div
                         style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                         <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
-                          v-model:datos="tablaNomenclatura" v-model:total-items="totalRegNom"
-                          :opciones-filtro="opcionesFiltroNomenclatura">
+                          v-model:datos = "tablaNomenclatura" v-model:total-items="totalRegNom"
+                          :opciones-filtro = "opcionesFiltroNomenclatura"
+                          :origen = "true"
+                          @eliminar-item = "manejarEliminarItem"
+                          @editar-item = "manejarEditar"
+                          @row-click = "manejaClick">
                           <template #expand-column>
                             <el-table-column type="expand">
                               <template #default="{ row }">
                                 <div class="expand-content-detail">
                                   <p><strong>Fecha de alta:</strong>{{ row.FechaCaptura }}</p>
                                   <p><strong>Fecha de modificación:</strong>{{ row.FechaModificacion }}</p>
-                                  <p><strong>Observaciones:</strong>
-                                    <el-input v-model=row.Observaciones style="width: 100%" :rows="2" type="textarea"
-                                      placeholder="Observaciones" />
-                                  </p>
                                 </div>
                               </template>
                             </el-table-column>
@@ -195,7 +208,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watchEffect } from 'vue';
+//import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElCard, ElCollapse, ElCollapseItem, ElScrollbar, ElTable, ElTableColumn, ElTooltip, ElButton, ElIcon, ElPagination, ElRadioGroup, ElRadioButton } from "element-plus";
+//import { ref, onMounted, watch, h } from "vue";
+import { ref, onMounted, watchEffect, h } from 'vue';
 import { Setting, User, Location, ShoppingCart, InfoFilled } from '@element-plus/icons-vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
@@ -206,7 +221,7 @@ import { mensajes } from '@/Composables/mensajes';
 import FiltroGrupo from '@/Components/Biotica/FiltroGrupoTax.vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import { ElLoading } from 'element-plus';
+import { ElLoading, ElMessageBox } from 'element-plus';
 import usePermisos from '@/composables/usePermisos';
 import { usePage } from '@inertiajs/vue3';
 import traspasoInfo from '@/Components/Biotica/Icons/TraspasoInfo.vue';
@@ -214,6 +229,8 @@ import regresoInfo from '@/Components/Biotica/Icons/RegresoInfo.vue';
 import reemplazo from '@/Components/Biotica/Icons/Reemplazar.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import axios from 'axios';
+import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
 const { permisos } = usePermisos();
 
@@ -231,6 +248,7 @@ const tipRelSelec = ref('');
 const gruposTax = ref([]);
 const relDetalle = ref([]);
 const totalItems = ref(0);
+const habObservaciones = ref(true);
 
 const habTraspaso = ref(true);
 const notificacionVisible = ref(false);
@@ -250,6 +268,8 @@ const tree = ref(null);
 const selectedNodeKey = ref(null);
 const numHijos = ref(0);
 const totalReg = ref(0);
+const observacionesRel = ref('');
+const relacionAct = ref([]);
 
 // Datos de ejemplo para el transfer
 const leftValue = ref([]);
@@ -349,6 +369,66 @@ const recibeGrupos = async (data) => {
     categ.push(catego.value)
     handleChange(categ);
   }
+};
+
+const manejarEliminarItem = (item) => {
+  
+  const procederConEliminacion = async () => {
+
+    try {
+      ElMessageBox.close();
+
+      const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+                                                                              taxAct: props.taxonAct.id}});
+      
+      tablaNomenclatura.value = response.data;
+
+      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+    }
+  };
+  const cancelarEliminacion = () => {
+    ElMessageBox.close();
+  };
+  
+  const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
+
+  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+};
+
+const manejarEditar = (item) => {
+  habObservaciones.value = false;
+  console.log("Este no es el item: ", item);
+}
+
+const manejaClick = (row) => {
+  observacionesRel.value = row.Observaciones;
+  relacionAct.value = row;
+  console.log("Este no es el row: ", row);
+  //habObservaciones.value = true;
+}
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 0;
+  notificacionVisible.value = true;
 };
 
 const handleChange = async (value) => {
@@ -513,61 +593,53 @@ const cerrarDialog = (valor) => {
   dialogFormVisibleCat.value = valor;
 };
 
+const Guardar = async() => {
+  console.log("Esta es la relacion actual: ", relacionAct.value);
+  console.log("Estas son las observaciones: ", observacionesRel.value);
+  const procederConEliminacion = async () => {
+    try {
+      ElMessageBox.close();
+      const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
+                                                                              observacion: observacionesRel.value,
+                                                                              taxAct: props.taxonAct.id}});
+      
+      /*tablaNomenclatura.value = response.data;*/
+      mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `Las observaciones no se pueden actualizar.`, 'success');
+    }
+  };
+  const cancelarActualizacion = () => {
+    ElMessageBox.close();
+  };
+  
+  const mensaje = ` Las observaciones seran actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarActualizacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+}
+
 // Función para cargar relaciones taxonómicas
-const cargaRelaciones = async (value) => {
-  let idsNombreSin = 0;
-  let idsNombreVal = 0;
-  let params = {};
-  let listAct = {};
-
-
-  if (value != undefined) {
-    const etiqueta = tiposRel.value.find(tipoRel => tipoRel.value === value[value.length - 1]);
-
-    if (etiqueta != undefined) {
-      tipRelSelec.value = etiqueta.value
-    }
-    console.log("Este es el valor de tipRelSelec: ", tipRelSelec.value);
-    if (tipRelSelec.value > 0) {
-      for (const child of tiposRel.value) {
-        if (child.children && child.children.length > 0) {
-          const found = await updateChildNode(child.children, value[value.length - 1]);
-        }
-      }
-
-      let filtrados = props.taxonAct.relaciones.filter(item =>
-        item.TipoRelacion?.idTipoRel === tipRelSelec.value)
-
-      console.log("Este es el resultado de existeValor: ", filtrados);
-
-      tablaNomenclatura.value = filtrados ?? [];
-
-      totalRegNom.value = filtrados.length;
-      habTraspaso.value = false;
-    }
-    else {
-      tablaNomenclatura.value = props.taxonAct.relaciones;
-      totalRegNom.value = props.taxonAct.relaciones.length
-      habTraspaso.value = false;
-    }
-  }
-  else {
-    tablaNomenclatura.value = [];
-    totalRegNom.value = 0;
-  }
-
-};
-
-const traspasaDatos = async () => {
-
-  let relacionar = false;
-    // Función para cargar relaciones taxonómicas
     const cargaRelaciones = async(value) => {
         let idsNombreSin = 0;
         let idsNombreVal = 0;
         let params = {};
         let listAct = {};
         
+        observacionesRel.value = "" 
+        //habObservaciones.value = true;
+
         if(value != undefined)
         {
            const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
@@ -617,6 +689,8 @@ const traspasaDatos = async () => {
             tablaNomenclatura.value = [];
             totalRegNom.value = 0;
         }
+
+        console.log("Esto es lo que hay en la tabla Nomenclatura: ", tablaNomenclatura.value);
     };
 
     const buscaTipoRelacion = async(tiposRelacion, valor) => {
@@ -641,6 +715,9 @@ const traspasaDatos = async () => {
         let sinonimos = false;
         let basonimos = false;
         let equivalencia = false;
+        let huesped = false;
+        let parental = false;
+        let homonimo = false;
 
         if(taxonActRel.value.length === 0)
         {
@@ -664,7 +741,7 @@ const traspasaDatos = async () => {
             case 2:
                 sinonimos = validacionSinonimos();
                 if (sinonimos){
-                  basonimos = validacionBasonimos();
+                    basonimos = validacionBasonimos();
                   if(basonimos){
                     altaRelacion();
                   }
@@ -681,7 +758,21 @@ const traspasaDatos = async () => {
                 huesped = validacionHuesped();
                 if(huesped)
                 {
+                   altaRelacion();
+                }
+              break;
+            case 5:
+                parental = validacionParental();
+                if(parental)
+                {
                   altaRelacion();
+                }
+              break;
+            case 8:
+                homonimo = validaHomonimos();
+                if(homonimo)
+                {
+                   altaRelacion();
                 }
               break;
         }
@@ -745,17 +836,9 @@ const traspasaDatos = async () => {
             return false;
         }
 
-  if (taxonActRel.value.length === 0) {
-    console.log("No a seleccionado ningun taxon");
-    mostrarNotificacion(
-      "Alerta",
-      "Se debe selccionar al menos un taxón a relacionar",
-      "error",
-      7000
-    );
-  }
+        return true;
+    }
 
-  console.log("Este es tipo Relacion: ", tipRelSelec.value);
     const validacionBasonimos = async () => {
 
       let filtraVal = props.taxonAct.relaciones;
@@ -812,6 +895,7 @@ const traspasaDatos = async () => {
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 1");
             return false;
       }
 
@@ -825,27 +909,30 @@ const traspasaDatos = async () => {
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 2");
             return false;
       }
 
-      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica === taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la categoria taxonomica no es la misma en ambos taxones",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 3");
             return false;
       }
 
-      if((props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.idNivel3 === 0) ||
-         (taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
+      if(!(props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.IdNivel3 === 0) ||
+         !(taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
           mostrarNotificacion(
                 "Alerta",
                 "No se puede generar la relación porque la debe ser género o superior",
                 "error",
                 7000
             ); 
+            console.log("Entre al error equivalencia 4");
             return false;
       }
 
@@ -870,21 +957,107 @@ const traspasaDatos = async () => {
             return false;
       }
 
-      if(!(gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-          gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
-          !(gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-           gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))){
+      if(!(
+              (gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+               gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
+              (gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
+               gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))
+            )
+          ){
+            console.log("Entre a la validacion en el vue");
             mostrarNotificacion(
                 "Alerta",
-                "El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
+                "***El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
                 "error",
                 7000
             ); 
             return false;
            }
+
+      return true;
     }
 
-    const altaRelacion = async() => {
+    const validacionParental = async () => {
+      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != "híbrido"){
+         mostrarNotificacion(
+                "Alerta",
+                "No es posible asociar un parental a un taxón que no es un híbrido",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+
+      const categPerm = ["género", "especie", "híbrido"];
+    
+          if(!categPerm.includes(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica) || 
+             !categPerm.includes(taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica)){
+           mostrarNotificacion(
+                "Alerta",
+                "No es posible asociar un parental a un taxón que su categoria taxonomica sea diferente de género o especie",
+                "error",
+                7000
+            ); 
+            return false; 
+      }
+
+      return true;
+    }
+
+    const validaHomonimos = async () => {
+      console.log("Este es el taxon Actual: ", props.taxonAct);
+      console.log("Este es el taxon relacionado: ", taxonActRel.value);
+      if(props.taxonAct.id === taxonActRel.value.id){
+        console.log("Entre a la validacion de taxones que son el mismo id");
+        mostrarNotificacion(
+                "Alerta",
+                "Está tratando de relacionar el nombre a sí mismo, lo cual no es posible",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+      if(props.taxonAct.completo.TaxonCompleto != taxonActRel.value.completo.TaxonCompleto){
+        mostrarNotificacion(
+                "Alerta",
+                "Está tratando de relacionar dos taxones con diferente nombre esto no es posible",
+                "error",
+                7000
+            ); 
+            return false;
+      }
+      return true;
+    }
+
+  switch (tipRelSelec.value) {
+    case 1:
+      relacionar = validacionSinonimos();
+      if (relacionar) {
+        console.log("Entre a la funcion de para dar de alta las relaciones");
+        altaRelacion();
+      }
+      break;
+  }
+
+
+
+    // Inicialización de datos
+    onMounted( async () => {
+        const response = await axios.get('/cargar-tipoRel');
+
+        if (response.status === 200) {            
+            tiposRel.value = response.data;
+            tiposRel.value.unshift({
+                label: "Todos",
+                value: 0
+            });
+        }
+       await cargaGrupos();
+        gruposTax.value = props.gruposTax;
+        taxonAct.value = props.taxonAct;
+    });
+
+const altaRelacion = async() => {
         
         const params= {
                         taxonAct: props.taxonAct, 
@@ -931,109 +1104,6 @@ const traspasaDatos = async () => {
           loading.close();
         }      
     }
-
-  switch (tipRelSelec.value) {
-    case 1:
-      relacionar = validacionSinonimos();
-      if (relacionar) {
-        console.log("Entre a la funcion de para dar de alta las relaciones");
-        altaRelacion();
-      }
-      break;
-  }
-
-
-
-    // Inicialización de datos
-    onMounted( async () => {
-        const response = await axios.get('/cargar-tipoRel');
-
-        if (response.status === 200) {            
-            tiposRel.value = response.data;
-            tiposRel.value.unshift({
-                label: "Todos",
-                value: 0
-            });
-        }
-       await cargaGrupos();
-        gruposTax.value = props.gruposTax;
-        taxonAct.value = props.taxonAct;
-    });
-
-const validacionSinonimos = async () => {
-
-  const contValido = props.taxonAct.relaciones.some(rel => rel.Nombrecompleto?.estatus === "Válido" ||
-    rel.Nombrecompleto?.estatus === "Correcto");
-  //Se valida que el taxon no sea del mismo estatus 
-  if (taxonActRel.value.estatus === props.taxonAct.estatus) {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual y el taxon a relacionar o pueden tener el mismo estatus",
-      "error",
-      7000
-    );
-    return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-  } else if ((props.taxonAct.estatus === "Sinonimo" && contValido) && taxonActRel.value.estatus === 'Válido') {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual ya tiene una relacion con un taxon válido ",
-      "error",
-      7000
-    );
-    return false;//Se valida que el taxon de origen no sea de estatus ND
-  } else if (props.taxonAct.estatus === "ND") {
-    mostrarNotificacion(
-      "Alerta",
-      "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
-      "error",
-      7000
-    );
-    return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-  } else if (props.taxonAct.completo.categoria.IdNivel1 < 5 || taxonActRel.value.completo.categoria.IdNivel1 < 5) {
-    mostrarNotificacion(
-      "Alerta",
-      "No se puede tener relaciones de sinonimia en taxones de cateria superior a familia",
-      "error",
-      7000
-    );
-    return false;
-  }
-
-  return true;
-}
-
-const altaRelacion = async () => {
-
-  console.log("Si voy a dar de alta la relacion entre taxones");
-  const params = {
-    taxonAct: props.taxonAct,
-    taxonActRel: taxonActRel.value,
-    tipRelacion: tipRelSelec.value
-  };
-
-  console.log("Estos son los parametros: ", params);
-
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  const response = await axios.post('/alta-RelacionesTax', { params });
-  console.log("Esta es la respuesta del servidor: ", response);
-  /*
-  if (response.status === 200) {
-      
-      data.value = response.data[0];
-      totalItems.value = response.data[1].total;
-      paginas.value = response.data[1].last_page;
-  }
-  else {
-      console.log("Se presentó un error en la recuperación de los datos");
-  }*/
-  loading.close();
-}
 
 const mostrarNotificacion = (
   titulo,
@@ -1082,6 +1152,7 @@ onMounted(async () => {
   }
   await cargaGrupos();
   gruposTax.value = props.gruposTax;
+  //habObservaciones.value = true;
 });
 
 watchEffect(() => {
