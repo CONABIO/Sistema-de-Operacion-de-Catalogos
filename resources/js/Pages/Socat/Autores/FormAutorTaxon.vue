@@ -118,8 +118,6 @@ const cerrarDialogo = () => {
                             v-model="autorTax.grupoTaxonomico"></el-input>
                     </el-form-item>
                 </el-form>
-
-
             </div>
         </div>
     </DialogGeneral>

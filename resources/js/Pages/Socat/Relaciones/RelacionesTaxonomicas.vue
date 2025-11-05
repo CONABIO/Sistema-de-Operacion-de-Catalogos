@@ -3,10 +3,13 @@
     <el-card class="box-card">
       <div class="common-layout">
         <el-container style="height: 90vh;">
-          <el-header style="background: #f5f5f5; padding: 10px; flex-shrink: 0;">
+          <el-header style="background: #f5f5f5; padding: 10px; flex-shrink: 0; display: flex; justify-content: space-between;">
             <el-row :gutter="10" align="middle">
               <h2 class="titulo">Relaciones taxonómicas</h2>
             </el-row>
+            <div class="form-actions">
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+            </div> 
           </el-header>
           <el-main style="padding: 15px; background: #fff; overflow: hidden;">
             <el-row>
@@ -194,12 +197,12 @@
     </el-card>
 
     <DialogForm v-model="dialogFormVisibleCat" :botCerrar="false" :pressEsc="false" :width="'35%'">
-      <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
+      <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog('grupos')" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
       <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
-                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog" />
+                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
     <Teleport to="body">
@@ -233,6 +236,7 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import axios from 'axios';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const { permisos } = usePermisos();
 
@@ -277,6 +281,8 @@ const observacionesRel = ref('');
 const relacionAct = ref([]);
 const habCambioSinBas = ref(true);
 const taxBiblio = ref([]);
+
+const emit = defineEmits(['cerrar']);
 
 // Datos de ejemplo para el transfer
 const leftValue = ref([]);
@@ -452,8 +458,6 @@ const abrirBiblio = async () => {
   taxActBiblio.value = props.taxonAct;
 
   dialogFormVisibleBiblio.value = true;
-
-  console.log("Estos son los taxones de bibliografia: ", taxBiblio.value);
 }
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -622,8 +626,25 @@ const recibirGrupos = (payload) => {
 };
 
 // Función para cerrar diálogo
-const cerrarDialog = (valor) => {
-  dialogFormVisibleCat.value = valor;
+const cerrarDialog = async(valor) => {
+
+  if(valor === grupos)
+  {
+    dialogFormVisibleCat.value = false;
+  }else{
+    const params= {
+                  taxAct: props.taxonAct.id
+                };   
+    
+    const response = await axios.get('/carga-RelacionesTax', { params });
+    
+    tablaNomenclatura.value = response.data;
+    totalRegNom.value = response.data.length;
+    habTraspaso.value = false;
+
+    dialogFormVisibleBiblio.value = false;
+  }
+  
 };
 
 const Guardar = async() => {
@@ -720,8 +741,6 @@ const Guardar = async() => {
             tablaNomenclatura.value = [];
             totalRegNom.value = 0;
         }
-
-        console.log("Esto es lo que hay en la tabla Nomenclatura: ", tablaNomenclatura.value);
     };
 
     const buscaTipoRelacion = async(tiposRelacion, valor) => {
@@ -1036,8 +1055,6 @@ const Guardar = async() => {
     }
 
     const validaHomonimos = async () => {
-      console.log("Este es el taxon Actual: ", props.taxonAct);
-      console.log("Este es el taxon relacionado: ", taxonActRel.value);
       if(props.taxonAct.id === taxonActRel.value.id){
         console.log("Entre a la validacion de taxones que son el mismo id");
         mostrarNotificacion(
@@ -1188,6 +1205,7 @@ const Guardar = async() => {
               backgroud: 'rgba(255,255,255,0.85)',
           });
           try{
+
             const response = await axios.post('/alta-RelacionesTax', { params });
 
             mostrarNotificacion(
@@ -1254,6 +1272,11 @@ const Guardar = async() => {
     }
     return false;
   };
+
+  const cerrarDialogo = () => {
+      console.log("Entre a la funcion para cerrar el dialog");
+        emit('cerrar');
+    };
 
   // Inicialización de datos
   onMounted(async () => {

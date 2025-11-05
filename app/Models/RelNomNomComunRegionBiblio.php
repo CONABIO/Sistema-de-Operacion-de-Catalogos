@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelNomNomComunRegionBiblio extends Model
 {
@@ -18,5 +19,5 @@ class RelNomNomComunRegionBiblio extends Model
     protected $table = 'RelNomNomComunRegionBiblio';
 
     //Se asigna el nombre del campo llave primaria
-    protected $primaryKey='IdNombre';
+    protected $primaryKey = ['IdNomComun','IdNombre','IdRegion','IdBibliografia'];
 }

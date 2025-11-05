@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelNombreRegion extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
 
@@ -18,5 +19,5 @@ class RelNombreRegion extends Model
     protected $table = 'RelNombreRegion';
 
     //Se asigna el nombre del campo llave primaria
-    protected $primaryKey='IdNombre';
+    protected $primaryKey=['IdNombre', 'IdRegion', 'IdTipoDistribucion'];
 }
