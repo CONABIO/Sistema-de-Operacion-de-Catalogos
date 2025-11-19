@@ -125,6 +125,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/actualiza-RelBasSin', [RelNombresController::class, 'relBasSin']);
     Route::put('/actualiza-RelacionesBiblio', [RelNombresController::class, 'updRelBiblio']);
     Route::delete('/elimina-RelacionesBiblio', [RelNombresController::class, 'destroyBiblio']);
+    Route::post('/alta-RelacionesBiblio', [RelNombresController::class, 'altaRelacionesBiblio']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);

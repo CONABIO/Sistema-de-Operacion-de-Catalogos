@@ -65,9 +65,11 @@
                                         :opciones-filtro = "opcionesFiltroNomenclatura"
                                         :origen = "true"
                                         :mostrarAcci = "true"
+                                        :mostrarNuevo = "true"
                                         @eliminar-item = "manejarEliminarBiblio"
                                         @editar-item = "manejarEditarBiblio"
-                                        @row-click = "manejaClickObs">
+                                        @row-click = "manejaClickObs"
+                                        @nuevo-item="crear">
                                         <template #expand-column>
                                             <el-table-column type="expand">
                                                 <template #default="{ row }">
@@ -141,6 +143,10 @@
       </div>
     </el-card>
 
+    <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="false" :pressEsc="false" :width="'83%'">
+      <Bibliografia :isModal = "true"  @cerrarBiblio = "cerrarRelBiblio" />
+    </DialogForm>
+
     <Teleport to="body">
       <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
         :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
@@ -157,6 +163,8 @@
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
     import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+    import Bibliografia from '@/Pages/Socat/Bibliografia/indexBibliografia.vue';
+    import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 
     // Props del componente
     const props = defineProps({
@@ -189,6 +197,8 @@
     const relacionAct = ref([]);
     const idBibliografia = ref(0);
     const tablaRelaciones = ref([]);
+    const dialogFormVisibleBiblio = ref(false);
+    const habNuevaBiblio = ref(false);
 
     const emit = defineEmits(['cerrar']);
 
@@ -211,13 +221,14 @@
         notificacionVisible.value = false;
     };
 
-    const manejaClick = (row) => {
+    const manejaClick = (row) => {        
         tipRelacion.value = row.TipoRelacion.texto;
         taxonRelacionado.value = row.Nombrecompleto.texto; 
         bibliografiaRel.value = row.bibliografia;
         observacionRel.value = row.bibliografia.ObsRelBiblio;
         habObservaciones.value = true;
         relacionAct.value = row.TipoRelacion.relCompleta;
+        habNuevaBiblio.value = true;
     }
 
     const manejaClickObs = (row) => {
@@ -225,13 +236,46 @@
         citaCompleta.value = row.CitaCompleta
     }
 
+    const crear = () => {
+        if(taxonRelacionado.value != ""){
+            dialogFormVisibleBiblio.value = true;
+        }
+        else{
+            mostrarNotificacionError('Aviso', `Se debe seleccionar al menos una relación.`, 'success');
+        }
+    };
+
+    const cerrarRelBiblio = async (datos) =>{
+
+        const loading = ElLoading.service({
+            lock: true,
+            text: "Loading",
+            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+            backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+        dialogFormVisibleBiblio.value = false;
+        
+        try{
+        const response = await axios.post('/alta-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
+                                                                             biblioRel: datos,
+                                                                             taxAct: props.taxonAct.id}});
+
+        tablaRelaciones.value = response.data;
+        bibliografiaRel.value = [];
+                                                                             
+        } catch (error) {
+            console.log("Error 422:", error.response.data);
+        }
+        
+        loading.close();
+    };
+
     const cerrarDialogo = () => {
         emit('cerrar');
     };
 
     const manejarEliminarBiblio = (row) => {
-        console.log("Eliminar bibliografia");
-        console.log(row);
         idBibliografia.value = row.IdBibliografia;
 
          const procederConEliminacion = async () => {
@@ -352,7 +396,6 @@
     // Inicialización de datos
     onMounted(async () => {
         tablaRelaciones.value = props.relaciones;
-        console.log("Este es el valor de relaciones", tablaRelaciones.value);
     });
 
 </script>

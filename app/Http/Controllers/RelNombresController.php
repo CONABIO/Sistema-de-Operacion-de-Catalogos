@@ -21,6 +21,7 @@ use App\Http\Requests\RequestActualizaNombreRel;
 use App\Http\Requests\RequestActualizaRelacionBiblio;
 use App\Http\Requests\RequestEliminaRelacionBiblio;
 use App\Http\Requests\RequestActualizaBasSin;
+use App\Http\Requests\RequestAltaRelacionBiblio;
 use Exception;
 
 
@@ -261,6 +262,17 @@ class RelNombresController extends Controller
 
             $relaciones = Nombre::cargaRelaciones($request->taxAct)
                             ->get();  
+            
+            $relaciones = $relaciones->map(function ($relacion){
+                $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                    $relacion['RelIdNom'],
+                    $relacion['RelIdNomRel'],
+                    $relacion['IdTipoRelacion']
+                )->get();
+                $relacion->bibliografia = $bibliografia;
+
+                return $relacion;
+            });
 
             $reldata = $this->relacionNombre($relaciones);
 
@@ -292,6 +304,17 @@ class RelNombresController extends Controller
 
             $relaciones = Nombre::cargaRelaciones($data['taxAct'])
                             ->get();  
+
+            $relaciones = $relaciones->map(function ($relacion){
+                $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                    $relacion['RelIdNom'],
+                    $relacion['RelIdNomRel'],
+                    $relacion['IdTipoRelacion']
+                )->get();
+                $relacion->bibliografia = $bibliografia;
+
+                return $relacion;
+            });
 
             $reldata = $this->relacionNombre($relaciones);
 
@@ -386,6 +409,55 @@ class RelNombresController extends Controller
         }      
     }
 
+    public function altaRelacionesBiblio(RequestAltaRelacionBiblio $request){
+
+        $data = $request->all();
+
+        $idNombre = $data['data']['relCompleta']['relIdNombre'];
+        $idNombreRel = $data['data']['relCompleta']['relIdNombreRel'];
+        $idTipoRel = $data['data']['relCompleta']['tipoRel'];
+        $idsBiblio = $data['data']['biblioRel'];
+        $taxAct = $data['data']['taxAct'];
+
+        try{
+            DB::beginTransaction();
+
+            foreach($idsBiblio as $clave => $valor){
+
+                $rel = RelacionBibliografia::create([
+                    'IdNombre' => $idNombre,
+                    'IdNombreRel' => $idNombreRel,
+                    'IdTipoRelacion' => $idTipoRel,
+                    'IdBibliografia' => $valor
+                ]);
+            }
+           
+            DB::commit();
+
+            $relaciones = Nombre::cargaRelaciones($taxAct)
+                            ->get();  
+
+            $relaciones = $relaciones->map(function ($relacion){
+                $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                    $relacion['RelIdNom'],
+                    $relacion['RelIdNomRel'],
+                    $relacion['IdTipoRelacion']
+                )->get();
+                $relacion->bibliografia = $bibliografia;
+
+                return $relacion;
+            });
+
+            $reldata = $this->relacionNombre($relaciones);
+
+            return $reldata;
+
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
     public function relBasSin(RequestActualizaBasSin $request){
         
         $data = $request->input('data');
@@ -405,6 +477,17 @@ class RelNombresController extends Controller
 
             $relaciones = Nombre::cargaRelaciones($data['taxAct'])
                             ->get();  
+
+            $relaciones = $relaciones->map(function ($relacion){
+                $bibliografia = RelacionBibliografia::bibliografiaRelacion(
+                    $relacion['RelIdNom'],
+                    $relacion['RelIdNomRel'],
+                    $relacion['IdTipoRelacion']
+                )->get();
+                $relacion->bibliografia = $bibliografia;
+
+                return $relacion;
+            });
 
             $reldata = $this->relacionNombre($relaciones);
 

@@ -18,7 +18,8 @@ const props = defineProps({
   idKey: { type: String, required: false },
   origen: { type: Boolean, default: false },
   mostrarBiblio: { type: Boolean, default: false },
-  mostrarAcci: { type: Boolean, default: false }
+  mostrarAcci: { type: Boolean, default: false },
+  mostrarNuevo: { type: Boolean, default:false },
 });
 
 const filtros = ref({});
@@ -120,7 +121,8 @@ const emit = defineEmits([
   'row-click',
   'eliminar-item',
   'editar-item',
-  'abrir-Biblio'
+  'abrir-Biblio',
+  'nuevo-item'
 ]);
 
 const onEliminar = (row) => emit('eliminar-item', row);
@@ -128,6 +130,8 @@ const onEliminar = (row) => emit('eliminar-item', row);
 const onEditar = (item) => emit('editar-item', item);
 
 const onBiblio = () => emit('abrir-Biblio'); 
+
+const onNuevo = () => emit('nuevo-item');
 
 watch(tipoDeBusqueda, () => {
     onFiltroInput(); 
@@ -145,6 +149,11 @@ watch(tipoDeBusqueda, () => {
           <slot name="header-title">
             <TipoBusqueda v-model="tipoDeBusqueda" />
           </slot>
+        </div>
+        <div class="left" >
+          <div class="form-actions" v-show="props.mostrarNuevo">
+            <NuevoButton @crear="onNuevo" v-show="habNuevaBiblio"/>
+          </div>
         </div>
         <div class="left">
           <slot name="header-actions">

@@ -447,17 +447,26 @@ const manejaClick = (row) => {
 }
 
 const abrirBiblio = async () => {
-  
-  const params= {
-                  taxAct: props.taxonAct.id
-                };       
-  const response = await axios.get('/carga-RelacionesTax', { params });
+  console.log("Voy a abrir la bibliografia completa solo si existe un valor seleccionado ");
+  console.log(tipRel.value.length);
 
-  taxBiblio.value = response.data;
+  if(tipRel.value.length > 0)
+  {
+    const params= {
+                    taxAct: props.taxonAct.id
+                  };       
+    const response = await axios.get('/carga-RelacionesTax', { params });
 
-  taxActBiblio.value = props.taxonAct;
+    taxBiblio.value = response.data;
 
-  dialogFormVisibleBiblio.value = true;
+    taxActBiblio.value = props.taxonAct;
+
+    dialogFormVisibleBiblio.value = true;
+  }else{
+    mostrarNotificacionError("Bibliografia", 
+                             "Se debe seleccionar un tipo de relación"),
+                             "Error"
+  }
 }
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {

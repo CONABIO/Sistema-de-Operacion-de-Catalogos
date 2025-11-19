@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose } from '@element-plus/icons-vue';
@@ -8,6 +8,7 @@ import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
 const props = defineProps({
   columnas: { type: Array, required: true },
@@ -15,7 +16,8 @@ const props = defineProps({
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 100 },
   endpoint: { type: String, required: true },
-  idKey: { type: String, required: true }
+  idKey: { type: String, required: true },
+  botCerrar: { type:Boolean, default:false }
 });
 
 const emit = defineEmits([
@@ -25,10 +27,12 @@ const emit = defineEmits([
   'eliminar-item',
   'nuevo-item',
   'row-dblclick',
-  'row-click'
+  'row-click', 
+  'traspasaBiblio',
+  'cerrar'
 ]);
 
-
+const accionModal = computed(() => props.botCerrar ? "cerrar" : "salir ")
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
@@ -71,6 +75,7 @@ const fetchData = async () => {
     console.error(`Error en TablaFiltrable (${props.endpoint}):`, error);
     emit('update:datos', []);
     emit('update:totalItems', 0);
+
   }
 };
 
@@ -107,7 +112,11 @@ const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
 const onRowDblClick = (row) => emit('row-dblclick', row); 
+const onRecuperaMarcado = () => emit('traspasaBiblio');
 
+const cerrarModal = () =>{
+   emit('cerrar');
+};
 
 onMounted(fetchData);
 
@@ -125,8 +134,9 @@ defineExpose({ fetchData });
         </div>
         <div class="left" >
           <div class="form-actions">
+               <BotonTraspaso @traspasa="onRecuperaMarcado"/>
                <NuevoButton @crear="onNuevo" />
-               <BotonSalir />
+               <BotonSalir :accion="accionModal" @salir="cerrarModal"/>
             </div>
         </div>
       </div>
