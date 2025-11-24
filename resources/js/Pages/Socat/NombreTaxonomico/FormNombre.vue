@@ -8,14 +8,12 @@
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <!-- Texto del taxón -->
               <el-col :span="20">
                 <span class="subtitulo" style="color: red;">
                   Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
                 </span>
               </el-col>
 
-              <!-- Botones -->
               <el-col :span="2" style="display: flex;">
                 <el-space>
                   <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
@@ -371,7 +369,6 @@ const page = usePage();
 
 const taxon = ref('');
 
-//Funcion para validae la visbilidad de los objetos 
 const hasPermisos = (etiqueta, modulo) => {
     
     const permiso = permisos.find(item => item.NombreModulo === etiqueta);
@@ -476,7 +473,6 @@ const notificacionVisible = ref(false);
 
 const emit = defineEmits(['regresaTaxMod', 'cerrar', 
                           'resultadoAlta', 'resultadoBaja']);
-//Se declara una referencia a nuestro formulario
 const formRef = ref(null);
 const nombreTax = reactive({
   nombreTaxon: '',
@@ -616,7 +612,6 @@ const comentarios_Snib = () => {
 };
 
 const cargaListGrp = async () => {
-  //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
   const response = await axios.get('/carga-list-grp');
 
   if (response.status === 200) {
@@ -880,7 +875,6 @@ const CambioEstatus = () => {
   }
 
   axios.get("/valCamEstatus", { params }).then((response) => {
-    // Actualiza correctamente las variables ref
     switch (props.taxonAct.completo.Estatus) {
       case 1:
         estCor.value = response.data != 1 ? true : false;
@@ -995,7 +989,6 @@ const borrarDatos = async () => {
 
 };
 
-//Se abre el dialog para lo autores 
 const carga_autor = () => {
   dialogFormVisibleAutor.value = true;
 };
@@ -1056,7 +1049,6 @@ const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-//Función para guardar los cambios en el taxón
 const Guardar = async () =>{
   
   if (!formRef.value) return;
@@ -1252,9 +1244,7 @@ watch(
   ()=> props.taxonAct,
   (newValue, oldValue) => {
     carga_inicio();
-    //console.log("Entre al watch");
   },
-  //carga_inicio(),
   { deep: true, inmediate: true }
 );
 
@@ -1273,12 +1263,11 @@ onMounted(() => {
 <style scoped>
 .form-nombre-container {
   padding: 20px;
-  /* Otros estilos si los tienes */
 }
 
 .header {
     text-align: left;
-    padding: 0.5rem; /* Reducir el padding en móviles */
+    padding: 0.5rem; 
     background-color: #f5f5f5;
     border-bottom: 1px solid #ddd;
   }
@@ -1310,14 +1299,11 @@ onMounted(() => {
 
 .filter-tree .el-tree-node.is-current .el-tree-node__children {
   background-color: transparent !important;
-  /* Sin fondo en los nodos hijos */
   color: inherit !important;
-  /* Mantener el color original de los hijos */
 }
 
 .highlight-node {
   color: #a52f2f !important;
-  /* Fondo */
 }
 
 .greenClass {
@@ -1337,13 +1323,9 @@ onMounted(() => {
   border: 1px solid #dcdfe6;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  /* Añade un relleno para que no se vea tan estrecho */
   min-width: 190px;
-  /* Ajusta el ancho mínimo */
   height: auto;
-  /* Asegúrate de que la altura se ajuste al contenido */
   box-sizing: border-box;
-  /* Asegura que el padding no afecte el ancho del menú */
 }
 
 .el-menu-item {
@@ -1387,8 +1369,6 @@ onMounted(() => {
   margin-right: 2px;
   vertical-align: middle;
 }
-
-/* --------------------------------------------------------- */
 
 .custom-form-item .el-form-item__content {
   display: flex;

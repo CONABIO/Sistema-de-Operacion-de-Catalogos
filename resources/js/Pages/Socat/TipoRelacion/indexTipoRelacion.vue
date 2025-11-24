@@ -784,38 +784,40 @@ const cerrarDialogo = () => {
                 <div class="dialog-header">
                     <h3>{{ modalTitle }}</h3>
                 </div>
-                <div class="form-actions">
-                    <GuardarButton @click="guardarDesdeModal" />
-                    <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
-                </div>
-                <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
+                <div class="content-wrapper-custom">
+                    <div class="form-actions">
+                        <GuardarButton @click="guardarDesdeModal" />
+                        <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+                    </div>
+                    <div class="dialog-body-container">
+                        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                            @submit.prevent="guardarDesdeModal">
 
-                        <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                            <el-radio-group v-model="opcionNivel">
-                                <el-radio value="mismo">Mismo nivel</el-radio>
-                                <el-radio value="inferior">Nivel inferior</el-radio>
-                            </el-radio-group>
-                        </div>
+                            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                                <el-radio-group v-model="opcionNivel">
+                                    <el-radio value="mismo">Mismo nivel</el-radio>
+                                    <el-radio value="inferior">Nivel inferior</el-radio>
+                                </el-radio-group>
+                            </div>
 
-                        <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
-                            <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                maxlength="255" show-word-limit />
-                        </el-form-item>
+                            <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
+                                <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                                    maxlength="255" show-word-limit />
+                            </el-form-item>
 
-                        <el-form-item prop="Direccionalidad" label="Direccionalidad:">
-                            <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
-                                style="width: 100%;">
-                                <el-option label="1 - Unidireccional" :value="1" />
-                                <el-option label="2 - Reciproca" :value="2" />
-                                <el-option label="3 - No aplica" :value="3" />
-                            </el-select>
-                        </el-form-item>
+                            <el-form-item prop="Direccionalidad" label="Direccionalidad:">
+                                <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
+                                    style="width: 100%;">
+                                    <el-option label="1 - Unidireccional" :value="1" />
+                                    <el-option label="2 - Reciproca" :value="2" />
+                                    <el-option label="3 - No aplica" :value="3" />
+                                </el-select>
+                            </el-form-item>
 
 
-                    </el-form>
+                        </el-form>
+                    </div>
                 </div>
             </DialogGeneral>
 
@@ -997,10 +999,22 @@ const cerrarDialogo = () => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.content-wrapper-custom {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+    /* La sombra que faltaba */
+    max-height: 65vh;
+    overflow-y: auto;
 }
 
 .dialog-header h3 {
