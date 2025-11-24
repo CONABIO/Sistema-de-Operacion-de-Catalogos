@@ -12,6 +12,3 @@ import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
     </AppLayout>
 </template>
 
-<style scoped>
-
-</style>
