@@ -7,10 +7,9 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use App\Models\Nombre;
-use App\Models\Tipo_Relacion;
 use Illuminate\Support\Facades\DB;
 
-class RequestActualizaNombreRel extends FormRequest   
+class RequestAltaRelacionBiblio extends FormRequest   
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -38,7 +37,7 @@ class RequestActualizaNombreRel extends FormRequest
                                             $fail("El $attribute no existe en la base de datos.");
                                         }
                                     }],
-            'data.relCompleta.relIdNombreRel' => ['required','integer', 
+            'data.relCompleta.relIdNombreRel' => ['required','integer',
                                     function ($attribute, $value, $fail) {
                                         $exists = DB::connection('catcentral')
                                                     ->table('Nombre')
@@ -49,7 +48,7 @@ class RequestActualizaNombreRel extends FormRequest
                                         }
                                     }],
             'data.relCompleta.tipoRel' => ['required','integer', 
-                                    function ($attribute, $value, $fail) {
+                                function ($attribute, $value, $fail) {
                                         $exists = DB::connection('catcentral')
                                                     ->table('Tipo_Relacion')
                                                     ->where('IdTipoRelacion', $value)
@@ -58,8 +57,21 @@ class RequestActualizaNombreRel extends FormRequest
                                             $fail("El $attribute no existe en la base de datos.");
                                         }
                                     }],
+            'data.biblioRel' => ['required','array', 'min:1'],
+            
+            'data.biblioRel.*' => ['integer',
+                        function ($attribute, $value, $fail) {
+                                        $exists = DB::connection('catcentral')
+                                                    ->table('Bibliografia')
+                                                    ->where('IdBibliografia', $value)
+                                                    ->exists();
+                                        if (!$exists) {
+                                            $fail("El $attribute no existe en la base de datos.");
+                                        }
+                                    }],
+
             'data.taxAct' => ['required','integer', 
-                                    function ($attribute, $value, $fail) {
+                        function ($attribute, $value, $fail) {
                                         $exists = DB::connection('catcentral')
                                                     ->table('Nombre')
                                                     ->where('IdNombre', $value)
@@ -67,22 +79,29 @@ class RequestActualizaNombreRel extends FormRequest
                                         if (!$exists) {
                                             $fail("El $attribute no existe en la base de datos.");
                                         }
-                                    }],
-            'data.observacion' => 'string|nullable'
+                                    }]
         ];
     }
 
     public function messages(): array
     {
         return [
-            'relIdNombre.required' => 'El campo IdNombre es obligatorio.',
-            'relIdNombre.integer'  => 'IdNombre debe ser un número.',
+            'data.relCompleta.relIdNombre.required' => 'El campo IdNombre es obligatorio.',
+            'data.relCompleta.relIdNombre.integer'  => 'IdNombre debe ser un número.',
 
-            'relIdNombreRel.required' => 'El campo IdNombreRel es obligatorio.',
-            'relIdNombreRel.integer'  => 'IdNombreRel debe ser un número.',
+            'data.relCompleta.relIdNombreRel.required' => 'El campo IdNombreRel es obligatorio.',
+            'data.relCompleta.relIdNombreRel.integer'  => 'IdNombreRel debe ser un número.',
 
-            'tipoRel.required' => 'El campo IdTipoRelalcion es obligatorio.',
-            'tipoRel.integer'  => 'IdTipoRelalcion debe ser un número.',
+            'data.relCompleta.tipoRel.required' => 'El campo IdTipoRelacion es obligatorio.',
+            'data.relCompleta.tipoRel.integer'  => 'IdTipoRelacion debe ser un número.',
+
+            'data.biblioRel.required' => 'Debe seleccionar al menos una bibliografía.',
+            'data.biblioRel.array'    => 'El campo bibliografía debe ser un arreglo.',
+
+            'data.biblioRel.*.integer' => 'Cada IdBibliografía debe ser un número.',
+
+            'data.taxAct.required' => 'El campo taxAct es obligatorio.',
+            'data.taxAct.integer'  => 'taxAct debe ser un número.',
         ];
     }
 }

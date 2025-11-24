@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelBiblioGrupoSCAT extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';
 
@@ -18,7 +19,7 @@ class RelBiblioGrupoSCAT extends Model
     protected $table = 'RelBiblioGrupoSCAT';
 
     //Se asigna el nombre del campo llave primaria
-    protected $primaryKey = 'IdBibliografia';
+    protected $primaryKey = ['IdBibliografia', 'IdGrupoSCAT'];
 
     //Se asignan los campos que podran ser actualizados
     //protected $guarded = [];

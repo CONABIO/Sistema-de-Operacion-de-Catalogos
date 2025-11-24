@@ -5,6 +5,8 @@ import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogRelaciones from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
+import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+import BibliografiaNombre from '@/Pages/Socat/Bibliografia/indexBibliografia.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import { ElMessageBox } from 'element-plus';
@@ -123,6 +125,9 @@ const tablaReferencias = ref([]);
 const currentPageNomenclatura = ref(1);
 const pageSizeNomenclatura = ref(2);
 
+const taxActBiblio = ref([]);
+const dialogFormVisibleBiblio = ref(false);
+const dialogFormVisibleBiblioNom = ref(false);
 
 const scrollbarHeight = ref('450px');
 const dialogWidth = ref('35%');
@@ -194,7 +199,28 @@ const resetFormNombre = () => {
 
 const closeDialog = () => {
   dialogFormVisibleAlta.value = false;
+};
+
+const closeDialogRel = async() => {
+  const loading = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+
+  const params= {
+                  taxAct: taxonAct.value.id
+                };
+
+  const response = await axios.get('/carga-RelacionesTax', { params });
+
+  tablaNomenclatura.value = response.data;
+
   dialogFormVisibleRel.value = false;
+
+  loading.close();
+
 };
 
 const cerrarDialog = (valor) => {
@@ -412,10 +438,17 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
       node.expanded = true;
 
     }
+
+    const params= {
+                  taxAct: draggingNode.id
+              };  
+    const responseNom = await axios.get('/carga-RelacionesTax', { params });
+
+    tablaNomenclatura.value = responseNom.data;
+
     loading.close();
   }
 
-  tablaNomenclatura.value = draggingNode.relaciones;
   totalRegNom.value = draggingNode.relaciones.length;
   tablaReferencias.value = draggingNode.referencias;
   totalRegRef.value = draggingNode.referencias.length
@@ -788,6 +821,75 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
 }
 
+const abrirBiblio = async () => {
+
+  if(taxonAct.value.id > 0)
+  {
+    taxActBiblio.value = props.taxonAct;
+
+    totalRegNom.value = tablaNomenclatura.value.length;
+
+    dialogFormVisibleBiblio.value = true;
+
+  }else{
+    mostrarNotificacionError("Bibliografia", 
+                             "Se debe seleccionar un tipo de relación"),
+                             "Error"
+  }
+}
+
+const abrirBiblioNombre = async() =>{
+  dialogFormVisibleBiblioNom.value = true;
+}
+
+const cerrarDialogBiblio = async() => {
+
+  const loading = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+
+    const params= {
+                  taxAct: taxonAct.value.id
+                };   
+    
+    const response = await axios.get('/carga-RelacionesTax', { params });
+    
+    tablaNomenclatura.value = response.data;
+
+    totalRegNom.value = response.data.length;
+
+    dialogFormVisibleBiblio.value = false;
+
+  loading.close();
+  
+};
+
+const cerrarRelNomBiblio = async(datos) => {
+  try{
+        const response = await axios.post('/alta-RelacionesBiblioNombre', { data: {biblioRel: datos,
+                                                                             taxAct: taxonAct.value.id}});
+
+        tablaReferencias.value = response.data;
+        totalRegRef.value = response.data.length
+                                                                             
+    } catch (error) {
+        console.log("Error 422:", error.response.data);
+    }
+
+  dialogFormVisibleBiblioNom.value = false;
+}
+
+const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 0;
+  notificacionVisible.value = true;
+};
+
 const handleNodeRightClick = (event, data, node) => {
 
   event.preventDefault(); 
@@ -1058,7 +1160,9 @@ const closeAscendantsDialog = () => {
                     <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
                     <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
                       :opciones-filtro="opcionesFiltroNomenclatura"
-                      @eliminar-item = "manejarEliminarRel">
+                      :mostrarBiblio = "true"
+                      @eliminar-item = "manejarEliminarRel"
+                      @abrir-Biblio = "abrirBiblio">
                     </TablaFiltrable>
 
                     <div v-if="totalRegNom > pageSizeNomenclatura"
@@ -1072,7 +1176,11 @@ const closeAscendantsDialog = () => {
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
                     <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"
-                      v-model:total-items="totalRegRef" :opciones-filtro="opcionesFiltroRef" :items-por-pagina="2">
+                      v-model:total-items="totalRegRef" 
+                      :opciones-filtro="opcionesFiltroRef" 
+                      :items-por-pagina="2"
+                      :mostrarBiblio = "true"
+                      @abrir-Biblio = "abrirBiblioNombre">
                     </TablaFiltrable>
                   </div>
                 </el-main>
@@ -1134,8 +1242,18 @@ const closeAscendantsDialog = () => {
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"
       custom-class="responsive-dialog relations-dialog">
       <DialogRelaciones :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
-        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" @cerrar="closeDialog">
+        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" 
+        @cerrar="closeDialogRel">
       </DialogRelaciones>
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura" 
+                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialogBiblio" />
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
+      <BibliografiaNombre :isModal = "true"  @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
     <Teleport to="body">

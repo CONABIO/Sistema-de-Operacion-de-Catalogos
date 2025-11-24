@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelNombreBiblio extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
 
@@ -18,5 +19,11 @@ class RelNombreBiblio extends Model
     protected $table = 'RelNombreBiblio';
 
     //Se asigna el nombre del campo llave primaria
-    protected $primaryKey='IdBibliografia';
+    protected $primaryKey=['IdNombre', 'IdBibliografia'];
+
+     protected $fillable = [
+        'IdNombre',
+        'IdBibliografia',
+        'Observaciones',
+    ];
 }

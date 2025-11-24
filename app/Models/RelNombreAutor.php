@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelNombreAutor extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
 
@@ -15,7 +16,7 @@ class RelNombreAutor extends Model
     protected $table = 'RelNombreAutor';
 
     //Se asigna el nombre del campo llave primaria
-    protected $primaryKey='IdNombre';
+    protected $primaryKey=['IdNombre', 'IdAutorTaxon'];
 
     //Con esta instruccion se omite el ingreso de fechas en el modelo 
     public $timestamps = false;

@@ -6,7 +6,6 @@ import CuerpoBibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vu
 <template>
     <AppLayout title="Catálogo de referencias bibliográficas"> 
         <CuerpoBibliografia /> 
-
     </AppLayout>
 </template>
 

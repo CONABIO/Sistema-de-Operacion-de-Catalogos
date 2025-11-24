@@ -12,12 +12,14 @@ use App\Models\GrupoScat;
 use App\Models\Nombre_Relacion;
 use App\Models\Scat;
 use App\Models\RelNombreAutor;
+use App\Models\RelNombreBiblio;
 use App\Helpers\Helpers;
 use Inertia\Inertia;
 use App\Http\Requests\RequestScat;
 use App\Http\Requests\RequestNombre;
 use App\Http\Requests\RequestRelNomAutor;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\RequestAltaRelBiblioNombre;
 use Exception;
 
 class NombresArbolController extends Controller
@@ -1068,6 +1070,38 @@ class NombresArbolController extends Controller
                 'status' => 404,
                 'message' => 'Registro no encontrado',
             ]);
+        }
+    }
+
+    public function altaBiblioNombre(RequestAltaRelBiblioNombre $request){
+        Log::info("Pase la validacion del request");
+        
+        $data = $request->all();
+        
+        $idsBiblio = $data['data']['biblioRel'];
+        $taxAct = $data['data']['taxAct'];
+
+        try{
+            DB::beginTransaction();
+
+            foreach($idsBiblio as $clave => $valor){
+
+                $rel = RelNombreBiblio::create([
+                    'IdNombre' => $taxAct,                    
+                    'IdBibliografia' => $valor
+                ]);
+            }
+           
+            DB::commit();
+
+            $referencias = Nombre::cargaReferencias($taxAct)
+                             ->get();
+ 
+            return $referencias;
+
+        }catch(\Exception $e){
+            DB::rollBack();
+            throw $e;
         }
     }
 }
