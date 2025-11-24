@@ -20,4 +20,10 @@ class RelNombreBiblio extends Model
 
     //Se asigna el nombre del campo llave primaria
     protected $primaryKey=['IdNombre', 'IdBibliografia'];
+
+     protected $fillable = [
+        'IdNombre',
+        'IdBibliografia',
+        'Observaciones',
+    ];
 }

@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/nombres-store', [NombresArbolController::class, 'store']);
     Route::put('/actualiza-nombre/{id}', [NombresArbolController::class, 'update']);
     Route::put('/baja-nombre/{id}', [NombresArbolController::class, 'bajaTax']);
+    Route::post('/alta-RelacionesBiblioNombre', [NombresArbolController::class, 'altaBiblioNombre']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);

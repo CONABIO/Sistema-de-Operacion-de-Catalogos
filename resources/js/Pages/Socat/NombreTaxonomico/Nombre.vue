@@ -6,6 +6,7 @@ import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogRelaciones from '@/Pages/Socat/Relaciones/RelacionesTaxonomicas.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+import BibliografiaNombre from '@/Pages/Socat/Bibliografia/indexBibliografia.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import { ElMessageBox } from 'element-plus';
@@ -123,6 +124,7 @@ const pageSizeNomenclatura = ref(2);
 
 const taxActBiblio = ref([]);
 const dialogFormVisibleBiblio = ref(false);
+const dialogFormVisibleBiblioNom = ref(false);
 
 const scrollbarHeight = ref('550px');
 const dialogWidth = ref('35%');
@@ -846,6 +848,10 @@ const abrirBiblio = async () => {
   }
 }
 
+const abrirBiblioNombre = async() =>{
+  dialogFormVisibleBiblioNom.value = true;
+}
+
 const cerrarDialogBiblio = async() => {
 
   const loading = ElLoading.service({
@@ -870,6 +876,21 @@ const cerrarDialogBiblio = async() => {
   loading.close();
   
 };
+
+const cerrarRelNomBiblio = async(datos) => {
+  try{
+        const response = await axios.post('/alta-RelacionesBiblioNombre', { data: {biblioRel: datos,
+                                                                             taxAct: taxonAct.value.id}});
+
+        tablaReferencias.value = response.data;
+        totalRegRef.value = response.data.length
+                                                                             
+    } catch (error) {
+        console.log("Error 422:", error.response.data);
+    }
+
+  dialogFormVisibleBiblioNom.value = false;
+}
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
   notificacionTitulo.value = titulo;
@@ -1120,7 +1141,11 @@ const abre_Relaciones = () => {
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
                     <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"
-                      v-model:total-items="totalRegRef" :opciones-filtro="opcionesFiltroRef" :items-por-pagina="2">
+                      v-model:total-items="totalRegRef" 
+                      :opciones-filtro="opcionesFiltroRef" 
+                      :items-por-pagina="2"
+                      :mostrarBiblio = "true"
+                      @abrir-Biblio = "abrirBiblioNombre">
                     </TablaFiltrable>
                   </div>
                 </el-main>
@@ -1167,6 +1192,10 @@ const abre_Relaciones = () => {
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
       <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura" 
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialogBiblio" />
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
+      <BibliografiaNombre :isModal = "true"  @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
     <Teleport to="body">
