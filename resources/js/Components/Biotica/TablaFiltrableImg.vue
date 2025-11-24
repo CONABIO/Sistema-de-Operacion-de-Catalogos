@@ -16,7 +16,9 @@ const props = defineProps({
   itemsPerPage: { type: Number, default: 4 },
   endpoint: { type: String, required: true },
   idKey: { type: String, required: false },
-  origen: { type: Boolean, default: false }
+  origen: { type: Boolean, default: false },
+  mostrarBiblio: { type: Boolean, default: false },
+  mostrarAcci: { type: Boolean, default: false }
 });
 
 const filtros = ref({});
@@ -24,6 +26,7 @@ const tipoDeBusqueda = ref('inicia');
 const currentPage = ref(1);
 const datosTabla = ref([]);
 const totalReg = ref(0);
+const selectedRow  = ref(null);
 
 let debounceTimer;
 const onFiltroInput = () => {
@@ -66,7 +69,12 @@ const onFiltroInput = () => {
 };
 
 const handleRowClick = (row, column, event) => {
+  selectedRow.value = row; 
   emit('row-click', row);
+}
+
+const rowClassName = ({ row }) =>{
+  return selectedRow.value === row ? 'selected-row' : '';
 }
 
 const limpiarFiltro = (campo) => {
@@ -106,65 +114,20 @@ watch(() => props.datos, (nuevosDatos) => {
 
 onMounted(() => {
   datosTabla.value = props.datos;
-  console.log(datosTabla.value);
 });
 
 const emit = defineEmits([
   'row-click',
   'eliminar-item',
-  'editar-item'
-]);
-
-/*
-const emit = defineEmits([
-  'update:datos',
-  'update:totalItems',
   'editar-item',
-  'eliminar-item',
-  'nuevo-item',
-  'row-dblclick',
-  'row-click'
+  'abrir-Biblio'
 ]);
 
-const currentPage = ref(1);
-const filtros = ref({});
-const sorting = ref({ prop: null, order: null });
-const tipoDeBusqueda = ref('inicia'); 
-
-watch(() => props.columnas, (nuevasColumnas) => {
-  const nuevosFiltros = {};
-  if (nuevasColumnas) {
-      nuevasColumnas.forEach(col => {
-        if (col.filtrable) {
-          nuevosFiltros[col.prop] = '';
-        }
-      });
-  }
-  filtros.value = nuevosFiltros;
-}, { immediate: true, deep: true });
-
-let debounceTimer;
-const onFiltroInput = () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    currentPage.value = 1;
-    //fetchData();
-  }, 500);
-};
-
-const handleSortChange = ({ prop, order }) => {
-  sorting.value.prop = prop;
-  sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-  currentPage.value = 1;
-  //fetchData();
-};
-
-const onRowDblClick = (row) => emit('row-dblclick', row);
-const onNuevo = () => emit('nuevo-item');
-*/
 const onEliminar = (row) => emit('eliminar-item', row);
 
 const onEditar = (item) => emit('editar-item', item);
+
+const onBiblio = () => emit('abrir-Biblio'); 
 
 watch(tipoDeBusqueda, () => {
     onFiltroInput(); 
@@ -187,7 +150,7 @@ watch(tipoDeBusqueda, () => {
           <slot name="header-actions">
             <!--NuevoButton @crear="onNuevo" /-->
             <el-tooltip class="item" effect="dark" content="Bibliografia" :placement= "toolPosicion">
-              <el-button circle type="primary">
+              <el-button @click="onBiblio" circle type="primary" v-show="props.mostrarBiblio">
                 <el-icon><Management /></el-icon>
               </el-button>
             </el-tooltip>
@@ -202,7 +165,8 @@ watch(tipoDeBusqueda, () => {
             :border="true" height="100%" 
             @sort-change="handleSortChange" 
             @row-dblclick="onRowDblClick" 
-            @row-click="handleRowClick">
+            @row-click="handleRowClick"
+            :row-class-name = "rowClassName">
             <slot name="expand-column"></slot>
 
             <el-table-column
@@ -269,7 +233,7 @@ watch(tipoDeBusqueda, () => {
                 </template>
             </el-table-column>
 
-            <el-table-column label="Acciones" width="120" align="center">
+            <el-table-column label="Acciones" width="120" align="center" v-if="props.mostrarAcci">
                 <template #default="{ row }">
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
@@ -415,4 +379,10 @@ watch(tipoDeBusqueda, () => {
 .header-filter-button {
   flex-shrink: 0;
 }
+
+:deep(.el-table__row.selected-row > td) {
+  background-color: rgb(203, 233, 200) !important; /* azul claro */
+  --el-table-tr-bg-color: #cce5ff !important;
+}
+
 </style>

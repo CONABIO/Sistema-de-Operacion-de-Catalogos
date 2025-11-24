@@ -193,7 +193,6 @@ class Nombre extends Model
                     ')
                     ->orderByRaw('Tipo_Relacion.IdTipoRelacion ASC, Nombre.NombreCompleto ASC');
             return $query;
-            dd($query->toSql());
         }
     }
 

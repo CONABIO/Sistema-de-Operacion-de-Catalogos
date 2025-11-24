@@ -111,7 +111,6 @@ class RequestBasonimos extends FormRequest
 
             //5. No se permite la relación si el taxón relacionado ya cuenta con un valido
             if ($contValidoAct > 0 || $conValidoRel > 0){
-                Log::info("No se paso la validacion 5");
                 $validator->errors()->add('validos', 'No se puede tener relaciones de basonimia si el taxón sininimo ya tiene una relación valida.');
             } 
         });

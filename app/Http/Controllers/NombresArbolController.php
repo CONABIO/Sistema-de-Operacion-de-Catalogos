@@ -23,8 +23,7 @@ use Exception;
 class NombresArbolController extends Controller
 {
 
-   public function index()
-    {
+   public function index(){
 
         $gruposTax = $this->filtroGruposSCAT();
 
@@ -36,9 +35,7 @@ class NombresArbolController extends Controller
         ]);
     }
 
-    public function fetchNomArb(Request $request)
-    {
-        
+    public function fetchNomArb(Request $request){
         $valor = $request->categ; 
 
         if($request->has('taxon'))
@@ -81,9 +78,17 @@ class NombresArbolController extends Controller
                                      'nombreRelVal','relNombreAutor',
                                      'relNombreRegion', 'scat.grupoScat'])
                              ->paginate(150);
+        }elseif($request->has('idNombre')){
+            $valor = $request->idNombre;
+
+            $nombres = Nombre::where('IdNombre', '=', $valor)
+                              ->with(['padre','hijos','ascendOblig','ascendObligHijos',
+                                      'relNombreCat','categoria','scat', 'nombreRel',
+                                      'nombreRelVal','relNombreAutor',
+                                      'relNombreRegion', 'scat.grupoScat'])
+                              ->get();
         }
         else{
-
             $nombres = Nombre::where('IdCategoriaTaxonomica', '=','1')
                               ->with(['padre','hijos','ascendOblig','ascendObligHijos',
                                       'relNombreCat','categoria','scat', 'nombreRel',
@@ -303,8 +308,7 @@ class NombresArbolController extends Controller
         return $reldata;
     }
 
-    public function filtroGruposSCAT()
-    {
+    public function filtroGruposSCAT(){
         $grupoSnib = GrupoScat::select('GrupoSNIB')
                               ->distinct()
                               ->Orderby('GrupoSNIB')                              
