@@ -447,18 +447,9 @@ const manejaClick = (row) => {
 }
 
 const abrirBiblio = async () => {
-  console.log("Voy a abrir la bibliografia completa solo si existe un valor seleccionado ");
-  console.log(tipRel.value.length);
 
   if(tipRel.value.length > 0)
   {
-    const params= {
-                    taxAct: props.taxonAct.id
-                  };       
-    const response = await axios.get('/carga-RelacionesTax', { params });
-
-    taxBiblio.value = response.data;
-
     taxActBiblio.value = props.taxonAct;
 
     dialogFormVisibleBiblio.value = true;

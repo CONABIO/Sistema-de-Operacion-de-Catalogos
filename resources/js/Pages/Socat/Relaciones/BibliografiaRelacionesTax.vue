@@ -221,7 +221,8 @@
         notificacionVisible.value = false;
     };
 
-    const manejaClick = (row) => {        
+    const manejaClick = (row) => {   
+        console.log("Esto es lo que tiene row: ", row);     
         tipRelacion.value = row.TipoRelacion.texto;
         taxonRelacionado.value = row.Nombrecompleto.texto; 
         bibliografiaRel.value = row.bibliografia;
@@ -397,6 +398,12 @@
     onMounted(async () => {
         tablaRelaciones.value = props.relaciones;
     });
+
+    watchEffect(() => {
+        tablaRelaciones.value = props.relaciones;
+        bibliografiaRel.value = [];
+    });
+
 
 </script>
 <style scope>
