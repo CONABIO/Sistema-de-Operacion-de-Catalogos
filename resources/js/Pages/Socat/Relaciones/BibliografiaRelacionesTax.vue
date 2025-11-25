@@ -163,7 +163,7 @@
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
     import BotonSalir from '@/Components/Biotica/SalirButton.vue';
-    import Bibliografia from '@/Pages/Socat/Bibliografia/indexBibliografia.vue';
+    import Bibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
     import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 
     // Props del componente
@@ -266,7 +266,8 @@
         bibliografiaRel.value = [];
                                                                              
         } catch (error) {
-            console.log("Error 422:", error.response.data);
+            mostrarNotificacionError('Aviso', error.response.data.message, 'error');
+            console.log("Error 422:", error.response.data.message);
         }
         
         loading.close();

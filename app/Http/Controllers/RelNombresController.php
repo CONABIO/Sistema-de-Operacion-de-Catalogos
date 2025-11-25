@@ -411,6 +411,8 @@ class RelNombresController extends Controller
 
     public function altaRelacionesBiblio(RequestAltaRelacionBiblio $request){
 
+        Log::info("Llegue al controlador para alta de bibliografia en las relaciones");
+        
         $data = $request->all();
 
         $idNombre = $data['data']['relCompleta']['relIdNombre'];

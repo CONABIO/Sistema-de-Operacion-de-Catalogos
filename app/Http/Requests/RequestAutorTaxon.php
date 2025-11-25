@@ -57,8 +57,7 @@ class RequestAutorTaxon extends FormRequest
      * Aqui se controla la respuesta en caso de que se presente un error 
      */
     protected function failedValidation(Validator $validator)
-    {
-        Log::info("Entre a esta seccion por no pasar taxonomico");
+    {        
         throw new HttpResponseException(response()->json([
             'status' => 422,
             'message' => 'Error de validación',
