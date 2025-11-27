@@ -114,12 +114,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/nombres-store', [NombresArbolController::class, 'store']);
     Route::put('/actualiza-nombre/{id}', [NombresArbolController::class, 'update']);
     Route::put('/baja-nombre/{id}', [NombresArbolController::class, 'bajaTax']);
+    Route::post('/alta-RelacionesBiblioNombre', [NombresArbolController::class, 'altaBiblioNombre']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
     Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
     Route::get('/carga-RelacionesTax', [RelNombresController::class, 'cargaRelaciones']);
+    Route::delete('/elimina-RelacionesTax', [RelNombresController::class, 'destroy']);
+    Route::put('/actualiza-RelacionesTax', [RelNombresController::class, 'update']);
+    Route::put('/actualiza-RelBasSin', [RelNombresController::class, 'relBasSin']);
+    Route::put('/actualiza-RelacionesBiblio', [RelNombresController::class, 'updRelBiblio']);
+    Route::delete('/elimina-RelacionesBiblio', [RelNombresController::class, 'destroyBiblio']);
+    Route::post('/alta-RelacionesBiblio', [RelNombresController::class, 'altaRelacionesBiblio']);
 
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
@@ -197,6 +204,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //________________________________________________________________________________________________
 
+
+    Route::post('/cargar-ascendentes', [NombresController::class, 'cargarAscendentes'])->name('nombres.cargarAscendentes');
 
 
 

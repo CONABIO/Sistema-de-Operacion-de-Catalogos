@@ -163,8 +163,10 @@ class Nombre extends Model
                         CategoriaTaxonomica.RutaIcono AS CategIcono,
                         Nombre_Relacion.FechaCaptura,
                         Nombre_Relacion.FechaModificacion,
-                        Nombre_Relacion.Observaciones
-                    ')
+                        Nombre_Relacion.Observaciones,
+                        Nombre_Relacion.IdNombre AS RelIdNom,
+                        Nombre_Relacion.IdNombreRel AS RelIdNomRel
+                        ')
                     ->join('CategoriaTaxonomica', 'Nombre.IdCategoriaTaxonomica', '=', 'CategoriaTaxonomica.IdCategoriaTaxonomica')
                     ->join('Nombre_Relacion', function($join){
                         $join->on('Nombre.IdNombre', '=', 'Nombre_Relacion.IdNombre')
@@ -186,7 +188,8 @@ class Nombre extends Model
                         Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono, Tipo_Relacion.Descripcion,
                         Nombre.IdNombre, Nombre.NombreCompleto, Nombre.Estatus, Nombre.SistClasCatDicc,
                         Nombre.NombreAutoridad, CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono,
-                        Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion, Nombre_Relacion.Observaciones
+                        Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion, 
+                        Nombre_Relacion.Observaciones, Nombre_Relacion.IdNombre, Nombre_Relacion.IdNombreRel
                     ')
                     ->orderByRaw('Tipo_Relacion.IdTipoRelacion ASC, Nombre.NombreCompleto ASC');
             return $query;

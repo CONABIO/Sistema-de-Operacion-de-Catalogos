@@ -71,13 +71,13 @@ class RequestEquivalencia extends FormRequest
             $filtraRel = $taxonRel['relaciones'];
 
             // === Conteo de registros validos ===
-            $contValidoAct = $filtraVal->contains(function ($rel) {
+            $contValidoAct = collect($filtraVal)->contains(function ($rel) {
                 return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
                         || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
             });
 
             // === Conteo de registros relacionados ===
-            $conValidoRel = $filtraRel->contains(function ($rel) {
+            $conValidoRel = collect($filtraRel)->contains(function ($rel) {
                 return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
                         || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
             });
@@ -90,6 +90,9 @@ class RequestEquivalencia extends FormRequest
             $nivelRelNiv1 = data_get($taxonRel, 'completo.categoria.IdNivel1');
             $nivelActNiv3 = data_get($taxonAct, 'completo.categoria.IdNivel3');
             $nivelRelNiv3 = data_get($taxonRel, 'completo.categoria.IdNivel3');
+
+            $idAct = data_get($taxonAct, 'id');
+            $idRel = data_get($taxonRel, 'id');
 
             $exists = DB::connection('catcentral')
                 ->table('Nombre_Relacion')
@@ -116,12 +119,12 @@ class RequestEquivalencia extends FormRequest
             }
 
             //Valida que la categoria taxonomica sea la misma en ambos taxones
-            if ($categoriaAct === $categoriaRel){
+            if ($categoriaAct != $categoriaRel){
                 $validator->errors()->add('validos', 'La categoria taxonomica no es la misma en ambos taxones');
             } 
 
             //Valida que ambos taxones sean de categoria genero o superiores
-            if(($nivelActNiv1 < 7 && $nivelActNiv3 === 0) || ($nivelRelNiv1 < 7 && $nivelRelNiv1 === 0)){
+            if(!($nivelActNiv1 < 7 && $nivelActNiv3 === 0) || ($nivelRelNiv1 < 7 && $nivelRelNiv1 === 0)){
                 $validator->errors()->add('validos', 'La categoria de ambos taxones debe ser genero o superior');
             }
         });

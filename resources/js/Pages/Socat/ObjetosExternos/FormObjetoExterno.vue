@@ -57,7 +57,7 @@ const manejarSeleccionArchivo = (event) => {
                 form.value.IdMime = tipoEncontrado.IdMime;
                 ElMessage.success(`Tipo de archivo '${extension.toUpperCase()}' auto-seleccionado.`);
             } else {
-                ElMessage.warning(`La extensión '${extension.toUpperCase()}' no se encontró en el catálogo de tipos de archivo.`);
+                ElMessage.warning(`La extensión '${extension.toUpperCase()}' no se encontró.`);
             }
         }
     }
@@ -69,7 +69,6 @@ const opcionesTipoArchivo = ref([]);
 const rules = computed(() => {
     const baseRules = {
         IdMime: [{ required: true, message: 'El tipo de archivo es obligatorio', trigger: 'change' }],
-        Titulo: [{ required: true, message: 'El título es obligatorio', trigger: 'blur' }],
     };
 
     if (selectedOption.value === 'localFile') {
@@ -142,11 +141,10 @@ watch(dialogVisible, (newVal) => {
 watch(selectedOption, (newVal) => {
     if (newVal === 'localFile') {
         form.value.UrlExterna = '';
-    } else { 
-        form.value.NombreObjeto = '';
         form.value.NombreSitio = '';
         form.value.Ruta = '';
-        form.value.Protocolo = 'HTTP';
+        form.value.Protocolo = 'HTTP'; 
+        form.value.NombreObjeto = '';
         form.value.UnidadLogica = '';
         form.value.Usuario = '';
         form.value.Password = '';
@@ -165,23 +163,30 @@ watch(() => form.value.UrlExterna, (newUrl) => {
                 form.value.Protocolo = protocol;
             }
             form.value.NombreSitio = url.hostname;
-            form.value.Ruta = url.pathname;
+            const pathParts = url.pathname.split('/').filter(p => p); 
+            if (pathParts.length > 0) {
+                form.value.Ruta = `/${pathParts[0]}`;
+                const remainingPath = pathParts.slice(1).join('/');
+                form.value.NombreObjeto = remainingPath + url.search;
+            } else {
+                form.value.Ruta = '/';
+                form.value.NombreObjeto = url.search; 
+            }
             const htmlFileType = opcionesTipoArchivo.value.find(
                 opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase() === 'htmlfile'
             );
             if (htmlFileType) {
                 form.value.IdMime = htmlFileType.IdMime;
             }
-
         } catch (error) {
             console.warn('URL inválida, esperando a que sea completa:', error.message);
             form.value.Protocolo = 'HTTP';
             form.value.NombreSitio = '';
             form.value.Ruta = '';
+            form.value.NombreObjeto = ''; 
         }
     }
 });
-
 
 const intentarGuardar = async () => {
     if (!formRef.value) return;
@@ -216,7 +221,7 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
 
-                    <el-form-item label="Origen del objeto" style="margin-bottom: 20px;">
+                    <el-form-item label="Origen del objeto" style="margin-bottom: 20px; margin-top: -75px;">
                         <el-radio-group v-model="selectedOption">
                             <el-radio label="localFile">Archivo local</el-radio>
                             <el-radio label="webPage">Página web (URL)</el-radio>
@@ -247,8 +252,8 @@ const cerrarDialogo = () => {
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Protocolo" prop="Protocolo">
-                                <el-select v-model="form.Protocolo" placeholder="Seleccione"
-                                    style="width: 100%;" :disabled="selectedOption === 'localFile'">
+                                <el-select v-model="form.Protocolo" placeholder="Seleccione" style="width: 100%;"
+                                    :disabled="selectedOption === 'localFile'">
                                     <el-option v-for="item in opcionesProtocolo" :key="item" :label="item"
                                         :value="item" />
                                 </el-select>
@@ -256,17 +261,24 @@ const cerrarDialogo = () => {
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="Unidad lógica" prop="UnidadLogica">
-                                <el-input v-model="form.UnidadLogica" placeholder="Ej: c, d, etc." :disabled="selectedOption === 'webPage'"/>
+                                <el-input v-model="form.UnidadLogica" placeholder="Ej: c, d, etc."
+                                    :disabled="selectedOption === 'webPage'" />
                             </el-form-item>
                         </el-col>
                     </el-row>
-                    
+
+                    <el-form-item v-if="selectedOption === 'webPage'" label="Nombre del archivo" prop="NombreObjeto">
+                        <el-input v-model="form.NombreObjeto" placeholder="Auto-generado desde la URL" readonly />
+                    </el-form-item>
+
                     <el-form-item label="Nombre del sitio" prop="NombreSitio">
-                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com" :disabled="selectedOption === 'localFile'" />
+                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com"
+                            :disabled="selectedOption === 'localFile'" />
                     </el-form-item>
 
                     <el-form-item label="Ruta" prop="Ruta">
-                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales" :disabled="selectedOption === 'webPage'" />
+                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales"
+                            :disabled="selectedOption === 'webPage'" />
                     </el-form-item>
 
                     <el-row :gutter="20">
@@ -280,12 +292,12 @@ const cerrarDialogo = () => {
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Usuario" prop="Usuario">
-                                <el-input v-model="form.Usuario" :disabled="selectedOption === 'webPage'"/>
+                                <el-input v-model="form.Usuario" disabled />
                             </el-form-item>
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Contraseña" prop="Password">
-                                <el-input v-model="form.Password" type="password" show-password :disabled="selectedOption === 'webPage'"/>
+                                <el-input v-model="form.Password" type="password" show-password disabled />
                             </el-form-item>
                         </el-col>
                     </el-row>

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\HasCompositePrimaryKey;
 
 class RelacionBibliografia extends Model
 {
-    use HasFactory;
+    use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
 
@@ -19,7 +20,10 @@ class RelacionBibliografia extends Model
 
     //Se asigna el nombre del campo llave primaria
     //protected $primaryKey = array('IdNombre', 'IdNombreRel', 'IdTipoRelacion', IdBibliografia );
-    protected $primaryKey = 'IdBibliografia';
+    protected $primaryKey = ['IdNombre', 
+                             'IdNombreRel',
+                             'IdTipoRelacion',
+                             'IdBibliografia'];
 
     //Se asignan los campos que podran ser actualizados 
     protected $guarded = [];
@@ -30,10 +34,12 @@ class RelacionBibliografia extends Model
         return $this->belongsTo(Bibliografia::class, 'IdBibliografia', 'IdBibliografia');
     }
 
-    /*En Eloquent no se puede agregar las relaciones por llaves compuestas por lo que
-    se esta resolviendo por medio de scope en los cuales se declaran los join explicitos*/
-    /*public function scopeNombreRelacion($query, $nombre)
-    {
-        return $this->belongsTo(Tipo_Relacion::class, 'IdTipoRelacion');
-    }*/
+    public function scopeBibliografiaRelacion($query, $idNombre, $idNombreRel, $idTipoRel){
+        
+        return $query->join('Bibliografia', 'Bibliografia.IdBibliografia', '=', 'RelacionBibliografia.IdBibliografia')
+                     ->selectRaw('RelacionBibliografia.Observaciones as ObsRelBiblio, Bibliografia.*')
+                     ->where('RelacionBibliografia.IdNombre', $idNombre)
+                     ->where('RelacionBibliografia.IdNombreRel', $idNombreRel)
+                     ->where('RelacionBibliografia.IdTipoRelacion', $idTipoRel);
+    }
 }

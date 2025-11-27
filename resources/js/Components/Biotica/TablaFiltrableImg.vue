@@ -15,7 +15,11 @@ const props = defineProps({
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 4 },
   endpoint: { type: String, required: true },
-  idKey: { type: String, required: false }
+  idKey: { type: String, required: false },
+  origen: { type: Boolean, default: false },
+  mostrarBiblio: { type: Boolean, default: false },
+  mostrarAcci: { type: Boolean, default: false },
+  mostrarNuevo: { type: Boolean, default:false },
 });
 
 const filtros = ref({});
@@ -23,6 +27,7 @@ const tipoDeBusqueda = ref('inicia');
 const currentPage = ref(1);
 const datosTabla = ref([]);
 const totalReg = ref(0);
+const selectedRow  = ref(null);
 
 let debounceTimer;
 const onFiltroInput = () => {
@@ -65,8 +70,12 @@ const onFiltroInput = () => {
 };
 
 const handleRowClick = (row, column, event) => {
-  console.log("Este es el row seleccionado: ", row);
+  selectedRow.value = row; 
   emit('row-click', row);
+}
+
+const rowClassName = ({ row }) =>{
+  return selectedRow.value === row ? 'selected-row' : '';
 }
 
 const limpiarFiltro = (campo) => {
@@ -106,64 +115,24 @@ watch(() => props.datos, (nuevosDatos) => {
 
 onMounted(() => {
   datosTabla.value = props.datos;
-  console.log(datosTabla.value);
 });
 
 const emit = defineEmits([
-  'row-click'
-]);
-
-/*
-const emit = defineEmits([
-  'update:datos',
-  'update:totalItems',
-  'editar-item',
+  'row-click',
   'eliminar-item',
-  'nuevo-item',
-  'row-dblclick',
-  'row-click'
+  'editar-item',
+  'abrir-Biblio',
+  'nuevo-item'
 ]);
 
-const currentPage = ref(1);
-const filtros = ref({});
-const sorting = ref({ prop: null, order: null });
-const tipoDeBusqueda = ref('inicia'); 
-
-watch(() => props.columnas, (nuevasColumnas) => {
-  const nuevosFiltros = {};
-  if (nuevasColumnas) {
-      nuevasColumnas.forEach(col => {
-        if (col.filtrable) {
-          nuevosFiltros[col.prop] = '';
-        }
-      });
-  }
-  filtros.value = nuevosFiltros;
-}, { immediate: true, deep: true });
-
-let debounceTimer;
-const onFiltroInput = () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    currentPage.value = 1;
-    //fetchData();
-  }, 500);
-};
-
-const handleSortChange = ({ prop, order }) => {
-  sorting.value.prop = prop;
-  sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-  currentPage.value = 1;
-  //fetchData();
-};
-
-
+const onEliminar = (row) => emit('eliminar-item', row);
 
 const onEditar = (item) => emit('editar-item', item);
-const onEliminar = (id) => emit('eliminar-item', id);
-const onRowDblClick = (row) => emit('row-dblclick', row);
+
+const onBiblio = () => emit('abrir-Biblio'); 
+
 const onNuevo = () => emit('nuevo-item');
-*/
+
 watch(tipoDeBusqueda, () => {
     onFiltroInput(); 
 });
@@ -181,11 +150,16 @@ watch(tipoDeBusqueda, () => {
             <TipoBusqueda v-model="tipoDeBusqueda" />
           </slot>
         </div>
+        <div class="left" >
+          <div class="form-actions" v-show="props.mostrarNuevo">
+            <NuevoButton @crear="onNuevo" v-show="habNuevaBiblio"/>
+          </div>
+        </div>
         <div class="left">
           <slot name="header-actions">
             <!--NuevoButton @crear="onNuevo" /-->
             <el-tooltip class="item" effect="dark" content="Bibliografia" :placement= "toolPosicion">
-              <el-button circle type="primary">
+              <el-button @click="onBiblio" circle type="primary" v-show="props.mostrarBiblio">
                 <el-icon><Management /></el-icon>
               </el-button>
             </el-tooltip>
@@ -200,7 +174,8 @@ watch(tipoDeBusqueda, () => {
             :border="true" height="100%" 
             @sort-change="handleSortChange" 
             @row-dblclick="onRowDblClick" 
-            @row-click="handleRowClick">
+            @row-click="handleRowClick"
+            :row-class-name = "rowClassName">
             <slot name="expand-column"></slot>
 
             <el-table-column
@@ -267,12 +242,12 @@ watch(tipoDeBusqueda, () => {
                 </template>
             </el-table-column>
 
-            <el-table-column label="Acciones" width="120" align="center">
+            <el-table-column label="Acciones" width="120" align="center" v-if="props.mostrarAcci">
                 <template #default="{ row }">
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
-                    <!--EditarButton @editar="onEditar(row)" /-->
-                    <EliminarButton @eliminar="onEliminar(row[props.idKey])" />
+                    <EditarButton @editar="onEditar(row)" v-if="props.origen"  />
+                    <EliminarButton @eliminar="onEliminar(row)" />
                     </slot>
                 </div>
                 </template>
@@ -413,4 +388,10 @@ watch(tipoDeBusqueda, () => {
 .header-filter-button {
   flex-shrink: 0;
 }
+
+:deep(.el-table__row.selected-row > td) {
+  background-color: rgb(203, 233, 200) !important; /* azul claro */
+  --el-table-tr-bg-color: #cce5ff !important;
+}
+
 </style>
