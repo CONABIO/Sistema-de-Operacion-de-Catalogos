@@ -6,7 +6,8 @@ import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
-import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
+//import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
+import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
 import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import { ElMessageBox } from 'element-plus';
@@ -746,6 +747,47 @@ const manejarEliminarRel = (item) => {
   }).catch(() => { });
 };
 
+const manejarEliminarRef = (item)=>{
+  
+  const procederConEliminacion = async () => {
+
+    try {
+      ElMessageBox.close();
+
+       const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
+                                                                                taxAct: taxonAct.value.id}});     
+        
+        tablaReferencias.value = response.data;
+
+        totalRegRef.value = response.data.length;
+
+      mostrarNotificacion('Eliminación Exitosa', `La referencia fue eliminada correctamente.`, 'success');
+    } catch (apiError) {
+      mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
+    }
+  };
+  const cancelarEliminacion = () => {
+    ElMessageBox.close();
+  };
+
+
+  const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+  
+  ElMessageBox({
+    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
+        h(BotonAceptar, { onClick: procederConEliminacion }),
+      ])
+    ])
+  }).catch(() => { });
+}
+
 const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
 
   if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
@@ -849,7 +891,14 @@ const abrirBiblio = async () => {
 }
 
 const abrirBiblioNombre = async() =>{
-  dialogFormVisibleBiblioNom.value = true;
+  if(taxonAct.value.id > 0)
+  {
+    dialogFormVisibleBiblioNom.value = true;
+  }else{
+    mostrarNotificacionError("Bibliografia", 
+                             "Se debe seleccionar un taxón"),
+                             "Error"
+  }
 }
 
 const cerrarDialogBiblio = async() => {
@@ -877,18 +926,19 @@ const cerrarDialogBiblio = async() => {
   
 };
 
-const cerrarRelNomBiblio = async(datos) => {
-  try{
-        const response = await axios.post('/alta-RelacionesBiblioNombre', { data: {biblioRel: datos,
-                                                                             taxAct: taxonAct.value.id}});
+const cerrarRelNomBiblio = async() => {
 
-        tablaReferencias.value = response.data;
-        totalRegRef.value = response.data.length
-                                                                             
-    } catch (error) {
-        console.log("Error 422:", error.response.data);
-    }
+  if(taxonAct.value.id > 0){
+    const params= {
+                    taxAct: taxonAct.value.id
+                  };
 
+    const response = await axios.get('/actualizaReferenciasNombre', { params });
+
+    tablaReferencias.value = response.data;
+
+    totalRegRef.value = response.data.length;
+  }
   dialogFormVisibleBiblioNom.value = false;
 }
 
@@ -1126,6 +1176,7 @@ const abre_Relaciones = () => {
                     <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
                       :opciones-filtro="opcionesFiltroNomenclatura"
                       :mostrarBiblio = "true"
+                      :mostrarAcci = "true"
                       @eliminar-item = "manejarEliminarRel"
                       @abrir-Biblio = "abrirBiblio">
                     </TablaFiltrable>
@@ -1145,7 +1196,9 @@ const abre_Relaciones = () => {
                       :opciones-filtro="opcionesFiltroRef" 
                       :items-por-pagina="2"
                       :mostrarBiblio = "true"
-                      @abrir-Biblio = "abrirBiblioNombre">
+                      :mostrarAcci = "true"
+                      @abrir-Biblio = "abrirBiblioNombre"
+                      @eliminar-item = "manejarEliminarRef">
                     </TablaFiltrable>
                   </div>
                 </el-main>
@@ -1195,7 +1248,8 @@ const abre_Relaciones = () => {
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <BibliografiaNombre :isModal = "true"  @cerrarBiblio = "cerrarRelNomBiblio" />
+      <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias" 
+                          :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
     <Teleport to="body">
