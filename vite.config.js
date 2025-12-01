@@ -6,12 +6,7 @@ export default defineConfig({
     server: {
         host: '172.16.3.63',  
         port: 5173,       
-        cors: {
-            origin: '*',
-        },
-        hmr:{
-            host: '172.16.15.129',
-        }
+        strictPort: true, 
       },
     plugins: [
         laravel({

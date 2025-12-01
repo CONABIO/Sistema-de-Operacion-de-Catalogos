@@ -22,8 +22,16 @@ const props = defineProps({
 
 const columnasDefinidas = ref([
     {
+        prop: 'NombreObjeto',
+        label: 'Nombre del archivo',
+        minWidth: '200',
+        sortable: true,
+        filtrable: true,
+        align: 'left'
+    },
+    {
         prop: 'NombreSitio',
-        label: 'Nombre sitio',
+        label: 'Nombre del sitio',
         minWidth: '200',
         sortable: true,
         filtrable: true,
