@@ -1144,7 +1144,7 @@ const closeAscendantsDialog = () => {
                 </el-menu>
               </div>
             </el-aside>
-            <el-container class="details-container" style="height: 470px;">
+            <el-container class="details-container" style="height: 500px;">
               <el-scrollbar :height="scrollbarHeight">
                 <el-header class="details-header">
                   <div class="details-title" style="margin-bottom: 20px;">
@@ -1172,7 +1172,6 @@ const closeAscendantsDialog = () => {
                     </div>
                   </div>
 
-                  <br>
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
                     <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"
