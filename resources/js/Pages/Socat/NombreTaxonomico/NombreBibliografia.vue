@@ -17,47 +17,16 @@
                         <div class="dual-panel-container">
                             <el-card class="table-panel">
                                 <span style="font-size: 20px; font-weight: bold;">
-                                    Nombres cientificos asociados a:
-                                </span>
-                                <br/>
-                                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                    {{ props.taxonAct.label }}
-                                </span>
-                                <br/>
-                                <br/>
-                                <span style="font-size: 18px; color: #2A661E; font-weight: bold;">
-                                    {{ tipRelacion }}
-                                </span>
-                                <br/>
-                                <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
-                                    <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
-                                        v-model:datos = "tablaRelaciones" v-model:total-items="props.totalRegistros"
-                                        :opciones-filtro = "opcionesFiltroNomenclatura"
-                                        :origen = "true"
-                                        @row-click = "manejaClick">
-                                        <template #expand-column>
-                                            <el-table-column type="expand">
-                                                <template #default="{ row }">
-                                                    <div class="expand-content-detail">
-                                                    <p><strong>Fecha de alta:</strong>{{ row.FechaCaptura }}</p>
-                                                    <p><strong>Fecha de modificación:</strong>{{ row.FechaModificacion }}</p>
-                                                    </div>
-                                                </template>
-                                            </el-table-column>
-                                        </template>
-                                    </TablaFiltrable>
-                                </div>
-                            </el-card>
-                            <el-card class="table-panel">
-                                <span style="font-size: 20px; font-weight: bold;">
                                     Cita(s) bibliografica(s) asociada(s) a:
                                 </span>
                                 <br/>
                                 <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                    {{ props.taxonAct.label }}
+                                </span>                                
+                                <br/>
+                                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
                                     {{ taxonRelacionado }}
                                 </span>
-                                <br/>
-                                <br/>
                                 <br/>
                                 <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                                     <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidasBiblio"
@@ -155,6 +124,7 @@
 
   </div>
 </template>
+
 <script setup>
     import { ref, h, onMounted, watchEffect } from 'vue';
     import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
@@ -171,7 +141,7 @@
         taxonAct: {
             type: Object
         },
-        relaciones: {
+        referencias: {
             type: Object,
             required: true,
         }, 
@@ -200,50 +170,19 @@
     const dialogFormVisibleBiblio = ref(false);
     const habNuevaBiblio = ref(false);
 
-    const emit = defineEmits(['cerrar']);
-
-    const columnasDefinidas = ref([
-        {
-            prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '190', sortable: true,
-            align: 'left', tipo: 'imagenTexto', filtrable: true
-        },
-        {
-            prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '230', sortable: true,
-            align: 'left', tipo: 'imagenTexto', filtrable: true
-        },
-        {
-            prop: 'Biblio', label: 'Ref.', minWidth: '90', sortable: false, align: 'center',
-            tipo: 'imagenTexto', filtrable: false
-        }
-    ]);
+    const emit = defineEmits(['cerrarBiblio']);
 
     const cerrarNotificacion = () => {
         notificacionVisible.value = false;
     };
 
-    const manejaClick = (row) => {   
-        console.log("Esto es lo que tiene row: ", row);     
-        tipRelacion.value = row.TipoRelacion.texto;
-        taxonRelacionado.value = row.Nombrecompleto.texto; 
-        bibliografiaRel.value = row.bibliografia;
-        observacionRel.value = row.bibliografia.ObsRelBiblio;
-        habObservaciones.value = true;
-        relacionAct.value = row.TipoRelacion.relCompleta;
-        habNuevaBiblio.value = true;
-    }
-
     const manejaClickObs = (row) => {
-        observacionRel.value = row.ObsRelBiblio;
-        citaCompleta.value = row.CitaCompleta
+        observacionRel.value = row.ObsRelNom;
+        citaCompleta.value = row.Cita;
     }
 
-    const crear = () => {
-        if(taxonRelacionado.value != ""){
-            dialogFormVisibleBiblio.value = true;
-        }
-        else{
-            mostrarNotificacionError('Aviso', `Se debe seleccionar al menos una relación.`, 'success');
-        }
+    const crear = () => {        
+        dialogFormVisibleBiblio.value = true;        
     };
 
     const cerrarRelBiblio = async (datos) =>{
@@ -258,12 +197,11 @@
         dialogFormVisibleBiblio.value = false;
         
         try{
-        const response = await axios.post('/alta-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
-                                                                             biblioRel: datos,
-                                                                             taxAct: props.taxonAct.id}});
+        
+        const response = await axios.post('/alta-RelacionesBiblioNombre', { data: {biblioRel: datos,
+                                                                                   taxAct: props.taxonAct.id}});
 
-        tablaRelaciones.value = response.data;
-        bibliografiaRel.value = [];
+        bibliografiaRel.value = response.data;
                                                                              
         } catch (error) {
             mostrarNotificacionError('Aviso', error.response.data.message, 'error');
@@ -273,8 +211,8 @@
         loading.close();
     };
 
-    const cerrarDialogo = () => {
-        emit('cerrar');
+    const cerrarDialogo = () => {        
+        emit('cerrarBiblio');
     };
 
     const manejarEliminarBiblio = (row) => {
@@ -285,12 +223,10 @@
             try {
                 ElMessageBox.close();
 
-                const response = await axios.delete('/elimina-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
-                                                                                          idBiblio: idBibliografia.value,
+                const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: idBibliografia.value,
                                                                                           taxAct: props.taxonAct.id}});
                 
-                tablaRelaciones.value = response.data;
-                bibliografiaRel.value = [];
+                bibliografiaRel.value = response.data;
 
                 mostrarNotificacion('Eliminación Exitosa', `La relación con la bibliografia fue eliminada correctamente.`, 'success');
             } catch (apiError) {
@@ -349,12 +285,13 @@
         const procederConActualizacion = async () => {
             try {
                 ElMessageBox.close();
-                const response = await axios.put('/actualiza-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
-                                                                                        idBiblio: idBibliografia.value,
-                                                                                        observacion: observacionRel.value,
-                                                                                        taxAct: props.taxonAct.id}});
 
-                tablaRelaciones.value = response.data;
+                const response = await axios.put('/actualiza-RelBiblioNombre', { data: {idNombre: props.taxonAct.id, 
+                                                                                        idBiblio: idBibliografia.value,
+                                                                                        observacion: observacionRel.value}
+                                                                               });
+                   
+                bibliografiaRel.value = response.data;
                 habObservaciones.value = true;
 
                 mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
@@ -397,12 +334,11 @@
 
     // Inicialización de datos
     onMounted(async () => {
-        tablaRelaciones.value = props.relaciones;
+        bibliografiaRel.value = props.referencias;
     });
 
     watchEffect(() => {
-        tablaRelaciones.value = props.relaciones;
-        bibliografiaRel.value = [];
+        bibliografiaRel.value = props.referencias;
     });
 
 

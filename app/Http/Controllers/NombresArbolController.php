@@ -18,8 +18,10 @@ use Inertia\Inertia;
 use App\Http\Requests\RequestScat;
 use App\Http\Requests\RequestNombre;
 use App\Http\Requests\RequestRelNomAutor;
+use App\Http\Requests\RequestActualizaNombreRelBiblio;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RequestAltaRelBiblioNombre;
+use App\Http\Requests\RequestEliminaNombreRelBiblio;
 use Exception;
 
 class NombresArbolController extends Controller
@@ -1074,7 +1076,6 @@ class NombresArbolController extends Controller
     }
 
     public function altaBiblioNombre(RequestAltaRelBiblioNombre $request){
-        Log::info("Pase la validacion del request");
         
         $data = $request->all();
         
@@ -1103,5 +1104,65 @@ class NombresArbolController extends Controller
             DB::rollBack();
             throw $e;
         }
+    }
+
+    public function actualizaObsNomBiblio(RequestActualizaNombreRelBiblio $request){
+        
+        $data = $request->input('data');
+
+        DB::beginTransaction();
+
+        try {
+            $relacion = RelNombreBiblio::where('IdNombre', $data['idNombre'])
+                                       ->where('IdBibliografia', $data['idBiblio'])
+                                       ->update(['Observaciones' => $data['observacion']]);
+
+            DB::commit();
+
+            $referencias = Nombre::cargaReferencias($data['idNombre'])
+                             ->get();                              
+
+            return $referencias;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        } 
+    }
+
+    public function eliminaRelBiblio(RequestEliminaNombreRelBiblio $request){
+       
+        $data = $request->input();
+        
+        DB::beginTransaction();
+
+        try {
+
+            $relacion = RelNombreBiblio::where('IdNombre', $data['taxAct'])
+                                       ->where('IdBibliografia', $data['idBiblio'])                                            
+                                       ->delete();
+
+            DB::commit();
+        
+            $referencias = Nombre::cargaReferencias($data['taxAct'])
+                             ->get();                              
+
+            return $referencias;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+        } 
+        
+    }
+
+    public function muestraReferencias(Request $request){
+
+        $referencias = Nombre::cargaReferencias($request['taxAct'])
+                             ->get();                              
+
+            return $referencias;
     }
 }
