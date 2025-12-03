@@ -68,6 +68,10 @@ const props = defineProps({
         isModal: {
             type: Boolean,
             default: false
+        },
+        traspaso: {
+            type: Boolean,
+            default: false
         }
     });
 
@@ -102,6 +106,8 @@ const guardarObservaciones = async () => {
 };
 
 const confirmarEliminacionGrupo = (filaGrupo) => {
+
+  console.log("Este es el grupo selccionado:", filaGrupo);
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
     mostrarNotificacion('Error', 'Faltan datos para eliminar la asociación.', 'error');
     return;
@@ -241,6 +247,7 @@ const traspasaBiblio= () =>{
 
    if (!biblioRelacion.value.includes(id)) {
     biblioRelacion.value.push(id); 
+    mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
   }
 
 };
@@ -362,18 +369,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLayout>
+  <!--AppLayout-->
     <!-- LayoutCuerpo para el contenido visible de la página -->
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
 
       <div class="layout-dos-columnas">
         <div class="columna-principal">
-          este es el valor de isModal: {{ props.isModal }}
+          <!--este es el valor de isModal: {{ props.isModal }}-->
           <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
             v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
             id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
             @row-click = "handleRowClick" @traspasaBiblio = "traspasaBiblio" @cerrar= "cerrarModal" 
-              :botCerrar="props.isModal"  :highlight-current-row="true">
+              :botCerrar="props.isModal"  :highlight-current-row="true"
+              :mostrarTraspaso="props.traspaso">
             <template #expand-column>
               <el-table-column type="expand">
                 <template #default="{ row }">
@@ -492,7 +500,7 @@ onMounted(() => {
       </DialogGeneral>
 
     </Teleport>
-  </AppLayout>
+  <!--/AppLayout-->
 </template>
 
 <style>

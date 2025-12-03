@@ -17,7 +17,8 @@ const props = defineProps({
   itemsPerPage: { type: Number, default: 100 },
   endpoint: { type: String, required: true },
   idKey: { type: String, required: true },
-  botCerrar: { type:Boolean, default:false }
+  botCerrar: { type:Boolean, default:false },
+  mostrarTraspaso: { type:Boolean, default:false }
 });
 
 const emit = defineEmits([
@@ -134,7 +135,7 @@ defineExpose({ fetchData });
         </div>
         <div class="left" >
           <div class="form-actions">
-               <BotonTraspaso @traspasa="onRecuperaMarcado"/>
+               <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado"/>
                <NuevoButton @crear="onNuevo" />
                <BotonSalir :accion="accionModal" @salir="cerrarModal"/>
             </div>
