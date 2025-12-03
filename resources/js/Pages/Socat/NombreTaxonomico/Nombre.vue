@@ -29,7 +29,7 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
+//Definición de variables a utilizar
 const props = defineProps({
   gruposTax: {
     type: Object,
