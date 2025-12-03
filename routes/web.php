@@ -201,8 +201,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/cargar-ascendentes', [NombresController::class, 'cargarAscendentes'])->name('nombres.cargarAscendentes');
 
-
-
     Route::get('/api/bibliografias/{bibliografiaId}/objetos-externos', [BibliografiaController::class, 'getObjetosExternos'])
         ->name('bibliografias.objetosExternos.get');
 

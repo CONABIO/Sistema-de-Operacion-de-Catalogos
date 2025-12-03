@@ -81,15 +81,15 @@ const cerrarModal = () => {
 
 const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
-
+    const esEdicion = grupoEditado.value !== null;
     const nombreGrupoNormalizado = datosDelFormulario.GrupoSCAT.trim().toLowerCase();
-    const esEdicion = datosDelFormulario.accion === 'editar';
-
     const registroExistente = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === nombreGrupoNormalizado;
-        return esEdicion ? (mismoNombre && grupo.IdGrupoSCAT !== datosDelFormulario.idParaEditar) : mismoNombre;
+        return esEdicion
+            ? (mismoNombre && grupo.IdGrupoSCAT !== grupoEditado.value.IdGrupoSCAT)
+            : mismoNombre;
     });
-
+ 
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
@@ -98,7 +98,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
         );
         return;
     }
-
+ 
     const procederConGuardado = async () => {
         ElMessageBox.close();
         try {
@@ -108,14 +108,16 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
                 GrupoAbreviado: datosDelFormulario.GrupoAbreviado,
                 GrupoSNIB: datosDelFormulario.GrupoSNIB,
             };
-            if (datosDelFormulario.accion === 'crear') {
+ 
+            if (!esEdicion) {
                 await axios.post("/grupos-taxonomicos", payload);
                 mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-            } else if (datosDelFormulario.accion === 'editar' && datosDelFormulario.idParaEditar) {
-                await axios.put(`/grupos-taxonomicos/${datosDelFormulario.idParaEditar}`, payload);
+            } else {
+                const idParaEditar = grupoEditado.value.IdGrupoSCAT;
+                await axios.put(`/grupos-taxonomicos/${idParaEditar}`, payload);
                 mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
             }
-
+ 
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
@@ -135,10 +137,10 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             guardandoDatosServer.value = false;
         }
     };
-
+ 
     const cancelarGuardado = () => { ElMessageBox.close(); };
-
-    if (datosDelFormulario.accion === 'crear') {
+ 
+    if (!esEdicion) {
         procederConGuardado();
     } else {
         const mensaje = `¿Estás seguro de que deseas guardar los cambios para el grupo "${datosDelFormulario.GrupoSCAT || "nuevo grupo"}"?`;
