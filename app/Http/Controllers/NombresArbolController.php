@@ -1165,4 +1165,46 @@ class NombresArbolController extends Controller
 
             return $referencias;
     }
+
+    public function cargarAscendentes(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer',
+        ]);
+ 
+        $ids = $validated['ids'];
+ 
+        if (empty($ids)) {
+            return response()->json([]);
+        }
+        $nombreTable = (new Nombre())->getTable();
+        $categoriasTable = (new CategoriasTaxonomicas())->getTable();
+        $nombres = Nombre::whereIn("{$nombreTable}.IdNombre", $ids)
+            ->with('categoria')
+            ->join($categoriasTable, "{$nombreTable}.IdCategoriaTaxonomica", '=', "{$categoriasTable}.IdCategoriaTaxonomica")
+            ->orderBy("{$categoriasTable}.IdNivel1", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel2", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel3", 'asc')
+            ->orderBy("{$categoriasTable}.IdNivel4", 'asc')
+            ->select("{$nombreTable}.*")
+            ->get();
+        $formattedNombres = $nombres->map(function ($nombre) {
+            $rutaIcono = optional($nombre->categoria)->RutaIcono ?? '/images/icons/default.svg';
+            return [
+                'id' => $nombre->IdNombre,
+                'label' => trim($nombre->Nombre . ' ' . $nombre->NombreAutoridad),
+                'children' => [],
+                'completo' => [
+                    'NombreCompleto' => $nombre->Nombre,
+                    'NombreAutoridad' => $nombre->NombreAutoridad,
+                    'categoria' => [
+                        'RutaIcono' => $rutaIcono
+                    ]
+                ]
+            ];
+        });
+ 
+        return response()->json($formattedNombres);
+    }
 }
