@@ -144,7 +144,7 @@
     </el-card>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <Bibliografia :isModal = "true"  @cerrarBiblio = "cerrarRelBiblio" />
+      <Bibliografia :isModal = "true" :traspaso="true" @cerrarBiblio = "cerrarRelBiblio" />      
     </DialogForm>
 
     <Teleport to="body">
@@ -256,20 +256,21 @@
         });
 
         dialogFormVisibleBiblio.value = false;
-        
-        try{
-        const response = await axios.post('/alta-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
-                                                                             biblioRel: datos,
-                                                                             taxAct: props.taxonAct.id}});
+        if(datos.length > 0){
+            try
+            {
+                const response = await axios.post('/alta-RelacionesBiblio', { data: {relCompleta: relacionAct.value, 
+                                                                                    biblioRel: datos,
+                                                                                    taxAct: props.taxonAct.id}});
 
-        tablaRelaciones.value = response.data;
-        bibliografiaRel.value = [];
-                                                                             
-        } catch (error) {
-            mostrarNotificacionError('Aviso', error.response.data.message, 'error');
-            console.log("Error 422:", error.response.data.message);
+                tablaRelaciones.value = response.data;
+                bibliografiaRel.value = [];
+                                                                                    
+            } catch (error) {
+                mostrarNotificacionError('Aviso', error.response.data.message, 'error');
+                console.log("Error 422:", error.response.data.message);
+            }
         }
-        
         loading.close();
     };
 
