@@ -130,6 +130,9 @@ const dialogFormVisibleBiblioNom = ref(false);
 const scrollbarHeight = ref('550px');
 const dialogWidth = ref('35%');
 
+const treeDataAscendentes = ref([]);
+const dialogFormVisibleAscendentes = ref(false);
+
 const updateLayout = () => {
   if (window.innerHeight < 820) {
     scrollbarHeight.value = '300px';
@@ -1023,6 +1026,52 @@ const fetchFilteredData = async () => {
 const abre_Relaciones = () => {
   dialogFormVisibleRel.value = true;
 }
+
+const showAscendants = async () => {
+  if (!taxonAct.value?.completo?.Ascendentes) {
+    ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
+    return;
+  }
+  const ascendantsString = taxonAct.value.completo.Ascendentes;
+  const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+  if (ascendantIds.length === 0) {
+    ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
+    return;
+  }
+ 
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Cargando ascendentes...',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+ 
+  try {
+    const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
+    if (response.status === 200 && Array.isArray(response.data)) {
+      const ascendantTaxa = response.data;
+      let nestedTree = [];
+      if (ascendantTaxa.length > 0) {
+        nestedTree.push(ascendantTaxa[0]);
+        let currentNode = nestedTree[0];
+        for (let i = 1; i < ascendantTaxa.length; i++) {
+          const nextNode = ascendantTaxa[i];
+          currentNode.children = [nextNode];
+          currentNode = nextNode;
+        }
+      }
+ 
+      treeDataAscendentes.value = nestedTree;
+      dialogFormVisibleAscendentes.value = true;
+    } else {
+      ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
+    }
+  } catch (error) {
+    console.error("Error al cargar los ascendentes:", error);
+    ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
+  } finally {
+    loading.close();
+  }
+};
 </script>
 
 
@@ -1148,11 +1197,11 @@ const abre_Relaciones = () => {
                     </el-icon>
                     <span>Catálogos asociados</span>
                   </el-menu-item>
-                  <el-menu-item class="item">
+                  <el-menu-item class="item" @click="showAscendants">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                       class="bi bi-bar-chart-steps" viewBox="0 0 16 16">
                       <path
-                        d="M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.safe.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z" />
+                        d="M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z" />
                     </svg>
                     <span>Ascendentes</span>
                   </el-menu-item>
@@ -1249,6 +1298,29 @@ const abre_Relaciones = () => {
     <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
       <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias" 
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleAscendentes" @close="closeAscendantsDialog" :botCerrar="true" :pressEsc="true"
+      custom-class="dialog-ascendentes-diseno">
+      <div class="dialog-header-custom">
+        <h3>Ascendentes del taxón</h3>
+      </div>
+      <div class="content-wrapper-custom">
+        <el-tree class="filter-tree" :data="treeDataAscendentes" node-key="id" @node-click="expande"
+          :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+          empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
+          :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
+          default-expand-all>
+          <template #default="{ node }">
+            <div class="tree-node-wrapper">
+              <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+              <span class="tree-node-label">
+                {{ node.label }}
+              </span>
+            </div>
+          </template>
+        </el-tree>
+      </div>
     </DialogForm>
 
     <Teleport to="body">
@@ -1522,5 +1594,45 @@ const abre_Relaciones = () => {
     max-height: 350px;
   }
 
+}
+
+:deep(.dialog-ascendentes-diseno .el-dialog__body) {
+  padding: 0 !important;
+}
+ 
+:deep(.dialog-ascendentes-diseno .el-dialog__header) {
+  display: none;
+}
+ 
+.dialog-header-custom {
+  background-color: #f1f7ff;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+}
+ 
+.dialog-header-custom h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #303133;
+}
+ 
+.dialog-header-custom {
+  background-color: #f5f5f5;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+ 
+.content-wrapper-custom {
+    background-color: #ffffff;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+    max-height: 65vh;
+    overflow-y: auto;
 }
 </style>
