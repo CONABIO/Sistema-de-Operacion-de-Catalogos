@@ -93,7 +93,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
-            `Ya existe un grupo taxonómico con el mismo Grupo SCAT`,
+            `Ya existe un grupo taxonómico registrado con el mismo nombre (Grupo SCAT).`,
             "error"
         );
         return;

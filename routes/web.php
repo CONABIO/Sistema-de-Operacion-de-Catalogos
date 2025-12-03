@@ -79,10 +79,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
 
-
-
-
-
     Route::get('/nombres-comunes', [NombreComunController::class, 'index'])->name('nombresComunes.index');
     Route::get('/nombres-comunes/create', [NombreComunController::class, 'create'])->name('nombresComunes.create');
     Route::post('/nombres-comunes', [NombreComunController::class, 'store'])->name('nombresComunes.store');
@@ -92,14 +88,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
 
-
-
-
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
 
     Route::get('/categoria-taxonomica', [CategoriaTaxonomicaController::class, 'index'])->name('categoria-taxonomica.index');
-
-
 
     Route::get('/Nombre', [NombresArbolController::class, 'Index'])->name('nombreTax.index');
     Route::get('/cargar-nomArb', [NombresArbolController::class, 'fetchNomArb']);
@@ -115,6 +106,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/actualiza-nombre/{id}', [NombresArbolController::class, 'update']);
     Route::put('/baja-nombre/{id}', [NombresArbolController::class, 'bajaTax']);
     Route::post('/alta-RelacionesBiblioNombre', [NombresArbolController::class, 'altaBiblioNombre']);
+    Route::put('/actualiza-RelBiblioNombre', [NombresArbolController::class, 'actualizaObsNomBiblio']);
+    Route::delete('/elimina-RelBiblioNombre', [NombresArbolController::class, 'eliminaRelBiblio']);
+    Route::get('/actualizaReferenciasNombre', [NombresArbolController::class, 'muestraReferencias']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
     Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);

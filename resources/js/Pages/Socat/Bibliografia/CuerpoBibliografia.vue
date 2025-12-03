@@ -30,6 +30,8 @@ const esModalGruposVisible = ref(false);
 const selectedBibliografia = ref(null);
 const datosObjetos = ref([]);
 
+const biblioRelacion = ref([]);
+
 const loadingObjetos = ref(false); 
 const esModalObjetosVisible = ref(false); 
 
@@ -41,7 +43,9 @@ const grupoParaEditar = ref({
   observaciones: ''
 });
 
-const emit = defineEmits(['cerrar', 'formSubmited']);
+const emit = defineEmits(['cerrar', 
+                          'formSubmited',
+                          'cerrarBiblio']);
 
 const columnasDefinidas = ref([
   { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
@@ -59,6 +63,17 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
+const props = defineProps({
+        isModal: {
+            type: Boolean,
+            default: false
+        },
+        traspaso: {
+            type: Boolean,
+            default: false
+        }
+    });
 
 
 const abrirModalEditar = (filaGrupo) => {
@@ -91,6 +106,8 @@ const guardarObservaciones = async () => {
 };
 
 const confirmarEliminacionGrupo = (filaGrupo) => {
+
+  console.log("Este es el grupo selccionado:", filaGrupo);
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
     mostrarNotificacion('Error', 'Faltan datos para eliminar la asociación.', 'error');
     return;
@@ -224,6 +241,22 @@ const cerrarModalGrupos = () => {
   }
 };
 
+const traspasaBiblio= () =>{
+
+ const id = selectedBibliografia.value.IdBibliografia;
+
+   if (!biblioRelacion.value.includes(id)) {
+    biblioRelacion.value.push(id); 
+    mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
+  }
+
+};
+
+const cerrarModal = () => {
+  emit('cerrarBiblio', biblioRelacion.value);
+  biblioRelacion.value = [];
+}
+
 const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
   const procederConGuardado = async () => {
@@ -336,13 +369,19 @@ onMounted(() => {
 </script>
 
 <template>
+  <!--AppLayout-->
+    <!-- LayoutCuerpo para el contenido visible de la página -->
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
+
       <div class="layout-dos-columnas">
         <div class="columna-principal">
+          <!--este es el valor de isModal: {{ props.isModal }}-->
           <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
             v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
             id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
-            @row-click="handleRowClick" :highlight-current-row="true">
+            @row-click = "handleRowClick" @traspasaBiblio = "traspasaBiblio" @cerrar= "cerrarModal" 
+              :botCerrar="props.isModal"  :highlight-current-row="true"
+              :mostrarTraspaso="props.traspaso">
             <template #expand-column>
               <el-table-column type="expand">
                 <template #default="{ row }">
@@ -371,8 +410,9 @@ onMounted(() => {
           <div class="widget-card" v-loading="loadingGrupos">
             <div class="widget-header">
               <h3>Grupo taxonómico</h3>
-              <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
-                grupo</el-button>
+              <!-- <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
+                grupo</el-button> -->
+                <NuevoButton @crear="agregarGrupo" />
             </div>
             <div class="widget-table-container">
               <el-table :data="datosGrupos" border style="width: 100%"
@@ -461,6 +501,7 @@ onMounted(() => {
       </DialogGeneral>
 
     </Teleport>
+  <!--/AppLayout-->
 </template>
 
 <style>

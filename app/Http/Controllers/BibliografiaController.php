@@ -203,7 +203,6 @@ class BibliografiaController extends Controller
                     'RelBiblioGrupoSCAT.Observaciones as observaciones'
                 )
                 ->get();
-
             return response()->json($grupos);
         } catch (\Illuminate\Database\QueryException $e) {
             Log::error("Error en getGruposTaxonomicos: " . $e->getMessage());

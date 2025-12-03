@@ -201,7 +201,8 @@ class Nombre extends Model
             $query->where('Nombre.IdNombre', '=', $id)
                   ->selectRaw('Bibliografia.IdBibliografia, Bibliografia.Autor, Bibliografia.Anio,
                                Bibliografia.TituloPublicacion AS Titulo, 
-                               Bibliografia.CitaCompleta AS Cita')
+                               Bibliografia.CitaCompleta AS Cita,
+                               RelNombreBiblio.Observaciones AS ObsRelNom')
                   ->OrderByRaw('Bibliografia.IdBibliografia, Bibliografia.Autor, Bibliografia.Anio,
                                 Bibliografia.TituloPublicacion, Bibliografia.CitaCompleta')
                   ->join('RelNombreBiblio', 'RelNombreBiblio.IdNombre', '=', 'Nombre.IdNombre')

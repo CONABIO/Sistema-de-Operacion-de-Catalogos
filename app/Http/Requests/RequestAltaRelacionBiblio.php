@@ -104,4 +104,42 @@ class RequestAltaRelacionBiblio extends FormRequest
             'data.taxAct.integer'  => 'taxAct debe ser un número.',
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator){
+            $idNombre = $this->input('data.relCompleta.relIdNombre');
+            $idNombreRel = $this->input('data.relCompleta.relIdNombreRel');
+            $tipoRel = $this->input('data.relCompleta.tipoRel');
+            $biblioRel = $this->input('data.biblioRel', []);
+
+            foreach ($biblioRel as $idBiblio){
+
+                $biblio = DB::connection('catcentral')
+                    ->table('Bibliografia')
+                    ->where('IdBibliografia', $idBiblio)
+                    ->first();
+
+                if(!$biblio) continue;
+
+                $exist = DB::connection('catcentral')
+                    ->table('RelacionBibliografia')
+                    ->where('IdNombre', $idNombre)
+                    ->where('IdNombreRel', $idNombreRel)
+                    ->where('IdTipoRelacion', $tipoRel)
+                    ->where('IdBibliografia', $idBiblio)
+                    ->exists();
+
+                if($exist){
+
+                    $autor = $biblio->Autor ?? '(sin autor)';
+
+                    $validator->errors()->add(
+                        'data.biblioRel', 
+                        "La relación con la bibliografia de autor `{$autor}` ya existe en la base de datos."
+                    );
+                }
+            }
+        });
+    }
 }
