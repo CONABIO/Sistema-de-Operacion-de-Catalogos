@@ -16,12 +16,11 @@
 
 ## 📋 Prerrequisitos
 
-- Sistema Operativo: (por ejemplo, Ubuntu 20.04+, Windows 10+, macOS)
+- Sistema Operativo: Windows 10+
 - Lenguaje de programación: PHP 8.1+
-- Framework: Laravel 10.x / 11.x (según el proyecto)
-- Base de datos: MySQL/MariaDB 10+, PostgreSQL 13+, SQLite u otra compatible
+- Framework: Laravel 11.x 
+- Base de datos: MySQL/MariaDB 
 - Administrador de dependencias: Composer 2.x
-- Sistema Operativo: (por ejemplo, Ubuntu 20.04+, Windows 10+, macOS)
 - Gestor de paquetes frontend: NPM 
 - Git: para clonar y gestionar el repositorio
 
@@ -56,7 +55,22 @@ composer install
 npm install
 ```
 
+
 ## Paso 4
+
+##### Antes de correr el proyecto es necesario modificar el vite.config.js 
+
+```
+server: {
+        host: ',  
+        port: ,       
+        strictPort: true, 
+      },
+```
+
+#### Se debe modificar el host y poner la ip del equipo donde se va a correr el proyecto y el puerto 
+
+## Paso 5
 
 #### Ya instaladas las dependencias del proyecto lo sigueinte es correr el proyecto con los sigueintes comandos
 
@@ -65,7 +79,7 @@ php artisan serve --host=0.0.0.0 --port=8000
 npm run dev
 ```
 
-## Paso 5
+## Paso 6
 
 ##### Como ultimo paso es acceder al navegador en la siguiente URL 
 
