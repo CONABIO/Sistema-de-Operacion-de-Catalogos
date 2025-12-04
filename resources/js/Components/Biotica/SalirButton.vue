@@ -37,6 +37,7 @@
 <script setup>
 import { defineEmits } from 'vue';
 import { router } from '@inertiajs/vue3';
+import '/resources/css/components/botonSalir.css';
 
 const props = defineProps({
   accion: {
@@ -58,30 +59,3 @@ function ejecutarAccion() {
 
 
 </script>
-
-<style scoped>
-.boton-salir {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background-color: #000000;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    color: #ffffff;
-    font-size: 24px;
-    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-}
-
-.boton-salir:hover {
-    background-color: #333333;
-    transform: scale(1.05);
-}
-
-.boton-salir:active {
-    transform: scale(0.95);
-}
-</style>
