@@ -1,3 +1,10 @@
+# 📌 Sistema de Operacion de Catalogos
+
+## 🧠 Descripción
+
+#### El Sistema para la Operación de los Catálogos de Autoridades Taxonómicas (SOCAT), fue desarrollado por la SubCoordinación de Informática para ayudar en la captura, actualización y depuración de los Catálogos de Autoridades Taxonómicas que tiene a cargo la SubCoordinación de Autoridades Taxonómicas (SCAT) de la CONABIO y que es parte fundamental del Sistema Nacional de Información sobre Biodiversidad (SNIB).
+
+
 ## 🚀 Empezando
 
 ### Estas instrucciones te guiarán para obtener una copia de este proyecto en funcionamiento en tu máquina local con fines de desarrollo, pruebas y revisión del código.
