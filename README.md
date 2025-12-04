@@ -1,13 +1,27 @@
-### Antes de levantar el proyecto debemos asegurar que tengamos la siguiente lista clara y actualizada de los requisitos para poder levantar (instalar y ejecutar) un proyecto Laravel:
+## 🚀 Empezando
 
-#### * Tener instalado [PHP](https://windows.php.net/download).
+### Estas instrucciones te guiarán para obtener una copia de este proyecto en funcionamiento en tu máquina local con fines de desarrollo, pruebas y revisión del código.
+El objetivo es que puedas configurar el entorno necesario, instalar las dependencias del proyecto y ejecutar la aplicación sin complicaciones, siguiendo una serie de pasos ordenados y detallados.
+
+
+## 📋 Prerrequisitos
+
+- Sistema Operativo: (por ejemplo, Ubuntu 20.04+, Windows 10+, macOS)
+- Lenguaje de programación: PHP 8.1+
+- Framework: Laravel 10.x / 11.x (según el proyecto)
+- Base de datos: MySQL/MariaDB 10+, PostgreSQL 13+, SQLite u otra compatible
+- Administrador de dependencias: Composer 2.x
+- Sistema Operativo: (por ejemplo, Ubuntu 20.04+, Windows 10+, macOS)
+- Gestor de paquetes frontend: NPM 
+- Git: para clonar y gestionar el repositorio
 
 
 # 🖥 Proceso para levantar el proyecto 🖥
 
 ## Paso 1
-#### Para poder clonar el proyecto se necesita poner el siguiente comando en la consola, se debe acceder a la carpeta donde se quiere clonar el proyecto y ya dentro de la carpeta se abre la terminal y se pone <ins>Git clone (Url del repo)</ins>
+#### Para poder clonar el proyecto se necesita poner el siguiente comando en la consola, se debe acceder a la carpeta donde se quiere clonar el proyecto y ya dentro de la carpeta se abre la terminal y se pone 
 
+´´
 
 
 ## Paso 2
