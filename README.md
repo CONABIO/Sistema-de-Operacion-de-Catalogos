@@ -72,7 +72,7 @@ server: {
 
 ## Paso 5
 
-#### Ya instaladas las dependencias del proyecto lo sigueinte es correr el proyecto con los sigueintes comandos
+#### Ya instaladas las dependencias del proyecto y configurado el vite.config.js lo sigueinte es correr el proyecto con los sigueintes comandos
 
 ```
 php artisan serve --host=0.0.0.0 --port=8000
