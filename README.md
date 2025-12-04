@@ -1,4 +1,4 @@
-# 📌 Sistema de Operacion de Catalogos
+# 📌 Sistema para la Operación de los Catálogos de Autoridades Taxonómicas
 
 ## 🧠 Descripción
 
