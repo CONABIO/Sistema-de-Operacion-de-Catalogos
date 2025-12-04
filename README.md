@@ -13,10 +13,22 @@
 
 #### Ya agregado el .env lo siguiente es la instalación de dependencias con estos dos comandos
 
-#### * <ins>composer install</ins>
-
-#### * <ins>npm install</ins>
+```
+composer install
+npm install
+```
 
 ## Paso 4
 
+#### Ya instaladas las dependencias del proyecto lo sigueinte es correr el proyecto con los sigueintes comandos
+
+```
+php artisan serve --host=0.0.0.0 --port=8000
+npm run dev
+```
+
 ## Paso 5
+
+##### Como ultimo paso es acceder al navegador en la siguiente URL 
+
+#### http://localhost:8000/
