@@ -7,7 +7,15 @@
 
 ## Paso 2
 
+#### Ya clonado el proyecto lo que se debe agregar el .env este archivo de texto plano es utilizado para almacenar variables de entorno, como credenciales de bases de datos, claves de API y otras configuraciones sensibles, separadas del código fuente
+
 ## Paso 3
+
+#### Ya agregado el .env lo siguiente es la instalación de dependencias con estos dos comandos
+
+#### * <ins>composer install</ins>
+
+#### * <ins>npm install</ins>
 
 ## Paso 4
 
