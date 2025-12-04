@@ -1,7 +1,7 @@
 ## 🚀 Empezando
 
 ### Estas instrucciones te guiarán para obtener una copia de este proyecto en funcionamiento en tu máquina local con fines de desarrollo, pruebas y revisión del código.
-El objetivo es que puedas configurar el entorno necesario, instalar las dependencias del proyecto y ejecutar la aplicación sin complicaciones, siguiendo una serie de pasos ordenados y detallados.
+### El objetivo es que puedas configurar el entorno necesario, instalar las dependencias del proyecto y ejecutar la aplicación sin complicaciones, siguiendo una serie de pasos ordenados y detallados.
 
 
 ## 📋 Prerrequisitos
