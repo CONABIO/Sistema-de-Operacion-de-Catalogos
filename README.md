@@ -1,6 +1,6 @@
 ### Antes de levantar el proyecto debemos asegurar que tengamos la siguiente lista clara y actualizada de los requisitos para poder levantar (instalar y ejecutar) un proyecto Laravel:
 
-#### * Tener instalado [PHP]([https://pages.github.com/](https://windows.php.net/download). 
+#### * Tener instalado [PHP](https://pages.github.com/](https://windows.php.net/download).
 
 
 # 🖥 Proceso para levantar el proyecto 🖥
