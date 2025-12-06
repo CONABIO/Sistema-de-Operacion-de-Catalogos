@@ -627,11 +627,11 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="dialog-header">
           <h3>{{ modalTitle }}</h3>
         </div>
-        <div class="form-actions">
+        <div class="dialog-body-container">
+          <div class="form-actions">
             <GuardarButton @click="guardarDesdeModal" />
             <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
           </div>
-        <div class="dialog-body-container">
           <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
             @submit.prevent="guardarDesdeModal">
 
@@ -808,10 +808,12 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-header {
-  background-color: #f1f7ff;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  text-align: left;
+    background-color: #f5f5f5;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
+    text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
 
 .dialog-header h3 {
@@ -822,13 +824,22 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-body-container {
-  padding: 24px 30px 30px;
+ background-color: #f3f3f3;
+    padding: 20px 24px;
+    border: 3px;
+    text-align: left;
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 20px 24px;
+    text-align: left;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
     gap: 10px;
 }
 

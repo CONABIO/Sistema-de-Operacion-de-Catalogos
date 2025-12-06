@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TipoRegion; 
+use App\Models\Region;
+use App\Models\TipoRegion;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,8 +14,8 @@ class TipoRegionController extends Controller
 {
     private const MAX_NIVELES = 5;
 
-   
-    public function index(Request $request) 
+
+    public function index(Request $request)
     {
         $isModalMode = $request->query('modal', false);
         $query = TipoRegion::query();
@@ -27,7 +28,7 @@ class TipoRegionController extends Controller
         return Inertia::render('Socat/TipoRegion/tipoRegion', [
             'treeDataProp' => $treeDataParaVisualizacion,
             'flatTreeDataProp' => $todosLosNodosPlanos,
-            'isModal' => $isModalMode, // <-- La nueva prop
+            'isModal' => $isModalMode,
         ]);
     }
 
@@ -59,7 +60,7 @@ class TipoRegionController extends Controller
         return $tree;
     }
 
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $levelRules = [];
         for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
@@ -69,34 +70,41 @@ class TipoRegionController extends Controller
 
         $validatedData = $request->validate(array_merge([
             'Descripcion' => ['required', 'string', 'max:255', Rule::unique(TipoRegion::class)],
-        ], $levelRules));
+        ], $levelRules), [
+            'Descripcion.required' => 'La descripción es obligatoria.',
+            'Descripcion.unique' => 'Esta descripción ya está registrada. Por favor intente con otra.',
+        ]);
 
         TipoRegion::create($validatedData);
 
-        $redirectParams = [];
-        if ($request->input('isModal')) {
-            $redirectParams['modal'] = true;
+        if ($request->boolean('isModal')) {
+            return back()->with('success', 'Tipo de Región creado.');
         }
-        return redirect()->route('tipos-region.index', $redirectParams)->with('success', 'Tipo de Región creado.');
+        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región creado.');
     }
 
     public function update(Request $request, TipoRegion $tipoRegion)
     {
         $validatedData = $request->validate([
             'Descripcion' => [
-                'required', 'string', 'max:255',
+                'required',
+                'string',
                 Rule::unique(TipoRegion::class)->ignore($tipoRegion->IdTipoRegion, 'IdTipoRegion')
             ],
-            'isModal' => 'nullable|boolean' 
+            'isModal' => 'nullable|boolean'
+        ], [
+            'Descripcion.required' => 'La descripción es obligatoria.',
+            'Descripcion.unique' => 'Esta descripción ya está registrada. Por favor intente con otra.',
+            'Descripcion.max' => 'La descripción no puede tener más de 255 caracteres.'
         ]);
 
         $tipoRegion->update($validatedData);
 
-        $redirectParams = [];
-        if ($request->input('isModal')) {
-            $redirectParams['modal'] = true;
+        if ($request->boolean('isModal')) {
+            return back()->with('success', 'Tipo de Región actualizado.');
         }
-        return redirect()->route('tipos-region.index', $redirectParams)->with('success', 'Tipo de Región actualizado.');
+
+        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región actualizado.');
     }
 
     public function destroy(Request $request, TipoRegion $tipoRegion)
@@ -115,15 +123,23 @@ class TipoRegionController extends Controller
             $query->where("Nivel" . ($profundidad + 1), '>', 0);
         }
         if ($query->exists()) {
-            throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene regiones dependientes.']);
+            throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene sub-tipos dependientes.']);
+        }
+
+        $regionesUsandoEsteTipo = Region::where('IdTipoRegion', $tipoRegion->IdTipoRegion)->exists();
+
+        if ($regionesUsandoEsteTipo) {
+            throw ValidationException::withMessages([
+                'message' => 'No se puede eliminar este tipo de región porque tiene regiones asociadas'
+            ]);
         }
 
         $tipoRegion->delete();
 
-        $redirectParams = [];
-        if ($request->input('isModal')) {
-            $redirectParams['modal'] = true;
+        if ($request->boolean('isModal')) {
+            return back()->with('success', 'Tipo de Región eliminado.');
         }
-        return redirect()->route('tipos-region.index', $redirectParams)->with('success', 'Tipo de Región eliminado.');
+
+        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región eliminado.');
     }
 }

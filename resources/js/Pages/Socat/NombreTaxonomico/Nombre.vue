@@ -1208,7 +1208,7 @@ const showAscendants = async () => {
                 </el-menu>
               </div>
             </el-aside>
-            <el-container class="details-container" style="height: 500px;">
+            <el-container class="details-container" style="height: 200px;">
               <el-scrollbar :height="scrollbarHeight">
                 <el-header class="details-header">
                   <div class="details-title" style="margin-bottom: 20px;">
@@ -1219,7 +1219,7 @@ const showAscendants = async () => {
                     </span>
                   </div>
                 </el-header>
-                <el-main class="details-main" style="margin-top: -40px;">
+                <el-main class="details-main" style="margin-top: -40px; ">
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
                     <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
