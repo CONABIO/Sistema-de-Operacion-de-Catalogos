@@ -1074,7 +1074,6 @@ const showAscendants = async () => {
 };
 </script>
 
-
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
     <el-container class="main-layout-container-fixed">
@@ -1208,49 +1207,86 @@ const showAscendants = async () => {
                 </el-menu>
               </div>
             </el-aside>
-            <el-container class="details-container" style="height: 470px;">
-              <!--el-scrollbar :height="scrollbarHeight"-->
-                <el-header class="details-header">
-                  <div class="details-title" style="margin-bottom: 20px;">
-                    <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                      class="details-title-icon">
-                    <span class="details-title-text">
-                      {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
+            <el-container class="details-container">
+              <el-header class="details-header">
+                <div class="details-title" style="margin-bottom: 20px;">
+                  <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
+                    class="details-title-icon">
+                  <span class="details-title-text">
+                    {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
+                  </span>
+                </div>
+              </el-header>
+              <el-main class="details-main">
+                <!-- Sección de Relaciones Nomenclaturales -->
+                <div class="table-section">
+                  <div class="table-header">
+                    <span class="demo-input-label table-title">
+                      Relaciones nomenclaturales
+                      <span class="table-count">({{ totalRegNom }})</span>
                     </span>
                   </div>
-                </el-header>
-                <el-main class="details-main" style="margin-top: -40px; ">
-                  <div class="table-section">
-                    <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
-                    <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
+                  
+                  <div class="table-wrapper">
+                    <TablaFiltrable 
+                      :columnas="columnasDefinidas" 
+                      :datos="datosPaginadosNomenclatura"
                       :opciones-filtro="opcionesFiltroNomenclatura"
-                      :mostrarBiblio = "true"
-                      :mostrarAcci = "true"
-                      @eliminar-item = "manejarEliminarRel"
-                      @abrir-Biblio = "abrirBiblio">
-                    </TablaFiltrable>
-
-                    <div v-if="totalRegNom > pageSizeNomenclatura"
-                      style="display: flex; justify-content: center; padding-top: 10px;">
-                      <el-pagination small background layout="prev, pager, next, total" :total="totalRegNom"
-                        :page-size="pageSizeNomenclatura" v-model:current-page="currentPageNomenclatura" />
-                    </div>
+                      :mostrarBiblio="true"
+                      :mostrarAcci="true"
+                      @eliminar-item="manejarEliminarRel"
+                      @abrir-Biblio="abrirBiblio"
+                    />
                   </div>
+                  
+                  <!-- Paginación -->
+                  <div v-if="totalRegNom > pageSizeNomenclatura" class="table-pagination">
+                    <el-pagination 
+                      small 
+                      background 
+                      layout="prev, pager, next, total" 
+                      :total="totalRegNom"
+                      :page-size="pageSizeNomenclatura" 
+                      v-model:current-page="currentPageNomenclatura" 
+                    />
+                  </div>
+                </div>
 
-                  <div class="table-section">
-                    <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
-                    <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"
+                <!-- Sección de Referencias Asociadas -->
+                <div class="table-section">
+                  <div class="table-header">
+                    <span class="demo-input-label table-title">
+                      Referencias asociadas
+                      <span class="table-count">({{ totalRegRef }})</span>
+                    </span>
+                  </div>
+                  
+                  <div class="table-wrapper">
+                    <TablaFiltrable 
+                      :columnas="columnasDefRef" 
+                      v-model:datos="tablaReferencias"
                       v-model:total-items="totalRegRef" 
                       :opciones-filtro="opcionesFiltroRef" 
                       :items-por-pagina="2"
-                      :mostrarBiblio = "true"
-                      :mostrarAcci = "true"
-                      @abrir-Biblio = "abrirBiblioNombre"
-                      @eliminar-item = "manejarEliminarRef">
-                    </TablaFiltrable>
+                      :mostrarBiblio="true"
+                      :mostrarAcci="true"
+                      @abrir-Biblio="abrirBiblioNombre"
+                      @eliminar-item="manejarEliminarRef"
+                    />
                   </div>
-                </el-main>
-              <!--/el-scrollbar-->
+                  
+                  <!-- Paginación para referencias si es necesario -->
+                  <div v-if="totalRegRef > 2" class="table-pagination">
+                    <el-pagination 
+                      small 
+                      background 
+                      layout="prev, pager, next, total" 
+                      :total="totalRegRef"
+                      :page-size="2" 
+                    />
+                  </div>
+                </div>
+              </el-main>
             </el-container>
           </el-container>
         </div>
@@ -1403,11 +1439,8 @@ const showAscendants = async () => {
   min-height: 0;
 }
 
-.main-layout-container {
-  display: flex;
-  flex-direction: column;
-  max-height: 100px;
-  height: 20%;
+.main-layout-container-fixed {
+  height: 750px;
 }
 
 .content-wrapper {
@@ -1415,11 +1448,16 @@ const showAscendants = async () => {
   margin-top: 16px;
   overflow: hidden;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
+.main-content-container {
+  flex: 1;
+  min-height: 0;
+}
 
-
-
+/* Estilos para pantallas grandes (desktop) */
 @media (min-width: 992px) {
   .content-wrapper {
     max-height: 500px;
@@ -1445,18 +1483,84 @@ const showAscendants = async () => {
     padding-left: 20px;
     display: flex;
     flex-direction: column;
-    height: 520px;
+    height: 470px;
+    overflow: hidden;
   }
 
-  .el-scrollbar {
+  .details-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+    padding-top: 10px;
+    padding-bottom: 20px;
+  }
+
+  /* Sección de cada tabla */
+  .table-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  /* Cabecera de la tabla */
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .table-count {
+    font-weight: normal;
+    color: #909399;
+    margin-left: 4px;
+  }
+
+  .table-action-button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  /* Contenedor de la tabla con scroll propio */
+  .table-wrapper {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    max-height: 300px;
+  }
+
+  /* Para que las tablas internas ocupen todo el espacio */
+  .table-wrapper :deep(.el-table) {
     height: 100%;
   }
+
+  /* Paginación */
+  .table-pagination {
+    padding: 12px 16px;
+    border-top: 1px solid #ebeef5;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+  }
 }
 
-.table-section {
-  overflow-x: auto;
-}
-
+/* Estilos para pantallas pequeñas (mobile/tablet) */
 @media (max-width: 991px) {
   .main-header-override {
     height: 100% !important;
@@ -1471,6 +1575,7 @@ const showAscendants = async () => {
 
   .main-content-container {
     height: 100%;
+    flex-direction: column;
   }
 
   .aside-tree {
@@ -1479,7 +1584,7 @@ const showAscendants = async () => {
     margin-bottom: 20px;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
-    height: auto;
+    height: 400px;
   }
 
   .details-container {
@@ -1490,10 +1595,12 @@ const showAscendants = async () => {
 
   .details-main {
     overflow-y: visible;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .aside-tree .el-scrollbar {
-    height: 45vh !important;
+    height: 350px !important;
   }
 
   .details-container .el-scrollbar {
@@ -1527,6 +1634,59 @@ const showAscendants = async () => {
     width: 80%;
     max-width: 280px;
   }
+
+  .table-section {
+    flex: none;
+    margin-bottom: 20px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .table-count {
+    font-weight: normal;
+    color: #909399;
+    margin-left: 4px;
+  }
+
+  .table-action-button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .table-wrapper {
+    max-height: 250px;
+    overflow: auto;
+  }
+
+  .table-pagination {
+    padding: 12px 16px;
+    border-top: 1px solid #ebeef5;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.main-layout-container-fixed {
+  min-height: 700px;
 }
 
 .context-menu-overlay {
@@ -1574,26 +1734,76 @@ const showAscendants = async () => {
   line-height: 1.4;
 }
 
+/* Ajustes para pantallas de 1440px */
 @media (max-width: 1440px) and (min-width: 992px) {
   .aside-tree {
-    width: 480px !important;
+    width: 500px !important;
+  }
+
+  .content-wrapper {
+    max-height: 450px;
+  }
+
+  .table-wrapper {
+    max-height: 250px;
+  }
+}
+
+/* Ajustes para pantallas de 1280px */
+@media (max-width: 1280px) and (min-width: 992px) {
+  .aside-tree {
+    width: 450px !important;
   }
 
   .content-wrapper {
     max-height: 400px;
   }
 
+  .table-wrapper {
+    max-height: 200px;
+  }
 }
 
-@media (max-width: 1280px) and (min-width: 992px) {
-  .aside-tree {
-    width: 420px !important;
+/* Para pantallas altas */
+@media (min-height: 800px) {
+  .main-layout-container-fixed {
+    height: 800px;
   }
-
-  .content-wrapper {
+  
+  .details-container {
+    height: 520px;
+  }
+  
+  .table-wrapper {
     max-height: 350px;
   }
+}
 
+/* Para que el árbol no se haga demasiado pequeño */
+.aside-tree {
+  min-width: 350px;
+}
+
+/* Asegurar que el árbol también tenga altura fija */
+.tree-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Quitar márgenes y padding innecesarios */
+:deep(.el-table__body-wrapper) {
+  scrollbar-width: thin;
+}
+
+:deep(.el-table__body-wrapper::-webkit-scrollbar) {
+  width: 6px;
+  height: 6px;
+}
+
+:deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
+  background: #c0c4cc;
+  border-radius: 3px;
 }
 
 :deep(.dialog-ascendentes-diseno .el-dialog__body) {
