@@ -1209,7 +1209,7 @@ const showAscendants = async () => {
               </div>
             </el-aside>
             <el-container class="details-container" style="height: 470px;">
-              <el-scrollbar :height="scrollbarHeight">
+              <!--el-scrollbar :height="scrollbarHeight"-->
                 <el-header class="details-header">
                   <div class="details-title" style="margin-bottom: 20px;">
                     <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
@@ -1251,7 +1251,7 @@ const showAscendants = async () => {
                     </TablaFiltrable>
                   </div>
                 </el-main>
-              </el-scrollbar>
+              <!--/el-scrollbar-->
             </el-container>
           </el-container>
         </div>
