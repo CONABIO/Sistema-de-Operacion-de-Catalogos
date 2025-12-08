@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue';
+import { ref, onMounted, defineEmits, computed } from 'vue';
 import arbolCheck from "@/Components/Biotica/ArbCheck.vue";
 import { ElMessageBox } from 'element-plus';
 import btnTraspaso from "@/Components/Biotica/BtnTraspaso.vue";
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 
+//Definición de variables 
 const props = defineProps({
     grupos: {
         type: Object,
@@ -22,8 +23,12 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
-
-const datos = props.grupos["original"];
+const datosOrdenados = computed(() => {
+    const lista = [...props.grupos["original"]];
+    return lista.sort((a, b) => {
+        return a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+    });
+});
 const checkAll = ref(false);
 const arbolRef = ref(null);
 const isIndeterminate = ref(false);
@@ -39,6 +44,7 @@ onMounted(() => {
     );
 });
 
+//Función referenciada para ejecutar las funciones desde el componente padre hasta el componente hijo
 const marcar = () => {
     if (arbolRef.value) {
         arbolRef.value.marcarTodos();
@@ -114,7 +120,7 @@ const cerrarNotificacion = () => {
                             </el-checkbox>
                         </div>
                     </div>
-                    <arbolCheck :datosArbol="datos" :defaultProps="propiedades" ref="arbolRef" default-expand-all
+                    <arbolCheck :datosArbol="datosOrdenados" :defaultProps="propiedades" ref="arbolRef" default-expand-all
                         @regresaMarcados="recibeGrupos" />
                 </el-main>
             </el-container>
@@ -129,57 +135,75 @@ const cerrarNotificacion = () => {
 
 <style scoped>
 .common-layout {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: 1000px;
+}
+
+:deep(.el-card) {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+:deep(.el-card__body) {
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .header {
-    text-align: center;
-    padding: 0.5rem;
     background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    height: auto !important;
+    min-height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .titulo {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: bold;
-    margin-bottom: 0.5rem;
+    color: #333;
+    margin: 0;
+    text-align: center;
+    line-height: 1.3;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
 .contenido {
-    max-width: 100%;
-    padding: 0.5rem;
-    margin-top: 1rem;
+    padding: 15px;
+    overflow-y: auto;
+    flex: 1;
 }
 
-.contenido>div {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-@media (min-width: 768px) {
-    .titulo {
-        font-size: 2rem;
-    }
+.contenido>div:first-child {
+    margin-bottom: 10px;
+    width: 100%;
 }
 
 @media (max-width: 480px) {
+    .common-layout {
+        max-width: 95vw;
+    }
+
     .titulo {
         font-size: 1rem;
     }
 
-    .header {
-        padding: 0.25rem;
-    }
-
-    .contenido {
-        padding: 0.25rem;
-        margin-top: 0.5rem;
+    :deep(.el-card) {
+        max-height: 70vh;
     }
 }
 </style>

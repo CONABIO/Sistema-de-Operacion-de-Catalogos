@@ -29,7 +29,7 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
+//Definición de variables a utilizar
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -1219,7 +1219,7 @@ const showAscendants = async () => {
                     </span>
                   </div>
                 </el-header>
-                <el-main class="details-main" style="margin-top: -40px;">
+                <el-main class="details-main" style="margin-top: -40px; ">
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
                     <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
@@ -1237,7 +1237,6 @@ const showAscendants = async () => {
                     </div>
                   </div>
 
-                  <br>
                   <div class="table-section">
                     <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
                     <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"

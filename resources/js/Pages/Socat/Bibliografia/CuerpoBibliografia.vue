@@ -410,8 +410,9 @@ onMounted(() => {
           <div class="widget-card" v-loading="loadingGrupos">
             <div class="widget-header">
               <h3>Grupo taxonómico</h3>
-              <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
-                grupo</el-button>
+              <!-- <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
+                grupo</el-button> -->
+                <NuevoButton @crear="agregarGrupo" />
             </div>
             <div class="widget-table-container">
               <el-table :data="datosGrupos" border style="width: 100%"
