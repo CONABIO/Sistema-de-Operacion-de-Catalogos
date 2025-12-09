@@ -120,7 +120,8 @@ const cerrarNotificacion = () => {
                             </el-checkbox>
                         </div>
                     </div>
-                    <arbolCheck :datosArbol="datosOrdenados" :defaultProps="propiedades" ref="arbolRef" default-expand-all
+                    <arbolCheck :datosArbol="datosOrdenados" :defaultProps="propiedades" 
+                                ref="arbolRef" default-expand-all
                         @regresaMarcados="recibeGrupos" />
                 </el-main>
             </el-container>
@@ -145,7 +146,7 @@ const cerrarNotificacion = () => {
 :deep(.el-card) {
     display: flex;
     flex-direction: column;
-    max-height: 80vh;
+    max-height: 900vh;
     border-radius: 12px;
     overflow: hidden;
 }
