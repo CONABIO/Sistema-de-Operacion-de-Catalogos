@@ -537,6 +537,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
                             <div class="action-group">
+                                <el-tooltip class="item" effect="dark" content="Ingresar" :placement= "toolPosicion">
                                 <el-button type="primary" circle @click="intentarAbrirModalInsertar"
                                     :disabled="botonNuevoDeshabilitado" title="Nuevo">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -547,7 +548,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                             d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
                                     </svg>
                                 </el-button>
+                                </el-tooltip>
 
+                                <el-tooltip class="item" effect="dark" content="Modificar" :placement= "toolPosicion">
                                 <el-button type="success" circle @click="intentarAbrirModalEditar"
                                     :disabled="botonEditarDeshabilitado" title="Nuevo">
                                     <el-icon>
@@ -558,7 +561,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                         </svg>
                                     </el-icon>
                                 </el-button>
+                                </el-tooltip>
 
+                                <el-tooltip class="item" effect="dark" content="Eliminar" :placement= "toolPosicion">
                                 <el-button type="danger" circle @click="intentarAbrirModalEliminar"
                                     :disabled="botonEliminarDeshabilitado" title="Nuevo">
                                     <el-icon>
@@ -571,6 +576,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                         </el-icon>
                                     </el-icon>
                                 </el-button>
+                                </el-tooltip>
 
                                 <BotonSalir />
                             </div>

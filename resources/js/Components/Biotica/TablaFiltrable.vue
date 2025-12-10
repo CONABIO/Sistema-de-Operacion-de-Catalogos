@@ -137,7 +137,7 @@ defineExpose({ fetchData });
           <div class="form-actions">
                <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado"/>
                <NuevoButton @crear="onNuevo" />
-               <BotonSalir :accion="accionModal" @salir="cerrarModal"/>
+               <BotonSalir />
             </div>
         </div>
       </div>
