@@ -52,19 +52,17 @@ class NombresArbolController extends Controller
                 $taxon = $request->taxon;
 
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
+                             ->with(['relNombreCat','categoria','scat', 'nombreRel',
                                      'nombreRelVal','relNombreAutor', 
-                                     'relNombreRegion', 'scat.grupoScat'])
+                                     'scat.grupoScat'])
                              ->paginate(150);
             }else{
                 $taxon = $request->taxon;
 
                 $nombres = Nombre::filtraArbolTax($taxon)
-                             ->with(['padre','hijos','ascendOblig','ascendObligHijos',
-                                     'relNombreCat','categoria','scat', 'nombreRel',
+                             ->with(['relNombreCat','categoria','scat', 'nombreRel',
                                      'nombreRelVal','relNombreAutor',
-                                     'relNombreRegion', 'scat.grupoScat'])
+                                     'scat.grupoScat'])
                              ->paginate(150);
             }
 
@@ -147,14 +145,14 @@ class NombresArbolController extends Controller
                     
                     $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
                     
-                    $query = "select count(1) as conteo 
+                    /*$query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
                               Where (t.IdNombreRel = ".$nombre->IdNombre." Or nt.IdNombre = ".$nombre->IdNombre.") ". 
                                 "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
-                    $resp = DB::connection('catcentral')->select($query);
+                    $resp = DB::connection('catcentral')->select($query);*/
 
                     $referencias = Nombre::cargaReferencias($nombre->IdNombre)
                              ->get();
@@ -169,7 +167,7 @@ class NombresArbolController extends Controller
                                  'children' => [],
                                  'texto' => $nomCat,
                                  'estatus' => $status,
-                                 'numEjemp' => $resp[0]->conteo,
+                                 //'numEjemp' => $resp[0]->conteo,
                                  'referencias' => $referencias,
                                  'relaciones' => $reldata,
                                  'completo'=>$nombre
@@ -221,7 +219,7 @@ class NombresArbolController extends Controller
             
             $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
 
-            $query = "select count(1) as conteo 
+            /*$query = "select count(1) as conteo 
                               from snib.nombre_taxonomia nt 
                                     left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
@@ -229,7 +227,7 @@ class NombresArbolController extends Controller
                                 "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
         
            
-            $resp = DB::connection('catcentral')->select($query);
+            $resp = DB::connection('catcentral')->select($query);*/
             
             $referencias = Nombre::cargaReferencias($nombre->IdNombre)
                              ->get();
@@ -244,7 +242,7 @@ class NombresArbolController extends Controller
                          'children' => [],
                          'texto' => $nomCat,
                          'estatus' => $status,
-                         'numEjemp' => $resp[0]->conteo,
+                         //'numEjemp' => $resp[0]->conteo,
                          'referencias' => $referencias,
                          'relaciones' => $reldata,
                          'completo'=>$nombre

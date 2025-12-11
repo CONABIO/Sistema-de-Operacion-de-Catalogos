@@ -22,6 +22,7 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import { processIcon, getSafeIconPath } from '@/Composables/iconos';
 
 const { permisos } = usePermisos();
 
@@ -42,6 +43,8 @@ const props = defineProps({
 });
 
 const totalRegNom = ref(0);
+
+const activeNames = ref(['1']);
 
 const columnasDefinidas = ref([
   {
@@ -149,13 +152,13 @@ const updateLayout = () => {
 
 onMounted(() => {
   dialogFormVisibleCat.value = true;
-  console.log(authUser);
 
   updateLayout();
   window.addEventListener('resize', updateLayout);
 });
 
 onUnmounted(() => {
+
   window.removeEventListener('resize', updateLayout);
 });
 
@@ -447,23 +450,34 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
       const node = tree.value.getNode(draggingNode);
       node.expanded = true;
 
+      loading.close();
     }
+  }
 
-    const params= {
+  const loading = ElLoading.service({
+      lock: true,
+      text: "Loading",
+      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+      backgroud: 'rgba(255,255,255,0.85)',
+    });
+  //Falta agregar las funciones de asignacion de nomenclatura
+  /////////////////////////////////////////////////////////////////////////
+  console.log("Pase la asignacion", draggingNode);
+
+  const params= {
                   taxAct: draggingNode.id
               };  
-    const responseNom = await axios.get('/carga-RelacionesTax', { params });
+  const responseNom = await axios.get('/carga-RelacionesTax', { params });
 
-    tablaNomenclatura.value = responseNom.data;
+  tablaNomenclatura.value = responseNom.data;
 
-    loading.close();
-  }
+  loading.close();
 
   totalRegNom.value = draggingNode.relaciones.length;
   tablaReferencias.value = draggingNode.referencias;
   totalRegRef.value = draggingNode.referencias.length
   selectedNodeKey.value = draggingNode.id;
-
+//////////////////////////////////////////////////////////////////////////////////////
 }
 
 const proceder = () => {
@@ -1027,6 +1041,47 @@ const abre_Relaciones = () => {
   dialogFormVisibleRel.value = true;
 }
 
+/*const processIcon = (icon) => {
+  if (!icon) return '';
+
+  // Si ya es una URL (empieza con /, http, o data:)
+      if (icon.startsWith('/') || icon.startsWith('http') || icon.startsWith('data:')) {
+        return icon;
+      }
+      
+      // Si es un string SVG
+      if (icon.trim().startsWith('<svg')) {
+        try {
+          // Convertir a data URL
+          return `data:image/svg+xml;base64,${btoa(icon)}`;
+        } catch (e) {
+          console.error('Error convirtiendo SVG:', e);
+          return '';
+        }
+      }
+
+      // Si está escapado (&lt;svg)
+      if (icon.includes('&lt;svg')) {
+        try {
+          // Desescapar
+          const decoded = icon
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, '&');
+          
+          if (decoded.trim().startsWith('<svg')) {
+            return `data:image/svg+xml;base64,${btoa(decoded)}`;
+          }
+        } catch (e) {
+          console.error('Error procesando SVG escapado:', e);
+          return '';
+        }
+      }
+      
+      return icon;
+}*/
+
 const showAscendants = async () => {
   if (!taxonAct.value?.completo?.Ascendentes) {
     ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
@@ -1096,7 +1151,7 @@ const showAscendants = async () => {
 
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="data.RutaIcono" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                    <img :src="processIcon(data.RutaIcono)" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
@@ -1218,7 +1273,7 @@ const showAscendants = async () => {
                 </div>
               </el-header>
               <el-main class="details-main">
-                <!-- Sección de Relaciones Nomenclaturales -->
+                <!-- Sección de Relaciones Nomenclaturales >
                 <div class="table-section">
                   <div class="table-header">
                     <span class="demo-input-label table-title">
@@ -1232,6 +1287,7 @@ const showAscendants = async () => {
                       :columnas="columnasDefinidas" 
                       :datos="datosPaginadosNomenclatura"
                       :opciones-filtro="opcionesFiltroNomenclatura"
+                      :totalItems = totalRegNom
                       :mostrarBiblio="true"
                       :mostrarAcci="true"
                       @eliminar-item="manejarEliminarRel"
@@ -1239,7 +1295,7 @@ const showAscendants = async () => {
                     />
                   </div>
                   
-                  <!-- Paginación -->
+                  < Paginación >
                   <div v-if="totalRegNom > pageSizeNomenclatura" class="table-pagination">
                     <el-pagination 
                       small 
@@ -1250,9 +1306,61 @@ const showAscendants = async () => {
                       v-model:current-page="currentPageNomenclatura" 
                     />
                   </div>
+                </div-->
+                <!--Prueba colapse-->
+                <div class="demo-collapse" >
+                   <el-collapse class="custom-collapse" accordion expand-icon-position="left"
+                                 v-model="activeNames">
+                    <el-collapse-item name="1">
+                      <template #title="{ isActive}">
+                        <div class="table-header">
+                          <span class="demo-input-label table-title">
+                            Relaciones nomenclaturales
+                            <span class="table-count">({{ totalRegNom }})</span>
+                          </span>
+                        </div>
+                      </template>                    
+                    <div class="table-wrapper">
+                      <TablaFiltrable 
+                        :columnas="columnasDefinidas" 
+                        :datos="tablaNomenclatura"
+                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        :totalItems = "totalRegNom"
+                        :mostrarBiblio="true"
+                        :mostrarAcci="true"
+                        @eliminar-item="manejarEliminarRel"
+                        @abrir-Biblio="abrirBiblio"
+                      />
+                    </div>
+                    </el-collapse-item>
+                    <el-collapse-item name="2">
+                      <template #title="{ isActive}">
+                        <div class="table-header">
+                          <span class="demo-input-label table-title">
+                            Referencias asociadas
+                            <span class="table-count">({{ totalRegRef }})</span>
+                          </span>
+                        </div>
+                      </template>
+                      <div class="table-wrapper">
+                        <TablaFiltrable 
+                          :columnas="columnasDefRef" 
+                          v-model:datos="tablaReferencias"
+                          v-model:total-items="totalRegRef" 
+                          :opciones-filtro="opcionesFiltroRef" 
+                          :totalItems = "totalRegRef"
+                          :items-por-pagina="2"
+                          :mostrarBiblio="true"
+                          :mostrarAcci="true"
+                          @abrir-Biblio="abrirBiblioNombre"
+                          @eliminar-item="manejarEliminarRef"
+                        />
+                      </div>
+                    </el-collapse-item>
+                  </el-collapse>
                 </div>
-
-                <!-- Sección de Referencias Asociadas -->
+                <!--Termina prueba colapse-->
+                <!-- Sección de Referencias Asociadas >
                 <div class="table-section">
                   <div class="table-header">
                     <span class="demo-input-label table-title">
@@ -1275,7 +1383,7 @@ const showAscendants = async () => {
                     />
                   </div>
                   
-                  <!-- Paginación para referencias si es necesario -->
+                  <!-- Paginación para referencias si es necesario >
                   <div v-if="totalRegRef > 2" class="table-pagination">
                     <el-pagination 
                       small 
@@ -1285,7 +1393,7 @@ const showAscendants = async () => {
                       :page-size="2" 
                     />
                   </div>
-                </div>
+                </div-->
               </el-main>
             </el-container>
           </el-container>
@@ -1336,7 +1444,7 @@ const showAscendants = async () => {
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAscendentes" @close="closeAscendantsDialog" :botCerrar="true" :pressEsc="true"
+    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="true" :pressEsc="true"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
         <h3>Ascendentes del taxón</h3>

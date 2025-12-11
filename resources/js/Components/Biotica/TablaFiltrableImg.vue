@@ -14,7 +14,6 @@ const props = defineProps({
   datos: { type: Array, required: true, default: [] },
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 4 },
-  endpoint: { type: String, required: true },
   idKey: { type: String, required: false },
   origen: { type: Boolean, default: false },
   mostrarBiblio: { type: Boolean, default: false },
@@ -152,13 +151,13 @@ watch(tipoDeBusqueda, () => {
         </div>
         <div class="left" >
           <div class="form-actions" v-show="props.mostrarNuevo">
-            <NuevoButton @crear="onNuevo" v-show="habNuevaBiblio"/>
+            <NuevoButton @crear="onNuevo" />
           </div>
         </div>
         <div class="left">
           <slot name="header-actions">
             <!--NuevoButton @crear="onNuevo" /-->
-            <el-tooltip class="item" effect="dark" content="Bibliografia" :placement= "toolPosicion">
+            <el-tooltip class="item" effect="dark" content="Bibliografia">
               <el-button @click="onBiblio" circle type="primary" v-show="props.mostrarBiblio">
                 <el-icon><Management /></el-icon>
               </el-button>
@@ -172,8 +171,6 @@ watch(tipoDeBusqueda, () => {
         <el-table 
             :data="paginatedDatos" 
             :border="true" height="100%" 
-            @sort-change="handleSortChange" 
-            @row-dblclick="onRowDblClick" 
             @row-click="handleRowClick"
             :row-class-name = "rowClassName">
             <slot name="expand-column"></slot>
