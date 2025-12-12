@@ -136,6 +136,8 @@ const dialogWidth = ref('35%');
 const treeDataAscendentes = ref([]);
 const dialogFormVisibleAscendentes = ref(false);
 
+const mostrarLoading = ref(true);
+
 const updateLayout = () => {
   if (window.innerHeight < 820) {
     scrollbarHeight.value = '300px';
@@ -190,7 +192,8 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const openDialog = (nodeData) => {
-  console.log(nodeData);
+
+  mostrarLoading.value = false;
 
   emit('reset-form');
   dialogFormVisibleAlta.value = true;
@@ -424,20 +427,27 @@ const cerrarNotificacion = () => {
 };
 
 //Funcion que se ejecuta para la expancion de un nodo
-const expande = async (draggingNode, nodeData, nodeComponent) => {
+//const expande = async (draggingNode, nodeData, nodeComponent) => {
+const expande = async (draggingNode) => {
+
+  let loadingInstance = null;
 
   isMenuVisible.value = false;
   mostrar.value = true;
   taxonAct.value = draggingNode;
 
-  if (draggingNode.children.length === 0) {
-    const loading = ElLoading.service({
-      lock: true,
-      text: "Loading",
-      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-      backgroud: 'rgba(255,255,255,0.85)',
-    });
+  if(mostrarLoading.value)
+  {
+    loadingInstance = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+  }
 
+  if (draggingNode.children.length === 0) {
+    
     const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
     if (response.status === 200) {
@@ -450,34 +460,28 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
       const node = tree.value.getNode(draggingNode);
       node.expanded = true;
 
-      loading.close();
     }
   }
-
-  const loading = ElLoading.service({
-      lock: true,
-      text: "Loading",
-      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-      backgroud: 'rgba(255,255,255,0.85)',
-    });
-  //Falta agregar las funciones de asignacion de nomenclatura
-  /////////////////////////////////////////////////////////////////////////
-  console.log("Pase la asignacion", draggingNode);
 
   const params= {
                   taxAct: draggingNode.id
               };  
+              
   const responseNom = await axios.get('/carga-RelacionesTax', { params });
 
   tablaNomenclatura.value = responseNom.data;
 
-  loading.close();
-
-  totalRegNom.value = draggingNode.relaciones.length;
+  if(mostrarLoading.value)
+  {
+    loadingInstance.close();
+  }
+  
+  totalRegNom.value = tablaNomenclatura.value.length;
   tablaReferencias.value = draggingNode.referencias;
-  totalRegRef.value = draggingNode.referencias.length
+  totalRegRef.value = draggingNode.referencias.length;
   selectedNodeKey.value = draggingNode.id;
-//////////////////////////////////////////////////////////////////////////////////////
+
+  mostrarLoading.value = true
 }
 
 const proceder = () => {
@@ -1421,7 +1425,7 @@ const showAscendants = async () => {
                 @reset-form="resetFormNombre" :botCerrar="true"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
-                  :catalogos="idsGrupos.value" :active-tab.sync="activeTab" 
+                  :catalogos="idsGrupos.value"
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
         @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
