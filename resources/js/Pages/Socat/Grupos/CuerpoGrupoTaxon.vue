@@ -14,6 +14,18 @@ const props = defineProps({
     datosGrupo: Object
 });
 
+const selectedRowId = ref(null);
+const manejarClickFila = (row) => {
+  selectedRowId.value = row.IdAutorTaxon; 
+};
+const tableRowClassName = ({ row }) => {
+  if (row.IdAutorTaxon === selectedRowId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
+
 
 const tablaRef = ref(null);
 const currentData = ref([]);
@@ -115,7 +127,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             } else {
                 const idParaEditar = grupoEditado.value.IdGrupoSCAT;
                 await axios.put(`/grupos-taxonomicos/${idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+                mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
             }
  
             if (tablaRef.value) {
@@ -171,7 +183,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación Exitosa", `Grupo ${nombreGrupoEliminado} eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón.`, 'error');
         }
@@ -218,6 +230,8 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         <div class="h-full flex flex-col flex-grow">
             
             <TablaFiltrable 
+                @row-click="manejarClickFila" 
+                :row-class-name="tableRowClassName"
                 @row-dblclick="seleccionarGrupo" 
                 ref="tablaRef" 
                 class="flex-grow" 
@@ -292,6 +306,14 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     justify-content: flex-end;
     gap: 10px;
     margin-top: 35px;
+}
+
+.el-table .fila-seleccionada-verde {
+  --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover > td.el-table__cell {
+  background-color: #a3e4d7 !important;
 }
 </style>
 

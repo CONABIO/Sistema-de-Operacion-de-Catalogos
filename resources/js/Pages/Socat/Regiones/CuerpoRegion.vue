@@ -189,6 +189,7 @@ const filterText = ref('');
 const listaTiposDeRegion = ref([]);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const nombreRegionInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
@@ -495,7 +496,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
     router.delete(`/regiones/${nodeId}`, {
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `Lqa región "${nombre}" ha sido eliminado correctamente.`, "success");
             selectedNode.value = null;
             router.reload({ only: ['treeDataProp'] });
         },

@@ -396,7 +396,7 @@ const manejarEliminarItem = (item) => {
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
     }

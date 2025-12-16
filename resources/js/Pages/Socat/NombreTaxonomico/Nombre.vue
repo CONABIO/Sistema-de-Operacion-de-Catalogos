@@ -722,7 +722,7 @@ const manejarEliminarRel = (item) => {
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
     }
@@ -764,7 +764,7 @@ const manejarEliminarRef = (item)=>{
 
         totalRegRef.value = response.data.length;
 
-      mostrarNotificacion('Eliminación Exitosa', `La referencia fue eliminada correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
     }

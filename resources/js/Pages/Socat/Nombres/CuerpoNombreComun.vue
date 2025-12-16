@@ -74,7 +74,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
-            `Ya existe un nombre común con el nombre '${datosDelFormulario.NomComun}'`,
+            `Ya existe un nombre común con el nombre "${datosDelFormulario.NomComun}"`,
             "error"
         );
         return; 
@@ -141,7 +141,7 @@ const eliminarNombreComun = (idNomComun) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El nombre común ${nombreItem} no se puede eliminar. Este nombre común esta asociado.`, 'success');
 
@@ -178,10 +178,10 @@ const eliminarNombreComun = (idNomComun) => {
                         <template #default="{ row }">
                             <div class="expand-content-detail">
                                 <p><strong>IdNomComun:</strong> {{ row.IdNomComun }}</p>
-                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
-                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                                 <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
                                 <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
+                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                             </div>
                         </template>
                     </el-table-column>
