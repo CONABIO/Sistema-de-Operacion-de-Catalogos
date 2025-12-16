@@ -170,17 +170,11 @@ const cerrarModalOperacion = () => {
 };
 
 
-
-// =========================================================================
-// ========================== INICIO DE LA MODIFICACIÓN ==========================
-// =========================================================================
-
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
 
-  // Lógica de validación de duplicados
   const nombreNormalizado = formModal.value.NombreCategoriaTaxonomica.trim().toLowerCase();
   const esEdicion = modalMode.value === 'editar';
 
@@ -192,9 +186,9 @@ const guardarDesdeModal = async () => {
   if (registroExistente) {
     mostrarNotificacionError(
       "Aviso",
-      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica}'`,
+      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica} en el mismo nivel'`,
       "error",
-      0 // Duración 0 para que no se cierre sola
+      0 
     );
     return;
   }
@@ -249,12 +243,6 @@ const guardarDesdeModal = async () => {
     });
   }
 };
-
-// =========================================================================
-// ============================ FIN DE LA MODIFICACIÓN ===========================
-// =========================================================================
-
-
 
 const MAX_NIVELES = 12;
 
