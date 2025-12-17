@@ -390,6 +390,19 @@ const guardarDesdeModal = async () => {
   }
 };
 
+const cerrarModalOperacion = () => {
+  esModalVisible.value = false;
+  nodoEnModal.value = null;
+  formModal.value = { Descripcion: "" };
+  modalMode.value = "";
+  opcionNivel.value = "mismo";
+  
+  if (formModalRef.value) {
+    formModalRef.value.clearValidate();
+  }
+};
+
+
 const handleEliminar = () => {
   if (esModalVisible.value)
     return ElMessage.info("Cierre cualquier operación en curso.");

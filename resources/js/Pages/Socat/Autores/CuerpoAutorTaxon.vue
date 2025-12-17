@@ -295,12 +295,10 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
         mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
       }
 
-      // Recargamos la tabla para ver los cambios
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
       
-      // Limpiamos la selección si el guardado fue exitoso
       selectedRowId.value = null;
 
     } catch (error) {
@@ -309,7 +307,7 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
         let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
         mostrarNotificacion("Error", errorMsg, "error", 0, true); // El true final es si tu componente soporta HTML
       } else {
-        mostrarNotificacionError("Error", "No se pudo guardar la información.");
+        mostrarNotificacionError("Error", "No se pudo guardar la información porque ese nombre de autoridad ya se encuentra registrado.");
       }
     } finally {
       guardandoDatosServer.value = false;
