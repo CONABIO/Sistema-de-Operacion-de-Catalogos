@@ -130,7 +130,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El tipo de distribución ${nombreItem} fue eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El tipo de distribución ${nombreItem} no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
 

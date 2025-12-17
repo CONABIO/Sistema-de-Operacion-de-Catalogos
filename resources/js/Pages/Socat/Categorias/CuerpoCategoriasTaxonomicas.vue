@@ -21,6 +21,7 @@ const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const nombreCategoriaInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const formModal = ref({ NombreCategoriaTaxonomica: "" });
@@ -129,7 +130,14 @@ const abrirModalParaInsertar = () => {
   formModal.value = { NombreCategoriaTaxonomica: "" };
   opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
   esModalVisible.value = true;
-  nextTick(() => formModalRef.value?.clearValidate());
+  nextTick(() => {
+    formModalRef.value?.clearValidate();
+    setTimeout(() => {
+      if (nombreCategoriaInputRef.value) {
+        nombreCategoriaInputRef.value.focus();
+      }
+    }, 100);
+  });
 };
 
 const abrirModalParaEditar = () => {
@@ -141,27 +149,32 @@ const abrirModalParaEditar = () => {
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = { NombreCategoriaTaxonomica: selectedNode.value.NombreCategoriaTaxonomica };
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+    nextTick(() => {
+      formModalRef.value?.clearValidate();
+      setTimeout(() => {
+        if (nombreCategoriaInputRef.value) {
+          nombreCategoriaInputRef.value.focus();
+          const nativeInput = nombreCategoriaInputRef.value.$el.querySelector('input');
+          if (nativeInput) {
+            const len = nativeInput.value.length;
+            nativeInput.setSelectionRange(len, len);
+          }
+        }
+      }, 100);
+    });
   }
 };
-
 const cerrarModalOperacion = () => {
   esModalVisible.value = false;
   nodoEnModal.value = null;
 };
 
 
-
-// =========================================================================
-// ========================== INICIO DE LA MODIFICACIÓN ==========================
-// =========================================================================
-
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
 
-  // Lógica de validación de duplicados
   const nombreNormalizado = formModal.value.NombreCategoriaTaxonomica.trim().toLowerCase();
   const esEdicion = modalMode.value === 'editar';
 
@@ -173,9 +186,9 @@ const guardarDesdeModal = async () => {
   if (registroExistente) {
     mostrarNotificacionError(
       "Aviso",
-      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica}'`,
+      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica} en el mismo nivel'`,
       "error",
-      0 // Duración 0 para que no se cierre sola
+      0 
     );
     return;
   }
@@ -230,12 +243,6 @@ const guardarDesdeModal = async () => {
     });
   }
 };
-
-// =========================================================================
-// ============================ FIN DE LA MODIFICACIÓN ===========================
-// =========================================================================
-
-
 
 const MAX_NIVELES = 12;
 
@@ -313,7 +320,7 @@ const handleEliminar = () => {
     router.delete(`/categorias-taxonomicas/${selectedNode.value.IdCategoriaTaxonomica}`, {
       preserveScroll: true,
       onSuccess: () => {
-        mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
+        mostrarNotificacion("Eliminación exitosa", `La categoria taxonómica "${nombre}" ha sido eliminado correctamente.`, "success");
         const parent = findNodeInTree(localTreeData.value, selectedNode.value.IdAscendente);
         selectedNode.value = parent || (localTreeData.value.length > 0 ? localTreeData.value[0] : null);
         if (selectedNode.value) treeRef.value?.setCurrentKey(selectedNode.value.IdCategoriaTaxonomica);
@@ -617,7 +624,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
             </div>
 
             <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
-              <el-input v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
+              <el-input ref="nombreCategoriaInputRef" v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
                 maxlength="255" show-word-limit />
             </el-form-item>
 

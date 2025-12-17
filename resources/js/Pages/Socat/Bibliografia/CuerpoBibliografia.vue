@@ -307,7 +307,7 @@ const borrarDatos = (idBibliografia) => {
       const nombreItem = itemAEliminar ? `"${itemAEliminar.Autor}"` : 'el registro';
       await axios.delete(`/bibliografias/${idBibliografia}`);
       tablaRef.value?.fetchData();
-      mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
+      mostrarNotificacion("Eliminación exitosa", `El registro ${nombreItem} fue eliminado.`, "success");
     } catch (apiError) {
       mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
     }
@@ -369,14 +369,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <!--AppLayout-->
-    <!-- LayoutCuerpo para el contenido visible de la página -->
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
 
       <div class="layout-dos-columnas">
         <div class="columna-principal">
-          <!--este es el valor de isModal: {{ props.isModal }}-->
-          <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
+          <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas" 
             v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
             id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
             @row-click = "handleRowClick" @traspasaBiblio = "traspasaBiblio" @cerrar= "cerrarModal" 
@@ -410,8 +407,6 @@ onMounted(() => {
           <div class="widget-card" v-loading="loadingGrupos">
             <div class="widget-header">
               <h3>Grupo taxonómico</h3>
-              <!-- <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
-                grupo</el-button> -->
                 <NuevoButton @crear="agregarGrupo" />
             </div>
             <div class="widget-table-container">
@@ -459,13 +454,9 @@ onMounted(() => {
         <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
           @form-submited="handleFormSubmited" />
       </DialogGeneral>
-
-      <!-- Modal para la Notificación -->
       <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
         :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
         @close="cerrarNotificacion" />
-
-      <!-- Modal para la gestión de Grupos Taxonómicos -->
       <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :press-esc="true" width="100%"
         @close="cerrarModalGrupos" :draggable="true" >
 
@@ -475,8 +466,6 @@ onMounted(() => {
           </iframe>
         </div>
       </DialogGeneral>
-
-
       <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :bot-cerrar="true">
         <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
           <div class="form-actions" style="margin-top: 10px;">
@@ -484,13 +473,11 @@ onMounted(() => {
             <BotonSalir accion="cerrar" @salir="cerrarDialogo2" />
           </div>
 
-          <!-- Sección de Información del Grupo -->
           <div class="info-grupo">
             <span class="info-label">Grupo:</span>
             <span class="info-valor" style="color: red; font-weight: bold;">{{ grupoParaEditar.grupo }}</span>
           </div>
 
-          <!-- Sección del Formulario -->
           <el-form label-position="top" class="form-observaciones">
             <el-form-item label="Observaciones">
               <el-input type="textarea" v-model="grupoParaEditar.observaciones" :rows="4"
@@ -501,7 +488,6 @@ onMounted(() => {
       </DialogGeneral>
 
     </Teleport>
-  <!--/AppLayout-->
 </template>
 
 <style>
@@ -635,9 +621,6 @@ onMounted(() => {
   gap: 10px;
 }
 
-
-
-
 :deep(.el-dialog .dialog-body-iframe-container) {
   height: 700px; 
 }
@@ -710,5 +693,20 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 10px;
   padding: 10px 20px;
+}
+
+
+/* Aplicamos las variables a la clase que le diste a tu tabla */
+.tabla-bibliografia-chica {
+  /* Define el color de fondo para la fila seleccionada */
+  --el-table-current-row-bg-color: #ddf6dd !important;
+  
+  /* Opcional: Define el color cuando pasas el mouse sobre la fila YA seleccionada */
+  --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+/* Mantenemos este por seguridad, pero el de arriba es el que suele arreglarlo */
+:deep(.el-table__body tr.current-row > td.el-table__cell) {
+  background-color: #ddf6dd !important;
 }
 </style>
