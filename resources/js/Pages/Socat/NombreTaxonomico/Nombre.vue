@@ -48,15 +48,15 @@ const activeNames = ref(['1']);
 
 const columnasDefinidas = ref([
   {
-    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120', sortable: true,
+    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
     align: 'left', tipo: 'imagenTexto', filtrable: true
   },
   {
-    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250', sortable: true,
+    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
     align: 'left', tipo: 'imagenTexto', filtrable: true
   },
   {
-    prop: 'Biblio', label: 'Ref.', minWidth: '55', sortable: false, align: 'center',
+    prop: 'Biblio', label: '', minWidth: '55', align: 'left',
     tipo: 'imagenTexto', filtrable: false
   }
 ]);
@@ -72,7 +72,7 @@ const totalRegRef = ref(0);
 
 const columnasDefRef = ref([
   {
-    prop: 'Cita', label: 'Cita completa', minWidth: '250', sortable: true,
+    prop: 'Cita', label: 'Cita completa', minWidth: '250',
     align: 'left', tipo: 'textarea', filtrable: true
   },
 ]);
@@ -239,6 +239,11 @@ const recibeGrupos = async (data) => {
   grupos.value = data['grupos'];
   idsGrupos.value = data['ids'];
 
+  tablaNomenclatura.value= [];
+  tablaReferencias.value = [];
+  totalRegNom.value = 0;
+  totalRegRef.value = 0;
+
   if (categ.value === '') {
     open("Se debe seleccionar una categoría taxonómica.");
   } else {
@@ -372,6 +377,14 @@ const handleChange = async (value) => {
       }
       loading.close();
     }
+  }else
+  {
+    catego.value = ''; 
+    tablaNomenclatura.value = [];
+    tablaReferencias.value = [];
+    totalRegNom.value = 0;
+    totalRegRef.value = 0;
+    data.value = [];
   }
 }
 
@@ -1045,47 +1058,6 @@ const abre_Relaciones = () => {
   dialogFormVisibleRel.value = true;
 }
 
-/*const processIcon = (icon) => {
-  if (!icon) return '';
-
-  // Si ya es una URL (empieza con /, http, o data:)
-      if (icon.startsWith('/') || icon.startsWith('http') || icon.startsWith('data:')) {
-        return icon;
-      }
-      
-      // Si es un string SVG
-      if (icon.trim().startsWith('<svg')) {
-        try {
-          // Convertir a data URL
-          return `data:image/svg+xml;base64,${btoa(icon)}`;
-        } catch (e) {
-          console.error('Error convirtiendo SVG:', e);
-          return '';
-        }
-      }
-
-      // Si está escapado (&lt;svg)
-      if (icon.includes('&lt;svg')) {
-        try {
-          // Desescapar
-          const decoded = icon
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&amp;/g, '&');
-          
-          if (decoded.trim().startsWith('<svg')) {
-            return `data:image/svg+xml;base64,${btoa(decoded)}`;
-          }
-        } catch (e) {
-          console.error('Error procesando SVG escapado:', e);
-          return '';
-        }
-      }
-      
-      return icon;
-}*/
-
 const showAscendants = async () => {
   if (!taxonAct.value?.completo?.Ascendentes) {
     ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
@@ -1135,7 +1107,7 @@ const showAscendants = async () => {
 
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
-    <el-container class="main-layout-container-fixed">
+    <el-container >
       <el-header class="main-header-override">
         <div>
           <el-row :gutter="16">
@@ -1203,12 +1175,12 @@ const showAscendants = async () => {
           </el-row>
         </div>
 
-        <div class="content-wrapper">
+        <div class="content-wrapper" >
           <el-container class="main-content-container">
-            <el-aside width="600px" class="aside-tree">
+            <el-aside class="aside-tree">
               <div class="tree-container">
-                <el-scrollbar height="550px">
-                  <el-tree class="filter-tree" :data="data" node-key="id" @node-click="expande"
+                <el-scrollbar height="500px">
+                  <el-tree :data="data" node-key="id" @node-click="expande"
                     :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
                     empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
                     :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick">
@@ -1268,7 +1240,7 @@ const showAscendants = async () => {
             </el-aside>
             <el-container class="details-container">
               <el-header class="details-header">
-                <div class="details-title" style="margin-bottom: 20px;">
+                <div class="details-title">
                   <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
                     class="details-title-icon">
                   <span class="details-title-text">
@@ -1277,48 +1249,14 @@ const showAscendants = async () => {
                 </div>
               </el-header>
               <el-main class="details-main">
-                <!-- Sección de Relaciones Nomenclaturales >
-                <div class="table-section">
-                  <div class="table-header">
-                    <span class="demo-input-label table-title">
-                      Relaciones nomenclaturales
-                      <span class="table-count">({{ totalRegNom }})</span>
-                    </span>
-                  </div>
-                  
-                  <div class="table-wrapper">
-                    <TablaFiltrable 
-                      :columnas="columnasDefinidas" 
-                      :datos="datosPaginadosNomenclatura"
-                      :opciones-filtro="opcionesFiltroNomenclatura"
-                      :totalItems = totalRegNom
-                      :mostrarBiblio="true"
-                      :mostrarAcci="true"
-                      @eliminar-item="manejarEliminarRel"
-                      @abrir-Biblio="abrirBiblio"
-                    />
-                  </div>
-                  
-                  < Paginación >
-                  <div v-if="totalRegNom > pageSizeNomenclatura" class="table-pagination">
-                    <el-pagination 
-                      small 
-                      background 
-                      layout="prev, pager, next, total" 
-                      :total="totalRegNom"
-                      :page-size="pageSizeNomenclatura" 
-                      v-model:current-page="currentPageNomenclatura" 
-                    />
-                  </div>
-                </div-->
                 <!--Prueba colapse-->
-                <div class="demo-collapse" >
-                   <el-collapse class="custom-collapse" accordion expand-icon-position="left"
+                <div>
+                   <el-collapse accordion expand-icon-position="left"
                                  v-model="activeNames">
                     <el-collapse-item name="1">
                       <template #title="{ isActive}">
                         <div class="table-header">
-                          <span class="demo-input-label table-title">
+                          <span class="table-title">
                             Relaciones nomenclaturales
                             <span class="table-count">({{ totalRegNom }})</span>
                           </span>
@@ -1330,6 +1268,7 @@ const showAscendants = async () => {
                         :datos="tablaNomenclatura"
                         :opciones-filtro="opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
+                        :itemsPerPage="2"
                         :mostrarBiblio="true"
                         :mostrarAcci="true"
                         @eliminar-item="manejarEliminarRel"
@@ -1340,7 +1279,7 @@ const showAscendants = async () => {
                     <el-collapse-item name="2">
                       <template #title="{ isActive}">
                         <div class="table-header">
-                          <span class="demo-input-label table-title">
+                          <span class="table-title">
                             Referencias asociadas
                             <span class="table-count">({{ totalRegRef }})</span>
                           </span>
@@ -1353,7 +1292,7 @@ const showAscendants = async () => {
                           v-model:total-items="totalRegRef" 
                           :opciones-filtro="opcionesFiltroRef" 
                           :totalItems = "totalRegRef"
-                          :items-por-pagina="2"
+                          :itemsPerPage="2"
                           :mostrarBiblio="true"
                           :mostrarAcci="true"
                           @abrir-Biblio="abrirBiblioNombre"
@@ -1363,52 +1302,17 @@ const showAscendants = async () => {
                     </el-collapse-item>
                   </el-collapse>
                 </div>
-                <!--Termina prueba colapse-->
-                <!-- Sección de Referencias Asociadas >
-                <div class="table-section">
-                  <div class="table-header">
-                    <span class="demo-input-label table-title">
-                      Referencias asociadas
-                      <span class="table-count">({{ totalRegRef }})</span>
-                    </span>
-                  </div>
-                  
-                  <div class="table-wrapper">
-                    <TablaFiltrable 
-                      :columnas="columnasDefRef" 
-                      v-model:datos="tablaReferencias"
-                      v-model:total-items="totalRegRef" 
-                      :opciones-filtro="opcionesFiltroRef" 
-                      :items-por-pagina="2"
-                      :mostrarBiblio="true"
-                      :mostrarAcci="true"
-                      @abrir-Biblio="abrirBiblioNombre"
-                      @eliminar-item="manejarEliminarRef"
-                    />
-                  </div>
-                  
-                  <!-- Paginación para referencias si es necesario >
-                  <div v-if="totalRegRef > 2" class="table-pagination">
-                    <el-pagination 
-                      small 
-                      background 
-                      layout="prev, pager, next, total" 
-                      :total="totalRegRef"
-                      :page-size="2" 
-                    />
-                  </div>
-                </div-->
+
               </el-main>
             </el-container>
           </el-container>
         </div>
 
-        <el-footer class="main-pagination-footer">
+        <el-footer>
           <div class="pagination-footer">
-            <div v-if="totalItems > 0" class="pagination-container-wrapper">
+            <div v-if="totalItems > 0">
               <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                @current-change="handlePageChange" layout="prev, pager, next, total" background
-                class="main-pagination-style">
+                @current-change="handlePageChange" layout="prev, pager, next, total" background>
               </el-pagination>
             </div>
           </div>
@@ -1454,7 +1358,7 @@ const showAscendants = async () => {
         <h3>Ascendentes del taxón</h3>
       </div>
       <div class="content-wrapper-custom">
-        <el-tree class="filter-tree" :data="treeDataAscendentes" node-key="id" @node-click="expande"
+        <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
           :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
           empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
           :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
@@ -1539,25 +1443,24 @@ const showAscendants = async () => {
 }
 
 .pagination-footer {
-  padding-top: 15px;
+  padding-top: 5px;
   flex-shrink: 0;
 }
 
 .main-header-override {
   height: 100% !important;
-  padding: 16px;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
 .main-layout-container-fixed {
-  height: 750px;
+  height: 250px;
 }
 
 .content-wrapper {
   flex-grow: 1;
-  margin-top: 16px;
+  margin-top: 1px;
   overflow: hidden;
   min-height: 0;
   display: flex;
@@ -1592,7 +1495,7 @@ const showAscendants = async () => {
 
   .details-container {
     flex-grow: 1;
-    padding-left: 20px;
+    padding-left: 10px;
     display: flex;
     flex-direction: column;
     height: 470px;
@@ -1605,7 +1508,7 @@ const showAscendants = async () => {
     flex-direction: column;
     gap: 20px;
     overflow: hidden;
-    padding-top: 10px;
+    padding-top: 1px;
     padding-bottom: 20px;
   }
 
@@ -1627,9 +1530,9 @@ const showAscendants = async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #ebeef5;
+    padding: 1px 16px;
+    background: #d9e1eb;
+    border-bottom: 1px solid #f5ebeb;
   }
 
   .table-title {
@@ -1639,8 +1542,10 @@ const showAscendants = async () => {
   }
 
   .table-count {
+    font-size: 14px;
+    font-weight: bold;
     font-weight: normal;
-    color: #909399;
+    color: #67746b;
     margin-left: 4px;
   }
 

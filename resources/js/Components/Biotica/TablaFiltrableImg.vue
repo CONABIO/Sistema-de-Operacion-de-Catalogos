@@ -170,9 +170,12 @@ watch(tipoDeBusqueda, () => {
     <div class="table-responsive " >
         <el-table 
             :data="paginatedDatos" 
-            :border="true" height="100%" 
+            :border="true" 
+            height="100%" 
             @row-click="handleRowClick"
-            :row-class-name = "rowClassName">
+            :row-class-name = "rowClassName"
+            :resizable="false"
+            class="no-resize-table">
             <slot name="expand-column"></slot>
 
             <el-table-column
@@ -182,7 +185,7 @@ watch(tipoDeBusqueda, () => {
                 :min-width="col.minWidth || '150'"
                 :sortable="col.sortable ? 'custom' : false"
                 :align="col.align || 'left'"
-            >
+                :resizable="false">
                 <template #header>
                     <div class="custom-header">
                         <span>{{ col.label }}</span>
@@ -239,7 +242,9 @@ watch(tipoDeBusqueda, () => {
                 </template>
             </el-table-column>
 
-            <el-table-column label="Acciones" width="120" align="center" v-if="props.mostrarAcci">
+            <el-table-column label="Acciones" 
+                              width="120" align="center" v-if="props.mostrarAcci">
+                              <!--:fixed = "'right'"-->
                 <template #default="{ row }">
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
@@ -358,7 +363,22 @@ watch(tipoDeBusqueda, () => {
     color: white !important;
     border-color: #409eff !important;
 }
+/* Estilos para reducir el alto de los encabezados */
+:deep(.el-table__header-wrapper th) {
+    padding: 0 !important;
+    height: 32px !important; /* Altura mínima */
+    line-height: 32px !important;
+}
 
+:deep(.el-table th.el-table__cell) {
+    padding: 0 8px !important; /* Padding horizontal mínimo */
+    height: 32px !important;
+}
+
+:deep(.el-table .el-table__header) {
+    height: 32px !important;
+}
+/*------------------------------------------*/
 :deep(.el-table th.is-sortable .cell) {
   position: relative;
   padding-left: 20px; 
