@@ -14,7 +14,6 @@ const props = defineProps({
   datos: { type: Array, required: true, default: [] },
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 4 },
-  endpoint: { type: String, required: true },
   idKey: { type: String, required: false },
   origen: { type: Boolean, default: false },
   mostrarBiblio: { type: Boolean, default: false },
@@ -152,13 +151,13 @@ watch(tipoDeBusqueda, () => {
         </div>
         <div class="left" >
           <div class="form-actions" v-show="props.mostrarNuevo">
-            <NuevoButton @crear="onNuevo" v-show="habNuevaBiblio"/>
+            <NuevoButton @crear="onNuevo" />
           </div>
         </div>
         <div class="left">
           <slot name="header-actions">
             <!--NuevoButton @crear="onNuevo" /-->
-            <el-tooltip class="item" effect="dark" content="Bibliografia" :placement= "toolPosicion">
+            <el-tooltip class="item" effect="dark" content="Bibliografia">
               <el-button @click="onBiblio" circle type="primary" v-show="props.mostrarBiblio">
                 <el-icon><Management /></el-icon>
               </el-button>
@@ -171,11 +170,12 @@ watch(tipoDeBusqueda, () => {
     <div class="table-responsive " >
         <el-table 
             :data="paginatedDatos" 
-            :border="true" height="100%" 
-            @sort-change="handleSortChange" 
-            @row-dblclick="onRowDblClick" 
+            :border="true" 
+            height="100%" 
             @row-click="handleRowClick"
-            :row-class-name = "rowClassName">
+            :row-class-name = "rowClassName"
+            :resizable="false"
+            class="no-resize-table">
             <slot name="expand-column"></slot>
 
             <el-table-column
@@ -185,7 +185,7 @@ watch(tipoDeBusqueda, () => {
                 :min-width="col.minWidth || '150'"
                 :sortable="col.sortable ? 'custom' : false"
                 :align="col.align || 'left'"
-            >
+                :resizable="false">
                 <template #header>
                     <div class="custom-header">
                         <span>{{ col.label }}</span>
@@ -242,7 +242,9 @@ watch(tipoDeBusqueda, () => {
                 </template>
             </el-table-column>
 
-            <el-table-column label="Acciones" width="120" align="center" v-if="props.mostrarAcci">
+            <el-table-column label="Acciones" 
+                              width="120" align="center" v-if="props.mostrarAcci">
+                              <!--:fixed = "'right'"-->
                 <template #default="{ row }">
                 <div class="action-buttons-container">
                     <slot name="acciones" :fila="row">
@@ -361,7 +363,22 @@ watch(tipoDeBusqueda, () => {
     color: white !important;
     border-color: #409eff !important;
 }
+/* Estilos para reducir el alto de los encabezados */
+:deep(.el-table__header-wrapper th) {
+    padding: 0 !important;
+    height: 32px !important; /* Altura mínima */
+    line-height: 32px !important;
+}
 
+:deep(.el-table th.el-table__cell) {
+    padding: 0 8px !important; /* Padding horizontal mínimo */
+    height: 32px !important;
+}
+
+:deep(.el-table .el-table__header) {
+    height: 32px !important;
+}
+/*------------------------------------------*/
 :deep(.el-table th.is-sortable .cell) {
   position: relative;
   padding-left: 20px; 

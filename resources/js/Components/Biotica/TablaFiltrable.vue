@@ -123,8 +123,11 @@ const limpiarFiltro = (campo) => {
 };
 
 const handleSortChange = ({ prop, order }) => {
+  console.log("Esto es lo que llega al ordenamiento como prop: ", prop);
+  console.log("Esto es lo que llega al ordenamiento como order: ", order);
   sorting.value.prop = prop;
   sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
+  console.log("Esto es lo que tiene sorting", sorting.value);
   currentPage.value = 1;
   fetchData();
 };
