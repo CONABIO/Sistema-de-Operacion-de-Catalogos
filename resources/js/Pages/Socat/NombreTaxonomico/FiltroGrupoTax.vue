@@ -105,17 +105,17 @@ const cerrarNotificacion = () => {
                 <el-header class="header">
                     <div class="header-content">
                         <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
-                        <div class="header-button">
-                            <btnTraspaso @traspasa="recuperaMarcados()" />
-                        </div>
                     </div>
                 </el-header>
                 <el-main class="contenido">
                     <div>
-                        <div v-show="!checkAll">
+                        <div v-show="!checkAll" class="header-content">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="marcar">
                                 Marcar todos
-                            </el-checkbox>
+                            </el-checkbox> 
+                            <div class="header-button">
+                                <btnTraspaso @traspasa="recuperaMarcados()" />
+                            </div>
                         </div>
                         <div v-show="checkAll">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">
