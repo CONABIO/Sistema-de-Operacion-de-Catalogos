@@ -22,7 +22,8 @@ const props = defineProps({
   highlightCurrentRow: {
     type: Boolean,
     default: false
-  }
+  },
+  rowClassName: { type: [Function, String], default: '' } 
 });
 
 
@@ -123,11 +124,8 @@ const limpiarFiltro = (campo) => {
 };
 
 const handleSortChange = ({ prop, order }) => {
-  console.log("Esto es lo que llega al ordenamiento como prop: ", prop);
-  console.log("Esto es lo que llega al ordenamiento como order: ", order);
   sorting.value.prop = prop;
   sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-  console.log("Esto es lo que tiene sorting", sorting.value);
   currentPage.value = 1;
   fetchData();
 };
@@ -163,9 +161,9 @@ defineExpose({ fetchData, forzarFocoFilaVerde   });
         </div>
         <div class="left">
           <div class="form-actions">
-            <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <BotonTraspaso  v-if="props.mostrarTraspaso"  @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
-            <BotonSalir />
+             <BotonSalir :accion="accionModal" @salir="cerrarModal" />
           </div>
         </div>
       </div>
@@ -173,7 +171,7 @@ defineExpose({ fetchData, forzarFocoFilaVerde   });
 
     <div class="table-responsive ">
       <el-table ref="tableRefInterna"  :highlight-current-row="props.highlightCurrentRow" :data="props.datos" :border="true"
-        height="550" @sort-change="handleSortChange" @row-click="(row) => emit('row-click', row)">
+        height="550" @sort-change="handleSortChange" @row-click="(row) => emit('row-click', row)" :row-class-name="props.rowClassName">
         <slot name="expand-column"></slot>
 
         <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
