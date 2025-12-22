@@ -3,7 +3,12 @@
     <el-card>
       <el-container>
         <el-header class="header">
-          <h1 class="titulo">Información del taxón</h1>
+          <div class="header-content">
+            <h1 class="titulo">Información del taxón</h1>
+          </div>
+          <div class="form-actions">
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+            </div> 
         </el-header>
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
@@ -43,7 +48,6 @@
                 </el-space>
               </el-col>
           </el-row>
-          <br />
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
             <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
               <el-option
@@ -362,6 +366,7 @@ import autoridades from '@/Components/Biotica/Icons/Autor.vue';
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const { permisos, usuario } = usePermisos();
 
@@ -602,6 +607,10 @@ const carga_inicio = () => {
     
   }
 };
+
+  const cerrarDialogo = () => {
+        emit('cerrar');
+  };
 
 const carga_Grupos = () => {
   dialogFormVisibleGrupos.value = true;
@@ -1261,209 +1270,231 @@ onMounted(() => {
 
 
 <style scoped>
-.form-nombre-container {
-  padding: 20px;
-}
-
-.header {
-    text-align: left;
-    padding: 0.5rem; 
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
+  .form-nombre-container {
+    padding: 1px;
   }
 
-.form-header {
-  padding: 20px;
-  min-width: 190px;
-  height: 180px;
-  box-sizing: border-box;
-}
+  .header {
+          background-color: #d9e1eb;
+          padding: 15px;
+          border-bottom: 1px solid #e0e0e0;
+          height: auto !important;
+          min-height: auto !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 8px;
+          color: white;
+    }
 
-.icono {
-  margin-right: 8px;
-}
+  .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
 
-.custom-tree-node {
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  padding-right: 8px;
-  width: 50%;
-  overflow: auto;
-}
+    .titulo {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+        text-align: center;
+    }
 
-.filter-tree .el-tree-node.is-current>.el-tree-node__content {
-  background-color: rgb(203, 233, 200) !important;
-  color: rgb(0 17 255) !important;
-}
-
-.filter-tree .el-tree-node.is-current .el-tree-node__children {
-  background-color: transparent !important;
-  color: inherit !important;
-}
-
-.highlight-node {
-  color: #a52f2f !important;
-}
-
-.greenClass {
-  background: rgb(90, 177, 90);
-}
-
-.redClass {
-  background: rgb(226, 119, 119);
-}
-
-.context-menu {
-  display: block !important;
-  visibility: visible !important;
-  position: absolute;
-  z-index: 9999;
-  background-color: hsl(223, 41%, 93%);
-  border: 1px solid #dcdfe6;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  min-width: 190px;
-  height: auto;
-  box-sizing: border-box;
-}
-
-.el-menu-item {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.menu-item-submenu {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.el-submenu .el-menu-item {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.el-submenu__title {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.icon-style {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-.el-icon {
-  font-size: 16px;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-.custom-form-item .el-form-item__content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.custom-form-item .el-form-item__label {
-  margin-bottom: 8px;
-}
-
-.flex-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.flex-container span {
-  white-space: nowrap;
-}
-
-.el-input,
-.el-cascader {
-  flex: 1;
-  min-width: 150px;
-}
-
-.tree-node-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.tree-node-logo {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.tree-node-label {
-  font-size: 14px;
-  line-height: 20px;
-}
-
-.el-tree-node:hover {
-  background-color: transparent !important;
-}
-
-@media (max-width: 768px) {
-  .filter-tree {
-    min-width: 98%;
+  .form-header {
+    padding: 20px;
+    min-width: 190px;
+    height: 180px;
+    box-sizing: border-box;
   }
 
-  .el-aside {
-    width: auto !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-width: 100%;
-    margin-bottom: 30px;
+  .icono {
+    margin-right: 8px;
   }
 
-  .d-table-cell {
-    max-width: 100%;
+  .custom-tree-node {
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+    width: 50%;
+    overflow: auto;
   }
 
-  .el-header {
-    width: 100%;
+  .filter-tree .el-tree-node.is-current>.el-tree-node__content {
+    background-color: rgb(203, 233, 200) !important;
+    color: rgb(0 17 255) !important;
   }
 
-  .el-row {
-    justify-content: flex-start;
+  .filter-tree .el-tree-node.is-current .el-tree-node__children {
+    background-color: transparent !important;
+    color: inherit !important;
   }
+
+  .highlight-node {
+    color: #a52f2f !important;
+  }
+
+  .greenClass {
+    background: rgb(90, 177, 90);
+  }
+
+  .redClass {
+    background: rgb(226, 119, 119);
+  }
+
+  .context-menu {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    z-index: 9999;
+    background-color: hsl(223, 41%, 93%);
+    border: 1px solid #dcdfe6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    min-width: 190px;
+    height: auto;
+    box-sizing: border-box;
+  }
+
+  .el-menu-item {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .menu-item-submenu {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .el-submenu .el-menu-item {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .el-submenu__title {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .icon-style {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+
+  .el-icon {
+    font-size: 16px;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+
+  .custom-form-item .el-form-item__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .custom-form-item .el-form-item__label {
+    margin-bottom: 8px;
+  }
+
+  .flex-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .flex-container span {
+    white-space: nowrap;
+  }
+
+  .el-input,
+  .el-cascader {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .tree-node-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .tree-node-logo {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .tree-node-label {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .el-tree-node:hover {
+    background-color: transparent !important;
+  }
+
+  @media (max-width: 768px) {
+    .filter-tree {
+      min-width: 98%;
+    }
+
+    .el-aside {
+      width: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-width: 100%;
+      margin-bottom: 30px;
+    }
+
+    .d-table-cell {
+      max-width: 100%;
+    }
+
+    .el-header {
+      width: 100%;
+    }
+
+    .el-row {
+      justify-content: flex-start;
+    }
 }
 </style>
 
 <style>
-.el-dialog {
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 90%;
-}
-
-@media (min-width: 768px) {
   .el-dialog {
-    max-width: 900px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
   }
-}
 
-@media (max-width: 767px) {
-  .el-dialog {
-    width: 95%;
-    margin: 0 auto;
-    top: 15%;
-    max-width: none;
+  @media (min-width: 768px) {
+    .el-dialog {
+      max-width: 900px;
+    }
   }
-}
+
+  @media (max-width: 767px) {
+    .el-dialog {
+      width: 95%;
+      margin: 0 auto;
+      top: 15%;
+      max-width: none;
+    }
+  }
 </style>

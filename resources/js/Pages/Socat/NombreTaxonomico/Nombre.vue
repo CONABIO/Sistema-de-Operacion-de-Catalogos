@@ -344,7 +344,6 @@ const open = (mensaje) => {
 
 //Esta funcion se dispara una vez que se selecciona una categia taxonomica
 const handleChange = async (value) => {
-
   if (value != undefined) {
     filterText.value = "";
     mostrar.value = false;
@@ -390,7 +389,6 @@ const handleChange = async (value) => {
 
 //Función para hacer la busqueda de los valores colocados en el input de busqueda
 const filterNode = async (value) => {
-  console.log("Aqui entre al filtrado", value);
   mostrar.value = false;
 
   const loading = ElLoading.service({
@@ -416,6 +414,8 @@ const filterNode = async (value) => {
       paginas.value = response.data[1].last_page;
       loading.close();
     }
+  }else if (idsGrupos.value != '' && categ.value != null){
+    handleChange(categ.value);
   }
 
   loading.close();
