@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, h } from "vue";
+import { ref, onMounted, watch, h, nextTick } from "vue";
 import axios from "axios";
 import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElCard, ElCollapse, ElCollapseItem, ElScrollbar, ElTable, ElTableColumn, ElTooltip, ElButton, ElIcon, ElPagination, ElRadioGroup, ElRadioButton } from "element-plus";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
@@ -14,6 +14,35 @@ import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@e
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 
 
+/* const hacerFocoEnFila = (idAutor) => {
+  // Buscamos en qué posición del arreglo está el autor
+  const index = datosDeAutores.value.findIndex(a => a.IdAutorTaxon === idAutor);
+
+  if (index >= 0 && tablaRef.value) {
+    nextTick(() => {
+      // Intentamos obtener las filas de la tabla. 
+      // Nota: '.el-table__body tr' es la clase estándar de las filas en Element Plus
+      const filas = tablaRef.value.$el.querySelectorAll('.el-table__body tr.el-table__row');
+      
+      if (filas && filas[index]) {
+        // Hacemos el scroll suave hacia esa fila
+        filas[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
+}; */
+
+const selectedRowId = ref(null);
+const manejarClickFila = (row) => {
+  selectedRowId.value = row.IdAutorTaxon;
+};
+const tableRowClassName = ({ row }) => {
+  if (row.IdAutorTaxon === selectedRowId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
 const emit = defineEmits(['traspasoAutores']);
 const props = defineProps({
   autorRel: { type: Object, required: false },
@@ -23,13 +52,11 @@ const props = defineProps({
 const tablaRef = ref(null);
 const datosDeAutores = ref([]);
 const totalAutores = ref(0);
-
 const columnasDefinidas = ref([
   { prop: 'NombreAutoridad', label: 'Nombre de la autoridad', minWidth: '180', sortable: true, align: 'left', filtrable: true },
   { prop: 'NombreCompleto', label: 'Nombre completo', minWidth: '250', sortable: true, align: 'left', filtrable: true },
   { prop: 'GrupoTaxonomico', label: 'Grupo taxonomico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
 ]);
-
 
 const opcionesFiltroAutores = ref([
   { label: 'NombreAutoridad', value: 'NombreAutoridad' },
@@ -54,7 +81,6 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
-
 const traspasaDatos = () => {
   if (autoridadTax.value === '') {
     ElMessageBox.alert('Se debe de armar la autoridad taxonomica para continuar.', 'Error', { type: 'error' });
@@ -62,6 +88,7 @@ const traspasaDatos = () => {
     emit('traspasoAutores', autoresRel, autoridadTax);
   }
 }
+
 const agregarAutor = async (row) => {
   autoridadTax.value = "";
   if (props.nombre) {
@@ -76,6 +103,7 @@ const agregarAutor = async (row) => {
     }
   }
 }
+
 const armaAutoridad = () => {
   let autorCompleto = "";
   autoresRel.value.forEach((autor, index) => {
@@ -92,6 +120,7 @@ const armaAutoridad = () => {
   });
   autoridadTax.value = autorCompleto;
 }
+
 const subirRow = (index) => {
   autoridadTax.value = "";
   if (index > 0) {
@@ -100,6 +129,7 @@ const subirRow = (index) => {
     autoresRel.value.splice(index - 1, 0, item);
   }
 }
+
 const bajarRow = (index) => {
   autoridadTax.value = "";
   if (index < autoresRel.value.length - 1) {
@@ -108,10 +138,12 @@ const bajarRow = (index) => {
     autoresRel.value.splice(index + 1, 0, item);
   }
 }
+
 const deleteRow = (index) => {
   autoridadTax.value = "";
   autoresRel.value.splice(index, 1)
 }
+
 const handleInput = (value, scope, campo) => {
   autoridadTax.value = "";
   let filteredValue = '';
@@ -123,6 +155,7 @@ const handleInput = (value, scope, campo) => {
   filteredValue = filteredValue.slice(0, 15);
   scope.row[campo] = filteredValue;
 };
+
 const onKeyDown = (event) => {
   if (event.ctrlKey || event.altKey || event.metaKey ||
     [8, 9, 13, 16, 17, 18, 19, 20, 27, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46].includes(event.keyCode)) {
@@ -132,6 +165,7 @@ const onKeyDown = (event) => {
     event.preventDefault();
   }
 };
+
 const onPaste = (event, scope) => {
   const clipboardData = event.clipboardData || window.clipboardData;
   const pastedText = clipboardData.getData('text');
@@ -143,6 +177,7 @@ const onPaste = (event, scope) => {
   }
   scope.row.CadFinal = filteredText;
 };
+
 const cargaListAutor = async (idsAutor) => {
   try {
     autoridadTax.value = '';
@@ -197,77 +232,104 @@ const cerrarFormModal = () => {
   modalFormVisible.value = false;
 };
 
-
 const handleFormAutorSubmited = (datosDelFormulario) => {
   cerrarFormModal();
 
-  if (datosDelFormulario.accionOriginal === 'editar') {
-    const autorExistente = datosDeAutores.value.find(autor => 
-      autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
-      autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
-      autor.IdAutorTaxon !== datosDelFormulario.idParaEditar 
-    );
+  // 1. Buscamos si ya existe el registro en la lista actual
+  // Usamos trim() y toLowerCase() para evitar falsos negativos por espacios o mayúsculas
+  const autorExistente = datosDeAutores.value.find(autor =>
+    autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
+    autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase()
+  );
 
-    if (autorExistente) {
+  // 2. Si existe un duplicado...
+  if (autorExistente) {
+    
+    // CASO A: Estamos CREANDO y ya existe
+    if (datosDelFormulario.accionOriginal === 'crear') {
+      // Marcamos la fila (esto activa la clase CSS .fila-seleccionada-verde)
+      selectedRowId.value = autorExistente.IdAutorTaxon;
+
+      // Ejecutamos el foco/scroll en la tabla
+      if (tablaRef.value) {
+        tablaRef.value.forzarFocoFilaVerde();
+      }
+
+      mostrarNotificacion(
+        "Aviso",
+        "El dato ya existe en el catálogo. Se ha seleccionado en la lista.",
+        "warning"
+      );
+      return; // ¡IMPORTANTE! Detenemos aquí para no guardar
+    }
+
+    // CASO B: Estamos EDITANDO y choca con OTRO registro distinto al que editamos
+    if (datosDelFormulario.accionOriginal === 'editar' && autorExistente.IdAutorTaxon !== datosDelFormulario.idParaEditar) {
       mostrarNotificacionError(
         "Aviso",
-        "Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.",
+        "La acción no se realizó ya que existe OTRO autor con el mismo Nombre de Autoridad y Grupo Taxonómico.",
         "error"
       );
-      return; 
+      return; // Detenemos aquí
     }
   }
 
-
+  // 3. Si no hay problemas de duplicados, definimos la función de guardado
   const procederConGuardado = async () => {
     ElMessageBox.close();
     try {
       guardandoDatosServer.value = true;
       let response;
+      
       const payload = {
         nombreAutoridad: datosDelFormulario.nombreAutoridad,
         nombreCompleto: datosDelFormulario.nombreCompleto,
         grupoTaxonomico: datosDelFormulario.grupoTaxonomico,
       };
+
       if (datosDelFormulario.accionOriginal === 'crear') {
         response = await axios.post("/autores", payload);
         mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
       } else if (datosDelFormulario.accionOriginal === 'editar' && datosDelFormulario.idParaEditar) {
         response = await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
         mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
-      } else {
-        throw new Error("Acción de formulario no válida o falta ID.");
       }
+
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
+      
+      selectedRowId.value = null;
+
     } catch (error) {
-      if (error.response) {
-        if (error.response.status === 422) {
-          const errors = error.response.data.errors;
-          let errorMsg = "Error de validación del servidor:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-          mostrarNotificacion("Error de Validación", errorMsg, "error", 0, true);
-        } else {
-          mostrarNotificacionError("Aviso", "Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.");
-        }
+      if (error.response && error.response.status === 422) {
+        const errors = error.response.data.errors;
+        let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+        mostrarNotificacion("Error", errorMsg, "error", 0, true); // El true final es si tu componente soporta HTML
       } else {
-        mostrarNotificacion("Error Inesperado", "Ocurrió un error.", "error");
+        mostrarNotificacionError("Error", "No se pudo guardar la información porque ese nombre de autoridad ya se encuentra registrado.");
       }
     } finally {
       guardandoDatosServer.value = false;
     }
   };
 
-
   const cancelarGuardado = () => {
     ElMessageBox.close();
   };
+
+  // 4. Ejecutamos el guardado o pedimos confirmación
   if (datosDelFormulario.accionOriginal === 'crear') {
     procederConGuardado();
   } else {
+    // Confirmación al editar
     const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
+    
     ElMessageBox({
-      title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      title: 'Confirmar modificación', 
+      showConfirmButton: false, 
+      showCancelButton: false, 
+      customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
           h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -278,9 +340,10 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
           h(BotonAceptar, { onClick: procederConGuardado }),
         ])
       ])
-    }).catch(() => { });
+    }).catch(() => { /* Captura el rechazo del modal si el usuario cierra con ESC */ });
   }
 };
+
 const manejarEliminarItem = (itemId) => {
   const procederConEliminacion = async () => {
     try {
@@ -294,7 +357,7 @@ const manejarEliminarItem = (itemId) => {
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion('Eliminación Exitosa', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'success');
     }
@@ -412,8 +475,9 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        endpoint="/busca-autor" id-key="IdAutorTaxon" @editar-item="manejarEditarItem"
-        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem" @row-dblclick="agregarAutor">
+        endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName"
+        @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem"
+        @row-dblclick="agregarAutor">
 
 
         <template #header-actions>
@@ -425,10 +489,10 @@ const cerrarNotificacion = () => {
               <div class="expand-content-detail">
                 <p><strong>IdAutorTaxon:</strong> {{ row.IdAutorTaxon }}</p>
                 <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                <p><strong>NombreAutoridadOriginal:</strong> {{ row.NombreAutoridadOriginal }}</p>
                 <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
                 <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
                 <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
-                <p><strong>NombreAutoridadOriginal:</strong> {{ row.NombreAutoridadOriginal }}</p>
               </div>
             </template>
           </el-table-column>
@@ -495,6 +559,14 @@ const cerrarNotificacion = () => {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 35px;
+}
+
+.el-table .fila-seleccionada-verde {
+  --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
+  background-color: #a3e4d7 !important;
 }
 </style>
 

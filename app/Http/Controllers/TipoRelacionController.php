@@ -20,7 +20,7 @@ use App\Models\RelacionBibliografia;
 
 class TipoRelacionController extends Controller
 {
-     public function inicioTipRel()
+    public function inicioTipRel()
     {
 
         $arbolCompleto = $this->construirArbolRelaciones(0, 1);
@@ -28,7 +28,7 @@ class TipoRelacionController extends Controller
         return response()->json($arbolCompleto);
     }
 
-    private function construirArbolRelaciones($nivelPadre, $nivelActual = 1, $valoresAnteriores = []) 
+    private function construirArbolRelaciones($nivelPadre, $nivelActual = 1, $valoresAnteriores = [])
     {
         $query = Tipo_Relacion::select(
             'IdTipoRelacion AS value',
@@ -45,8 +45,7 @@ class TipoRelacionController extends Controller
         foreach ($valoresAnteriores as $nivel => $valor) {
             $numeroNivel = str_replace('Nivel', '', $nivel); // Extrae solo el número
             $query->where("Nivel$numeroNivel", $valor);
-
-        }    
+        }
 
         // Filtrar el nivel actual
         if ($nivelPadre > 0) {
@@ -72,7 +71,7 @@ class TipoRelacionController extends Controller
                 $registro->children = $this->construirArbolRelaciones(0, $nivelActual + 1, $nuevosValores);
             }
         }
-        
+
         return $registros;
     }
 
@@ -84,87 +83,83 @@ class TipoRelacionController extends Controller
         $tipRel = collect($request->ids)->pluck('idTipRel')->unique()->toArray();
 
         $iconTipRel = Tipo_Relacion::whereIn('IdTipoRelacion', $tipRel)
-                                   ->get();
+            ->get();
 
         $nombres = Nombre::whereIn('IdNombre', $ids)
-                         ->with(['nombreRel', 'categoria'])
-                         ->get();
+            ->with(['nombreRel', 'categoria'])
+            ->get();
 
-        
+
 
         $data = [];
-        foreach($nombres as $nombre)
-        {
+        foreach ($nombres as $nombre) {
             $taxRel = collect($request->ids)->firstWhere('idNom', $nombre->IdNombre);
-            
+
             $icoTip = collect($iconTipRel)->firstWhere('IdTipoRelacion', $taxRel['idTipRel']);
 
             $biblio = RelacionBibliografia::where('IdNombre', $request->idAct)
-                                          ->where('IdNombreRel', $nombre->IdNombre)
-                                          ->where('IdTipoRelacion', $taxRel['idTipRel'])
-                                          ->with(['bibliografia'])
-                                          ->get();
+                ->where('IdNombreRel', $nombre->IdNombre)
+                ->where('IdTipoRelacion', $taxRel['idTipRel'])
+                ->with(['bibliografia'])
+                ->get();
 
-            $todasBiblio = $biblio->pluck('bibliografia')->filter()->values()->toArray();                                          
-                                          
-            if($nombre->EstadoRegistro === 1)
-            {
-                switch($nombre->Estatus )
-                {
+            $todasBiblio = $biblio->pluck('bibliografia')->filter()->values()->toArray();
+
+            if ($nombre->EstadoRegistro === 1) {
+                switch ($nombre->Estatus) {
                     case 1:
-                        $status = "Sinonimo";     
-                    break;
+                        $status = "Sinonimo";
+                        break;
                     case 6;
-                        $status = "NA";     
-                    break;
+                        $status = "NA";
+                        break;
                     case -9:
-                        $status = "ND";     
-                    break;
+                        $status = "ND";
+                        break;
                     default:
-                        switch($nombre->Nombre)
-                        {
+                        switch ($nombre->Nombre) {
                             case 'Animalia':
-                                $status = "Válido"; 
-                            break;
+                                $status = "Válido";
+                                break;
                             case 'Plantae':
                             case 'Fungi':
                             case 'Protozoa':
                             case 'Archaea':
                             case 'Bacteria':
-                            case 'Chromista':   
+                            case 'Chromista':
                                 $status = "Correcto";
-                            break;                              
-                        default:
-                            if($nombre->categoria->IdNivel2 === 0)
-                            {
-                                $status = "Correcto";
-                            }else{
-                                $status = "Válido";
-                            }
+                                break;
+                            default:
+                                if ($nombre->categoria->IdNivel2 === 0) {
+                                    $status = "Correcto";
+                                } else {
+                                    $status = "Válido";
+                                }
                         }
-                    break;
+                        break;
                 }
 
-                $nomCat = $nombre->categoria->NombreCategoriaTaxonomica.
-                        " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
-                    
-                $etiqueta = $nombre->NombreCompleto." ".$nombre->NombreAutoridad." - ".$status." - ".$nombre->SistClasCatDicc; 
-                    
-                $newHijo = [ 'id' => $nombre->IdNombre, 
-                             'label' => $etiqueta, 
-                             'texto' => $nomCat,
-                             'estatus' => $status,
-                             'completo'=> $nombre,
-                             'iconoCat'=> $nombre->categoria->RutaIcono,
-                             'desIconCat'=> $nombre->categoria->NombreCategoriaTaxonomica,
-                             'iconoTipRel' => $icoTip->RutaIcono,
-                             'desIconTip' => $icoTip->Descripcion,
-                             'observaciones' => $taxRel['obser'] ?? null,
-                             'fechaCaptura' => $taxRel['fechaCap'] ?? null,
-                             'fechaModificacion' => $taxRel['fechaMod'] ?? null,
-                             'Bibliografia' => $todasBiblio
-                        ];
-                        
+                $nomCat = $nombre->categoria->NombreCategoriaTaxonomica .
+                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+
+                $etiqueta = $nombre->NombreCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
+
+                $newHijo = [
+                    'id' => $nombre->IdNombre,
+                    'label' => $etiqueta,
+                    'texto' => $nomCat,
+                    'estatus' => $status,
+                    'completo' => $nombre,
+                    'iconoCat' => $nombre->categoria->RutaIcono,
+                    'desIconCat' => $nombre->categoria->NombreCategoriaTaxonomica,
+                    'iconoTipRel' => $icoTip->RutaIcono,
+                    'desIconTip' => $icoTip->Descripcion,
+                    'observaciones' => $taxRel['obser'] ?? null,
+                    'fechaCaptura' => $taxRel['fechaCap'] ?? null,
+                    'fechaModificacion' => $taxRel['fechaMod'] ?? null,
+                    'Bibliografia' => $todasBiblio
+                ];
+
                 array_push($data, $newHijo);
             }
         }
@@ -172,7 +167,7 @@ class TipoRelacionController extends Controller
         return $data;
     }
 
-//==============================================================================
+    //==============================================================================
     public function index()
     {
         $todosLosNodosPlanos = Tipo_Relacion::orderBy('Nivel1')
@@ -229,6 +224,9 @@ class TipoRelacionController extends Controller
             'Nivel3' => 'required|integer',
             'Nivel4' => 'required|integer',
             'Nivel5' => 'required|integer',
+        ], [
+            // Agregamos este arreglo con el mensaje personalizado
+            'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
         ]);
 
         $tipoRelacion = Tipo_Relacion::create($validatedData);
@@ -253,6 +251,9 @@ class TipoRelacionController extends Controller
                     Rule::unique(Tipo_Relacion::class)->ignore($tipoRelacion->IdTipoRelacion, 'IdTipoRelacion')
                 ],
                 'Direccionalidad' => 'required|integer|in:1,2,3',
+            ], [
+                // Agregamos este arreglo con el mensaje personalizado
+                'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
             ]);
 
             $tipoRelacion->update($validatedData);
@@ -289,7 +290,6 @@ class TipoRelacionController extends Controller
         try {
             $tipoRelacion->delete();
             return Redirect::back()->with('success', 'Tipo de Relación eliminado con éxito.');
-
         } catch (QueryException $e) {
             $errorCode = $e->errorInfo[1];
             if ($errorCode == 1451) {

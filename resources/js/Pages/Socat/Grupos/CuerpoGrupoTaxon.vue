@@ -1,7 +1,7 @@
 <script setup>
 import { ref, h, computed } from 'vue';
 import axios from 'axios';
-import { ElMessageBox, ElTableColumn } from 'element-plus';
+import { ElMessageBox, ElButton } from 'element-plus';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import FormGrupoTaxonomico from '@/Pages/Socat/Grupos/FormGrupoTaxonomico.vue';
@@ -14,6 +14,35 @@ const props = defineProps({
     datosGrupo: Object
 });
 
+const selectedRowId = ref(null);
+
+const manejarClickFila = (row) => {
+    selectedRowId.value = row.IdGrupoSCAT;
+};
+
+const tableRowClassName = ({ row }) => {
+    if (row.IdGrupoSCAT === selectedRowId.value) {
+        return 'fila-seleccionada-verde';
+    }
+    return '';
+};
+
+const asociarSeleccionado = () => {
+    if (!selectedRowId.value) {
+        mostrarNotificacion("Aviso", "Por favor, seleccione un grupo de la lista para asociar.", "warning");
+        return;
+    }
+    const row = currentData.value.find(r => r.IdGrupoSCAT === selectedRowId.value);
+    if (row) {
+        seleccionarGrupo(row);
+    }
+};
+
+const cerrarVentana = () => {
+    window.parent.postMessage({
+        type: 'cerrarModal'
+    }, '*');
+};
 
 const tablaRef = ref(null);
 const currentData = ref([]);
@@ -45,14 +74,14 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000, es
 
 
 function seleccionarGrupo(row) {
-  const payload = {
-    id: row.IdGrupoSCAT,
-    nombre: row.GrupoSCAT
-  };
-  window.parent.postMessage({
-    type: 'grupoTaxonomicoSeleccionado',
-    payload: payload
-  }, '*'); 
+    const payload = {
+        id: row.IdGrupoSCAT,
+        nombre: row.GrupoSCAT
+    };
+    window.parent.postMessage({
+        type: 'grupoTaxonomicoSeleccionado',
+        payload: payload
+    }, '*');
 }
 
 
@@ -89,7 +118,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             ? (mismoNombre && grupo.IdGrupoSCAT !== grupoEditado.value.IdGrupoSCAT)
             : mismoNombre;
     });
- 
+
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
@@ -98,7 +127,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
         );
         return;
     }
- 
+
     const procederConGuardado = async () => {
         ElMessageBox.close();
         try {
@@ -108,16 +137,25 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
                 GrupoAbreviado: datosDelFormulario.GrupoAbreviado,
                 GrupoSNIB: datosDelFormulario.GrupoSNIB,
             };
- 
+
             if (!esEdicion) {
                 await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+                mostrarNotificacion(
+                    "Ingreso",
+                    `El grupo "${datosDelFormulario.GrupoSCAT}" ha sido ingresado correctamente.`,
+                    "success"
+                );
+
             } else {
                 const idParaEditar = grupoEditado.value.IdGrupoSCAT;
                 await axios.put(`/grupos-taxonomicos/${idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+                mostrarNotificacion(
+                    "Modificación",
+                    `El grupo "${datosDelFormulario.GrupoSCAT}" ha sido modificado correctamente.`,
+                    "success"
+                );
             }
- 
+
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
@@ -137,9 +175,9 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             guardandoDatosServer.value = false;
         }
     };
- 
+
     const cancelarGuardado = () => { ElMessageBox.close(); };
- 
+
     if (!esEdicion) {
         procederConGuardado();
     } else {
@@ -171,7 +209,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación Exitosa", `Grupo ${nombreGrupoEliminado} eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón.`, 'error');
         }
@@ -197,38 +235,36 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 </script>
 
 <template>
-    <!-- VISTA NORMAL  -->
     <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Grupos Taxonómicos"
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
-            <TablaFiltrable  @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow"
-                :columnas="columnasDefinidas" v-model:datos="currentData" v-model:total-items="totalItems"
-                endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo"
-                @nuevo-item="nuevoGrupo">
+            <TablaFiltrable @row-click="manejarClickFila" :row-class-name="tableRowClassName"
+                @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
+                v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
+                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo">
+
+                <template #actions>
+                    <el-button type="primary" @click="asociarSeleccionado">
+                        Asociar
+                    </el-button>
+                </template>
+
             </TablaFiltrable>
         </div>
     </LayoutCuerpo>
 
 
-    <!-- VISTA DEL MODAL -->
     <div v-else class="modal-view-container">
         <div class="area-title" style="background-color: #d9e1eb; color: black; border-radius: 8px; height: 60px ;">
             <h2 style="margin-top: 14px; margin-left: 20px;">Catálogo de grupos taxonómicos</h2>
         </div>
         <div class="h-full flex flex-col flex-grow">
-            
-            <TablaFiltrable 
-                @row-dblclick="seleccionarGrupo" 
-                ref="tablaRef" 
-                class="flex-grow" 
-                :columnas="columnasDefinidas" 
-                v-model:datos="currentData"
-                v-model:total-items="totalItems" 
-                endpoint="/busca-grupo" 
-                id-key="IdGrupoSCAT" 
-                @editar-item="editarGrupo"
-                @eliminar-item="eliminarGrupo" 
-                @nuevo-item="nuevoGrupo">
+
+            <TablaFiltrable @row-click="manejarClickFila" :row-class-name="tableRowClassName"
+                @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
+                v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
+                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
+                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana">
             </TablaFiltrable>
         </div>
     </div>
@@ -238,8 +274,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 
     <Teleport to="body">
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion=0
-            @close="cerrarNotificacion" />
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion" @close="cerrarNotificacion" />
     </Teleport>
 </template>
 
@@ -293,6 +328,19 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     gap: 10px;
     margin-top: 35px;
 }
+
+.el-table .fila-seleccionada-verde {
+    background-color: #ddf6dd !important;
+}
+
+
+.el-table .fila-seleccionada-verde {
+    --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
+    background-color: #a3e4d7 !important;
+}
 </style>
 
 <style scoped>
@@ -317,5 +365,13 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #e2e8f0;
+}
+
+el-table .fila-seleccionada-verde {
+    --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
+    background-color: #cce8cc !important;
 }
 </style>

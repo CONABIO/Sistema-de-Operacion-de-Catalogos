@@ -26,6 +26,7 @@ const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const descripcionInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
@@ -98,7 +99,14 @@ const abrirModalParaInsertar = () => {
     formModal.value = { Descripcion: "" };
     opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+            }
+        }, 100);
+    });
 };
 
 const abrirModalParaEditar = () => {
@@ -109,9 +117,20 @@ const abrirModalParaEditar = () => {
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = { Descripcion: selectedNode.value.Descripcion };
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                if (nativeInput) {
+                    const len = nativeInput.value.length;
+                    nativeInput.setSelectionRange(len, len);
+                }
+            }
+        }, 100);
+    });
 };
-
 const cerrarModalOperacion = () => {
     esModalVisible.value = false;
     nodoEnModal.value = null;
@@ -188,7 +207,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         data: { isModal: props.isModal },
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El tipo de region "${nombre}" ha sido eliminado correctamente.`, "success");
             selectedNode.value = null;
         },
         onError: (error) => mostrarNotificacion("Error", error.message || "Ocurrió un error.", "error"),
@@ -331,7 +350,7 @@ const handleNodeDoubleClick = (data) => {
                         </div>
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
-                            <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
                                 maxlength="255" show-word-limit />
                         </el-form-item>
 

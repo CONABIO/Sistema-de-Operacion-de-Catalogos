@@ -205,6 +205,7 @@ const handleNodeSelected = (data, node) => {
   selectedNode.value = data;
 };
 const formModalRef = ref(null);
+const descripcionInputRef = ref(null);
 const formModal = ref({ Descripcion: "" });
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
@@ -225,16 +226,25 @@ const modalRules = {
     },
   ],
 };
+
 const abrirModalParaInsertar = () => {
   if (!selectedNode.value && props.treeDataProp.length > 0) {
-
   }
   modalMode.value = "insertar";
   formModal.value = { Descripcion: "" };
   opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
   esModalVisible.value = true;
-  nextTick(() => formModalRef.value?.clearValidate());
+
+  nextTick(() => {
+    formModalRef.value?.clearValidate();
+    setTimeout(() => {
+      if (descripcionInputRef.value) {
+        descripcionInputRef.value.focus();
+      }
+    }, 100);
+  });
 };
+
 const abrirModalParaEditar = () => {
   if (!selectedNode.value) {
     ElMessage.warning("Por favor, seleccione un nodo para editar.");
@@ -244,14 +254,19 @@ const abrirModalParaEditar = () => {
   nodoEnModal.value = { ...selectedNode.value };
   formModal.value = { Descripcion: selectedNode.value.Descripcion };
   esModalVisible.value = true;
-  nextTick(() => formModalRef.value?.clearValidate());
-};
-const cerrarModalOperacion = () => {
-  esModalVisible.value = false;
-  nodoEnModal.value = null;
-  formModal.value = { Descripcion: "" };
-  modalMode.value = "";
-  opcionNivel.value = "mismo";
+  nextTick(() => {
+    formModalRef.value?.clearValidate();
+    setTimeout(() => {
+      if (descripcionInputRef.value) {
+        descripcionInputRef.value.focus();
+        const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+        if (nativeInput) {
+          const len = nativeInput.value.length;
+          nativeInput.setSelectionRange(len, len);
+        }
+      }
+    }, 100);
+  });
 };
 
 const modalTitle = computed(() => {
@@ -266,7 +281,7 @@ const guardarDesdeModal = async () => {
   }
 
   const proceedWithSave = () => {
-    ElMessageBox.close(); 
+    ElMessageBox.close();
     if (modalMode.value === "editar") {
       const datosUpdate = { Descripcion: formModal.value.Descripcion.trim() };
       const nodeId = nodoEnModal.value.IdCatNombre;
@@ -276,7 +291,7 @@ const guardarDesdeModal = async () => {
         onSuccess: (page) => {
           cerrarModalOperacion();
           mostrarNotificacion(
-            "Ingreso", 
+            "Ingreso",
             "La información ha sido modificada correctamente.",
             "success"
           );
@@ -324,7 +339,7 @@ const guardarDesdeModal = async () => {
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-          
+
           const finalNewNodeId = page.props.flash?.newNodeId;
           if (finalNewNodeId) {
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
@@ -352,7 +367,7 @@ const guardarDesdeModal = async () => {
               "div",
               {
                 class: "custom-warning-circle",
-                style: "background-color: #e6a23c;", 
+                style: "background-color: #e6a23c;",
               },
               "!"
             ),
@@ -374,6 +389,19 @@ const guardarDesdeModal = async () => {
     });
   }
 };
+
+const cerrarModalOperacion = () => {
+  esModalVisible.value = false;
+  nodoEnModal.value = null;
+  formModal.value = { Descripcion: "" };
+  modalMode.value = "";
+  opcionNivel.value = "mismo";
+  
+  if (formModalRef.value) {
+    formModalRef.value.clearValidate();
+  }
+};
+
 
 const handleEliminar = () => {
   if (esModalVisible.value)
@@ -435,8 +463,8 @@ const proceedWithDeletion = async () => {
       preserveScroll: true,
       onSuccess: () => {
         mostrarNotificacion(
-          "¡Eliminación Exitosa!",
-          `Característica "${nombreCaracteristica}" eliminada correctamente.`,
+          "Eliminación exitosa",
+          `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
           "success"
         );
 
@@ -584,82 +612,82 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 </script>
 
 <template>
-    <LayoutCuerpo :usar-app-layout="false" titulo-pag="Características Taxonómicas"
-      titulo-area="Catálogo de características asociadas al taxón">
+  <LayoutCuerpo :usar-app-layout="false" titulo-pag="Características Taxonómicas"
+    titulo-area="Catálogo de características asociadas al taxón">
 
-      <el-card class="box-card tree-card">
-        <template #header>
-          <div class="header-container">
-            <div class="left-header-content"></div>
-            <div class="right-header-content">
-              <div class="action-group">
-                <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
-                <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                  <BotonSalir /> 
-              </div>
+    <el-card class="box-card tree-card">
+      <template #header>
+        <div class="header-container">
+          <div class="left-header-content"></div>
+          <div class="right-header-content">
+            <div class="action-group">
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+              <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
+                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+              <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
+                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+              <BotonSalir />
             </div>
           </div>
+        </div>
+      </template>
+
+      <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
+        :props="{ children: 'children', label: 'Descripcion' }" node-key="IdCatNombre"
+        :current-node-key="selectedNode?.IdCatNombre" :highlight-current="true" :expand-on-click-node="true"
+        :default-expanded-keys="expandedKeysArray" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+        @node-click="handleNodeSelected" class="custom-element-tree">
+        <template #default="{ node, data }">
+          <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
+            <span>{{ node.label }}</span>
+          </span>
         </template>
+      </el-tree>
+      <div v-else class="no-data-message">
+        No hay datos de características para mostrar.
+      </div>
+    </el-card>
 
-        <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
-          :props="{ children: 'children', label: 'Descripcion' }" node-key="IdCatNombre"
-          :current-node-key="selectedNode?.IdCatNombre" :highlight-current="true" :expand-on-click-node="true"
-          :default-expanded-keys="expandedKeysArray" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-          @node-click="handleNodeSelected" class="custom-element-tree">
-          <template #default="{ node, data }">
-            <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
-              <span>{{ node.label }}</span>
-            </span>
-          </template>
-        </el-tree>
-        <div v-else class="no-data-message">
-          No hay datos de características para mostrar.
+  </LayoutCuerpo>
+
+  <Teleport to="body">
+    <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+      <div class="dialog-header">
+        <h3>{{ modalTitle }}</h3>
+      </div>
+      <div class="dialog-body-container">
+        <div class="form-actions">
+          <GuardarButton @click="guardarDesdeModal" />
+          <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
         </div>
-      </el-card>
+        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+          @submit.prevent="guardarDesdeModal">
 
-    </LayoutCuerpo>
-
-    <Teleport to="body">
-      <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
-        <div class="dialog-header">
-          <h3>{{ modalTitle }}</h3>
-        </div>
-        <div class="dialog-body-container">
-          <div class="form-actions">
-            <GuardarButton @click="guardarDesdeModal" />
-            <BotonSalir accion="cerrar"  @salir="cerrarModalOperacion" />
+          <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+            <el-radio-group v-model="opcionNivel">
+              <el-radio value="mismo">Mismo nivel</el-radio>
+              <el-radio value="inferior">Nivel inferior</el-radio>
+            </el-radio-group>
           </div>
-          <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-            @submit.prevent="guardarDesdeModal">
 
-            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-              <el-radio-group v-model="opcionNivel">
-                <el-radio value="mismo">Mismo nivel</el-radio>
-                <el-radio value="inferior">Nivel inferior</el-radio>
-              </el-radio-group>
-            </div>
+          <el-form-item prop="Descripcion">
+            <template #label>
+              {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
+            </template>
+            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
+              clearable maxlength="255" show-word-limit />
+          </el-form-item>
 
-            <el-form-item prop="Descripcion">
-              <template #label>
-                {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
-              </template>
-              <el-input id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
-                clearable maxlength="255" show-word-limit />
-            </el-form-item>
-            
-          </el-form>
-          
-        </div>
-      </DialogGeneral>
+        </el-form>
 
-      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-        @close="cerrarNotificacion" />
-    </Teleport>
+      </div>
+    </DialogGeneral>
+
+    <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+      :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+      @close="cerrarNotificacion" />
+  </Teleport>
 </template>
 
 <style>
@@ -808,12 +836,12 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-header {
-    background-color: #f5f5f5;
-    padding: 20px 24px;
-    border-bottom: 1px solid #e4e7ed;
-    text-align: left;
-    border-radius: 10px;
-    margin-bottom: 10px;
+  background-color: #f5f5f5;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .dialog-header h3 {
@@ -824,23 +852,23 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-body-container {
- background-color: #f3f3f3;
-    padding: 20px 24px;
-    border: 3px;
-    text-align: left;
-    border-radius: 10px;
-    background-color: #ffffff;
-    padding: 20px 24px;
-    text-align: left;
-    position: relative;
-    z-index: 10;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+  background-color: #f3f3f3;
+  padding: 20px 24px;
+  border: 3px;
+  text-align: left;
+  border-radius: 10px;
+  background-color: #ffffff;
+  padding: 20px 24px;
+  text-align: left;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 :deep(.el-form-item) {

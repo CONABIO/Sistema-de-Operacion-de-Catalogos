@@ -32,8 +32,8 @@ const datosObjetos = ref([]);
 
 const biblioRelacion = ref([]);
 
-const loadingObjetos = ref(false); 
-const esModalObjetosVisible = ref(false); 
+const loadingObjetos = ref(false);
+const esModalObjetosVisible = ref(false);
 
 const esModalEditarGrupoVisible = ref(false);
 const grupoParaEditar = ref({
@@ -43,9 +43,9 @@ const grupoParaEditar = ref({
   observaciones: ''
 });
 
-const emit = defineEmits(['cerrar', 
-                          'formSubmited',
-                          'cerrarBiblio']);
+const emit = defineEmits(['cerrar',
+  'formSubmited',
+  'cerrarBiblio']);
 
 const columnasDefinidas = ref([
   { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
@@ -65,15 +65,15 @@ const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
 
 const props = defineProps({
-        isModal: {
-            type: Boolean,
-            default: false
-        },
-        traspaso: {
-            type: Boolean,
-            default: false
-        }
-    });
+  isModal: {
+    type: Boolean,
+    default: false
+  },
+  traspaso: {
+    type: Boolean,
+    default: false
+  }
+});
 
 
 const abrirModalEditar = (filaGrupo) => {
@@ -177,7 +177,7 @@ const editar = (row) => {
 const cerrarDialogo = () => { dialogFormVisible.value = false; };
 
 const cerrarDialogo2 = () => {
-    emit('cerrar');
+  emit('cerrar');
 };
 
 const handleRowClick = async (row) => {
@@ -241,12 +241,12 @@ const cerrarModalGrupos = () => {
   }
 };
 
-const traspasaBiblio= () =>{
+const traspasaBiblio = () => {
 
- const id = selectedBibliografia.value.IdBibliografia;
+  const id = selectedBibliografia.value.IdBibliografia;
 
-   if (!biblioRelacion.value.includes(id)) {
-    biblioRelacion.value.push(id); 
+  if (!biblioRelacion.value.includes(id)) {
+    biblioRelacion.value.push(id);
     mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
   }
 
@@ -307,7 +307,7 @@ const borrarDatos = (idBibliografia) => {
       const nombreItem = itemAEliminar ? `"${itemAEliminar.Autor}"` : 'el registro';
       await axios.delete(`/bibliografias/${idBibliografia}`);
       tablaRef.value?.fetchData();
-      mostrarNotificacion("¡Eliminación Exitosa!", `El registro ${nombreItem} fue eliminado.`, "success");
+      mostrarNotificacion("Eliminación exitosa", `El registro ${nombreItem} fue eliminado.`, "success");
     } catch (apiError) {
       mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
     }
@@ -356,6 +356,9 @@ onMounted(() => {
           mostrarNotificacionError("Aviso", errorMessage, "error");
         });
     }
+     if (event.data && event.data.type === 'cerrarModal') {
+        esModalGruposVisible.value = false;
+    }
   };
   window.addEventListener('message', handleMessageFromIframe);
   onUnmounted(() => {
@@ -369,139 +372,124 @@ onMounted(() => {
 </script>
 
 <template>
-  <!--AppLayout-->
-    <!-- LayoutCuerpo para el contenido visible de la página -->
-    <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
+  <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
 
-      <div class="layout-dos-columnas">
-        <div class="columna-principal">
-          <!--este es el valor de isModal: {{ props.isModal }}-->
-          <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
-            v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
-            id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
-            @row-click = "handleRowClick" @traspasaBiblio = "traspasaBiblio" @cerrar= "cerrarModal" 
-              :botCerrar="props.isModal"  :highlight-current-row="true"
-              :mostrarTraspaso="props.traspaso">
-            <template #expand-column>
-              <el-table-column type="expand">
+    <div class="layout-dos-columnas">
+      <div class="columna-principal">
+        <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
+          v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
+          id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
+          @row-click="handleRowClick" @traspasaBiblio="traspasaBiblio" @cerrar="cerrarModal" :botCerrar="props.isModal"
+          :highlight-current-row="true" :mostrarTraspaso="props.traspaso">
+          <template #expand-column>
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div class="expand-content-detail">
+                  <p><strong>IdBibliografia:</strong> {{ row.IdBibliografia }}</p>
+                  <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
+                  <p><strong>OrdenCitaCompleta:</strong> {{ row.OrdenCitaCompleta }}</p>
+                  <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                  <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
+                  <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                  <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
+                  <p><strong>AutorOriginal:</strong> {{ row.AutorOriginal }}</p>
+                  <p><strong>usuario:</strong> {{ row.usuario }}</p>
+                  <p><strong>Marca:</strong> {{ row.Marca }}</p>
+                </div>
+              </template>
+            </el-table-column>
+          </template>
+        </TablaFiltrable>
+        <div class="cita-container">
+          <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
+            placeholder="Haga clic en una fila para ver la cita completa..." />
+        </div>
+      </div>
+      <div class="columna-lateral">
+        <div class="widget-card" v-loading="loadingGrupos">
+          <div class="widget-header">
+            <h3>Grupo taxonómico</h3>
+            <NuevoButton @crear="agregarGrupo" />
+          </div>
+          <div class="widget-table-container">
+            <el-table :data="datosGrupos" border style="width: 100%"
+              :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
+              <el-table-column prop="grupo" label="Grupo taxonómico" />
+              <el-table-column prop="observaciones" label="Observaciones" />
+              <el-table-column label="Acciones" width="100" align="center">
                 <template #default="{ row }">
-                  <div class="expand-content-detail">
-                    <p><strong>IdBibliografia:</strong> {{ row.IdBibliografia }}</p>
-                    <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
-                    <p><strong>OrdenCitaCompleta:</strong> {{ row.OrdenCitaCompleta }}</p>
-                    <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
-                    <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
-                    <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
-                    <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
-                    <p><strong>AutorOriginal:</strong> {{ row.AutorOriginal }}</p>
-                    <p><strong>usuario:</strong> {{ row.usuario }}</p>
-                    <p><strong>Marca:</strong> {{ row.Marca }}</p>
+                  <div class="action-buttons-container">
+                    <EditarButton @editar="abrirModalEditar(row)" />
+                    <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
                   </div>
                 </template>
               </el-table-column>
-            </template>
-          </TablaFiltrable>
-          <div class="cita-container">
-            <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
-              placeholder="Haga clic en una fila para ver la cita completa..." />
+
+            </el-table>
           </div>
         </div>
-        <div class="columna-lateral">
-          <div class="widget-card" v-loading="loadingGrupos">
-            <div class="widget-header">
-              <h3>Grupo taxonómico</h3>
-              <!-- <el-button type="primary" size="small" @click="agregarGrupo" :disabled="!selectedBibliografia">Agregar
-                grupo</el-button> -->
-                <NuevoButton @crear="agregarGrupo" />
-            </div>
-            <div class="widget-table-container">
-              <el-table :data="datosGrupos" border style="width: 100%"
-                :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
-                <el-table-column prop="grupo" label="Grupo taxonómico" />
-                <el-table-column prop="observaciones" label="Observaciones" />
-                <el-table-column label="Acciones" width="100" align="center">
-                  <template #default="{ row }">
-                    <div class="action-buttons-container">
-                      <EditarButton @editar="abrirModalEditar(row)" />
-                      <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
-                    </div>
-                  </template>
-                </el-table-column>
-
-              </el-table>
-            </div>
+        <div class="widget-card">
+          <div class="widget-header">
+            <h3>Objeto externo</h3>
           </div>
-          <div class="widget-card">
-            <div class="widget-header">
-              <h3>Objeto externo</h3>
-            </div>
-            <div class="widget-table-container">
-              <el-table :data="datosObjetos" border style="width: 100%" empty-text="Sin Datos">
-                <el-table-column prop="objeto" label="Objeto externo" />
-                <el-table-column prop="observaciones" label="Observaciones" />
-                <el-table-column label="Acciones" width="100" align="center">
-                  <template #default="{ }">
-                    <div class="action-buttons-container">
-                      <EditarButton />
-                      <EliminarButton />
-                    </div>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
+          <div class="widget-table-container">
+            <el-table :data="datosObjetos" border style="width: 100%" empty-text="Sin Datos">
+              <el-table-column prop="objeto" label="Objeto externo" />
+              <el-table-column prop="observaciones" label="Observaciones" />
+              <el-table-column label="Acciones" width="100" align="center">
+                <template #default="{ }">
+                  <div class="action-buttons-container">
+                    <EditarButton />
+                    <EliminarButton />
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
         </div>
       </div>
-    </LayoutCuerpo>
+    </div>
+  </LayoutCuerpo>
 
-    <Teleport to="body">
-      <DialogGeneral v-model="dialogFormVisible" style="width:1250px" :bot-cerrar="true" :press-esc="true">
-        <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
-          @form-submited="handleFormSubmited" />
-      </DialogGeneral>
+  <Teleport to="body">
+    <DialogGeneral v-model="dialogFormVisible" style="width:1250px" :bot-cerrar="true" :press-esc="true">
+      <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
+        @form-submited="handleFormSubmited" />
+    </DialogGeneral>
+    <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+      :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+      @close="cerrarNotificacion" />
+    <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :press-esc="true" width="100%"
+      @close="cerrarModalGrupos" :draggable="true">
 
-      <!-- Modal para la Notificación -->
-      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-        @close="cerrarNotificacion" />
-
-      <!-- Modal para la gestión de Grupos Taxonómicos -->
-      <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :press-esc="true" width="100%"
-        @close="cerrarModalGrupos" :draggable="true" >
-
-        <div class="dialog-body-iframe-container" style="padding: 0; border: none;">
-          <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full"
-            frameborder="0">
-          </iframe>
+      <div class="dialog-body-iframe-container" style="padding: 0; border: none; display: flex; flex-direction: column;">
+        <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full"
+          frameborder="0">
+        </iframe>
+      </div>
+    </DialogGeneral>
+    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :bot-cerrar="true">
+      <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
+        <div class="form-actions" style="margin-top: 10px;">
+          <GuardarButton @click="guardarObservaciones" />
+          <BotonSalir accion="cerrar" @salir="cerrarDialogo2" />
         </div>
-      </DialogGeneral>
 
-
-      <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :bot-cerrar="true">
-        <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
-          <div class="form-actions" style="margin-top: 10px;">
-            <GuardarButton @click="guardarObservaciones" /> 
-            <BotonSalir accion="cerrar" @salir="cerrarDialogo2" />
-          </div>
-
-          <!-- Sección de Información del Grupo -->
-          <div class="info-grupo">
-            <span class="info-label">Grupo:</span>
-            <span class="info-valor" style="color: red; font-weight: bold;">{{ grupoParaEditar.grupo }}</span>
-          </div>
-
-          <!-- Sección del Formulario -->
-          <el-form label-position="top" class="form-observaciones">
-            <el-form-item label="Observaciones">
-              <el-input type="textarea" v-model="grupoParaEditar.observaciones" :rows="4"
-                placeholder="Añade tus observaciones aquí" />
-            </el-form-item>
-          </el-form>
+        <div class="info-grupo">
+          <span class="info-label">Grupo:</span>
+          <span class="info-valor" style="color: red; font-weight: bold;">{{ grupoParaEditar.grupo }}</span>
         </div>
-      </DialogGeneral>
 
-    </Teleport>
-  <!--/AppLayout-->
+        <el-form label-position="top" class="form-observaciones">
+          <el-form-item label="Observaciones">
+            <el-input type="textarea" v-model="grupoParaEditar.observaciones" :rows="4"
+              placeholder="Añade tus observaciones aquí" />
+          </el-form-item>
+        </el-form>
+      </div>
+    </DialogGeneral>
+
+  </Teleport>
 </template>
 
 <style>
@@ -602,8 +590,8 @@ onMounted(() => {
 }
 
 .widget-table-container {
-  max-height: 250px; 
-  overflow-y: auto;  
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 .widget-header {
@@ -635,11 +623,8 @@ onMounted(() => {
   gap: 10px;
 }
 
-
-
-
 :deep(.el-dialog .dialog-body-iframe-container) {
-  height: 700px; 
+  height: 700px;
 }
 
 :deep(.el-dialog__body) {
@@ -651,14 +636,14 @@ onMounted(() => {
 
 .dialog-body-iframe-container {
   flex-grow: 1;
-  height: 75vh; 
-  display: flex; 
+  height: 75vh;
+  display: flex;
 }
 
 .iframe-full {
   width: 100%;
   border: none;
-  flex-grow: 1; 
+  flex-grow: 1;
 }
 
 .form-actions {
@@ -674,7 +659,7 @@ onMounted(() => {
   padding: 10px 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px; 
+  gap: 20px;
 }
 
 .info-grupo {
@@ -696,7 +681,7 @@ onMounted(() => {
 }
 
 .form-observaciones .el-form-item {
-  margin-bottom: 0; 
+  margin-bottom: 0;
 }
 
 .form-observaciones :deep(.el-form-item__label) {
@@ -710,5 +695,15 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 10px;
   padding: 10px 20px;
+}
+
+
+.tabla-bibliografia-chica {
+  --el-table-current-row-bg-color: #ddf6dd !important;
+  --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+:deep(.el-table__body tr.current-row > td.el-table__cell) {
+  background-color: #ddf6dd !important;
 }
 </style>
