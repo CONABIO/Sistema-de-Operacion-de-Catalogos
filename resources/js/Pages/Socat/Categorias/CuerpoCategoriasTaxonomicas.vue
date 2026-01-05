@@ -122,7 +122,7 @@ onMounted(() => {
   }
 });
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar la categoría taxonómica seleccionada" : "Ingresar una nueva categoría taxonómica");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar la categoría taxonómica " : "Ingresar una nueva categoría taxonómica");
 const modalRules = { NombreCategoriaTaxonomica: [{ required: true, message: "El nombre es obligatorio.", trigger: "blur" }] };
 
 const abrirModalParaInsertar = () => {
@@ -554,7 +554,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" titulo-pag="Categorías Taxonómicas"
       titulo-area="Catálogo de categorías taxonómicas">
-      <el-card class="box-card tree-card">
+      <el-card class="box-card tree-card" shadow="never">
         <template #header>
           <div class="header-container">
             <div class="left-header-content"></div>
@@ -596,9 +596,8 @@ const isCambiarIconoDeshabilitado = computed(() => {
           </template>
         </el-tree>
 
-        <div v-else class="no-data-message">
-          No hay datos de categorías taxonómicas para mostrar.
-        </div>
+        <div v-else class="no-data-message"> No hay datos de categorías taxonómicas para mostrar.
+</div>
       </el-card>
     </LayoutCuerpo>
 

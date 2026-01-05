@@ -270,7 +270,7 @@ const abrirModalParaEditar = () => {
 };
 
 const modalTitle = computed(() => {
-  return modalMode.value === "editar" ? "Modificar la característica seleccionada" : "Ingresar una nueva característica";
+  return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
 });
 
 const guardarDesdeModal = async () => {
@@ -615,7 +615,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   <LayoutCuerpo :usar-app-layout="false" titulo-pag="Características Taxonómicas"
     titulo-area="Catálogo de características asociadas al taxón">
 
-    <el-card class="box-card tree-card">
+    <el-card class="box-card tree-card" shadow="never">
       <template #header>
         <div class="header-container">
           <div class="left-header-content"></div>

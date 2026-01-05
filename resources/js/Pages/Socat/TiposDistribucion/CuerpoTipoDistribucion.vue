@@ -69,7 +69,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
-            `Ya existe un tipo de distribución con la descripción '${datosDelFormulario.Descripcion}'.`,
+            `Ya existe un tipo de distribución registrado con la misma descripción, no se realizarán los cambios solicitados.`,
             "error"
         );
         return; 

@@ -489,7 +489,7 @@ const cerrarModalOperacion = () => {
     opcionNivel.value = "mismo";
 };
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación seleccionado" : "Ingresar un nuevo tipo de relación");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación" : "Ingresar un nuevo tipo de relación");
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
@@ -515,19 +515,15 @@ const guardarDesdeModal = async () => {
                 onSuccess: onSuccessHandler, onError: onErrorHandler,
             });
         } else if (modalMode.value === "insertar") {
-            // Se calcula la posición del nuevo nodo
             const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
             if (!calculoNiveles) return;
-
-            // CONSTRUIMOS LOS DATOS PARA INSERTAR
             const datosInsert = {
                 Descripcion: formModal.value.Descripcion.trim(),
                 Direccionalidad: formModal.value.Direccionalidad,
                 ...calculoNiveles.niveles,
-                RutaIcono: ICONO_POR_DEFECTO // <--- SIEMPRE SE ASIGNA EL PUTO ICONO AQUÍ
+                RutaIcono: ICONO_POR_DEFECTO 
             };
 
-            // Se manda la petición POST
             router.post("/tipos-relacion", datosInsert, {
                 preserveState: true, preserveScroll: true,
                 onSuccess: (page) => {

@@ -40,7 +40,7 @@ const rules = {
 };
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo nombre común' : 'Modificar el nombre común seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo nombre común' : 'Modificar el nombre común';
 });
 
 watch(() => props.visible, (newVal) => {
