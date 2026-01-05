@@ -16,18 +16,19 @@
                         :columnas="columnasDefinidas" 
                         :datos="comSnib"
                         :totalItems = "totalComSnib"
-                        :itemsPerPage="10"
-                        @row-click="carga_DetCom">
+                        :itemsPerPage="10">
                         <template #expand-column>
                             <el-table-column type="expand">
                                 <template #default="{ row }">
-                                <div class="expand-content-detail">
-                                    <h2>Detalle</h2>
-                                    <TablaFiltrable 
-                                            :columnas="columnasDefDet" 
-                                            :datos="tableDetCom"
-                                            :totalItems = "totalComDet"
-                                            :itemsPerPage="10"/>
+                                <div class="expand-content-detail">                                  
+                                    <el-table :data="row.Detalle"
+                                    size="small"
+                                    :border="false"
+                                    :show-header="true"
+                                    class="compact-table">
+                                        <el-table-column label="Llave nombre" prop="llavenombre" header-align="left" align="left"/>
+                                        <el-table-column label="Comentario SNIB" prop="comentarioscat" header-align="left" align="left"/>
+                                    </el-table>
                                 </div>
                                 </template>
                             </el-table-column>
@@ -127,6 +128,7 @@
         if (response.status === 200) {
             comSnib.value = response.data;
             totalComSnib.value = comSnib.value.length;
+            console.log("Este es el resultado de la consulta: ", comSnib.value);
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");
@@ -135,23 +137,6 @@
         loading.close();
     };
 
-    const carga_DetCom = async (row) => {
-
-        const params = {
-            idNombre: row.idnombre,
-            comentarios: row.comentarioscat
-        };
-
-        const response = await axios.get('/carga-ComDet', { params } ); 
-
-        if (response.status === 200) {
-            tableDetCom.value = response.data;
-            totalComDet.value = tableDetCom.value.length;
-        }
-        else {
-            console.log("Se presentó un error en la recuperación de los datos");
-        }
-    }
 </script>
 <style scoped>
     .common-layout {
@@ -194,6 +179,23 @@
         padding: 0.5rem; /* Reducir el padding en móviles */
         margin-top: 1rem; /* Añadir margen superior para separar del título */
     }
+
+    /*-----------------------------
+    .expand-content-detail .el-table__row > td.el-table__cell {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        border-bottom: none;
+    }
+
+    .expand-content-detail .el-table th.el-table__cell {
+        border-bottom: none;
+        text-align: left;
+    }
+
+    .expand-content-detail .el-table::before {
+        display: none;
+    }*/
+
 
     /* Responsividad */
     @media (min-width: 768px) {
