@@ -334,7 +334,7 @@
 
     <div>
       <DialogComSnib v-model="dialogFormVisibleComentarios" :botCerrar="true" :pressEsc="true">
-        <ComenSnibNom :taxon = "taxonAct" />
+        <ComenSnibNom :taxon = "taxonAct"  @cerrar="closeDialogComSnib" />
       </DialogComSnib>
     </div>
 
@@ -392,7 +392,7 @@ const props = defineProps({
   },
   paginaActual: Number,
   categoria: [],
-  catalogos: []
+  catalogos: [], 
 });
 
 const habNuevo = ref(false);
@@ -541,8 +541,7 @@ const recibeAutores = (autores, autoridadTax) =>{
   dialogFormVisibleAutor.value= false;
 }
 
-const carga_inicio = () => {
-  tabInicial.value = "taxon";
+const carga_inicio = () => {  
   muestraGrd.value = props.muestraGuardar;
   estCor.value = true;
   estSin.value = true;
@@ -609,6 +608,7 @@ const carga_inicio = () => {
 };
 
   const cerrarDialogo = () => {
+        tabInicial.value = "taxon";
         emit('cerrar');
   };
 
@@ -619,6 +619,10 @@ const carga_Grupos = () => {
 const comentarios_Snib = () => {
   dialogFormVisibleComentarios.value = true;
 };
+
+const closeDialogComSnib= () => {
+   dialogFormVisibleComentarios.value = false;
+}
 
 const cargaListGrp = async () => {
   const response = await axios.get('/carga-list-grp');
@@ -640,7 +644,6 @@ const cargaListGrp = async () => {
 
 const validaHijos = async () => {
   let params;
-
   params = {
     idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
     IdNivel1: props.taxonAct.completo.categoria.IdNivel1,

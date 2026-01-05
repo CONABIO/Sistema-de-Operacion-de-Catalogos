@@ -1,79 +1,40 @@
 <template>
     <div class="common-layout">
         <el-card>
-            <el-container style="height: 300px; border: 1px solid #eee">
+            <el-container style="height: 500px; border: 1px solid #eee">
                 <el-header class="header">
-                    <h1 class="titulo">Comentarios al taxón en el SNIB</h1>
+                    <div class=" header-content ">
+                        <h1 class="titulo">Comentarios al taxón en el SNIB</h1>
+                    </div>
+                    <div class =" form-actions ">
+                        <BotonSalir accion="cerrar" @salir="cerrarDialogo"/>
+                    </div>
                 </el-header>
-                <el-main class="contenido" style="text-align: right; font-size: 12px">
-                    <el-table  :data="comSnib"
-                            :highlight-current-row= true
-                            :border="true"
-                            height="400"
-                            style="width: 100%"
-                            @row-click="carga_DetCom">
-                        <div slot="empty" v-if="comSnib.length=='0'">
-
-                        </div>
-                        <el-table-column
-                            v-for="(column) in tableColumns"
-                            :key="column.label"
-                            :label="column.label"
-                            :prop="column.prop"
-                            :column-key="column.prop"
-                            :min-width="column.minWidth"
-                            :sortable="column.sortable"
-                            :align="column.align"
-                            :header-align="column.align"
-                            :fixed="column.fixed || null"
-                            :formatter="column.formatter ||null">
-                        </el-table-column>
-                        <el-table-column align="center" width="80">
-                            <template  #default="{ row }">
-                                <div class="flex justify-around">
-                                    <el-button type="success" 
-                                            circle
-                                            @click="carga_DetCom(row)">
-                                        <el-icon>
-                                            <comentarioSnib />
-                                        </el-icon>
-                                    </el-button>
+                <el-main class="contenido" style="text-align: right; 
+                            font-size: 12px">
+                    <TablaFiltrable 
+                        :columnas="columnasDefinidas" 
+                        :datos="comSnib"
+                        :totalItems = "totalComSnib"
+                        :itemsPerPage="10"
+                        @row-click="carga_DetCom">
+                        <template #expand-column>
+                            <el-table-column type="expand">
+                                <template #default="{ row }">
+                                <div class="expand-content-detail">
+                                    <h2>Detalle</h2>
+                                    <TablaFiltrable 
+                                            :columnas="columnasDefDet" 
+                                            :datos="tableDetCom"
+                                            :totalItems = "totalComDet"
+                                            :itemsPerPage="10"/>
                                 </div>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                                </template>
+                            </el-table-column>
+                        </template>
+                    </TablaFiltrable>
                 </el-main>
             </el-container>
-            <div>
-                <el-container style="height: 300px; border: 1px solid #eee">
-                    <el-header>
-                    <el-table
-                        :data="tableDetCom"
-                        :highlight-current-row= true
-                        :border="true"
-                        height="400"
-                        style="width: 100%">
-                        <div v-if="tableDetCom.length==='0'">
-                                No hay vista de los comentarios 
-                        </div>
-                    
-                        <el-table-column
-                            v-for="(column) in tableColDet"
-                            :key="column.label"
-                            :label="column.label"
-                            :prop="column.prop"
-                            :column-key="column.prop"
-                            :min-width="column.minWidth"
-                            :sortable="column.sortable"
-                            :align="column.align"
-                            :header-align="column.align"
-                            :fixed="column.fixed || null"
-                            :formatter="column.formatter ||null">
-                        </el-table-column>
-                    </el-table>
-                    </el-header>
-                </el-container>
-            </div>
         </el-card>
     </div>
 </template>
@@ -82,6 +43,9 @@
     import { ref, onMounted, watch } from 'vue';
     import { ChatDotSquare } from '@element-plus/icons-vue';
     import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
+    import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+    import { ElLoading } from 'element-plus';
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
 
     const props = defineProps({
         taxon: {
@@ -89,66 +53,49 @@
         },
     });
 
+    const emit = defineEmits(['cerrar']);
+
     const comSnib = ref([]);
-    const tableColumns = ref([
+    const totalComSnib = ref(0);
+    const columnasDefinidas = ref([
         {
-            prop: "idnombre",
-            label: "IdNombre",
-            minWidth: 80,
-            sortable: true,
-            hidden: false,
-            align: 'left',
-            fixed: true
+            prop: 'idnombre', label: 'IdNombre', minWidth: '80',
+            align: 'left', tipo: 'Texto', filtrable: false
         },
         {
-            prop: "comentarioscat",
-            label: "Comentarios SCAT",
-            minWidth: 80,
-            sortable: true,
-            hidden: false,
-            align: 'left',
-            fixed: true
+            prop: 'comentarioscat', label: 'Comentarios SCAT', minWidth: '80',
+            align: 'left', tipo: 'Texto', filtrable: false
         },
         {
-            prop: "Conteo",
-            label: "Conteo",
-            minWidth: 80,
-            sortable: true,
-            hidden: false,
-            align: 'left',
-            fixed: true
+            prop: 'Conteo', label: 'Conteo', minWidth: '55', align: 'left',
+            tipo: 'Texto', filtrable: false
+        }
+    ]);
+    const totalComDet = ref(0);
+    const columnasDefDet = ref([
+        {
+            prop: 'comentarioscat', label: 'Comentarios SCAT', minWidth: '80',
+            align: 'left', tipo: 'Texto', filtrable: false
+        },
+        {
+            prop: 'llavenombre', label: 'Llave Nombre', minWidth: '80',
+            align: 'left', tipo: 'Texto', filtrable: false
         }
     ]);
 
     const tableDetCom = ref([]);
-    const tableColDet = ref([
-        {
-            prop: "comentarioscat",
-            label: "Comenetarios SCAT",
-            minWidth: 80,
-            sortable: true,
-            hidden: false,
-            align: 'left',
-            fixed:true
-        },
-        {
-            prop: "llavenombre",
-            label: "LLaveNombre",
-            minWidth: 80,
-            sortable: true,
-            hidden: false,
-            align: 'left',
-            fixed:true
-        }
-    ]);
+
+    const cerrarDialogo = () => {
+        emit('cerrar');
+    };
 
     watch(
         ()=> props.taxon,
         (newValue, oldValue) => {
             carga_AcumSnib();
             comSnib.value=[];
+            totalComSnib.value = 0
             tableDetCom.value=[];
-            //console.log("Entre al watch");
         },
         //carga_inicio(),
         { deep: true, inmediate: true }
@@ -156,7 +103,6 @@
 
     onMounted(() => {
         try {
-            console.log("Este es el taxon Actual", props.taxon);
             carga_AcumSnib();
         } catch (error) {
             console.error('Error al obtener el usuario: ', error);
@@ -165,6 +111,13 @@
 
     const carga_AcumSnib = async () =>{
        
+        const loading = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+
         const  params = {
             idNombre: props.taxon.id
         };
@@ -173,10 +126,13 @@
 
         if (response.status === 200) {
             comSnib.value = response.data;
+            totalComSnib.value = comSnib.value.length;
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");
         }
+
+        loading.close();
     };
 
     const carga_DetCom = async (row) => {
@@ -190,6 +146,7 @@
 
         if (response.status === 200) {
             tableDetCom.value = response.data;
+            totalComDet.value = tableDetCom.value.length;
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");
@@ -200,20 +157,36 @@
     .common-layout {
         display: flex;
         flex-direction: column;
-        min-height: 100vh;
+        min-height: 80vh;
     }
 
     .header {
-        text-align: center;
-        padding: 0.5rem; /* Reducir el padding en móviles */
-        background-color: #f5f5f5;
-        border-bottom: 1px solid #ddd;
+          background-color: #d9e1eb;
+          padding: 15px;
+          border-bottom: 1px solid #e0e0e0;
+          height: auto !important;
+          min-height: auto !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 8px;
+          color: white;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
 
     .titulo {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: bold;
-        margin-bottom: 0.5rem; /* Añadir margen inferior para separar del contenido */
+        color: #333;
+        margin: 0;
+        text-align: center;
     }
 
     .contenido {
