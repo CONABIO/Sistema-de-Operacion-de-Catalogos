@@ -111,7 +111,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/actualizaReferenciasNombre', [NombresArbolController::class, 'muestraReferencias']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
-    Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
     Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
     Route::get('/carga-RelacionesTax', [RelNombresController::class, 'cargaRelaciones']);

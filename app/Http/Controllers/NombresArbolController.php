@@ -338,22 +338,17 @@ class NombresArbolController extends Controller
             ->groupBy('nombre_taxonomia.idnombre', 'nombre_taxonomia.comentarioscat')
             ->get();
 
-        return $resultado;
-    }
-
-    //carga comentarios detalle del snib
-    public function cargaComDet(Request $request)
-    {
-        //En esta condicion se maneja una condicion entre parentesis 
-        $resultado = DB::connection('catcentral')->table('snib.nombre_taxonomia')
-            ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
-            ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, nombre_taxonomia.llavenombre'))
-            ->where('nombre_taxonomia.comentarioscat', '=', $request->comentarios)
-            ->where(function ($query) use ($request) {
-                /*$query->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
-                        ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre);*/
-                $query->where('nombre_taxonomia.idnombre', '=', $request->idNombre);
-            })->distinct()->get();
+            $resultado = $resultado->map(function ($row) {
+                $row->Detalle = DB::connection('catcentral')
+                        ->table('snib.nombre_taxonomia')
+                        ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
+                                ->select('nombre_taxonomia.llavenombre','nombre_taxonomia.comentarioscat')
+                                    ->where('nombre_taxonomia.comentarioscat', $row->comentarioscat)
+                                    ->where('nombre_taxonomia.idnombre', $row->idnombre)
+                                ->distinct()
+                                ->get();
+                return $row;
+            });
 
         return $resultado;
     }

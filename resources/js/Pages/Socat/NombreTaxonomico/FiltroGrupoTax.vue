@@ -23,12 +23,17 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
 const datosOrdenados = computed(() => {
     const lista = [...props.grupos["original"]];
     return lista.sort((a, b) => {
-        return a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+        const labelA = (a?.label ?? '').toString()
+        const labelB = (b?.label ?? '').toString()
+
+        return labelA.localeCompare(labelB, 'es', { sensitivity: 'base' });
     });
 });
+
 const checkAll = ref(false);
 const arbolRef = ref(null);
 const isIndeterminate = ref(false);
