@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, nextTick  } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose } from '@element-plus/icons-vue';
@@ -22,27 +22,35 @@ const props = defineProps({
   highlightCurrentRow: {
     type: Boolean,
     default: false
-  },
-  rowClassName: { type: [Function, String], default: '' } 
+  }
 });
 
 
 const tableRefInterna = ref(null);
 
-
-const forzarFocoFilaVerde = () => {
+// --- FUNCIÓN DE ENFOQUE MEJORADA ---
+const forzarFocoFilaVerde = async () => {
+  // Esperamos 2 ciclos de renderizado para asegurar que la fila ya existe y tiene la clase verde
+  await nextTick();
   setTimeout(() => {
     if (!tableRefInterna.value) return;
-    const el = tableRefInterna.value.$el;
-    const scrollContainer = el.querySelector('.el-scrollbar__wrap') || el.querySelector('.el-table__body-wrapper');
-    const filaVerde = el.querySelector('.fila-seleccionada-verde');
-    if (scrollContainer && filaVerde) {
-      const topPos = filaVerde.offsetTop - (scrollContainer.clientHeight / 2) + (filaVerde.clientHeight / 2);
-      scrollContainer.scrollTop = topPos;
+    
+    // Buscamos directamente el elemento DOM que tiene la clase verde
+    const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
+    
+    if (filaVerde) {
+      // Magia del navegador: esto hace scroll suave hasta poner la fila en el centro
+      filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-        console.warn("No se pudo hacer scroll: Container o Fila no encontrados");
+      console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
     }
-  }, 200);
+  }, 300); // Un pequeño delay de 300ms ayuda a que ElementPlus termine de dibujar
+};
+
+// --- Permitir al padre establecer filtros manualmente ---
+const setFiltroExterno = (campo, valor) => {
+    filtros.value[campo] = valor;
+    onFiltroInput(); // Esto dispara la recarga
 };
 
 
@@ -138,7 +146,6 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
-const onRowDblClick = (row) => emit('row-dblclick', row);
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -147,7 +154,12 @@ const cerrarModal = () => {
 
 onMounted(fetchData);
 
-defineExpose({ fetchData, forzarFocoFilaVerde   });
+defineExpose({ 
+  fetchData, 
+  forzarFocoFilaVerde, 
+  setFiltroExterno,
+  tableRefInterna
+});
 </script>
 
 <template>
@@ -161,9 +173,9 @@ defineExpose({ fetchData, forzarFocoFilaVerde   });
         </div>
         <div class="left">
           <div class="form-actions">
-            <BotonTraspaso  v-if="props.mostrarTraspaso"  @traspasa="onRecuperaMarcado" />
+            <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
-             <BotonSalir :accion="accionModal" @salir="cerrarModal" />
+            <BotonSalir />
           </div>
         </div>
       </div>
@@ -171,7 +183,7 @@ defineExpose({ fetchData, forzarFocoFilaVerde   });
 
     <div class="table-responsive ">
       <el-table ref="tableRefInterna"  :highlight-current-row="props.highlightCurrentRow" :data="props.datos" :border="true"
-        height="550" @sort-change="handleSortChange" @row-click="(row) => emit('row-click', row)" :row-class-name="props.rowClassName">
+        height="550" @sort-change="handleSortChange" @row-click="(row) => emit('row-click', row)">
         <slot name="expand-column"></slot>
 
         <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"

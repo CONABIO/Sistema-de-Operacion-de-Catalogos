@@ -20,12 +20,12 @@ const manejarClickFila = (row) => {
     selectedRowId.value = row.IdGrupoSCAT;
 };
 
-const tableRowClassName = ({ row }) => {
+/* const tableRowClassName = ({ row }) => {
     if (row.IdGrupoSCAT === selectedRowId.value) {
         return 'fila-seleccionada-verde';
     }
     return '';
-};
+}; */
 
 const asociarSeleccionado = () => {
     if (!selectedRowId.value) {
@@ -85,11 +85,11 @@ function seleccionarGrupo(row) {
 }
 
 
-const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 0) => {
+const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 5000) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -122,7 +122,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
-            `Ya existe un grupo taxonómico registrado con el mismo nombre (Grupo SCAT).`,
+            `Ya existe un grupo taxonómico registrado con el mismo nombre (Grupo SCAT), no se realizarán los cambios solicitados.`,
             "error"
         );
         return;
@@ -211,7 +211,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             }
             mostrarNotificacion("Eliminación exitosa", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón.`, 'error');
+            mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
         }
     };
 
@@ -241,7 +241,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <TablaFiltrable @row-click="manejarClickFila" :row-class-name="tableRowClassName"
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
-                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo">
+                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
 
                 <template #actions>
                     <el-button type="primary" @click="asociarSeleccionado">
@@ -264,7 +264,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
                 id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
-                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana">
+                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana" :highlight-current-row="true">
             </TablaFiltrable>
         </div>
     </div>
@@ -373,5 +373,15 @@ el-table .fila-seleccionada-verde {
 
 .el-table .fila-seleccionada-verde:hover>td.el-table__cell {
     background-color: #cce8cc !important;
+}
+
+
+.tabla-grupos {
+  --el-table-current-row-bg-color: #ddf6dd !important;
+  --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+:deep(.el-table__body tr.current-row > td.el-table__cell) {
+  background-color: #ddf6dd !important;
 }
 </style>

@@ -26,7 +26,7 @@ const formRef = ref(null);
 const grupoScatInputRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo grupo taxonómico' : 'Modificar el grupo taxonómico seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo grupo taxonómico' : 'Modificar el grupo taxonómico';
 });
 
 const rules = {

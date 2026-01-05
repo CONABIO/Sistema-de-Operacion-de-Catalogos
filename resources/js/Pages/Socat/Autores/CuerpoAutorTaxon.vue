@@ -14,24 +14,6 @@ import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@e
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 
 
-/* const hacerFocoEnFila = (idAutor) => {
-  // Buscamos en qué posición del arreglo está el autor
-  const index = datosDeAutores.value.findIndex(a => a.IdAutorTaxon === idAutor);
-
-  if (index >= 0 && tablaRef.value) {
-    nextTick(() => {
-      // Intentamos obtener las filas de la tabla. 
-      // Nota: '.el-table__body tr' es la clase estándar de las filas en Element Plus
-      const filas = tablaRef.value.$el.querySelectorAll('.el-table__body tr.el-table__row');
-      
-      if (filas && filas[index]) {
-        // Hacemos el scroll suave hacia esa fila
-        filas[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-  }
-}; */
-
 const selectedRowId = ref(null);
 const manejarClickFila = (row) => {
   selectedRowId.value = row.IdAutorTaxon;
@@ -232,54 +214,35 @@ const cerrarFormModal = () => {
   modalFormVisible.value = false;
 };
 
+
+
 const handleFormAutorSubmited = (datosDelFormulario) => {
   cerrarFormModal();
 
-  // 1. Buscamos si ya existe el registro en la lista actual
-  // Usamos trim() y toLowerCase() para evitar falsos negativos por espacios o mayúsculas
+  // 1. Verificación de duplicados
   const autorExistente = datosDeAutores.value.find(autor =>
     autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
     autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase()
   );
 
-  // 2. Si existe un duplicado...
   if (autorExistente) {
-    
-    // CASO A: Estamos CREANDO y ya existe
     if (datosDelFormulario.accionOriginal === 'crear') {
-      // Marcamos la fila (esto activa la clase CSS .fila-seleccionada-verde)
       selectedRowId.value = autorExistente.IdAutorTaxon;
-
-      // Ejecutamos el foco/scroll en la tabla
-      if (tablaRef.value) {
-        tablaRef.value.forzarFocoFilaVerde();
-      }
-
-      mostrarNotificacion(
-        "Aviso",
-        "El dato ya existe en el catálogo. Se ha seleccionado en la lista.",
-        "warning"
-      );
-      return; // ¡IMPORTANTE! Detenemos aquí para no guardar
+      if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
+      mostrarNotificacion("Aviso", "El dato ya existe. Se ha seleccionado en la lista.", "warning");
+      return; 
     }
-
-    // CASO B: Estamos EDITANDO y choca con OTRO registro distinto al que editamos
     if (datosDelFormulario.accionOriginal === 'editar' && autorExistente.IdAutorTaxon !== datosDelFormulario.idParaEditar) {
-      mostrarNotificacionError(
-        "Aviso",
-        "La acción no se realizó ya que existe OTRO autor con el mismo Nombre de Autoridad y Grupo Taxonómico.",
-        "error"
-      );
-      return; // Detenemos aquí
+      mostrarNotificacionError("Aviso", "Ya existe otro autor con ese nombre.", "error");
+      return; 
     }
   }
 
-  // 3. Si no hay problemas de duplicados, definimos la función de guardado
   const procederConGuardado = async () => {
     ElMessageBox.close();
     try {
       guardandoDatosServer.value = true;
-      let response;
+      let nuevoIdRegistrado = null;
       
       const payload = {
         nombreAutoridad: datosDelFormulario.nombreAutoridad,
@@ -287,27 +250,59 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
         grupoTaxonomico: datosDelFormulario.grupoTaxonomico,
       };
 
+      // A. Guardar en servidor
       if (datosDelFormulario.accionOriginal === 'crear') {
-        response = await axios.post("/autores", payload);
+        const response = await axios.post("/autores", payload);
+        nuevoIdRegistrado = response.data.IdAutorTaxon || response.data.id || (response.data.data ? response.data.data.id : null);
         mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
       } else if (datosDelFormulario.accionOriginal === 'editar' && datosDelFormulario.idParaEditar) {
-        response = await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
+        await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
         mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
       }
 
+      // B. Recargar tabla estándar
       if (tablaRef.value) {
-        tablaRef.value.fetchData();
+        await tablaRef.value.fetchData();
       }
       
-      selectedRowId.value = null;
+      // C. Estrategia "Encontrar y Enfocar"
+      if (datosDelFormulario.accionOriginal === 'crear' && nuevoIdRegistrado) {
+        // 1. Asignamos ID para pintar de verde
+        selectedRowId.value = nuevoIdRegistrado;
+
+        await nextTick(); // Esperar a que vue actualice datos
+
+        // 2. Verificamos si está visible en la página actual
+        const estaEnPaginaActual = datosDeAutores.value.some(x => String(x.IdAutorTaxon) === String(nuevoIdRegistrado));
+
+        if (estaEnPaginaActual) {
+           // CASO 1: Está en la página. Solo hacemos scroll.
+           if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
+        } else {
+           // CASO 2: NO está en la página (paginación). Aplicamos filtro automático.
+           if (tablaRef.value) {
+             ElMessage.info({ message: 'Buscando el registro creado...', duration: 2000 });
+             // Forzamos filtro por nombre para traer el registro a la vista
+             tablaRef.value.setFiltroExterno('NombreAutoridad', datosDelFormulario.nombreAutoridad);
+             
+             // Esperamos a que el filtro recargue la tabla
+             setTimeout(() => {
+                if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
+             }, 800); // Damos un poco de tiempo para el fetch del filtro
+           }
+        }
+      } else {
+        selectedRowId.value = null;
+      }
 
     } catch (error) {
+      console.error(error);
       if (error.response && error.response.status === 422) {
         const errors = error.response.data.errors;
         let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0, true); // El true final es si tu componente soporta HTML
+        mostrarNotificacion("Error", errorMsg, "error", 0, true); 
       } else {
-        mostrarNotificacionError("Error", "No se pudo guardar la información porque ese nombre de autoridad ya se encuentra registrado.");
+        mostrarNotificacionError("Error", "No se pudo guardar la información.");
       }
     } finally {
       guardandoDatosServer.value = false;
@@ -318,13 +313,11 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
     ElMessageBox.close();
   };
 
-  // 4. Ejecutamos el guardado o pedimos confirmación
   if (datosDelFormulario.accionOriginal === 'crear') {
     procederConGuardado();
   } else {
-    // Confirmación al editar
+    // Modal confirmación editar
     const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
-    
     ElMessageBox({
       title: 'Confirmar modificación', 
       showConfirmButton: false, 
@@ -340,9 +333,10 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
           h(BotonAceptar, { onClick: procederConGuardado }),
         ])
       ])
-    }).catch(() => { /* Captura el rechazo del modal si el usuario cierra con ESC */ });
+    }).catch(() => { });
   }
 };
+
 
 const manejarEliminarItem = (itemId) => {
   const procederConEliminacion = async () => {
@@ -423,9 +417,7 @@ const cerrarNotificacion = () => {
                   <el-table-column prop="IdAutorTaxon" label="Id" width="80" v-if="false" />
                   <el-table-column label="Texto Inicio" width="120">
                     <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto"
-                        maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')"
-                        @keydown.native.prevent="onKeyDown($event)"
-                        @paste.native.prevent="onPaste($event, scope)" /></template>
+                        maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')" /></template>
                   </el-table-column>
                   <el-table-column prop="NombreAutoridad" label="Nombre" min-width="180" />
                   <el-table-column label="Texto Final" width="120">
