@@ -74,7 +74,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (registroExistente) {
         mostrarNotificacionError(
             "Aviso",
-            `Ya existe un nombre común con el nombre "${datosDelFormulario.NomComun}"`,
+            `Ya existe un nombre común registrado con el mismo nombre, no se realizarán los cambios solicitados.`,
             "error"
         );
         return; 
