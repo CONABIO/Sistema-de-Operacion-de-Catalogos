@@ -23,12 +23,17 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
 const datosOrdenados = computed(() => {
     const lista = [...props.grupos["original"]];
     return lista.sort((a, b) => {
-        return a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+        const labelA = (a?.label ?? '').toString()
+        const labelB = (b?.label ?? '').toString()
+
+        return labelA.localeCompare(labelB, 'es', { sensitivity: 'base' });
     });
 });
+
 const checkAll = ref(false);
 const arbolRef = ref(null);
 const isIndeterminate = ref(false);
@@ -105,17 +110,17 @@ const cerrarNotificacion = () => {
                 <el-header class="header">
                     <div class="header-content">
                         <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
-                        <div class="header-button">
-                            <btnTraspaso @traspasa="recuperaMarcados()" />
-                        </div>
                     </div>
                 </el-header>
                 <el-main class="contenido">
                     <div>
-                        <div v-show="!checkAll">
+                        <div v-show="!checkAll" class="header-content">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="marcar">
                                 Marcar todos
-                            </el-checkbox>
+                            </el-checkbox> 
+                            <div class="header-button">
+                                <btnTraspaso @traspasa="recuperaMarcados()" />
+                            </div>
                         </div>
                         <div v-show="checkAll">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">

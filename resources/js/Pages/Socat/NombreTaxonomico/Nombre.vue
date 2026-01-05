@@ -193,7 +193,7 @@ const hasPermisos = (etiqueta, modulo) => {
 
 const openDialog = (nodeData) => {
 
-  mostrarLoading.value = false;
+  //mostrarLoading.value = false;
 
   emit('reset-form');
   dialogFormVisibleAlta.value = true;
@@ -344,7 +344,6 @@ const open = (mensaje) => {
 
 //Esta funcion se dispara una vez que se selecciona una categia taxonomica
 const handleChange = async (value) => {
-
   if (value != undefined) {
     filterText.value = "";
     mostrar.value = false;
@@ -408,13 +407,15 @@ const filterNode = async (value) => {
 
     const response = await axios.get('/cargar-nomArb',
       { params });
-
+    
     if (response.status === 200) {
       data.value = response.data[0];
-      totalReg.value = response.data[1].total;
+      totalItems.value = response.data[1].total;
       paginas.value = response.data[1].last_page;
       loading.close();
     }
+  }else if (idsGrupos.value != '' && categ.value != null){
+    handleChange(categ.value);
   }
 
   loading.close();
@@ -1326,7 +1327,7 @@ const showAscendants = async () => {
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
-                @reset-form="resetFormNombre" :botCerrar="true"
+                @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
                   :catalogos="idsGrupos.value"
@@ -1421,8 +1422,9 @@ const showAscendants = async () => {
   border: 1px solid #dcdfe6;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   padding: 5px 0;
-  border-radius: 4px;
-  min-width: 180px;
+  border-radius: 8px;
+  min-width: 160px;
+  max-width: 200px;
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
@@ -1719,11 +1721,30 @@ const showAscendants = async () => {
 .context-menu .el-menu-item {
   display: flex !important;
   align-items: center !important;
-  gap: 10px;
+  gap: 8px;
+  padding: 8px 12px !important;
+  min-height: 36px !important; /* Altura reducida */
+  width: auto !important; /* No ocupar todo el ancho */
+  margin: 0 4px !important; /* Margen lateral */
+  border-radius: 4px !important; /* Bordes redondeados */
 }
 
 .context-menu .el-menu-item span {
   white-space: nowrap;
+  font-size: 13px !important; /* Texto más pequeño */
+}
+
+/* Ajustar íconos */
+.context-menu .el-icon {
+  font-size: 16px !important; /* Íconos más pequeños */
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* SVG personalizado */
+.context-menu svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .details-header {

@@ -10,6 +10,14 @@
     const traspasaDatos = () =>{
         emit('traspasa');
     } 
+
+    const props = defineProps({
+        toolPosicion: {
+            type: String,
+            default: "top"
+        },
+   
+    });
 </script>
 
 <template>
