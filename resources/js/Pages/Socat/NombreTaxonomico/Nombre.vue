@@ -193,7 +193,7 @@ const hasPermisos = (etiqueta, modulo) => {
 
 const openDialog = (nodeData) => {
 
-  mostrarLoading.value = false;
+  //mostrarLoading.value = false;
 
   emit('reset-form');
   dialogFormVisibleAlta.value = true;
@@ -1327,7 +1327,7 @@ const showAscendants = async () => {
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
-                @reset-form="resetFormNombre" :botCerrar="true"
+                @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
                   :catalogos="idsGrupos.value"

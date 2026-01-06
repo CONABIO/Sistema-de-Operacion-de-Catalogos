@@ -509,7 +509,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
     <LayoutCuerpo :usar-app-layout="false" titulo-pag="Regiones" titulo-area="Catálogo de regiones geográficas">
 
         <div class="split-container">
-            <el-card class="panel-card list-panel">
+            <el-card class="panel-card list-panel" shadow="never">
                 <template #header>
                     <div class="header-container">
                         <span class="details-header-title">Filtrar por tipo de región</span>
@@ -529,7 +529,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                 </div>
             </el-card>
 
-            <el-card class="panel-card details-panel">
+            <el-card class="panel-card details-panel" shadow="never">
                 <template #header>
                     <div class="header-container">
                         <div class="header-buscador">

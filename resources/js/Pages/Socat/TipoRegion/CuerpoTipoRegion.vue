@@ -88,7 +88,7 @@ const handleNodeSelected = (data) => {
     selectedNode.value = data;
 };
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región seleccionado" : "Ingresar un nuevo tipo de región");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región" : "Ingresar un nuevo tipo de región");
 
 const modalRules = {
     Descripcion: [{ required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" }],
@@ -289,7 +289,7 @@ const handleNodeDoubleClick = (data) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Autoridades Taxonómicas" tituloArea="Catálogo de tipos de región">
 
-        <el-card class="box-card tree-card">
+        <el-card class="box-card tree-card" shadow="never">
             <template #header>
                 <div class="header-container">
                     <div class="left-header-content"></div>

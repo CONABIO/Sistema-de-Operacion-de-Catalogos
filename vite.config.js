@@ -6,7 +6,7 @@ export default defineConfig({
     server: {
         host: '172.16.3.78',  
         port: 5173,       
-        strictPort: true, 
+        strictPort: true
       },
     plugins: [
         laravel({

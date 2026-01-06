@@ -31,7 +31,7 @@ const rules = {
 };
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo tipo de distribución' : 'Modificar el tipo de distribución seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo tipo de distribución' : 'Modificar el tipo de distribución';
 });
 
 watch(() => props.visible, (newVal) => {
