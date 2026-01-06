@@ -801,7 +801,7 @@ const cerrarDialogo = () => {
         </LayoutCuerpo>
 
         <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalOperacion">
                 <div class="dialog-header">
                     <h3>{{ modalTitle }}</h3>
                 </div>
@@ -842,7 +842,7 @@ const cerrarDialogo = () => {
                 </div>
             </DialogGeneral>
 
-            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" @close="cerrarModalIconos">
+            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalIconos">
                 <div class="dialog-header">
                     <h3>Seleccionar Ícono para "{{ selectedNode?.Descripcion }}"</h3>
                 </div>
