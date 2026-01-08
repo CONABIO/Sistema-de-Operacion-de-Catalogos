@@ -538,7 +538,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
                             <div class="action-group">
-                                <el-tooltip class="item" effect="dark" content="Ingresar" :placement= "toolPosicion">
+                                <el-tooltip class="item" effect="dark" content="Ingresar">
                                 <el-button type="primary" circle @click="intentarAbrirModalInsertar"
                                     :disabled="botonNuevoDeshabilitado" title="Nuevo">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -551,7 +551,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                 </el-button>
                                 </el-tooltip>
 
-                                <el-tooltip class="item" effect="dark" content="Modificar" :placement= "toolPosicion">
+                                <el-tooltip class="item" effect="dark" content="Modificar">
                                 <el-button type="success" circle @click="intentarAbrirModalEditar"
                                     :disabled="botonEditarDeshabilitado" title="Nuevo">
                                     <el-icon>
@@ -564,7 +564,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                 </el-button>
                                 </el-tooltip>
 
-                                <el-tooltip class="item" effect="dark" content="Eliminar" :placement= "toolPosicion">
+                                <el-tooltip class="item" effect="dark" content="Eliminar">
                                 <el-button type="danger" circle @click="intentarAbrirModalEliminar"
                                     :disabled="botonEliminarDeshabilitado" title="Nuevo">
                                     <el-icon>
@@ -650,7 +650,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
             <div class="dialog-body-container" style="padding: 10px; height: 800px; overflow: hidden;">
                 <CuerpoTipoRegion :treeDataProp="tiposDeRegionTreeProp" :flatTreeDataProp="tiposDeRegionProp"
-                    :isModal="true" @seleccionar-tipo="handleTipoRegionSeleccionadoComponente"
+                    :isModal="true"
                     @cerrar-modal="esModalTipoRegionVisible = false" />
             </div>
         </DialogGeneral>

@@ -21,13 +21,6 @@ const manejarClickFila = (row) => {
     selectedRowId.value = row.IdGrupoSCAT;
 };
 
-/* const tableRowClassName = ({ row }) => {
-    if (row.IdGrupoSCAT === selectedRowId.value) {
-        return 'fila-seleccionada-verde';
-    }
-    return '';
-}; */
-
 const asociarSeleccionado = () => {
     if (!selectedRowId.value) {
         mostrarNotificacion("Aviso", "Por favor, seleccione un grupo de la lista para asociar.", "warning");
@@ -239,7 +232,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Grupos Taxonómicos"
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
-            <TablaFiltrable @row-click="manejarClickFila" :row-class-name="tableRowClassName"
+            <TablaFiltrable @row-click="manejarClickFila" 
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
                 id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
@@ -261,7 +254,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         </div>
         <div class="h-full flex flex-col flex-grow">
 
-            <TablaFiltrable @row-click="manejarClickFila" :row-class-name="tableRowClassName"
+            <TablaFiltrable @row-click="manejarClickFila" 
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
                 id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"

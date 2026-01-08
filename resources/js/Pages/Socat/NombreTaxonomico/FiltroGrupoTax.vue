@@ -122,10 +122,13 @@ const cerrarNotificacion = () => {
                                 <btnTraspaso @traspasa="recuperaMarcados()" />
                             </div>
                         </div>
-                        <div v-show="checkAll">
+                        <div v-show="checkAll" class="header-content">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">
                                 Desmarcar todos
                             </el-checkbox>
+                            <div class="header-button">
+                                <btnTraspaso @traspasa="recuperaMarcados()" />
+                            </div>
                         </div>
                     </div>
                     <div class="arbol-wrapper">
