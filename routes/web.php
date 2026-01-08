@@ -124,7 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
     Route::put('/bibliografias/{id}', [BibliografiaController::class, 'update'])->name('bibliografias.update');
-    Route::delete('/bibliografias/{id}', [BibliografiaController::class, 'destroy'])->name('bibliografias.destroy');
+    Route::delete('/bibliografias/{bibliografia}', [BibliografiaController::class, 'destroy'])->name('bibliografias.destroy');
     Route::get('/bibliografias-api', [BibliografiaController::class, 'indexApi'])->name('bibliografias.api');
     Route::get('/bibliografiasIndex', [BibliografiaController::class, 'index'])->name('bibliografias.index');
     Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store');

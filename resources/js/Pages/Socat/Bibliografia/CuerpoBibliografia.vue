@@ -299,34 +299,51 @@ const handleFormSubmited = (datosDelFormulario) => {
   }
 };
 
+
 const borrarDatos = (idBibliografia) => {
-  const itemAEliminar = localTableData.value.find(item => item.IdBibliografia === idBibliografia);
+  // Buscamos el item para el mensaje de confirmación
+  const itemAEliminar = localTableData.value.find(item => item.IdBibliografia == idBibliografia);
+  
   const procederConEliminacion = async () => {
     try {
       ElMessageBox.close();
-      const nombreItem = itemAEliminar ? `"${itemAEliminar.Autor}"` : 'el registro';
-      await axios.delete(`/bibliografias/${idBibliografia}`);
-      tablaRef.value?.fetchData();
-      mostrarNotificacion("Eliminación exitosa", `El registro ${nombreItem} fue eliminado.`, "success");
+      await axios.delete(route('bibliografias.destroy', { bibliografia: idBibliografia }));
+      selectedBibliografia.value = null;
+      cita.value = '';
+      datosGrupos.value = [];
+      datosObjetos.value = [];
+      if (tablaRef.value) {
+        await tablaRef.value.fetchData();
+      }
+      mostrarNotificacion("Eliminación exitosa", "El registro fue eliminado correctamente.", "success");
     } catch (apiError) {
+      console.error(apiError);
       mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
     }
   };
+
   const cancelarEliminacion = () => { ElMessageBox.close(); };
-  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'seleccionado'}"? Esta acción no se puede revertir.`;
+  
+  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'este registro'}"? Esta acción no se puede revertir.`;
+  
   ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+    title: 'Confirmar eliminación', 
+    showConfirmButton: false, 
+    showCancelButton: false, 
+    customClass: 'message-box-diseno-limpio',
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
         h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
         h('div', { class: 'text-container' }, [h('p', null, mensaje)])
       ]),
       h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }), h(BotonAceptar, { onClick: procederConEliminacion }),
+        h(BotonCancelar, { onClick: cancelarEliminacion }), 
+        h(BotonAceptar, { onClick: procederConEliminacion }),
       ])
     ])
   }).catch(() => { });
 };
+
 
 onMounted(() => {
   const handleMessageFromIframe = (event) => {

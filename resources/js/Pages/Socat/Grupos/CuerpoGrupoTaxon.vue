@@ -14,6 +14,7 @@ const props = defineProps({
     datosGrupo: Object
 });
 
+
 const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
@@ -257,7 +258,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
                 id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
-                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana" :highlight-current-row="true">
+                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana" :highlight-current-row="true" >
             </TablaFiltrable>
         </div>
     </div>

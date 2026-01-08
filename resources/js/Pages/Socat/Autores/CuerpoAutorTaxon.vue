@@ -14,6 +14,7 @@ import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@e
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 
 
+
 const selectedRowId = ref(null);
 const manejarClickFila = (row) => {
   selectedRowId.value = row.IdAutorTaxon;
@@ -219,7 +220,6 @@ const cerrarFormModal = () => {
 const handleFormAutorSubmited = (datosDelFormulario) => {
   cerrarFormModal();
 
-  // 1. Verificación de duplicados
   const autorExistente = datosDeAutores.value.find(autor =>
     autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
     autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase()
@@ -250,7 +250,6 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
         grupoTaxonomico: datosDelFormulario.grupoTaxonomico,
       };
 
-      // A. Guardar en servidor
       if (datosDelFormulario.accionOriginal === 'crear') {
         const response = await axios.post("/autores", payload);
         nuevoIdRegistrado = response.data.IdAutorTaxon || response.data.id || (response.data.data ? response.data.data.id : null);
@@ -260,35 +259,27 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
         mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
       }
 
-      // B. Recargar tabla estándar
       if (tablaRef.value) {
         await tablaRef.value.fetchData();
       }
       
-      // C. Estrategia "Encontrar y Enfocar"
       if (datosDelFormulario.accionOriginal === 'crear' && nuevoIdRegistrado) {
-        // 1. Asignamos ID para pintar de verde
         selectedRowId.value = nuevoIdRegistrado;
 
-        await nextTick(); // Esperar a que vue actualice datos
+        await nextTick(); 
 
-        // 2. Verificamos si está visible en la página actual
         const estaEnPaginaActual = datosDeAutores.value.some(x => String(x.IdAutorTaxon) === String(nuevoIdRegistrado));
 
         if (estaEnPaginaActual) {
-           // CASO 1: Está en la página. Solo hacemos scroll.
            if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
         } else {
-           // CASO 2: NO está en la página (paginación). Aplicamos filtro automático.
            if (tablaRef.value) {
              ElMessage.info({ message: 'Buscando el registro creado...', duration: 2000 });
-             // Forzamos filtro por nombre para traer el registro a la vista
              tablaRef.value.setFiltroExterno('NombreAutoridad', datosDelFormulario.nombreAutoridad);
              
-             // Esperamos a que el filtro recargue la tabla
              setTimeout(() => {
                 if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
-             }, 800); // Damos un poco de tiempo para el fetch del filtro
+             }, 800); 
            }
         }
       } else {
