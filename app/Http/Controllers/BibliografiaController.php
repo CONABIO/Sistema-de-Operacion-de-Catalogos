@@ -178,16 +178,25 @@ class BibliografiaController extends Controller
     }
 
     public function destroy($id)
-    {
-        try {
-            $biblio = Bibliografia::findOrFail($id);
-            $biblio->delete();
-            return response()->json(['status' => 200, 'message' => 'Bibliografia eliminada con éxito']);
-        } catch (\Exception $e) {
-            Log::error("Error deleting Bibliografia: {$e->getMessage()}");
-            return response()->json(['status' => 500, 'message' => 'Error al eliminar la bibliografía: ' . $e->getMessage()]);
-        }
+{
+    try {
+        $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
+        $biblio->delete();
+        return response()->json([
+            'message' => 'Bibliografia eliminada con éxito'
+        ], 200); 
+    } catch (\Illuminate\Database\QueryException $e) {
+        return response()->json([
+            'message' => 'No se puede eliminar: Esta bibliografía está asociada a taxones o grupos.'
+        ], 422); 
+
+    } catch (\Exception $e) {
+        Log::error("Error deleting Bibliografia: {$e->getMessage()}");
+        return response()->json([
+            'message' => 'Error interno: ' . $e->getMessage()
+        ], 500); 
     }
+}
 
 
     public function getGruposTaxonomicos($bibliografiaId)
