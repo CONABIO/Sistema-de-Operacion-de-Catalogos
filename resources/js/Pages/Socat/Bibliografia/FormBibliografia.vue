@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
+import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue";
 
 const props = defineProps({
     accion: {
@@ -77,7 +78,7 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true">
+    <!--DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :pressEsc="true"-->
         <div class="dialog-header">
             <h3>{{ formTitle }}</h3>
         </div>
@@ -157,7 +158,7 @@ const cerrarDialogo = () => {
 
             </div>
         </div>
-    </DialogGeneral>
+    <!--/DialogGeneral-->
 </template>
 
 <style scoped>

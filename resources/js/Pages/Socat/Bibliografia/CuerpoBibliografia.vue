@@ -535,14 +535,14 @@ onMounted(() => {
   </LayoutCuerpo>
 
   <Teleport to="body">
-    <DialogGeneral v-model="dialogFormVisible" style="width:1250px" :bot-cerrar="true" :press-esc="true">
+    <DialogGeneral v-model="dialogFormVisible" style="width:1250px" :bot-cerrar="true" :pressEsc="true">
       <FormBibliografia v-if="dialogFormVisible" :accion="accBiblio" :biblio-edit="rowEdit" @cerrar="cerrarDialogo"
         @form-submited="handleFormSubmited" />
     </DialogGeneral>
     <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
       :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
       @close="cerrarNotificacion" />
-    <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :press-esc="true" width="100%"
+    <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :pressEsc="true" width="100%"
       @close="cerrarModalGrupos" :draggable="true">
 
       <div class="dialog-body-iframe-container" style="padding: 0; border: none; display: flex; flex-direction: column;">
@@ -551,7 +551,7 @@ onMounted(() => {
         </iframe>
       </div>
     </DialogGeneral>
-    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :bot-cerrar="true">
+    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :pressEsc="false" :bot-cerrar="true">
       <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
         <div class="form-actions" style="margin-top: 10px;">
           <GuardarButton @click="guardarObservaciones" />
