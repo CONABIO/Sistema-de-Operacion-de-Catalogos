@@ -1,5 +1,5 @@
 <script setup>
-import { ref, h, computed, onMounted, onUnmounted } from 'vue';
+import { ref, h, computed, onMounted, onUnmounted, nextTick  } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ElMessage, ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -16,6 +16,49 @@ import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+
+const selectedRowId = ref(null);
+
+const manejarClickFila = (row) => {
+  selectedRowId.value = row.IdBibliografia;
+  handleRowClick(row); // Mantiene tu lógica de cargar grupos y objetos
+};
+
+const tableRowClassName = ({ row }) => {
+  if (row.IdBibliografia === selectedRowId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
+const irAlRegistroEspecifico = async (idEncontrado) => {
+  try {
+    const currentSort = tablaRef.value?.sorting || { prop: 'Autor', order: 'asc' };
+    
+    const resPagina = await axios.post('/bibliografias/obtener-pagina', {
+      id: idEncontrado,
+      perPage: 100,
+      sortBy: currentSort.prop || 'Autor',
+      sortOrder: currentSort.order || 'asc'
+    });
+
+    const paginaDestino = resPagina.data.page;
+    selectedRowId.value = idEncontrado;
+
+    if (tablaRef.value) {
+      await tablaRef.value.irAPagina(paginaDestino);
+      await nextTick();
+      const fila = localTableData.value.find(d => d.IdBibliografia === idEncontrado);
+      if (fila) {
+          tablaRef.value.selectedRow = fila;
+          handleRowClick(fila); // Cargamos sus detalles automáticamente
+      }
+      tablaRef.value.forzarFocoFilaVerde();
+    }
+  } catch (err) {
+    console.error("Error al redirigir:", err);
+  }
+};
 
 const tablaRef = ref(null);
 const localTableData = ref([]);
@@ -259,31 +302,53 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
+  const duplicadoLocal = localTableData.value.find(b => 
+    b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
+    b.Anio.toString() === datosDelFormulario.Anio.toString() &&
+    b.TituloPublicacion.trim().toLowerCase() === datosDelFormulario.TituloPublicacion.trim().toLowerCase() &&
+    (accBiblio.value === 'crear' || b.IdBibliografia !== rowEdit.value.IdBibliografia)
+  );
+
+  if (duplicadoLocal) {
+    selectedRowId.value = duplicadoLocal.IdBibliografia;
+    tablaRef.value.selectedRow = duplicadoLocal;
+    handleRowClick(duplicadoLocal);
+    tablaRef.value.forzarFocoFilaVerde();
+    mostrarNotificacion("Aviso", "La bibliografía que ingresó ya existe, por favor ingrese otra", "warning");
+    return;
+  }
+
   const procederConGuardado = async () => {
-    ElMessageBox.close();
     try {
       if (accBiblio.value === 'crear') {
-        await axios.post('/bibliografias', datosDelFormulario);
-        mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+        const response = await axios.post('/bibliografias', datosDelFormulario);
+        mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+        const nuevoId = response.data.data?.IdBibliografia;
+        if (nuevoId) await irAlRegistroEspecifico(nuevoId);
       } else {
         await axios.put(`/bibliografias/${rowEdit.value.IdBibliografia}`, datosDelFormulario);
-        mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+        mostrarNotificacion("Éxito", "Información modificada correctamente.", "success");
+        if (tablaRef.value) await tablaRef.value.fetchData();
+        await nextTick();
+        tablaRef.value.forzarFocoFilaVerde();
       }
-      tablaRef.value?.fetchData();
     } catch (error) {
-      if (error.response && error.response.status === 422) {
-        let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error de Validación", errorMsg, "error", 0);
+      if (error.response?.status === 400 && error.response.data.idExistente) {
+        mostrarNotificacion("Aviso", "La bibliografía que ingresó ya existe, por favor ingrese otra", "warning");
+        await irAlRegistroEspecifico(error.response.data.idExistente);
+      } else if (error.response?.status === 422) {
+        let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+        mostrarNotificacion("Error", errorMsg, "error", 0);
       } else {
-        mostrarNotificacion("Error del Servidor", error.response?.data?.message || "Ocurrió un error.", "error");
+        mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
       }
     }
   };
-  const cancelarGuardado = () => { ElMessageBox.close(); };
+
   if (accBiblio.value === 'crear') {
     procederConGuardado();
   } else {
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para la bibliografía de "${datosDelFormulario.Autor || "nuevo registro"}"?`;
+    const mensaje = `¿Estás seguro de guardar los cambios para la bibliografía de "${datosDelFormulario.Autor}"?`;
     ElMessageBox({
       title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
@@ -292,7 +357,8 @@ const handleFormSubmited = (datosDelFormulario) => {
           h('div', { class: 'text-container' }, [h('p', null, mensaje)])
         ]),
         h('div', { class: 'footer-buttons' }, [
-          h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
+          h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
+          h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
         ])
       ])
     }).catch(() => { });

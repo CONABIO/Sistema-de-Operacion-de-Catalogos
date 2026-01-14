@@ -1,5 +1,5 @@
 <script setup>
-import { ref, h, computed } from 'vue';
+import { ref, h, computed, nextTick } from 'vue';
 import axios from 'axios';
 import { ElMessageBox, ElButton } from 'element-plus';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
@@ -13,6 +13,39 @@ const props = defineProps({
     isModal: Boolean,
     datosGrupo: Object
 });
+
+const tableRowClassName = ({ row }) => {
+    if (row.IdGrupoSCAT === selectedRowId.value) {
+        return 'fila-seleccionada-verde';
+    }
+    return '';
+};
+
+const irAlRegistroEspecifico = async (idEncontrado) => {
+    try {
+        const currentSort = tablaRef.value?.sorting || { prop: 'GrupoSCAT', order: 'asc' };
+
+        const resPagina = await axios.post('/grupos-taxonomicos/obtener-pagina', {
+            id: idEncontrado,
+            perPage: 100,
+            sortBy: currentSort.prop || 'GrupoSCAT',
+            sortOrder: currentSort.order || 'asc'
+        });
+
+        const paginaDestino = resPagina.data.page;
+        selectedRowId.value = idEncontrado;
+
+        if (tablaRef.value) {
+            await tablaRef.value.irAPagina(paginaDestino);
+            await nextTick();
+            const fila = currentData.value.find(d => d.IdGrupoSCAT === idEncontrado);
+            if (fila) tablaRef.value.selectedRow = fila;
+            tablaRef.value.forzarFocoFilaVerde();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
 
 
 const selectedRowId = ref(null);
@@ -102,28 +135,26 @@ const cerrarModal = () => {
     modalVisible.value = false;
 };
 
+
 const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = grupoEditado.value !== null;
-    const nombreGrupoNormalizado = datosDelFormulario.GrupoSCAT.trim().toLowerCase();
-    const registroExistente = currentData.value.find(grupo => {
-        const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === nombreGrupoNormalizado;
+    const registroExistenteLocal = currentData.value.find(grupo => {
+        const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
         return esEdicion
             ? (mismoNombre && grupo.IdGrupoSCAT !== grupoEditado.value.IdGrupoSCAT)
             : mismoNombre;
     });
 
-    if (registroExistente) {
-        mostrarNotificacionError(
-            "Aviso",
-            `Ya existe un grupo taxonómico registrado con el mismo nombre (Grupo SCAT), no se realizarán los cambios solicitados.`,
-            "error"
-        );
+    if (registroExistenteLocal) {
+        selectedRowId.value = registroExistenteLocal.IdGrupoSCAT;
+        tablaRef.value.selectedRow = registroExistenteLocal;
+        tablaRef.value.forzarFocoFilaVerde();
+        mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
         return;
     }
 
     const procederConGuardado = async () => {
-        ElMessageBox.close();
         try {
             guardandoDatosServer.value = true;
             const payload = {
@@ -133,49 +164,37 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             };
 
             if (!esEdicion) {
-                await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion(
-                    "Ingreso",
-                    `El grupo "${datosDelFormulario.GrupoSCAT}" ha sido ingresado correctamente.`,
-                    "success"
-                );
-
+                const response = await axios.post("/grupos-taxonomicos", payload);
+                mostrarNotificacion("Ingreso", "Grupo ingresado correctamente.", "success");
+                const nuevoId = response.data.grupo?.IdGrupoSCAT;
+                if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
-                const idParaEditar = grupoEditado.value.IdGrupoSCAT;
-                await axios.put(`/grupos-taxonomicos/${idParaEditar}`, payload);
-                mostrarNotificacion(
-                    "Modificación",
-                    `El grupo "${datosDelFormulario.GrupoSCAT}" ha sido modificado correctamente.`,
-                    "success"
-                );
-            }
-
-            if (tablaRef.value) {
-                tablaRef.value.fetchData();
+                await axios.put(`/grupos-taxonomicos/${grupoEditado.value.IdGrupoSCAT}`, payload);
+                mostrarNotificacion("Modificación", "Grupo modificado correctamente.", "success");
+                if (tablaRef.value) await tablaRef.value.fetchData();
+                await nextTick();
+                tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
-            if (error.response) {
-                if (error.response.status === 422) {
-                    const errors = error.response.data.errors;
-                    let errorMsg = "Error de validación del servidor:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-                    mostrarNotificacion("Error de Validación", errorMsg, "error", 0, true);
-                } else {
-                    mostrarNotificacionError("Aviso", `El grupo taxonómico '${datosDelFormulario.GrupoSCAT}' ya existe en la base de datos.`);
-                }
+            if (error.response?.status === 400 && error.response.data.idExistente) {
+                mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
+                await irAlRegistroEspecifico(error.response.data.idExistente);
+            } else if (error.response?.status === 422) {
+                const errors = error.response.data.errors;
+                let errorMsg = "Error:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+                mostrarNotificacion("Error", errorMsg, "error", 0, true);
             } else {
-                mostrarNotificacion("Error Inesperado", "Ocurrió un error al contactar al servidor.", "error");
+                mostrarNotificacionError("Error", "No se pudo procesar la solicitud.");
             }
         } finally {
             guardandoDatosServer.value = false;
         }
     };
 
-    const cancelarGuardado = () => { ElMessageBox.close(); };
-
     if (!esEdicion) {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de que deseas guardar los cambios para el grupo "${datosDelFormulario.GrupoSCAT || "nuevo grupo"}"?`;
+        const mensaje = `¿Estás seguro de guardar los cambios para "${datosDelFormulario.GrupoSCAT}"?`;
         ElMessageBox({
             title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
@@ -184,13 +203,18 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
                     h('div', { class: 'text-container' }, [h('p', null, mensaje)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
-                    h(BotonCancelar, { onClick: cancelarGuardado }),
-                    h(BotonAceptar, { onClick: procederConGuardado, cargando: guardandoDatosServer.value }),
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, {
+                        onClick: () => { ElMessageBox.close(); procederConGuardado(); }
+                    }),
                 ])
             ])
         }).catch(() => { });
     }
 };
+
+
+
 
 const eliminarGrupo = (IdGrupoSCAT) => {
     const grupoAEliminar = currentData.value.find(g => g.IdGrupoSCAT === IdGrupoSCAT);
@@ -235,7 +259,8 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <TablaFiltrable @row-click="manejarClickFila" 
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
-                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
+                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
+                :highlight-current-row="true">
 
                 <template #actions>
                     <el-button type="primary" @click="asociarSeleccionado">
@@ -258,7 +283,8 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                 @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
                 v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
                 id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
-                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana" :highlight-current-row="true" >
+                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana"
+                :highlight-current-row="true">
             </TablaFiltrable>
         </div>
     </div>
@@ -268,7 +294,8 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 
     <Teleport to="body">
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion" @close="cerrarNotificacion" />
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+            @close="cerrarNotificacion" />
     </Teleport>
 </template>
 
@@ -371,11 +398,11 @@ el-table .fila-seleccionada-verde {
 
 
 .tabla-grupos {
-  --el-table-current-row-bg-color: #ddf6dd !important;
-  --el-table-row-hover-bg-color: #cbf0cb !important;
+    --el-table-current-row-bg-color: #ddf6dd !important;
+    --el-table-row-hover-bg-color: #cbf0cb !important;
 }
 
 :deep(.el-table__body tr.current-row > td.el-table__cell) {
-  background-color: #ddf6dd !important;
+    background-color: #ddf6dd !important;
 }
 </style>

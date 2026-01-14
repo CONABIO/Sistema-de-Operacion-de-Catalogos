@@ -1,5 +1,5 @@
 <script setup>
-import { ref, h } from 'vue';
+import { ref, h, nextTick } from 'vue';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
 import { ElMessageBox, ElTableColumn } from 'element-plus';
@@ -9,6 +9,45 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
+
+const selectedRowId = ref(null);
+
+const manejarClickFila = (row) => {
+    selectedRowId.value = row.IdNomComun;
+};
+
+const tableRowClassName = ({ row }) => {
+    if (row.IdNomComun === selectedRowId.value) {
+        return 'fila-seleccionada-verde';
+    }
+    return '';
+};
+
+const irAlRegistroEspecifico = async (idEncontrado) => {
+    try {
+        const currentSort = tablaRef.value?.sorting || { prop: 'NomComun', order: 'asc' };
+
+        const resPagina = await axios.post('/nombres-comunes/obtener-pagina', {
+            id: idEncontrado, 
+            perPage: 100,
+            sortBy: currentSort.prop || 'NomComun',
+            sortOrder: currentSort.order || 'asc'
+        });
+
+        const paginaDestino = resPagina.data.page;
+        selectedRowId.value = idEncontrado;
+
+        if (tablaRef.value) {
+            await tablaRef.value.irAPagina(paginaDestino);
+            await nextTick();
+            const fila = currentData.value.find(d => d.IdNomComun === idEncontrado);
+            if (fila) tablaRef.value.selectedRow = fila;
+            tablaRef.value.forzarFocoFilaVerde();
+        }
+    } catch (err) {
+        console.error("Error al redirigir:", err);
+    }
+};
 
 const tablaRef = ref(null);
 const currentData = ref([]);
@@ -62,58 +101,62 @@ const cerrarModal = () => {
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
 
-    const nombreNormalizado = datosDelFormulario.NomComun.trim().toLowerCase();
-    const lenguaNormalizada = datosDelFormulario.Lengua.trim().toLowerCase();
-    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
-    const registroExistente = currentData.value.find(item => {  
-    const mismoNombre = item.NomComun.trim().toLowerCase() === nombreNormalizado;
-    const mismaLengua = item.Lengua.trim().toLowerCase() === lenguaNormalizada;
-        return esEdicion ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar) : (mismoNombre && mismaLengua);
+    // VALIDACIÓN LOCAL
+    const registroExistenteLocal = currentData.value.find(item => {  
+        const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();
+        const mismaLengua = item.Lengua.trim().toLowerCase() === datosDelFormulario.Lengua.trim().toLowerCase();
+        return datosDelFormulario.accionOriginal === 'editar' 
+            ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar) 
+            : (mismoNombre && mismaLengua);
     });
 
-    if (registroExistente) {
-        mostrarNotificacionError(
-            "Aviso",
-            `Ya existe un nombre común registrado con el mismo nombre, no se realizarán los cambios solicitados.`,
-            "error"
-        );
+    if (registroExistenteLocal) {
+        selectedRowId.value = registroExistenteLocal.IdNomComun;
+        if (tablaRef.value) {
+            tablaRef.value.selectedRow = registroExistenteLocal;
+            tablaRef.value.forzarFocoFilaVerde();
+        }
+        mostrarNotificacion("Aviso", "El nombre común que ingresó ya existe, por favor ingrese otro", "warning");
         return; 
     }
 
-
-
     const procederConGuardado = async () => {
-        ElMessageBox.close();
         try {
             const payload = {
                 NomComun: datosDelFormulario.NomComun,
                 Observaciones: datosDelFormulario.Observaciones,
                 Lengua: datosDelFormulario.Lengua,
             };
+
             if (datosDelFormulario.accionOriginal === 'crear') {
-                await axios.post('/nombres-comunes', payload);
-                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+                const response = await axios.post('/nombres-comunes', payload);
+                mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+                const nuevoId = response.data.data?.IdNomComun;
+                if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/nombres-comunes/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
-            }
-            if (tablaRef.value) {
-                tablaRef.value.fetchData();
+                mostrarNotificacion("Ingreso", "Información modificada correctamente.", "success");
+                if (tablaRef.value) await tablaRef.value.fetchData();
+                await nextTick();
+                tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
-            if (error.response && error.response.status === 422) {
-                let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-                mostrarNotificacion("Error de Validación", errorMsg, "error", 0);
+            if (error.response?.status === 400 && error.response.data.idExistente) {
+                mostrarNotificacion("Aviso", "El nombre común que ingresó ya existe, por favor ingrese otro", "warning");
+                await irAlRegistroEspecifico(error.response.data.idExistente);
+            } else if (error.response?.status === 422) {
+                let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+                mostrarNotificacion("Error", errorMsg, "error", 0);
             } else {
-                mostrarNotificacion("Error del Servidor", error.response?.data?.message || "Ocurrió un error.", "error");
+                mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
             }
         }
     };
-    const cancelarGuardado = () => { ElMessageBox.close(); };
+
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.NomComun || "nuevo registro"}"?`;
+        const mensaje = `¿Estás seguro de guardar cambios para "${datosDelFormulario.NomComun}"?`;
         ElMessageBox({
             title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
@@ -122,13 +165,12 @@ const handleFormSubmited = (datosDelFormulario) => {
                     h('div', { class: 'text-container' }, [h('p', null, mensaje)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
-                    h(BotonCancelar, { onClick: cancelarGuardado }),
-                    h(BotonAceptar, { onClick: procederConGuardado }),
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
                 ])
             ])
         }).catch(() => { });
     }
-
 };
 
 const eliminarNombreComun = (idNomComun) => {
@@ -169,8 +211,8 @@ const eliminarNombreComun = (idNomComun) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
         <div class="h-full flex flex-col">
-            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
-                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun"
+            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
+                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun" @row-click="manejarClickFila" 
                 @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun" @nuevo-item="nuevoNombreComun">
 
                 <template #expand-column>
@@ -251,6 +293,19 @@ const eliminarNombreComun = (idNomComun) => {
     gap: 10px;
     margin-top: 35px;
 }
+
+.el-table .fila-seleccionada-verde {
+    background-color: #ddf6dd !important;
+}
+
+
+.el-table .fila-seleccionada-verde {
+    --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
+    background-color: #a3e4d7 !important;
+}
 </style>
 
 <style scoped>
@@ -258,5 +313,24 @@ const eliminarNombreComun = (idNomComun) => {
     padding: 10px 15px;
     background-color: #fdfdfd;
     font-size: 13px;
+}
+
+
+el-table .fila-seleccionada-verde {
+    --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
+    background-color: #cce8cc !important;
+}
+
+
+.tabla-grupos {
+    --el-table-current-row-bg-color: #ddf6dd !important;
+    --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+:deep(.el-table__body tr.current-row > td.el-table__cell) {
+    background-color: #ddf6dd !important;
 }
 </style>
