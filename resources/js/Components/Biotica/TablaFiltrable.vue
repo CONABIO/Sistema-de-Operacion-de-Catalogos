@@ -19,11 +19,17 @@ const props = defineProps({
   idKey: { type: String, required: true },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
+  rowClassName: { type: Function, default: null }, // Añadir esta línea
   highlightCurrentRow: {
     type: Boolean,
     default: false
   }
 });
+
+const irAPagina = async (numeroPagina) => {
+  currentPage.value = numeroPagina;
+  await fetchData();
+};
 
 const selectedRow = ref(null);
 
@@ -187,7 +193,9 @@ defineExpose({
   fetchData,
   forzarFocoFilaVerde,
   setFiltroExterno,
-  tableRefInterna
+  irAPagina,
+  sorting,
+  selectedRow,
 });
 </script>
 
@@ -203,9 +211,9 @@ defineExpose({
         <div class="left">
           <div class="form-actions">
             <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <NuevoButton @crear="onNuevo" />
             <BotonSalir />
           </div>
         </div>
@@ -214,7 +222,7 @@ defineExpose({
 
     <div class="table-responsive ">
       <el-table ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
-        :row-class-name="rowClassNameInterno" @row-click="handleRowClickInterno" :border="true" height="550"
+        :row-class-name="props.rowClassName || rowClassNameInterno" @row-click="handleRowClickInterno" :border="true" height="550"
         @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 

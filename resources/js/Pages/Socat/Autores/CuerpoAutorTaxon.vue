@@ -216,34 +216,53 @@ const cerrarFormModal = () => {
 };
 
 
-
-const handleFormAutorSubmited = (datosDelFormulario) => {
+const handleFormAutorSubmited = async (datosDelFormulario) => {
   cerrarFormModal();
 
-  const autorExistente = datosDeAutores.value.find(autor =>
+  const irAlRegistroEspecifico = async (idEncontrado) => {
+    try {
+      const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
+      const resPagina = await axios.post('/autores/obtener-pagina', {
+        id: idEncontrado,
+        perPage: 100,
+        sortBy: currentSort.prop || 'NombreAutoridad',
+        sortOrder: currentSort.order || 'asc'
+      });
+
+      const paginaDestino = resPagina.data.page;
+      selectedRowId.value = idEncontrado;
+
+      if (tablaRef.value) {
+        await tablaRef.value.irAPagina(paginaDestino);
+        await nextTick();
+        const filaEncontrada = datosDeAutores.value.find(d => d.IdAutorTaxon === idEncontrado);
+        if (filaEncontrada) tablaRef.value.selectedRow = filaEncontrada;
+        tablaRef.value.forzarFocoFilaVerde();
+      }
+    } catch (err) {
+      console.error("Error al redirigir:", err);
+    }
+  };
+
+  const autorLocal = datosDeAutores.value.find(autor =>
     autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
-    autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase()
+    autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
+    autor.IdAutorTaxon !== datosDelFormulario.idParaEditar 
   );
 
-  if (autorExistente) {
-    if (datosDelFormulario.accionOriginal === 'crear') {
-      selectedRowId.value = autorExistente.IdAutorTaxon;
-      if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
-      mostrarNotificacion("Aviso", "El dato ya existe. Se ha seleccionado en la lista.", "warning");
-      return; 
+  if (autorLocal) {
+    selectedRowId.value = autorLocal.IdAutorTaxon;
+    if (tablaRef.value) {
+      tablaRef.value.selectedRow = autorLocal;
+      tablaRef.value.forzarFocoFilaVerde();
     }
-    if (datosDelFormulario.accionOriginal === 'editar' && autorExistente.IdAutorTaxon !== datosDelFormulario.idParaEditar) {
-      mostrarNotificacionError("Aviso", "Ya existe otro autor con ese nombre.", "error");
-      return; 
-    }
+    mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe, por favor ingrese otra", "warning");
+    return;
   }
 
   const procederConGuardado = async () => {
-    ElMessageBox.close();
     try {
       guardandoDatosServer.value = true;
-      let nuevoIdRegistrado = null;
-      
       const payload = {
         nombreAutoridad: datosDelFormulario.nombreAutoridad,
         nombreCompleto: datosDelFormulario.nombreCompleto,
@@ -252,67 +271,40 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
 
       if (datosDelFormulario.accionOriginal === 'crear') {
         const response = await axios.post("/autores", payload);
-        nuevoIdRegistrado = response.data.IdAutorTaxon || response.data.id || (response.data.data ? response.data.data.id : null);
+        const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon || response.data.id;
         mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-      } else if (datosDelFormulario.accionOriginal === 'editar' && datosDelFormulario.idParaEditar) {
+        await irAlRegistroEspecifico(nuevoId);
+      } else {
         await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
         mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+        if (tablaRef.value) await tablaRef.value.fetchData();
+        await nextTick();
+        if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
       }
-
-      if (tablaRef.value) {
-        await tablaRef.value.fetchData();
-      }
-      
-      if (datosDelFormulario.accionOriginal === 'crear' && nuevoIdRegistrado) {
-        selectedRowId.value = nuevoIdRegistrado;
-
-        await nextTick(); 
-
-        const estaEnPaginaActual = datosDeAutores.value.some(x => String(x.IdAutorTaxon) === String(nuevoIdRegistrado));
-
-        if (estaEnPaginaActual) {
-           if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
-        } else {
-           if (tablaRef.value) {
-             ElMessage.info({ message: 'Buscando el registro creado...', duration: 2000 });
-             tablaRef.value.setFiltroExterno('NombreAutoridad', datosDelFormulario.nombreAutoridad);
-             
-             setTimeout(() => {
-                if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
-             }, 800); 
-           }
-        }
-      } else {
-        selectedRowId.value = null;
-      }
-
     } catch (error) {
-      console.error(error);
-      if (error.response && error.response.status === 422) {
+      if (error.response?.status === 400 && error.response.data.idExistente) {
+        mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe, por favor ingrese otra", "warning");
+        await irAlRegistroEspecifico(error.response.data.idExistente);
+      } else if (error.response?.status === 422) {
         const errors = error.response.data.errors;
         let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0, true); 
+        mostrarNotificacion("Error", errorMsg, "error", 0);
       } else {
-        mostrarNotificacionError("Error", "No se pudo guardar la información.");
+        mostrarNotificacionError("Error", "No se pudo procesar la información.");
       }
     } finally {
       guardandoDatosServer.value = false;
     }
   };
 
-  const cancelarGuardado = () => {
-    ElMessageBox.close();
-  };
-
   if (datosDelFormulario.accionOriginal === 'crear') {
-    procederConGuardado();
+    await procederConGuardado();
   } else {
-    // Modal confirmación editar
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad || "nuevo autor"}"?`;
+    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad}"?`;
     ElMessageBox({
-      title: 'Confirmar modificación', 
-      showConfirmButton: false, 
-      showCancelButton: false, 
+      title: 'Confirmar modificación',
+      showConfirmButton: false,
+      showCancelButton: false,
       customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
@@ -320,13 +312,19 @@ const handleFormAutorSubmited = (datosDelFormulario) => {
           h('div', { class: 'text-container' }, [h('p', null, mensaje)])
         ]),
         h('div', { class: 'footer-buttons' }, [
-          h(BotonCancelar, { onClick: cancelarGuardado }),
-          h(BotonAceptar, { onClick: procederConGuardado }),
+          h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+          h(BotonAceptar, {
+            onClick: async () => {
+              ElMessageBox.close();
+              await procederConGuardado();
+            }
+          }),
         ])
       ])
     }).catch(() => { });
   }
 };
+
 
 
 const manejarEliminarItem = (itemId) => {

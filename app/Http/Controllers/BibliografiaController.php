@@ -111,92 +111,120 @@ class BibliografiaController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'Autor' => 'required|string|min:1',
-            'Anio' => 'required|string|min:1',
-            'TituloPublicacion' => 'required|string|min:1',
-            'TituloSubPublicacion' => 'nullable|string',
-            'EditoresCompiladores' => 'nullable|string',
-            'EditorialPaisPagina' => 'nullable|string',
-            'NumeroVolumenAnio' => 'nullable|string',
-            'OrdenCitaCompleta' => 'nullable|string',
-            'citaCompleta' => 'nullable|string',
-        ]);
+        // Validación de duplicado global (Autor + Año + Titulo)
+        $existing = Bibliografia::where('Autor', $request->Autor)
+            ->where('Anio', $request->Anio)
+            ->where('TituloPublicacion', $request->TituloPublicacion)
+            ->first();
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Ya existe una referencia bibliográfica con los mismos datos.',
+                'idExistente' => $existing->IdBibliografia
+            ], 400);
         }
+
+        $request->validate([
+            'Autor' => 'required|string',
+            'Anio' => 'required|string',
+            'TituloPublicacion' => 'required|string',
+        ]);
 
         try {
             $biblio = new Bibliografia;
-            $biblio->Autor = $request->input('Autor');
-            $biblio->Anio = $request->input('Anio');
-            $biblio->TituloPublicacion = $request->input('TituloPublicacion');
-            $biblio->TituloSubPublicacion = $request->input('TituloSubPublicacion');
-            $biblio->EditoresCompiladores = $request->input('EditoresCompiladores');
-            $biblio->EditorialPaisPagina = $request->input('EditorialPaisPagina');
-            $biblio->NumeroVolumenAnio = $request->input('NumeroVolumenAnio');
-            $biblio->OrdenCitaCompleta = $request->input('OrdenCitaCompleta');
-            $biblio->CitaCompleta = $request->input('citaCompleta');
+            $biblio->Autor = $request->Autor;
+            $biblio->Anio = $request->Anio;
+            $biblio->TituloPublicacion = $request->TituloPublicacion;
+            $biblio->TituloSubPublicacion = $request->TituloSubPublicacion;
+            $biblio->EditoresCompiladores = $request->EditoresCompiladores;
+            $biblio->EditorialPaisPagina = $request->EditorialPaisPagina;
+            $biblio->NumeroVolumenAnio = $request->NumeroVolumenAnio;
+            $biblio->OrdenCitaCompleta = $request->OrdenCitaCompleta;
+            $biblio->CitaCompleta = $request->citaCompleta;
             $biblio->FechaModificacion = now()->toDateTimeString();
-
             $biblio->save();
 
-            return redirect()->route('bibliografias.index')->with('success', 'La bibliografia taxonómica se dio de alta con éxito');
+            return response()->json(['message' => 'Guardado con éxito', 'data' => $biblio], 201);
         } catch (\Exception $e) {
-            Log::error("Error creating Bibliografia: " . $e->getMessage());
-            return back()->with('error', 'Error al crear la bibliografía: ' . $e->getMessage())->withInput();
+            return response()->json(['message' => 'Error al crear'], 500);
         }
     }
 
     public function update(Request $request, $id)
     {
         $biblio = Bibliografia::find($id);
+        if (!$biblio) return response()->json(['message' => 'No encontrado'], 404);
 
-        if (!$biblio) {
-            return response()->json(['message' => 'Bibliografia no encontrada'], 404);
+        // Validación de duplicado (excluyendo el actual)
+        $existing = Bibliografia::where('Autor', $request->Autor)
+            ->where('Anio', $request->Anio)
+            ->where('TituloPublicacion', $request->TituloPublicacion)
+            ->where('IdBibliografia', '!=', $id)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Ya existe otro registro con estos datos.',
+                'idExistente' => $existing->IdBibliografia
+            ], 400);
         }
-
-        $biblio->Autor = $request->input('Autor');
-        $biblio->Anio = $request->input('Anio');
-        $biblio->EditoresCompiladores = $request->input('EditoresCompiladores');
-        $biblio->EditorialPaisPagina = $request->input('EditorialPaisPagina');
-        $biblio->NumeroVolumenAnio = $request->input('NumeroVolumenAnio');
-        $biblio->OrdenCitaCompleta = $request->input('OrdenCitaCompleta');
-        $biblio->TituloPublicacion = $request->input('TituloPublicacion');
-        $biblio->TituloSubPublicacion = $request->input('TituloSubPublicacion');
-        $biblio->CitaCompleta = $request->input('citaCompleta');
-        $biblio->FechaModificacion = now()->toDateTimeString();
 
         try {
+            $biblio->fill($request->all());
+            $biblio->FechaModificacion = now()->toDateTimeString();
             $biblio->save();
-            return response()->json(['message' => 'El registro se actualizó con éxito'], 200);
+            return response()->json(['message' => 'Actualizado con éxito'], 200);
         } catch (Exception $e) {
-            Log::error("Error updating Bibliografia: {$e->getMessage()}");
-            return response()->json(['message' => 'Error al actualizar la bibliografía: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Error al actualizar'], 500);
         }
+    }
+
+    public function obtenerPaginaDeBiblio(Request $request)
+    {
+        $id = $request->id;
+        $perPage = $request->perPage ?? 100;
+        $sortBy = $request->sortBy ?? 'Autor';
+        $sortOrder = $request->sortOrder ?? 'asc';
+
+        $registroReferencia = Bibliografia::find($id);
+        if (!$registroReferencia) return response()->json(['page' => 1]);
+
+        $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
+
+        $posicion = Bibliografia::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
+            $valor = $registroReferencia->{$sortBy};
+            $query->where(DB::raw("LOWER(`$sortBy`)"), $operador, strtolower($valor))
+                ->orWhere(function ($q) use ($registroReferencia, $sortBy, $valor) {
+                    $q->where(DB::raw("LOWER(`$sortBy`)"), '=', strtolower($valor))
+                        ->where('IdBibliografia', '<', $registroReferencia->IdBibliografia);
+                });
+        })->count();
+
+        $pagina = floor($posicion / $perPage) + 1;
+        return response()->json(['page' => (int)$pagina]);
     }
 
     public function destroy($id)
-{
-    try {
-        $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
-        $biblio->delete();
-        return response()->json([
-            'message' => 'Bibliografia eliminada con éxito'
-        ], 200); 
-    } catch (\Illuminate\Database\QueryException $e) {
-        return response()->json([
-            'message' => 'No se puede eliminar: Esta bibliografía está asociada a taxones o grupos.'
-        ], 422); 
-
-    } catch (\Exception $e) {
-        Log::error("Error deleting Bibliografia: {$e->getMessage()}");
-        return response()->json([
-            'message' => 'Error interno: ' . $e->getMessage()
-        ], 500); 
+    {
+        try {
+            $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
+            $biblio->delete();
+            return response()->json([
+                'message' => 'Bibliografia eliminada con éxito'
+            ], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'No se puede eliminar: Esta bibliografía está asociada a taxones o grupos.'
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error("Error deleting Bibliografia: {$e->getMessage()}");
+            return response()->json([
+                'message' => 'Error interno: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
 
 
     public function getGruposTaxonomicos($bibliografiaId)
@@ -341,7 +369,7 @@ class BibliografiaController extends Controller
             Log::error("Error de SQL en getObjetosExternos: " . $e->getMessage());
             return response()->json([
                 'message' => 'Error en la consulta a la base de datos al obtener objetos externos.',
-                'error_sql' => $e->getMessage() 
+                'error_sql' => $e->getMessage()
             ], 500);
         } catch (\Exception $e) {
             Log::error("Error general en getObjetosExternos: " . $e->getMessage());

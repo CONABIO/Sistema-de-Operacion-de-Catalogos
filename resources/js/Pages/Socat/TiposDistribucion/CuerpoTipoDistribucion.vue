@@ -1,5 +1,5 @@
 <script setup>
-import { ref, h } from 'vue';
+import { ref, h, nextTick  } from 'vue';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
 import { ElMessageBox, ElTableColumn } from 'element-plus';
@@ -8,6 +8,46 @@ import FormTipoDistribucion from '@/Pages/Socat/TiposDistribucion/FormTipoDistri
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+
+const selectedRowId = ref(null);
+
+const manejarClickFila = (row) => {
+    selectedRowId.value = row.IdTipoDistribucion;
+};
+
+const tableRowClassName = ({ row }) => {
+    if (row.IdTipoDistribucion === selectedRowId.value) {
+        return 'fila-seleccionada-verde';
+    }
+    return '';
+};
+
+const irAlRegistroEspecifico = async (idEncontrado) => {
+    try {
+        const currentSort = tablaRef.value?.sorting || { prop: 'Descripcion', order: 'asc' };
+
+        const resPagina = await axios.post('/tipos-distribucion/obtener-pagina', {
+            id: idEncontrado,
+            perPage: 100,
+            sortBy: currentSort.prop || 'Descripcion',
+            sortOrder: currentSort.order || 'asc'
+        });
+
+        const paginaDestino = resPagina.data.page;
+        selectedRowId.value = idEncontrado;
+
+        if (tablaRef.value) {
+            await tablaRef.value.irAPagina(paginaDestino);
+            await nextTick();
+            const fila = currentData.value.find(d => d.IdTipoDistribucion === idEncontrado);
+            if (fila) tablaRef.value.selectedRow = fila;
+            tablaRef.value.forzarFocoFilaVerde();
+        }
+    } catch (err) {
+        console.error("Error al redirigir:", err);
+    }
+};
+
 
 const tablaRef = ref(null);
 const currentData = ref([]);
@@ -58,52 +98,55 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
-
-    const descNormalizada = datosDelFormulario.Descripcion.trim().toLowerCase();
-    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
-    const registroExistente = currentData.value.find(item => {
-        const mismaDescripcion = item.Descripcion.trim().toLowerCase() === descNormalizada;
-        return esEdicion ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar) : mismaDescripcion;
+    const registroExistenteLocal = currentData.value.find(item => {
+        const mismaDescripcion = item.Descripcion.trim().toLowerCase() === datosDelFormulario.Descripcion.trim().toLowerCase();
+        return datosDelFormulario.accionOriginal === 'editar' 
+            ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar) 
+            : mismaDescripcion;
     });
 
-    if (registroExistente) {
-        mostrarNotificacionError(
-            "Aviso",
-            `Ya existe un tipo de distribución registrado con la misma descripción, no se realizarán los cambios solicitados.`,
-            "error"
-        );
+    if (registroExistenteLocal) {
+        selectedRowId.value = registroExistenteLocal.IdTipoDistribucion;
+        if (tablaRef.value) {
+            tablaRef.value.selectedRow = registroExistenteLocal;
+            tablaRef.value.forzarFocoFilaVerde();
+        }
+        mostrarNotificacion("Aviso", "El tipo de distribución que ingresó ya existe, por favor ingrese otro", "warning");
         return; 
     }
 
-
     const procederConGuardado = async () => {
-        ElMessageBox.close();
         try {
             const payload = { Descripcion: datosDelFormulario.Descripcion };
             if (datosDelFormulario.accionOriginal === 'crear') {
-                await axios.post('/tipos-distribucion', payload);
+                const response = await axios.post('/tipos-distribucion', payload);
                 mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+                const nuevoId = response.data.data?.IdTipoDistribucion;
+                if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
                 mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
-            }
-            if (tablaRef.value) {
-                tablaRef.value.fetchData();
+                if (tablaRef.value) await tablaRef.value.fetchData();
+                await nextTick();
+                tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
-            if (error.response && error.response.status === 422) {
-                let errorMsg = "Error de validación:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-                mostrarNotificacion("Error de Validación", errorMsg, "error", 0);
+            if (error.response?.status === 400 && error.response.data.idExistente) {
+                mostrarNotificacion("Aviso", "El tipo de distribución que ingresó ya existe, por favor ingrese otro", "warning");
+                await irAlRegistroEspecifico(error.response.data.idExistente);
+            } else if (error.response?.status === 422) {
+                let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+                mostrarNotificacion("Error", errorMsg, "error", 0);
             } else {
-                mostrarNotificacion("Error del Servidor", error.response?.data?.message || "Ocurrió un error.", "error");
+                mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
             }
         }
     };
-    const cancelarGuardado = () => { ElMessageBox.close(); };
+
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.Descripcion || "nuevo registro"}"?`;
+        const mensaje = `¿Estás seguro de guardar cambios para "${datosDelFormulario.Descripcion}"?`;
         ElMessageBox({
             title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
@@ -112,12 +155,12 @@ const handleFormSubmited = (datosDelFormulario) => {
                     h('div', { class: 'text-container' }, [h('p', null, mensaje)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
-                    h(BotonCancelar, { onClick: cancelarGuardado }), h(BotonAceptar, { onClick: procederConGuardado }),
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
+                    h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
                 ])
             ])
         }).catch(() => { });
     }
-
 };
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
