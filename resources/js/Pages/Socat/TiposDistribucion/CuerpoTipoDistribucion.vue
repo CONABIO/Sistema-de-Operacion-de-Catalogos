@@ -24,6 +24,13 @@ const tableRowClassName = ({ row }) => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
+        if (tablaRef.value) {
+            tablaRef.value.limpiarTodosLosFiltros();
+        }
+
+        selectedRowId.value = null; 
+        if (tablaRef.value) tablaRef.value.selectedRow = null;
+
         const currentSort = tablaRef.value?.sorting || { prop: 'Descripcion', order: 'asc' };
 
         const resPagina = await axios.post('/tipos-distribucion/obtener-pagina', {
@@ -34,14 +41,20 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
         });
 
         const paginaDestino = resPagina.data.page;
-        selectedRowId.value = idEncontrado;
-
+        
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
+            
             const fila = currentData.value.find(d => d.IdTipoDistribucion === idEncontrado);
-            if (fila) tablaRef.value.selectedRow = fila;
-            tablaRef.value.forzarFocoFilaVerde();
+            if (fila) {
+                selectedRowId.value = idEncontrado;
+                tablaRef.value.selectedRow = fila;  
+                
+                setTimeout(() => {
+                    tablaRef.value.forzarFocoFilaVerde();
+                }, 150);
+            }
         }
     } catch (err) {
         console.error("Error al redirigir:", err);

@@ -23,30 +23,33 @@ const tableRowClassName = ({ row }) => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
+        if (tablaRef.value) {
+            tablaRef.value.limpiarTodosLosFiltros();
+        }
         const currentSort = tablaRef.value?.sorting || { prop: 'GrupoSCAT', order: 'asc' };
-
         const resPagina = await axios.post('/grupos-taxonomicos/obtener-pagina', {
             id: idEncontrado,
             perPage: 100,
             sortBy: currentSort.prop || 'GrupoSCAT',
             sortOrder: currentSort.order || 'asc'
         });
-
         const paginaDestino = resPagina.data.page;
         selectedRowId.value = idEncontrado;
-
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
             const fila = currentData.value.find(d => d.IdGrupoSCAT === idEncontrado);
-            if (fila) tablaRef.value.selectedRow = fila;
-            tablaRef.value.forzarFocoFilaVerde();
+            if (fila) {
+                tablaRef.value.selectedRow = fila;
+                setTimeout(() => {
+                    tablaRef.value.forzarFocoFilaVerde();
+                }, 100);
+            }
         }
     } catch (err) {
-        console.error(err);
+        console.error("Error al ir al registro:", err);
     }
 };
-
 
 const selectedRowId = ref(null);
 
@@ -256,16 +259,26 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Grupos Taxonómicos"
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
-            <TablaFiltrable @row-click="manejarClickFila" 
-                @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
-                v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
-                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
-                :highlight-current-row="true">
+            <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
 
                 <template #actions>
                     <el-button type="primary" @click="asociarSeleccionado">
                         Asociar
                     </el-button>
+                </template>
+                <template #expand-column>
+                    <el-table-column type="expand">
+                        <template #default="{ row }">
+                            <div class="expand-content-detail">
+                                <p><strong>IdGrupoSCAT:</strong> {{ row.IdAutorTaxon }}</p>
+                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
+                            </div>
+                        </template>
+                    </el-table-column>
                 </template>
 
             </TablaFiltrable>
@@ -279,12 +292,14 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         </div>
         <div class="h-full flex flex-col flex-grow">
 
-            <TablaFiltrable @row-click="manejarClickFila" 
-                @row-dblclick="seleccionarGrupo" ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas"
-                v-model:datos="currentData" v-model:total-items="totalItems" endpoint="/busca-grupo"
-                id-key="IdGrupoSCAT" @editar-item="editarGrupo" @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo"
-                :mostrarTraspaso="true" @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana"
+            <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="true"
+                @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana"
                 :highlight-current-row="true">
+
+
             </TablaFiltrable>
         </div>
     </div>

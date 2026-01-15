@@ -221,6 +221,9 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
 
   const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
+      if (tablaRef.value) {
+        tablaRef.value.limpiarTodosLosFiltros();
+      }
       const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
       const resPagina = await axios.post('/autores/obtener-pagina', {
         id: idEncontrado,
@@ -228,16 +231,18 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
         sortBy: currentSort.prop || 'NombreAutoridad',
         sortOrder: currentSort.order || 'asc'
       });
-
       const paginaDestino = resPagina.data.page;
       selectedRowId.value = idEncontrado;
-
       if (tablaRef.value) {
         await tablaRef.value.irAPagina(paginaDestino);
         await nextTick();
         const filaEncontrada = datosDeAutores.value.find(d => d.IdAutorTaxon === idEncontrado);
-        if (filaEncontrada) tablaRef.value.selectedRow = filaEncontrada;
-        tablaRef.value.forzarFocoFilaVerde();
+        if (filaEncontrada) {
+          tablaRef.value.selectedRow = filaEncontrada;
+        }
+        setTimeout(() => {
+          tablaRef.value.forzarFocoFilaVerde();
+        }, 150);
       }
     } catch (err) {
       console.error("Error al redirigir:", err);
@@ -247,7 +252,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
   const autorLocal = datosDeAutores.value.find(autor =>
     autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
     autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
-    autor.IdAutorTaxon !== datosDelFormulario.idParaEditar 
+    autor.IdAutorTaxon !== datosDelFormulario.idParaEditar
   );
 
   if (autorLocal) {

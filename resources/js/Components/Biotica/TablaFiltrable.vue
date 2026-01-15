@@ -26,6 +26,16 @@ const props = defineProps({
   }
 });
 
+
+const limpiarTodosLosFiltros = () => {
+  // Reiniciamos el objeto de filtros a strings vacíos
+  Object.keys(filtros.value).forEach(key => {
+    filtros.value[key] = '';
+  });
+  // Opcional: reiniciar el tipo de búsqueda a 'inicia' o el default
+  tipoDeBusqueda.value = 'inicia';
+};
+
 const irAPagina = async (numeroPagina) => {
   currentPage.value = numeroPagina;
   await fetchData();
@@ -56,7 +66,7 @@ const rowClassNameInterno = ({ row }) => {
     if (!selectedRow.value) return '';
     const idFilaActual = row[props.idKey];
     const idSeleccionado = selectedRow.value[props.idKey];
-    if (idFilaActual !== undefined && idFilaActual === idSeleccionado) {
+    if (idFilaActual !== undefined && idFilaActual !== null && idFilaActual === idSeleccionado) {
       return 'fila-seleccionada-verde';
     }
   } catch (err) {
@@ -139,8 +149,19 @@ const fetchData = async () => {
         sortOrder: sorting.value.order,
       }
     });
-    emit('update:datos', response.data.data || []);
-    emit('update:totalItems', response.data.total || response.data.totalItems || 0);
+
+    const resultados = response.data.data || [];
+    const total = response.data.total || response.data.totalItems || 0;
+    emit('update:datos', resultados);
+    emit('update:totalItems', total);
+    await nextTick();
+    if (resultados.length > 0) {
+      selectedRow.value = resultados[0];
+      emit('row-click', resultados[0]);
+    } else {
+      selectedRow.value = null;
+    }
+
   } catch (error) {
     console.error(`Error en TablaFiltrable (${props.endpoint}):`, error);
     emit('update:datos', []);
@@ -194,6 +215,7 @@ defineExpose({
   forzarFocoFilaVerde,
   setFiltroExterno,
   irAPagina,
+  limpiarTodosLosFiltros,
   sorting,
   selectedRow,
 });
@@ -222,8 +244,8 @@ defineExpose({
 
     <div class="table-responsive ">
       <el-table ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
-        :row-class-name="props.rowClassName || rowClassNameInterno" @row-click="handleRowClickInterno" :border="true" height="550"
-        @sort-change="handleSortChange">
+        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
+        @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
         <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
@@ -354,7 +376,7 @@ defineExpose({
 
 
 :deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
-  background-color: #ddf6dd  !important; 
+  background-color: #ddf6dd !important;
 }
 
 :deep(.el-table .fila-seleccionada-verde > td.el-table__cell) {

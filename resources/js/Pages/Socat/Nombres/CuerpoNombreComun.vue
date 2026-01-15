@@ -25,24 +25,28 @@ const tableRowClassName = ({ row }) => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
+        if (tablaRef.value) {
+            tablaRef.value.limpiarTodosLosFiltros();
+        }
         const currentSort = tablaRef.value?.sorting || { prop: 'NomComun', order: 'asc' };
-
         const resPagina = await axios.post('/nombres-comunes/obtener-pagina', {
             id: idEncontrado, 
             perPage: 100,
             sortBy: currentSort.prop || 'NomComun',
             sortOrder: currentSort.order || 'asc'
         });
-
         const paginaDestino = resPagina.data.page;
         selectedRowId.value = idEncontrado;
-
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
             const fila = currentData.value.find(d => d.IdNomComun === idEncontrado);
-            if (fila) tablaRef.value.selectedRow = fila;
-            tablaRef.value.forzarFocoFilaVerde();
+            if (fila) {
+                tablaRef.value.selectedRow = fila;
+            }
+            setTimeout(() => {
+                tablaRef.value.forzarFocoFilaVerde();
+            }, 150);
         }
     } catch (err) {
         console.error("Error al redirigir:", err);
