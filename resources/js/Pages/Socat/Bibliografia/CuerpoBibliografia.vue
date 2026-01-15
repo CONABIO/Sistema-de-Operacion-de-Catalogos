@@ -33,27 +33,31 @@ const tableRowClassName = ({ row }) => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
   try {
+    if (tablaRef.value) {
+      tablaRef.value.limpiarTodosLosFiltros();
+    }
+    selectedRowId.value = null;
+    if (tablaRef.value) tablaRef.value.selectedRow = null;
     const currentSort = tablaRef.value?.sorting || { prop: 'Autor', order: 'asc' };
-    
     const resPagina = await axios.post('/bibliografias/obtener-pagina', {
       id: idEncontrado,
       perPage: 100,
       sortBy: currentSort.prop || 'Autor',
       sortOrder: currentSort.order || 'asc'
     });
-
     const paginaDestino = resPagina.data.page;
-    selectedRowId.value = idEncontrado;
-
     if (tablaRef.value) {
       await tablaRef.value.irAPagina(paginaDestino);
       await nextTick();
       const fila = localTableData.value.find(d => d.IdBibliografia === idEncontrado);
       if (fila) {
+          selectedRowId.value = idEncontrado;
           tablaRef.value.selectedRow = fila;
-          handleRowClick(fila); // Cargamos sus detalles automáticamente
+          handleRowClick(fila); 
+          setTimeout(() => {
+              tablaRef.value.forzarFocoFilaVerde();
+          }, 150);
       }
-      tablaRef.value.forzarFocoFilaVerde();
     }
   } catch (err) {
     console.error("Error al redirigir:", err);
