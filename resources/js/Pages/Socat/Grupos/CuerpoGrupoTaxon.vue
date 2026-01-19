@@ -15,7 +15,10 @@ const props = defineProps({
 });
 
 const tableRowClassName = ({ row }) => {
-    if (row.IdGrupoSCAT === selectedRowId.value) {
+    const idFila = row.IdGrupoSCAT;
+    const idSeleccionado = selectedRowId.value;
+    if (idFila == null || idSeleccionado == null) return '';
+    if (String(idFila) === String(idSeleccionado)) {
         return 'fila-seleccionada-verde';
     }
     return '';
@@ -54,7 +57,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
 const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
-    selectedRowId.value = row.IdGrupoSCAT;
+    selectedRowId.value = row ? row.IdGrupoSCAT : null;
 };
 
 const asociarSeleccionado = () => {
@@ -260,9 +263,9 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
-                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
-                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="false">
 
                 <template #actions>
                     <el-button type="primary" @click="asociarSeleccionado">
@@ -273,7 +276,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                     <el-table-column type="expand">
                         <template #default="{ row }">
                             <div class="expand-content-detail">
-                                <p><strong>IdGrupoSCAT:</strong> {{ row.IdAutorTaxon }}</p>
+                                <p><strong>IdGrupoSCAT:</strong> {{ row.IdGrupoSCAT }}</p>
                                 <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
                                 <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
                             </div>
@@ -417,7 +420,4 @@ el-table .fila-seleccionada-verde {
     --el-table-row-hover-bg-color: #cbf0cb !important;
 }
 
-:deep(.el-table__body tr.current-row > td.el-table__cell) {
-    background-color: #ddf6dd !important;
-}
 </style>

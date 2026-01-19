@@ -21,7 +21,7 @@ const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
   selectedRowId.value = row.IdBibliografia;
-  handleRowClick(row); // Mantiene tu lógica de cargar grupos y objetos
+  handleRowClick(row); 
 };
 
 const tableRowClassName = ({ row }) => {
@@ -371,9 +371,7 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 
 const borrarDatos = (idBibliografia) => {
-  // Buscamos el item para el mensaje de confirmación
   const itemAEliminar = localTableData.value.find(item => item.IdBibliografia == idBibliografia);
-  
   const procederConEliminacion = async () => {
     try {
       ElMessageBox.close();
@@ -785,10 +783,6 @@ onMounted(() => {
 }
 
 
-.tabla-bibliografia-chica {
-  --el-table-current-row-bg-color: #ddf6dd !important;
-  --el-table-row-hover-bg-color: #cbf0cb !important;
-}
 
 :deep(.el-table__body tr.current-row > td.el-table__cell) {
   background-color: #ddf6dd !important;
