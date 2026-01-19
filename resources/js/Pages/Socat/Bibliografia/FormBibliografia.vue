@@ -31,7 +31,7 @@ const form = ref({
 });
 
 const formTitle = computed(() => {
-    return props.accion === 'crear' ? 'Insertar una nueva bibliografía' : 'Modificar la bibliografía seleccionada';
+    return props.accion === 'crear' ? 'Insertar una nueva bibliografía' : 'Modificar la bibliografía';
 });
 
 watch(() => props.biblioEdit, (newVal) => {

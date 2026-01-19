@@ -2,10 +2,8 @@
     <el-tooltip class="item" effect="dark" content="Salir" placement="bottom" :z-index="2101">
         <el-button class="boton-salir" @click="ejecutarAccion" aria-label="Salir">
             <svg version="1.0" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                x="0px" y="0px" width="40px" height="40px" viewBox="0 0 1200 1200" enable-background="new 0 0 1200 1200"
+                x="0px" y="0px" width="32px" height="40px" viewBox="0 0 1200 1200" enable-background="new 0 0 1200 1200"
                 xml:space="preserve">
-
-                <!-- Path corregido -->
                 <path 
                     fill="#000000" 
                     d="M 599.924 45.625 

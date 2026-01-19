@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed, nextTick  } from 'vue';
+import { ref, watch, onMounted, computed, nextTick } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose } from '@element-plus/icons-vue';
@@ -19,6 +19,7 @@ const props = defineProps({
   idKey: { type: String, required: true },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
+  rowClassName: { type: Function, default: null }, // Añadir esta línea
   highlightCurrentRow: {
     type: Boolean,
     default: false
@@ -26,31 +27,75 @@ const props = defineProps({
 });
 
 
+const limpiarTodosLosFiltros = () => {
+  // Reiniciamos el objeto de filtros a strings vacíos
+  Object.keys(filtros.value).forEach(key => {
+    filtros.value[key] = '';
+  });
+  // Opcional: reiniciar el tipo de búsqueda a 'inicia' o el default
+  tipoDeBusqueda.value = 'inicia';
+};
+
+const irAPagina = async (numeroPagina) => {
+  currentPage.value = numeroPagina;
+  await fetchData();
+};
+
+const selectedRow = ref(null);
+
+
+const handleRowClickInterno = (row) => {
+  selectedRow.value = row;
+  emit('row-click', row);
+};
+
+const onEditarInterno = () => {
+  if (selectedRow.value) {
+    emit('editar-item', selectedRow.value);
+  }
+};
+
+const onEliminarInterno = () => {
+  if (selectedRow.value) {
+    emit('eliminar-item', selectedRow.value[props.idKey]);
+  }
+};
+
+const rowClassNameInterno = ({ row }) => {
+  try {
+    if (!selectedRow.value) return '';
+    const idFilaActual = row[props.idKey];
+    const idSeleccionado = selectedRow.value[props.idKey];
+    if (idFilaActual !== undefined && idFilaActual !== null && idFilaActual === idSeleccionado) {
+      return 'fila-seleccionada-verde';
+    }
+  } catch (err) {
+    console.error("Error en rowClassNameInterno:", err);
+  }
+  return '';
+};
+
+
 const tableRefInterna = ref(null);
 
-// --- FUNCIÓN DE ENFOQUE MEJORADA ---
 const forzarFocoFilaVerde = async () => {
-  // Esperamos 2 ciclos de renderizado para asegurar que la fila ya existe y tiene la clase verde
   await nextTick();
   setTimeout(() => {
     if (!tableRefInterna.value) return;
-    
-    // Buscamos directamente el elemento DOM que tiene la clase verde
+
     const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
-    
+
     if (filaVerde) {
-      // Magia del navegador: esto hace scroll suave hasta poner la fila en el centro
       filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
       console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
     }
-  }, 300); // Un pequeño delay de 300ms ayuda a que ElementPlus termine de dibujar
+  }, 300);
 };
 
-// --- Permitir al padre establecer filtros manualmente ---
 const setFiltroExterno = (campo, valor) => {
-    filtros.value[campo] = valor;
-    onFiltroInput(); // Esto dispara la recarga
+  filtros.value[campo] = valor;
+  onFiltroInput();
 };
 
 
@@ -104,8 +149,19 @@ const fetchData = async () => {
         sortOrder: sorting.value.order,
       }
     });
-    emit('update:datos', response.data.data || []);
-    emit('update:totalItems', response.data.total || response.data.totalItems || 0);
+
+    const resultados = response.data.data || [];
+    const total = response.data.total || response.data.totalItems || 0;
+    emit('update:datos', resultados);
+    emit('update:totalItems', total);
+    await nextTick();
+    if (resultados.length > 0) {
+      selectedRow.value = resultados[0];
+      emit('row-click', resultados[0]);
+    } else {
+      selectedRow.value = null;
+    }
+
   } catch (error) {
     console.error(`Error en TablaFiltrable (${props.endpoint}):`, error);
     emit('update:datos', []);
@@ -154,11 +210,14 @@ const cerrarModal = () => {
 
 onMounted(fetchData);
 
-defineExpose({ 
-  fetchData, 
-  forzarFocoFilaVerde, 
+defineExpose({
+  fetchData,
+  forzarFocoFilaVerde,
   setFiltroExterno,
-  tableRefInterna
+  irAPagina,
+  limpiarTodosLosFiltros,
+  sorting,
+  selectedRow,
 });
 </script>
 
@@ -175,6 +234,8 @@ defineExpose({
           <div class="form-actions">
             <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
+            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
+            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
             <BotonSalir />
           </div>
         </div>
@@ -182,8 +243,9 @@ defineExpose({
     </template>
 
     <div class="table-responsive ">
-      <el-table ref="tableRefInterna"  :highlight-current-row="props.highlightCurrentRow" :data="props.datos" :border="true"
-        height="550" @sort-change="handleSortChange" @row-click="(row) => emit('row-click', row)">
+      <el-table ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
+        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
+        @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
         <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
@@ -210,17 +272,6 @@ defineExpose({
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="Acciones" width="120" align="center">
-          <template #default="{ row }">
-            <div class="action-buttons-container">
-              <slot name="acciones" :fila="row">
-                <EditarButton @editar="onEditar(row)" />
-                <EliminarButton @eliminar="onEliminar(row[props.idKey])" />
-              </slot>
             </div>
           </template>
         </el-table-column>
@@ -322,6 +373,16 @@ defineExpose({
 :deep(.el-table .el-table__row:hover > td.el-table__cell) {
   background-color: #f5f7fa !important;
 }
+
+
+:deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
+  background-color: #ddf6dd !important;
+}
+
+:deep(.el-table .fila-seleccionada-verde > td.el-table__cell) {
+  background-color: #ddf6dd !important;
+}
+
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
