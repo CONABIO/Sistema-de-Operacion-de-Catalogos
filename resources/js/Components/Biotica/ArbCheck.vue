@@ -106,3 +106,13 @@
         :props="defaultProps">
     </el-tree>
 </template>
+
+<style scoped>
+    :deep(.el-tree-node__content),
+    :deep(.el-tree-node.is-current > .el-tree-node__content),
+    :deep(.el-tree-node__content:hover),
+    :deep(.el-tree-node__content:focus) {
+        background-color: transparent !important;
+    }
+</style>
+

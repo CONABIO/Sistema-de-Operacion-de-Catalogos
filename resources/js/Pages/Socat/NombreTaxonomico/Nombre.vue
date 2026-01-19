@@ -1427,8 +1427,9 @@ const showAscendants = async () => {
   max-width: 200px;
 }
 
+
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgb(203, 233, 200) !important;
+  background-color: rgb(203, 233, 200);
   color: #0d6efd !important;
 }
 
