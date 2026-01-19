@@ -23,6 +23,7 @@ const form = ref({
 });
 
 const formRef = ref(null);
+const nomComunInputRef = ref(null);
 
 const rules = {
     NomComun: [
@@ -39,7 +40,7 @@ const rules = {
 };
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo nombre común' : 'Modificar el nombre común seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo nombre común' : 'Modificar el nombre común';
 });
 
 watch(() => props.visible, (newVal) => {
@@ -56,6 +57,16 @@ watch(() => props.visible, (newVal) => {
         }
         nextTick(() => {
             formRef.value?.clearValidate();
+             setTimeout(() => {
+                if (nomComunInputRef.value) {
+                    nomComunInputRef.value.focus();
+                    const nativeInput = nomComunInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
+                }
+            }, 100);
         });
     }
 }, { immediate: true });
@@ -101,7 +112,7 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Nombre común" prop="NomComun">
-                        <el-input type="text" v-model="form.NomComun" maxlength="255" show-word-limit />
+                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="255" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Lengua" prop="Lengua">

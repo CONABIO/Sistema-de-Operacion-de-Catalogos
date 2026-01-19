@@ -105,44 +105,57 @@ class Nombre extends Model
     //Funación para buscar por idcat
     public function scopeFiltraArbol($query, $categ, $catalog)
     {
-        if($catalog)
-        {
-            $query->whereIn('SCAT.IdGrupoSCAT', $catalog)
-                  ->whereIn('Nombre.IdCategoriaTaxonomica',$categ)
-                  ->where('EstadoRegistro', '=', 1)
-                  ->OrderByRaw('CategoriaTaxonomica.IdNivel2 ASC, Nombre.NombreCompleto ASC, CategoriaTaxonomica.IdNivel1 ASC,  CategoriaTaxonomica.IdNivel3 ASC, 
-                                      CategoriaTaxonomica.IdNivel4 ASC')
-                  ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
-                  ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica');
-            return $query;
+        if ($catalog) {
+            return $query->select('Nombre.*', 'CategoriaTaxonomica.NombreCategoriaTaxonomica')
+                ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                ->where('Nombre.EstadoRegistro', 1)
+                ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
+                ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica')
+                ->orderBy('CategoriaTaxonomica.IdNivel2')
+                ->orderBy('Nombre.NombreCompleto')
+                ->orderBy('CategoriaTaxonomica.IdNivel1')
+                ->orderBy('CategoriaTaxonomica.IdNivel3')
+                ->orderBy('CategoriaTaxonomica.IdNivel4');
         }
+        return $query;
     }
     
     //Funcion para buscar por taxon con filtro de categoria y catalogos
-    public function scopeFiltraArbolTaxCat($query, $categ, $catalog, $taxon) {
-    	if ($categ) {
-            $query->whereIn('SCAT.IdGrupoSCAT', $catalog)
-                  ->whereIn('Nombre.IdCategoriaTaxonomica',$categ)
-                  ->whereRaw('LOWER(Nombre.NombreCompleto) LIKE LOWER(?)',["%$taxon%"])
-                  ->where('EstadoRegistro', '=', 1)
-                  ->OrderByRaw('CategoriaTaxonomica.IdNivel2 ASC, Nombre.NombreCompleto ASC, CategoriaTaxonomica.IdNivel1 ASC,  CategoriaTaxonomica.IdNivel3 ASC, 
-                                      CategoriaTaxonomica.IdNivel4 ASC')
-                  ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
-                  ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica');
-            return $query;
+    public function scopeFiltraArbolTaxCat($query, $categ, $catalog, $taxon) 
+    {
+        if ($categ) {
+            return $query->select('Nombre.*', 'CategoriaTaxonomica.NombreCategoriaTaxonomica')
+                ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                ->whereRaw('LOWER(Nombre.NombreCompleto) LIKE LOWER(?)', ["%$taxon%"])
+                ->where('Nombre.EstadoRegistro', 1)
+                ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
+                ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica')
+                ->orderBy('CategoriaTaxonomica.IdNivel2')
+                ->orderBy('Nombre.NombreCompleto')
+                ->orderBy('CategoriaTaxonomica.IdNivel1')
+                ->orderBy('CategoriaTaxonomica.IdNivel3')
+                ->orderBy('CategoriaTaxonomica.IdNivel4');
         }
+        return $query;
     }
 
-    public function scopeCargaHijos($query, $id) {
-    	if ($id) {
-            $query->where('Nombre.IdNombreAscendente', '=', $id)
-                  ->where('Nombre.IdNombre','<>', $id)
-                  ->where('Nombre.EstadoRegistro', '=', 1)
-                  ->OrderByRaw('CategoriaTaxonomica.IdNivel2 ASC, Nombre.NombreCompleto ASC, CategoriaTaxonomica.IdNivel1 ASC,  CategoriaTaxonomica.IdNivel3 ASC, 
-                                      CategoriaTaxonomica.IdNivel4 ASC')
-                  ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica');
-            return $query;
+    public function scopeCargaHijos($query, $id) 
+    {
+        if ($id) {
+            return $query->select('Nombre.*', 'CategoriaTaxonomica.NombreCategoriaTaxonomica')
+                ->where('Nombre.IdNombreAscendente', $id)
+                ->where('Nombre.IdNombre', '<>', $id)
+                ->where('Nombre.EstadoRegistro', 1)
+                ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica')
+                ->orderBy('CategoriaTaxonomica.IdNivel2')
+                ->orderBy('Nombre.NombreCompleto')
+                ->orderBy('CategoriaTaxonomica.IdNivel1')
+                ->orderBy('CategoriaTaxonomica.IdNivel3')
+                ->orderBy('CategoriaTaxonomica.IdNivel4');
         }
+        return $query;
     }
 
     public function scopeCargaRelaciones($query, $id)

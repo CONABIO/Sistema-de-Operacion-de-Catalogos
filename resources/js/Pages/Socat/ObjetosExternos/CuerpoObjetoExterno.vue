@@ -116,7 +116,7 @@ const eliminarObjetoExterno = (idObjeto) => {
                         try {
                             ElMessageBox.close();
                             await axios.delete(`/objetos-externos/${idObjeto}`);
-                            mostrarNotificacion("¡Eliminación Exitosa!", `El registro fue eliminado.`, "success");
+                            mostrarNotificacion("Eliminación exitosa", `El objeto externo fue eliminado.`, "success");
                             tablaRef.value?.fetchData();
                         } catch (apiError) {
                             mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");

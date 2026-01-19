@@ -22,6 +22,7 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import { processIcon, getSafeIconPath } from '@/Composables/iconos';
 
 const { permisos } = usePermisos();
 
@@ -29,7 +30,7 @@ const page = usePage();
 const authUser = page.props.auth.user || [];
 
 
-//Definición de variables
+//Definición de variables a utilizar
 const props = defineProps({
   gruposTax: {
     type: Object,
@@ -43,17 +44,19 @@ const props = defineProps({
 
 const totalRegNom = ref(0);
 
+const activeNames = ref(['1']);
+
 const columnasDefinidas = ref([
   {
-    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120', sortable: true,
+    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
     align: 'left', tipo: 'imagenTexto', filtrable: true
   },
   {
-    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250', sortable: true,
+    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
     align: 'left', tipo: 'imagenTexto', filtrable: true
   },
   {
-    prop: 'Biblio', label: 'Ref.', minWidth: '55', sortable: false, align: 'center',
+    prop: 'Biblio', label: '', minWidth: '55', align: 'left',
     tipo: 'imagenTexto', filtrable: false
   }
 ]);
@@ -69,7 +72,7 @@ const totalRegRef = ref(0);
 
 const columnasDefRef = ref([
   {
-    prop: 'Cita', label: 'Cita completa', minWidth: '250', sortable: true,
+    prop: 'Cita', label: 'Cita completa', minWidth: '250',
     align: 'left', tipo: 'textarea', filtrable: true
   },
 ]);
@@ -133,6 +136,8 @@ const dialogWidth = ref('35%');
 const treeDataAscendentes = ref([]);
 const dialogFormVisibleAscendentes = ref(false);
 
+const mostrarLoading = ref(true);
+
 const updateLayout = () => {
   if (window.innerHeight < 820) {
     scrollbarHeight.value = '300px';
@@ -149,13 +154,13 @@ const updateLayout = () => {
 
 onMounted(() => {
   dialogFormVisibleCat.value = true;
-  console.log(authUser);
 
   updateLayout();
   window.addEventListener('resize', updateLayout);
 });
 
 onUnmounted(() => {
+
   window.removeEventListener('resize', updateLayout);
 });
 
@@ -187,7 +192,8 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const openDialog = (nodeData) => {
-  console.log(nodeData);
+
+  //mostrarLoading.value = false;
 
   emit('reset-form');
   dialogFormVisibleAlta.value = true;
@@ -232,6 +238,11 @@ const recibeGrupos = async (data) => {
   catalogos.value = data['catalogos'];
   grupos.value = data['grupos'];
   idsGrupos.value = data['ids'];
+
+  tablaNomenclatura.value= [];
+  tablaReferencias.value = [];
+  totalRegNom.value = 0;
+  totalRegRef.value = 0;
 
   if (categ.value === '') {
     open("Se debe seleccionar una categoría taxonómica.");
@@ -333,7 +344,6 @@ const open = (mensaje) => {
 
 //Esta funcion se dispara una vez que se selecciona una categia taxonomica
 const handleChange = async (value) => {
-
   if (value != undefined) {
     filterText.value = "";
     mostrar.value = false;
@@ -366,6 +376,14 @@ const handleChange = async (value) => {
       }
       loading.close();
     }
+  }else
+  {
+    catego.value = ''; 
+    tablaNomenclatura.value = [];
+    tablaReferencias.value = [];
+    totalRegNom.value = 0;
+    totalRegRef.value = 0;
+    data.value = [];
   }
 }
 
@@ -389,13 +407,15 @@ const filterNode = async (value) => {
 
     const response = await axios.get('/cargar-nomArb',
       { params });
-
+    
     if (response.status === 200) {
       data.value = response.data[0];
-      totalReg.value = response.data[1].total;
+      totalItems.value = response.data[1].total;
       paginas.value = response.data[1].last_page;
       loading.close();
     }
+  }else if (idsGrupos.value != '' && categ.value != null){
+    handleChange(categ.value);
   }
 
   loading.close();
@@ -421,20 +441,27 @@ const cerrarNotificacion = () => {
 };
 
 //Funcion que se ejecuta para la expancion de un nodo
-const expande = async (draggingNode, nodeData, nodeComponent) => {
+//const expande = async (draggingNode, nodeData, nodeComponent) => {
+const expande = async (draggingNode) => {
+
+  let loadingInstance = null;
 
   isMenuVisible.value = false;
   mostrar.value = true;
   taxonAct.value = draggingNode;
 
-  if (draggingNode.children.length === 0) {
-    const loading = ElLoading.service({
-      lock: true,
-      text: "Loading",
-      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-      backgroud: 'rgba(255,255,255,0.85)',
-    });
+  if(mostrarLoading.value)
+  {
+    loadingInstance = ElLoading.service({
+        lock: true,
+        text: "Loading",
+        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+        backgroud: 'rgba(255,255,255,0.85)',
+      });
+  }
 
+  if (draggingNode.children.length === 0) {
+    
     const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
     if (response.status === 200) {
@@ -448,22 +475,27 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
       node.expanded = true;
 
     }
-
-    const params= {
-                  taxAct: draggingNode.id
-              };  
-    const responseNom = await axios.get('/carga-RelacionesTax', { params });
-
-    tablaNomenclatura.value = responseNom.data;
-
-    loading.close();
   }
 
-  totalRegNom.value = draggingNode.relaciones.length;
+  const params= {
+                  taxAct: draggingNode.id
+              };  
+              
+  const responseNom = await axios.get('/carga-RelacionesTax', { params });
+
+  tablaNomenclatura.value = responseNom.data;
+
+  if(mostrarLoading.value)
+  {
+    loadingInstance.close();
+  }
+  
+  totalRegNom.value = tablaNomenclatura.value.length;
   tablaReferencias.value = draggingNode.referencias;
-  totalRegRef.value = draggingNode.referencias.length
+  totalRegRef.value = draggingNode.referencias.length;
   selectedNodeKey.value = draggingNode.id;
 
+  mostrarLoading.value = true
 }
 
 const proceder = () => {
@@ -722,7 +754,7 @@ const manejarEliminarRel = (item) => {
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación Exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
     }
@@ -764,7 +796,7 @@ const manejarEliminarRef = (item)=>{
 
         totalRegRef.value = response.data.length;
 
-      mostrarNotificacion('Eliminación Exitosa', `La referencia fue eliminada correctamente.`, 'success');
+      mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
     }
@@ -1074,10 +1106,9 @@ const showAscendants = async () => {
 };
 </script>
 
-
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
-    <el-container class="main-layout-container-fixed">
+    <el-container >
       <el-header class="main-header-override">
         <div>
           <el-row :gutter="16">
@@ -1097,7 +1128,7 @@ const showAscendants = async () => {
 
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="data.RutaIcono" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                    <img :src="processIcon(data.RutaIcono)" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
@@ -1145,12 +1176,12 @@ const showAscendants = async () => {
           </el-row>
         </div>
 
-        <div class="content-wrapper">
+        <div class="content-wrapper" >
           <el-container class="main-content-container">
-            <el-aside width="600px" class="aside-tree">
+            <el-aside class="aside-tree">
               <div class="tree-container">
-                <el-scrollbar height="550px">
-                  <el-tree class="filter-tree" :data="data" node-key="id" @node-click="expande"
+                <el-scrollbar height="500px">
+                  <el-tree :data="data" node-key="id" @node-click="expande"
                     :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
                     empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
                     :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick">
@@ -1208,59 +1239,81 @@ const showAscendants = async () => {
                 </el-menu>
               </div>
             </el-aside>
-            <el-container class="details-container" style="height: 500px;">
-              <el-scrollbar :height="scrollbarHeight">
-                <el-header class="details-header">
-                  <div class="details-title" style="margin-bottom: 20px;">
-                    <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                      class="details-title-icon">
-                    <span class="details-title-text">
-                      {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
-                    </span>
-                  </div>
-                </el-header>
-                <el-main class="details-main" style="margin-top: -40px;">
-                  <div class="table-section">
-                    <span class="demo-input-label" style=" font-weight: bold;">Relaciones nomenclaturales</span>
-                    <TablaFiltrable :columnas="columnasDefinidas" :datos="datosPaginadosNomenclatura"
-                      :opciones-filtro="opcionesFiltroNomenclatura"
-                      :mostrarBiblio = "true"
-                      :mostrarAcci = "true"
-                      @eliminar-item = "manejarEliminarRel"
-                      @abrir-Biblio = "abrirBiblio">
-                    </TablaFiltrable>
-
-                    <div v-if="totalRegNom > pageSizeNomenclatura"
-                      style="display: flex; justify-content: center; padding-top: 10px;">
-                      <el-pagination small background layout="prev, pager, next, total" :total="totalRegNom"
-                        :page-size="pageSizeNomenclatura" v-model:current-page="currentPageNomenclatura" />
+            <el-container class="details-container">
+              <el-header class="details-header">
+                <div class="details-title">
+                  <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
+                    class="details-title-icon">
+                  <span class="details-title-text">
+                    {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
+                  </span>
+                </div>
+              </el-header>
+              <el-main class="details-main">
+                <!--Prueba colapse-->
+                <div>
+                   <el-collapse accordion expand-icon-position="left"
+                                 v-model="activeNames">
+                    <el-collapse-item name="1">
+                      <template #title="{ isActive}">
+                        <div class="table-header">
+                          <span class="table-title">
+                            Relaciones nomenclaturales
+                            <span class="table-count">({{ totalRegNom }})</span>
+                          </span>
+                        </div>
+                      </template>                    
+                    <div class="table-wrapper">
+                      <TablaFiltrable 
+                        :columnas="columnasDefinidas" 
+                        :datos="tablaNomenclatura"
+                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        :totalItems = "totalRegNom"
+                        :itemsPerPage="2"
+                        :mostrarBiblio="true"
+                        :mostrarAcci="true"
+                        @eliminar-item="manejarEliminarRel"
+                        @abrir-Biblio="abrirBiblio"
+                      />
                     </div>
-                  </div>
+                    </el-collapse-item>
+                    <el-collapse-item name="2">
+                      <template #title="{ isActive}">
+                        <div class="table-header">
+                          <span class="table-title">
+                            Referencias asociadas
+                            <span class="table-count">({{ totalRegRef }})</span>
+                          </span>
+                        </div>
+                      </template>
+                      <div class="table-wrapper">
+                        <TablaFiltrable 
+                          :columnas="columnasDefRef" 
+                          v-model:datos="tablaReferencias"
+                          v-model:total-items="totalRegRef" 
+                          :opciones-filtro="opcionesFiltroRef" 
+                          :totalItems = "totalRegRef"
+                          :itemsPerPage="2"
+                          :mostrarBiblio="true"
+                          :mostrarAcci="true"
+                          @abrir-Biblio="abrirBiblioNombre"
+                          @eliminar-item="manejarEliminarRef"
+                        />
+                      </div>
+                    </el-collapse-item>
+                  </el-collapse>
+                </div>
 
-                  <div class="table-section">
-                    <span class="demo-input-label" style=" font-weight: bold;">Referencias asocidas</span>
-                    <TablaFiltrable :columnas="columnasDefRef" v-model:datos="tablaReferencias"
-                      v-model:total-items="totalRegRef" 
-                      :opciones-filtro="opcionesFiltroRef" 
-                      :items-por-pagina="2"
-                      :mostrarBiblio = "true"
-                      :mostrarAcci = "true"
-                      @abrir-Biblio = "abrirBiblioNombre"
-                      @eliminar-item = "manejarEliminarRef">
-                    </TablaFiltrable>
-                  </div>
-                </el-main>
-              </el-scrollbar>
+              </el-main>
             </el-container>
           </el-container>
         </div>
 
-        <el-footer class="main-pagination-footer">
+        <el-footer>
           <div class="pagination-footer">
-            <div v-if="totalItems > 0" class="pagination-container-wrapper">
+            <div v-if="totalItems > 0">
               <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                @current-change="handlePageChange" layout="prev, pager, next, total" background
-                class="main-pagination-style">
+                @current-change="handlePageChange" layout="prev, pager, next, total" background>
               </el-pagination>
             </div>
           </div>
@@ -1274,10 +1327,10 @@ const showAscendants = async () => {
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
-                @reset-form="resetFormNombre" :botCerrar="true"
+                @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
-                  :catalogos="idsGrupos.value" :active-tab.sync="activeTab" 
+                  :catalogos="idsGrupos.value"
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
         @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
@@ -1300,13 +1353,13 @@ const showAscendants = async () => {
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAscendentes" @close="closeAscendantsDialog" :botCerrar="true" :pressEsc="true"
+    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="true" :pressEsc="true"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
         <h3>Ascendentes del taxón</h3>
       </div>
       <div class="content-wrapper-custom">
-        <el-tree class="filter-tree" :data="treeDataAscendentes" node-key="id" @node-click="expande"
+        <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
           :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
           empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
           :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
@@ -1369,12 +1422,14 @@ const showAscendants = async () => {
   border: 1px solid #dcdfe6;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   padding: 5px 0;
-  border-radius: 4px;
-  min-width: 180px;
+  border-radius: 8px;
+  min-width: 160px;
+  max-width: 200px;
 }
 
+
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgb(203, 233, 200) !important;
+  background-color: rgb(203, 233, 200);
   color: #0d6efd !important;
 }
 
@@ -1391,35 +1446,36 @@ const showAscendants = async () => {
 }
 
 .pagination-footer {
-  padding-top: 15px;
+  padding-top: 5px;
   flex-shrink: 0;
 }
 
 .main-header-override {
   height: 100% !important;
-  padding: 16px;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-.main-layout-container {
-  display: flex;
-  flex-direction: column;
-  max-height: 100px;
-  height: 20%;
+.main-layout-container-fixed {
+  height: 250px;
 }
 
 .content-wrapper {
   flex-grow: 1;
-  margin-top: 16px;
+  margin-top: 1px;
   overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content-container {
+  flex: 1;
   min-height: 0;
 }
 
-
-
-
+/* Estilos para pantallas grandes (desktop) */
 @media (min-width: 992px) {
   .content-wrapper {
     max-height: 500px;
@@ -1442,21 +1498,89 @@ const showAscendants = async () => {
 
   .details-container {
     flex-grow: 1;
-    padding-left: 20px;
+    padding-left: 10px;
     display: flex;
     flex-direction: column;
-    height: 520px;
+    height: 470px;
+    overflow: hidden;
   }
 
-  .el-scrollbar {
+  .details-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+    padding-top: 1px;
+    padding-bottom: 20px;
+  }
+
+  /* Sección de cada tabla */
+  .table-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  /* Cabecera de la tabla */
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1px 16px;
+    background: #d9e1eb;
+    border-bottom: 1px solid #f5ebeb;
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .table-count {
+    font-size: 14px;
+    font-weight: bold;
+    font-weight: normal;
+    color: #67746b;
+    margin-left: 4px;
+  }
+
+  .table-action-button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  /* Contenedor de la tabla con scroll propio */
+  .table-wrapper {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    max-height: 300px;
+  }
+
+  /* Para que las tablas internas ocupen todo el espacio */
+  .table-wrapper :deep(.el-table) {
     height: 100%;
   }
+
+  /* Paginación */
+  .table-pagination {
+    padding: 12px 16px;
+    border-top: 1px solid #ebeef5;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+  }
 }
 
-.table-section {
-  overflow-x: auto;
-}
-
+/* Estilos para pantallas pequeñas (mobile/tablet) */
 @media (max-width: 991px) {
   .main-header-override {
     height: 100% !important;
@@ -1471,6 +1595,7 @@ const showAscendants = async () => {
 
   .main-content-container {
     height: 100%;
+    flex-direction: column;
   }
 
   .aside-tree {
@@ -1479,7 +1604,7 @@ const showAscendants = async () => {
     margin-bottom: 20px;
     border: 1px solid #e4e7ed;
     border-radius: 4px;
-    height: auto;
+    height: 400px;
   }
 
   .details-container {
@@ -1490,10 +1615,12 @@ const showAscendants = async () => {
 
   .details-main {
     overflow-y: visible;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .aside-tree .el-scrollbar {
-    height: 45vh !important;
+    height: 350px !important;
   }
 
   .details-container .el-scrollbar {
@@ -1527,6 +1654,59 @@ const showAscendants = async () => {
     width: 80%;
     max-width: 280px;
   }
+
+  .table-section {
+    flex: none;
+    margin-bottom: 20px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .table-count {
+    font-weight: normal;
+    color: #909399;
+    margin-left: 4px;
+  }
+
+  .table-action-button {
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .table-wrapper {
+    max-height: 250px;
+    overflow: auto;
+  }
+
+  .table-pagination {
+    padding: 12px 16px;
+    border-top: 1px solid #ebeef5;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.main-layout-container-fixed {
+  min-height: 700px;
 }
 
 .context-menu-overlay {
@@ -1542,11 +1722,30 @@ const showAscendants = async () => {
 .context-menu .el-menu-item {
   display: flex !important;
   align-items: center !important;
-  gap: 10px;
+  gap: 8px;
+  padding: 8px 12px !important;
+  min-height: 36px !important; /* Altura reducida */
+  width: auto !important; /* No ocupar todo el ancho */
+  margin: 0 4px !important; /* Margen lateral */
+  border-radius: 4px !important; /* Bordes redondeados */
 }
 
 .context-menu .el-menu-item span {
   white-space: nowrap;
+  font-size: 13px !important; /* Texto más pequeño */
+}
+
+/* Ajustar íconos */
+.context-menu .el-icon {
+  font-size: 16px !important; /* Íconos más pequeños */
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* SVG personalizado */
+.context-menu svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .details-header {
@@ -1574,26 +1773,76 @@ const showAscendants = async () => {
   line-height: 1.4;
 }
 
+/* Ajustes para pantallas de 1440px */
 @media (max-width: 1440px) and (min-width: 992px) {
   .aside-tree {
-    width: 480px !important;
+    width: 500px !important;
+  }
+
+  .content-wrapper {
+    max-height: 450px;
+  }
+
+  .table-wrapper {
+    max-height: 250px;
+  }
+}
+
+/* Ajustes para pantallas de 1280px */
+@media (max-width: 1280px) and (min-width: 992px) {
+  .aside-tree {
+    width: 450px !important;
   }
 
   .content-wrapper {
     max-height: 400px;
   }
 
+  .table-wrapper {
+    max-height: 200px;
+  }
 }
 
-@media (max-width: 1280px) and (min-width: 992px) {
-  .aside-tree {
-    width: 420px !important;
+/* Para pantallas altas */
+@media (min-height: 800px) {
+  .main-layout-container-fixed {
+    height: 800px;
   }
-
-  .content-wrapper {
+  
+  .details-container {
+    height: 520px;
+  }
+  
+  .table-wrapper {
     max-height: 350px;
   }
+}
 
+/* Para que el árbol no se haga demasiado pequeño */
+.aside-tree {
+  min-width: 350px;
+}
+
+/* Asegurar que el árbol también tenga altura fija */
+.tree-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Quitar márgenes y padding innecesarios */
+:deep(.el-table__body-wrapper) {
+  scrollbar-width: thin;
+}
+
+:deep(.el-table__body-wrapper::-webkit-scrollbar) {
+  width: 6px;
+  height: 6px;
+}
+
+:deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
+  background: #c0c4cc;
+  border-radius: 3px;
 }
 
 :deep(.dialog-ascendentes-diseno .el-dialog__body) {

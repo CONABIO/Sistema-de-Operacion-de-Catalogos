@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/autores/{id}', [AutorTaxonController::class, 'update'])->name('autores.update');
     Route::delete('/autores/{id}', [AutorTaxonController::class, 'destroy'])->name('autores.destroy');
     Route::get('busca-autoresRel', [AutorTaxonController::class, 'buscaAutoresRel']);
+    Route::post('/autores/obtener-pagina', [AutorTaxonController::class, 'obtenerPaginaDeAutor']);
 
 
     Route::get('/busca-grupo', [GrupoTaxonomicoController::class, 'buscaGrupo'])->name('buscaGrupo');
@@ -68,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/grupos-taxonomicos/{grupo_taxonomico}/edit', [GrupoTaxonomicoController::class, 'edit'])->name('gruposTaxonomicos.edit');
     Route::put('/grupos-taxonomicos/{IdGrupoSCAT}', [GrupoTaxonomicoController::class, 'update'])->name('gruposTaxonomicos.update');
     Route::delete('/grupos-taxonomicos/{IdGrupoSCAT}', [GrupoTaxonomicoController::class, 'destroy'])->name('gruposTaxonomicos.destroy');
+    Route::post('/grupos-taxonomicos/obtener-pagina', [GrupoTaxonomicoController::class, 'obtenerPaginaDeGrupo']);
 
 
     Route::get('/tipos-distribucion', [TiposDistribucionController::class, 'index'])->name('tiposDistribucion.index');
@@ -76,6 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tipos-distribucion/{IdTipoDistribucion}/edit', [TiposDistribucionController::class, 'edit'])->name('tiposDistribucion.edit');
     Route::put('/tipos-distribucion/{IdTipoDistribucion}', [TiposDistribucionController::class, 'update'])->name('tiposDistribucion.update');
     Route::delete('/tipos-distribucion/{IdTipoDistribucion}', [TiposDistribucionController::class, 'destroy'])->name('tiposDistribucion.destroy');
+    Route::post('/tipos-distribucion/obtener-pagina', [TiposDistribucionController::class, 'obtenerPaginaDeTipoDistribucion']);
 
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
 
@@ -85,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/nombres-comunes/{IdNomComun}/edit', [NombreComunController::class, 'edit'])->name('nombresComunes.edit');
     Route::put('/nombres-comunes/{IdNomComun}', [NombreComunController::class, 'update'])->name('nombresComunes.update');
     Route::delete('/nombres-comunes/{IdNomComun}', [NombreComunController::class, 'destroy'])->name('nombresComunes.destroy');
+    Route::post('/nombres-comunes/obtener-pagina', [NombreComunController::class, 'obtenerPaginaDeNombreComun']);
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
 
@@ -111,7 +115,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/actualizaReferenciasNombre', [NombresArbolController::class, 'muestraReferencias']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
-    Route::get('/carga-ComDet', [NombresArbolController::class, 'cargaComDet']);
 
     Route::post('/alta-RelacionesTax', [RelNombresController::class, 'altaRelaciones']);
     Route::get('/carga-RelacionesTax', [RelNombresController::class, 'cargaRelaciones']);
@@ -125,10 +128,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/carga-Biblio', [BibliografiaController::class, 'fetchBibliografia'])->name('biblio.fetch');
     Route::get('/busca-Biblio', [BibliografiaController::class, 'buscaBibliografia']);
     Route::put('/bibliografias/{id}', [BibliografiaController::class, 'update'])->name('bibliografias.update');
-    Route::delete('/bibliografias/{id}', [BibliografiaController::class, 'destroy'])->name('bibliografias.destroy');
+    Route::delete('/bibliografias/{bibliografia}', [BibliografiaController::class, 'destroy'])->name('bibliografias.destroy');
     Route::get('/bibliografias-api', [BibliografiaController::class, 'indexApi'])->name('bibliografias.api');
     Route::get('/bibliografiasIndex', [BibliografiaController::class, 'index'])->name('bibliografias.index');
     Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store');
+    Route::post('/bibliografias/obtener-pagina', [BibliografiaController::class, 'obtenerPaginaDeBiblio']);
+    
 
     Route::delete('/caracteristicas-taxon/{id}', [CaracteristicasController::class, 'destroy'])
         ->name('caracteristicasTaxon.destroy');

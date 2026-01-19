@@ -41,7 +41,8 @@ import { defineProps, defineEmits } from 'vue';
 const props = defineProps({
   accion: {
     type: String,
-    required: true, // '
+    required: false,
+    default: '' // '
   },
   tooltipContent: {
     type: String,

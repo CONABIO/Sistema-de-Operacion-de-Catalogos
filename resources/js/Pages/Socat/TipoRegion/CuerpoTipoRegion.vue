@@ -26,9 +26,12 @@ const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const descripcionInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
+
+const emit = defineEmits(['seleccionar-tipo', 'cerrar-modal']); 
 
 const formModal = ref({
     Descripcion: "",
@@ -85,7 +88,7 @@ const handleNodeSelected = (data) => {
     selectedNode.value = data;
 };
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región seleccionado" : "Ingresar un nuevo tipo de región");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región" : "Ingresar un nuevo tipo de región");
 
 const modalRules = {
     Descripcion: [{ required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" }],
@@ -96,7 +99,14 @@ const abrirModalParaInsertar = () => {
     formModal.value = { Descripcion: "" };
     opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+            }
+        }, 100);
+    });
 };
 
 const abrirModalParaEditar = () => {
@@ -107,9 +117,20 @@ const abrirModalParaEditar = () => {
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = { Descripcion: selectedNode.value.Descripcion };
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                if (nativeInput) {
+                    const len = nativeInput.value.length;
+                    nativeInput.setSelectionRange(len, len);
+                }
+            }
+        }, 100);
+    });
 };
-
 const cerrarModalOperacion = () => {
     esModalVisible.value = false;
     nodoEnModal.value = null;
@@ -158,7 +179,7 @@ const guardarDesdeModal = async () => {
 const handleEliminar = () => {
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Acción no permitida", "No se puede eliminar porque tiene regiones dependientes.", "error");
+        return mostrarNotificacion("Error", "No se puede eliminar porque tiene regiones dependientes.", "error");
     }
 
     const nombre = selectedNode.value.Descripcion;
@@ -186,10 +207,10 @@ const proceedWithDeletion = (nodeId, nombre) => {
         data: { isModal: props.isModal },
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `El tipo de region "${nombre}" ha sido eliminado correctamente.`, "success");
             selectedNode.value = null;
         },
-        onError: (error) => mostrarNotificacion("Error al Eliminar", error.message || "Ocurrió un error.", "error"),
+        onError: (error) => mostrarNotificacion("Error", error.message || "Ocurrió un error.", "error"),
     });
 };
 
@@ -254,8 +275,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.valu
 
 const handleNodeDoubleClick = (data) => {
     if (props.isModal) {
-        // 'window.parent' es la ventana que contiene el iframe (indexRegion.vue)
-        // 'postMessage' es la forma segura de enviar datos entre ventanas.
         window.parent.postMessage({
             type: 'tipoRegionSeleccionado',
             payload: {
@@ -270,7 +289,7 @@ const handleNodeDoubleClick = (data) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Autoridades Taxonómicas" tituloArea="Catálogo de tipos de región">
 
-        <el-card class="box-card tree-card">
+        <el-card class="box-card tree-card" shadow="never">
             <template #header>
                 <div class="header-container">
                     <div class="left-header-content"></div>
@@ -284,6 +303,8 @@ const handleNodeDoubleClick = (data) => {
                                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
 
                             <BotonSalir v-if="!isModal" />
+
+                            <BotonSalir v-else accion="cerrar" @salir="$emit('cerrar-modal')" />
                         </div>
                     </div>
                 </div>
@@ -328,8 +349,8 @@ const handleNodeDoubleClick = (data) => {
                             </el-radio-group>
                         </div>
 
-                        <el-form-item prop="Descripcion" label="Descripción del Tipo de Región:">
-                            <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                        <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
+                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
                                 maxlength="255" show-word-limit />
                         </el-form-item>
 
@@ -499,10 +520,12 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
 
 .dialog-header h3 {
@@ -513,7 +536,17 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .dialog-body-container {
-    padding: 24px 30px 30px;
+    background-color: #f3f3f3;
+    padding: 20px 24px;
+    border: 3px;
+    text-align: left;
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 20px 24px;
+    text-align: left;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .form-actions {

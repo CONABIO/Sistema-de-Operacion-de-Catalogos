@@ -35,30 +35,6 @@ class TiposDistribucionController extends Controller
     }
 
 
-    public function store(Request $request)
-    {
-        Log::info("Creando un nuevo TipoDistribucion");
-
-        $request->validate([
-            'Descripcion' => 'required|string|max:255',
-        ]);
-
-        try {
-            $tipoDistribucion = new TipoDistribucion();
-            $tipoDistribucion->Descripcion = $request->input('Descripcion');
-            $tipoDistribucion->save();
-
-            return response()->json([
-                'data' => $tipoDistribucion,
-                'message' => 'TipoDistribucion creado exitosamente',
-            ], 201);
-        } catch (\Exception $e) {
-            Log::error("Error al crear TipoDistribucion: {$e->getMessage()}");
-            return response()->json(['message' => 'Error al crear TipoDistribucion'], 500);
-        }
-    }
-
-
     public function show($id)
     {
         $tipoDistribucion = TipoDistribucion::find($id);
@@ -77,35 +53,83 @@ class TiposDistribucionController extends Controller
     }
 
 
-    public function update(Request $request, $IdTipoDistribucion)
+    public function store(Request $request)
     {
-        Log::info("Actualizando TipoDistribucion con ID: {$IdTipoDistribucion}");
-        // dd($request->all());
-        $tipoDistribucion = TipoDistribucion::find($IdTipoDistribucion);
+        // Validación de duplicado global
+        $existing = TipoDistribucion::where(DB::raw('lower(Descripcion)'), strtolower($request->Descripcion))->first();
 
-        if (!$tipoDistribucion) {
-            Log::warning("TipoDistribucion no encontrado con ID: {$IdTipoDistribucion}");
-            return response()->json(['message' => 'TipoDistribucion no encontrado'], 404);
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Ya existe un tipo de distribución con esa descripción.',
+                'idExistente' => $existing->IdTipoDistribucion
+            ], 400);
         }
 
-        $request->validate([
-            'Descripcion' => 'required|string|max:255',
+        try {
+            $tipoDistribucion = new TipoDistribucion();
+            $tipoDistribucion->Descripcion = $request->input('Descripcion');
+            $tipoDistribucion->save();
 
-        ]);
+            return response()->json([
+                'data' => $tipoDistribucion,
+                'message' => 'Tipo de distribución creado exitosamente',
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al crear'], 500);
+        }
+    }
+
+    public function update(Request $request, $IdTipoDistribucion)
+    {
+        $tipoDistribucion = TipoDistribucion::find($IdTipoDistribucion);
+        if (!$tipoDistribucion) return response()->json(['message' => 'Not found'], 404);
+
+        // Validación de duplicado global (excluyendo el actual)
+        $existing = TipoDistribucion::where(DB::raw('lower(Descripcion)'), strtolower($request->Descripcion))
+            ->where('IdTipoDistribucion', '!=', $IdTipoDistribucion)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Ya existe otro registro con esa descripción.',
+                'idExistente' => $existing->IdTipoDistribucion
+            ], 400);
+        }
 
         try {
             $tipoDistribucion->Descripcion = $request->input('Descripcion');
             $tipoDistribucion->save();
-
-            Log::info("TipoDistribucion actualizado con ID: {$IdTipoDistribucion}");
-            return response()->json([
-                'data' => $tipoDistribucion,
-                'message' => 'TipoDistribucion actualizado exitosamente',
-            ], 200);
+            return response()->json(['data' => $tipoDistribucion, 'message' => 'Actualizado exitosamente'], 200);
         } catch (\Exception $e) {
-            Log::error("Error al actualizar TipoDistribucion con ID: {$IdTipoDistribucion}: {$e->getMessage()}");
-            return response()->json(['message' => 'Error al actualizar TipoDistribucion'], 500);
+            return response()->json(['message' => 'Error al actualizar'], 500);
         }
+    }
+
+    public function obtenerPaginaDeTipoDistribucion(Request $request)
+    {
+        $id = $request->id;
+        $perPage = $request->perPage ?? 100;
+        $sortBy = $request->sortBy ?? 'Descripcion';
+        $sortOrder = $request->sortOrder ?? 'asc';
+
+        $registroReferencia = TipoDistribucion::find($id);
+        if (!$registroReferencia) return response()->json(['page' => 1]);
+
+        $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
+
+        $posicion = TipoDistribucion::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
+            $valor = $registroReferencia->{$sortBy};
+            $query->where(DB::raw("LOWER(`$sortBy`)"), $operador, strtolower($valor))
+                ->orWhere(function ($q) use ($registroReferencia, $sortBy, $valor) {
+                    $q->where(DB::raw("LOWER(`$sortBy`)"), '=', strtolower($valor))
+                        ->where('IdTipoDistribucion', '<', $registroReferencia->IdTipoDistribucion);
+                });
+        })->count();
+
+        $pagina = floor($posicion / $perPage) + 1;
+        return response()->json(['page' => (int)$pagina]);
     }
 
 
@@ -155,7 +179,7 @@ class TiposDistribucionController extends Controller
                         case 'termina':
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
                             break;
-                        default: 
+                        default:
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
                             break;
                     }
