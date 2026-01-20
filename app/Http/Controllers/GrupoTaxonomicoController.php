@@ -93,7 +93,7 @@ class GrupoTaxonomicoController extends Controller
                         case 'termina':
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
                             break;
-                        default: // 'contiene'
+                        default: 
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
                             break;
                     }
@@ -121,14 +121,13 @@ class GrupoTaxonomicoController extends Controller
 
     public function store(Request $request)
     {
-        // Validación de duplicado
         $existing = GrupoScat::where(DB::raw('lower(GrupoSCAT)'), strtolower($request->GrupoSCAT))->first();
 
         if ($existing) {
             return response()->json([
                 'status' => 400,
                 'message' => 'El grupo que intenta guardar ya existe.',
-                'idExistente' => $existing->IdGrupoSCAT // <--- Para el JS
+                'idExistente' => $existing->IdGrupoSCAT 
             ], 400);
         }
 
