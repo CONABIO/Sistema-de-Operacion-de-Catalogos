@@ -13,7 +13,7 @@ import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
-    selectedRowId.value = row.IdNomComun;
+    selectedRowId.value = row ? row.IdNomComun : null;
 };
 
 const tableRowClassName = ({ row }) => {
@@ -25,7 +25,9 @@ const tableRowClassName = ({ row }) => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
+        selectedRowId.value = null;
         if (tablaRef.value) {
+            tablaRef.value.selectedRow = null;
             tablaRef.value.limpiarTodosLosFiltros();
         }
         const currentSort = tablaRef.value?.sorting || { prop: 'NomComun', order: 'asc' };
@@ -36,17 +38,17 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
             sortOrder: currentSort.order || 'asc'
         });
         const paginaDestino = resPagina.data.page;
-        selectedRowId.value = idEncontrado;
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
             const fila = currentData.value.find(d => d.IdNomComun === idEncontrado);
             if (fila) {
+                selectedRowId.value = idEncontrado; 
                 tablaRef.value.selectedRow = fila;
+                setTimeout(() => {
+                    tablaRef.value.forzarFocoFilaVerde();
+                }, 200);
             }
-            setTimeout(() => {
-                tablaRef.value.forzarFocoFilaVerde();
-            }, 150);
         }
     } catch (err) {
         console.error("Error al redirigir:", err);
@@ -104,8 +106,6 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
-
-    // VALIDACIÓN LOCAL
     const registroExistenteLocal = currentData.value.find(item => {  
         const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();
         const mismaLengua = item.Lengua.trim().toLowerCase() === datosDelFormulario.Lengua.trim().toLowerCase();
@@ -216,7 +216,7 @@ const eliminarNombreComun = (idNomComun) => {
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
-                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun" @row-click="manejarClickFila" 
+                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun" @row-click="manejarClickFila"  :highlight-current-row="false"  
                 @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun" @nuevo-item="nuevoNombreComun">
 
                 <template #expand-column>

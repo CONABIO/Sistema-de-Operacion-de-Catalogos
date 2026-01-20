@@ -186,10 +186,9 @@ class AutorTaxonController extends Controller
             return response()->json(['message' => 'AutorTaxon not found'], 404);
         }
 
-        // VALIDACIÓN DE DUPLICADOS: Buscar si OTRO registro ya tiene estos datos
         $existing = AutorTaxon::where(DB::raw('lower(NombreAutoridad)'), strtolower($request->input('nombreAutoridad')))
             ->where(DB::raw('lower(GrupoTaxonomico)'), strtolower($request->input('grupoTaxonomico')))
-            ->where('IdAutorTaxon', '!=', $id) // Que no sea el mismo que estamos editando
+            ->where('IdAutorTaxon', '!=', $id) 
             ->first();
 
         if ($existing) {
