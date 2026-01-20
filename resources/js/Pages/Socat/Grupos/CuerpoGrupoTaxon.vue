@@ -29,6 +29,10 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
         if (tablaRef.value) {
             tablaRef.value.limpiarTodosLosFiltros();
         }
+        
+        // Sincronizamos el ID antes de la petición
+        selectedRowId.value = idEncontrado;
+
         const currentSort = tablaRef.value?.sorting || { prop: 'GrupoSCAT', order: 'asc' };
         const resPagina = await axios.post('/grupos-taxonomicos/obtener-pagina', {
             id: idEncontrado,
@@ -36,17 +40,19 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
             sortBy: currentSort.prop || 'GrupoSCAT',
             sortOrder: currentSort.order || 'asc'
         });
+
         const paginaDestino = resPagina.data.page;
-        selectedRowId.value = idEncontrado;
+
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
-            const fila = currentData.value.find(d => d.IdGrupoSCAT === idEncontrado);
+            const fila = currentData.value.find(d => String(d.IdGrupoSCAT) === String(idEncontrado));
             if (fila) {
-                tablaRef.value.selectedRow = fila;
+                selectedRowId.value = fila.IdGrupoSCAT;
+                tablaRef.value.selectedRow = fila; 
                 setTimeout(() => {
                     tablaRef.value.forzarFocoFilaVerde();
-                }, 100);
+                }, 200);
             }
         }
     } catch (err) {
@@ -263,7 +269,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
-                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"  :row-class-name="tableRowClassName" 
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="false">
 
