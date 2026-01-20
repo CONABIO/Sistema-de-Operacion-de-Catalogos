@@ -43,6 +43,7 @@ const props = defineProps({
 });
 
 const totalRegNom = ref(0);
+const numHijos = ref(0);
 
 const activeNames = ref(['1']);
 
@@ -472,6 +473,7 @@ const expande = async (draggingNode) => {
       }
 
       const node = tree.value.getNode(draggingNode);
+      numHijos.value = draggingNode.children.length;
       node.expanded = true;
 
     }
@@ -1316,6 +1318,12 @@ const showAscendants = async () => {
                 @current-change="handlePageChange" layout="prev, pager, next, total" background>
               </el-pagination>
             </div>
+            <div  class="pagination-right">
+              <span v-show="numHijos > 0" style="margin-left: auto;">
+                Num. Hijos: {{ numHijos }}
+              </span>
+            </div>
+            
           </div>
         </el-footer>
       </el-header>
@@ -1446,8 +1454,16 @@ const showAscendants = async () => {
 }
 
 .pagination-footer {
+  display: flex;
+  align-items: center;
+  width: 38%;
   padding-top: 5px;
   flex-shrink: 0;
+}
+
+.pagination-right {
+  margin-left: auto; /* empuja el texto al extremo derecho */
+  font-weight: 500;
 }
 
 .main-header-override {

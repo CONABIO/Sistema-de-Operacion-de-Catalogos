@@ -138,7 +138,7 @@
             </el-tab-pane>
 
             <el-tab-pane label="SCAT" name="scat">
-                    <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
+                    <el-row :gutter="250" type="flex" align="middle" style="flex-wrap: nowrap;">
                       <el-col :span="10">
                         <table style="border: 1px solid black; width: 100%;">
                           <tbody>
@@ -157,6 +157,7 @@
                         <div  style="flex: 1; min-width:0; display: flex; align-items:center;">
                             <el-form-item label="Grupo" 
                                           prop="grpSelec" 
+                                          label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
