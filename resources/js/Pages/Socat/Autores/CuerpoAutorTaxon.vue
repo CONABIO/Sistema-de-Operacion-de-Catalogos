@@ -73,6 +73,7 @@ const traspasaDatos = () => {
 }
 
 const agregarAutor = async (row) => {
+  console.log("Este es el row que llego: ", row);
   autoridadTax.value = "";
   if (props.nombre) {
     const existe = autoresRel.value.some(autor => autor.IdAutorTaxon === row.IdAutorTaxon);
@@ -461,9 +462,10 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
+        :mostrarTraspaso="true" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'"
         endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName"
         @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem"
-        @row-dblclick="agregarAutor">
+        >
 
 
         <template #header-actions>

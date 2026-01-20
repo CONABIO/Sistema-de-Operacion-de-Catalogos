@@ -23,6 +23,11 @@ const props = defineProps({
   highlightCurrentRow: {
     type: Boolean,
     default: false
+  }, 
+  asignaTrasp: { 
+    type: String, 
+    required: false,
+    default: "izq"
   }
 });
 
@@ -232,7 +237,7 @@ defineExpose({
         </div>
         <div class="left">
           <div class="form-actions">
-            <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
