@@ -25,7 +25,7 @@ const manejarClickFila = (row) => {
 };
 
 const tableRowClassName = ({ row }) => {
-  if (row.IdBibliografia === selectedRowId.value) {
+  if (String(row.IdBibliografia) === String(selectedRowId.value)) {
     return 'fila-seleccionada-verde';
   }
   return '';
@@ -36,8 +36,6 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     if (tablaRef.value) {
       tablaRef.value.limpiarTodosLosFiltros();
     }
-    selectedRowId.value = null;
-    if (tablaRef.value) tablaRef.value.selectedRow = null;
     const currentSort = tablaRef.value?.sorting || { prop: 'Autor', order: 'asc' };
     const resPagina = await axios.post('/bibliografias/obtener-pagina', {
       id: idEncontrado,
@@ -48,15 +46,16 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     const paginaDestino = resPagina.data.page;
     if (tablaRef.value) {
       await tablaRef.value.irAPagina(paginaDestino);
-      await nextTick();
-      const fila = localTableData.value.find(d => d.IdBibliografia === idEncontrado);
+      await nextTick(); 
+      const fila = localTableData.value.find(d => String(d.IdBibliografia) === String(idEncontrado));
       if (fila) {
           selectedRowId.value = idEncontrado;
-          tablaRef.value.selectedRow = fila;
+          tablaRef.value.selectedRow = fila; 
           handleRowClick(fila); 
+          
           setTimeout(() => {
               tablaRef.value.forzarFocoFilaVerde();
-          }, 150);
+          }, 200);
       }
     }
   } catch (err) {
@@ -786,5 +785,19 @@ onMounted(() => {
 
 :deep(.el-table__body tr.current-row > td.el-table__cell) {
   background-color: #ddf6dd !important;
+}
+
+:deep(.el-table .fila-seleccionada-verde) {
+  background-color: #ddf6dd !important;
+}
+
+:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
+  background-color: #ddf6dd !important;
+  color: #000;
+}
+
+/* Color cuando pasas el mouse por encima de la fila verde */
+:deep(.el-table .fila-seleccionada-verde:hover td.el-table__cell) {
+  background-color: #cce8cc !important;
 }
 </style>
