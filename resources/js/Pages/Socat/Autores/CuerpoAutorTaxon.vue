@@ -12,6 +12,7 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@element-plus/icons-vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
 
@@ -77,9 +78,11 @@ const traspasaDatos = () => {
   }
 }
 
-const agregarAutor = async (row) => {
-  console.log("Este es el row que llego: ", row);
-  autoridadTax.value = "";
+const agregarAutor = async () => {
+ 
+ let row = tablaRef.value.selectedRow;
+
+ autoridadTax.value = "";
   if (props.nombre) {
     const existe = autoresRel.value.some(autor => autor.IdAutorTaxon === row.IdAutorTaxon);
     if (!existe) {
@@ -465,7 +468,7 @@ const cerrarNotificacion = () => {
                     </el-icon></el-button></el-tooltip>
                 <el-tooltip effect="dark" content="Asociar Autores" placement="right-start"><el-button
                     @click="traspasaDatos" circle type="primary"><el-icon>
-                      <DArrowRight />
+                      <iconoTraspaso />
                     </el-icon></el-button></el-tooltip>
               </div>
             </el-collapse-item>
@@ -475,10 +478,10 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        :mostrarTraspaso="true" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'"
-        endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName"
-        @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem"
-        >
+        :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'" 
+        :mostrarSalir = "!props.nombre"        endpoint="/busca-autor" id-key="IdAutorTaxon" 
+        @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem" 
+        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
 
 
         <template #header-actions>
