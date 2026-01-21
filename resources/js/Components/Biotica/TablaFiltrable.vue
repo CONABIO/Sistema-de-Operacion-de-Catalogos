@@ -28,6 +28,11 @@ const props = defineProps({
     type: String, 
     required: false,
     default: "izq"
+  },
+  mostrarSalir: {
+    type: Boolean,
+    required: false,
+    default: true
   }
 });
 
@@ -106,6 +111,7 @@ const emit = defineEmits([
   'row-dblclick',
   'row-click',
   'traspasaBiblio',
+  'traspasaSeleccionado',
   'cerrar'
 ]);
 
@@ -210,6 +216,7 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
+//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -244,7 +251,7 @@ defineExpose({
             <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <BotonSalir />
+            <BotonSalir v-if="mostrarSalir"/>
           </div>
         </div>
       </div>
