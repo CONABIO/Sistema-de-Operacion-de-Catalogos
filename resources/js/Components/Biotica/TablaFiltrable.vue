@@ -10,6 +10,8 @@ import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
+const inputsFiltro = ref({});
+
 const props = defineProps({
   columnas: { type: Array, required: true },
   datos: { type: Array, required: true },
@@ -27,8 +29,19 @@ const props = defineProps({
 });
 
 
+const handleVisibleChange = (visible, prop) => {
+  if (visible) {
+    nextTick(() => {
+      const inputRef = inputsFiltro.value[prop];
+      if (inputRef) {
+        inputRef.focus();
+      }
+    });
+  }
+};
+
+
 const limpiarTodosLosFiltros = () => {
-  // 1. Solo limpiamos los inputs de texto de las columnas
   Object.keys(filtros.value).forEach(key => {
     filtros.value[key] = '';
   });
@@ -61,7 +74,7 @@ const onEliminarInterno = () => {
 
 
 const rowClassNameInterno = ({ row }) => {
-  if (props.rowClassName) return props.rowClassName({ row }); 
+  if (props.rowClassName) return props.rowClassName({ row });
   const idFila = row[props.idKey];
   const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
   if (idFila == null || idSeleccionado == null) return '';
@@ -133,7 +146,6 @@ const tableKey = ref(0);
 
 const fetchData = async () => {
   try {
-    // Guardamos el ID de lo que estaba seleccionado antes de la petición
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
     const response = await axios.get(props.endpoint, {
@@ -149,25 +161,20 @@ const fetchData = async () => {
 
     const resultados = response.data.data || [];
     const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
-    
-    // Ya no reseteamos a null aquí
+
     emit('update:datos', resultados);
     emit('update:totalItems', total);
-    tableKey.value++; 
-    
+
     await nextTick();
 
     if (resultados.length > 0) {
-      // BUSCAMOS si el registro que estaba seleccionado sigue estando en la lista actual
       const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
-      
+
       if (coincidencia) {
-        // Si existe, lo mantenemos seleccionado (mantiene el color verde)
         selectedRow.value = coincidencia;
         tableRefInterna.value?.setCurrentRow(coincidencia);
         emit('row-click', coincidencia);
       } else {
-        // Si es una búsqueda nueva o el registro ya no está, entonces sí seleccionamos el primero por defecto
         selectedRow.value = resultados[0];
         tableRefInterna.value?.setCurrentRow(resultados[0]);
         emit('row-click', resultados[0]);
@@ -186,11 +193,8 @@ const fetchData = async () => {
 let debounceTimer;
 
 const onFiltroInput = () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData(); 
-  }, 500);
+  currentPage.value = 1;
+  fetchData();
 };
 
 const limpiarFiltro = (campo) => {
@@ -257,8 +261,8 @@ defineExpose({
     </template>
 
     <div class="table-responsive ">
-      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
-        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno" 
+      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow"
+        :data="props.datos" :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
         @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
@@ -267,7 +271,8 @@ defineExpose({
           <template #header>
             <div class="custom-header">
               <span>{{ col.label }}</span>
-              <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false">
+              <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false"
+                @visible-change="(visible) => handleVisibleChange(visible, col.prop)">
                 <el-button @click.stop circle size="small" class="header-filter-button"
                   :type="filtros[col.prop] ? 'primary' : ''" style="margin-left: 10px;">
                   <el-icon>
@@ -278,8 +283,9 @@ defineExpose({
                   <el-dropdown-menu>
                     <el-dropdown-item class="filter-dropdown-item">
                       <div @click.stop>
-                        <el-input v-model="filtros[col.prop]" :placeholder="`Filtrar por ${col.label}`"
-                          @input="onFiltroInput" clearable @clear="onFiltroInput">
+                        <el-input :ref="el => { if (el) inputsFiltro[col.prop] = el }" v-model="filtros[col.prop]"
+                          :placeholder="`Filtrar por ${col.label}`" @keyup.enter="onFiltroInput" clearable
+                          @clear="onFiltroInput">
                         </el-input>
                       </div>
                     </el-dropdown-item>

@@ -29,13 +29,9 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
         if (tablaRef.value) {
             tablaRef.value.limpiarTodosLosFiltros(); 
-            
-            // Sincronizamos el objeto de selección ANTES de pedir la página
-            tablaRef.value.selectedRow = { [columnasDefinidas.value[0].prop]: '', IdGrupoSCAT: idEncontrado };
+            tablaRef.value.selectedRow = { IdGrupoSCAT: idEncontrado };
         }
-        
         selectedRowId.value = idEncontrado;
-
         const currentSort = tablaRef.value?.sorting || { prop: 'GrupoSCAT', order: 'asc' };
         const resPagina = await axios.post('/grupos-taxonomicos/obtener-pagina', {
             id: idEncontrado,
@@ -49,16 +45,13 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
-            
-            // Buscamos la fila en los nuevos datos cargados
             const fila = currentData.value.find(d => String(d.IdGrupoSCAT) === String(idEncontrado));
             if (fila) {
                 selectedRowId.value = fila.IdGrupoSCAT;
                 tablaRef.value.selectedRow = fila; 
                 setTimeout(() => {
-                    // Ahora que no hay race condition, el scroll funcionará perfecto
                     tablaRef.value.forzarFocoFilaVerde();
-                }, 250);
+                }, 300); 
             }
         }
     } catch (err) {
