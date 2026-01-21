@@ -28,10 +28,10 @@ const props = defineProps({
 
 
 const limpiarTodosLosFiltros = () => {
+  // 1. Solo limpiamos los inputs de texto de las columnas
   Object.keys(filtros.value).forEach(key => {
     filtros.value[key] = '';
   });
-  tipoDeBusqueda.value = 'inicia';
 };
 
 const irAPagina = async (numeroPagina) => {
@@ -130,8 +130,12 @@ watch(tipoDeBusqueda, () => {
 
 const tableKey = ref(0);
 
+
 const fetchData = async () => {
   try {
+    // Guardamos el ID de lo que estaba seleccionado antes de la petición
+    const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
     const response = await axios.get(props.endpoint, {
       params: {
         filtros: filtros.value,
@@ -146,18 +150,31 @@ const fetchData = async () => {
     const resultados = response.data.data || [];
     const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
     
-    selectedRow.value = null;
-    emit('row-click', null); 
+    // Ya no reseteamos a null aquí
     emit('update:datos', resultados);
     emit('update:totalItems', total);
     tableKey.value++; 
+    
     await nextTick();
+
     if (resultados.length > 0) {
-      if (resultados[0][props.idKey] != null) {
+      // BUSCAMOS si el registro que estaba seleccionado sigue estando en la lista actual
+      const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
+      
+      if (coincidencia) {
+        // Si existe, lo mantenemos seleccionado (mantiene el color verde)
+        selectedRow.value = coincidencia;
+        tableRefInterna.value?.setCurrentRow(coincidencia);
+        emit('row-click', coincidencia);
+      } else {
+        // Si es una búsqueda nueva o el registro ya no está, entonces sí seleccionamos el primero por defecto
         selectedRow.value = resultados[0];
         tableRefInterna.value?.setCurrentRow(resultados[0]);
         emit('row-click', resultados[0]);
       }
+    } else {
+      selectedRow.value = null;
+      emit('row-click', null);
     }
   } catch (error) {
     console.error(`Error en fetchData:`, error);
@@ -168,17 +185,11 @@ const fetchData = async () => {
 
 let debounceTimer;
 
-
 const onFiltroInput = () => {
   clearTimeout(debounceTimer);
-  if (tableRefInterna.value) {
-    tableRefInterna.value.setCurrentRow(null); 
-  }
-  selectedRow.value = null; 
-  emit('row-click', null);  
   debounceTimer = setTimeout(() => {
     currentPage.value = 1;
-    fetchData();
+    fetchData(); 
   }, 500);
 };
 
