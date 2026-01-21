@@ -24,15 +24,14 @@ const tableRowClassName = ({ row }) => {
     return '';
 };
 
+
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
         if (tablaRef.value) {
-            tablaRef.value.limpiarTodosLosFiltros();
+            tablaRef.value.limpiarTodosLosFiltros(); 
+            tablaRef.value.selectedRow = { IdGrupoSCAT: idEncontrado };
         }
-        
-        // Sincronizamos el ID antes de la petición
         selectedRowId.value = idEncontrado;
-
         const currentSort = tablaRef.value?.sorting || { prop: 'GrupoSCAT', order: 'asc' };
         const resPagina = await axios.post('/grupos-taxonomicos/obtener-pagina', {
             id: idEncontrado,
@@ -52,7 +51,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
                 tablaRef.value.selectedRow = fila; 
                 setTimeout(() => {
                     tablaRef.value.forzarFocoFilaVerde();
-                }, 200);
+                }, 300); 
             }
         }
     } catch (err) {
