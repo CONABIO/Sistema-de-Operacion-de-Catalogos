@@ -19,20 +19,28 @@ const props = defineProps({
   idKey: { type: String, required: true },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
-  rowClassName: { type: Function, default: null }, // Añadir esta línea
+  rowClassName: { type: Function, default: null },
   highlightCurrentRow: {
     type: Boolean,
     default: false
+  }, 
+  asignaTrasp: { 
+    type: String, 
+    required: false,
+    default: "izq"
+  },
+  mostrarSalir: {
+    type: Boolean,
+    required: false,
+    default: true
   }
 });
 
 
 const limpiarTodosLosFiltros = () => {
-  // Reiniciamos el objeto de filtros a strings vacíos
   Object.keys(filtros.value).forEach(key => {
     filtros.value[key] = '';
   });
-  // Opcional: reiniciar el tipo de búsqueda a 'inicia' o el default
   tipoDeBusqueda.value = 'inicia';
 };
 
@@ -61,20 +69,14 @@ const onEliminarInterno = () => {
   }
 };
 
-const rowClassNameInterno = ({ row }) => {
-  try {
-    if (!selectedRow.value) return '';
-    const idFilaActual = row[props.idKey];
-    const idSeleccionado = selectedRow.value[props.idKey];
-    if (idFilaActual !== undefined && idFilaActual !== null && idFilaActual === idSeleccionado) {
-      return 'fila-seleccionada-verde';
-    }
-  } catch (err) {
-    console.error("Error en rowClassNameInterno:", err);
-  }
-  return '';
-};
 
+const rowClassNameInterno = ({ row }) => {
+  if (props.rowClassName) return props.rowClassName({ row }); 
+  const idFila = row[props.idKey];
+  const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+  if (idFila == null || idSeleccionado == null) return '';
+  return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
+};
 
 const tableRefInterna = ref(null);
 
@@ -109,6 +111,7 @@ const emit = defineEmits([
   'row-dblclick',
   'row-click',
   'traspasaBiblio',
+  'traspasaSeleccionado',
   'cerrar'
 ]);
 
@@ -136,6 +139,7 @@ watch(tipoDeBusqueda, () => {
 });
 
 
+const tableKey = ref(0);
 
 const fetchData = async () => {
   try {
@@ -151,28 +155,38 @@ const fetchData = async () => {
     });
 
     const resultados = response.data.data || [];
-    const total = response.data.total || response.data.totalItems || 0;
+    const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
+    
+    selectedRow.value = null;
+    emit('row-click', null); 
     emit('update:datos', resultados);
     emit('update:totalItems', total);
+    tableKey.value++; 
     await nextTick();
     if (resultados.length > 0) {
-      selectedRow.value = resultados[0];
-      emit('row-click', resultados[0]);
-    } else {
-      selectedRow.value = null;
+      if (resultados[0][props.idKey] != null) {
+        selectedRow.value = resultados[0];
+        tableRefInterna.value?.setCurrentRow(resultados[0]);
+        emit('row-click', resultados[0]);
+      }
     }
-
   } catch (error) {
-    console.error(`Error en TablaFiltrable (${props.endpoint}):`, error);
-    emit('update:datos', []);
-    emit('update:totalItems', 0);
-
+    console.error(`Error en fetchData:`, error);
   }
 };
 
+
+
 let debounceTimer;
+
+
 const onFiltroInput = () => {
   clearTimeout(debounceTimer);
+  if (tableRefInterna.value) {
+    tableRefInterna.value.setCurrentRow(null); 
+  }
+  selectedRow.value = null; 
+  emit('row-click', null);  
   debounceTimer = setTimeout(() => {
     currentPage.value = 1;
     fetchData();
@@ -202,6 +216,7 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
+//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -232,19 +247,19 @@ defineExpose({
         </div>
         <div class="left">
           <div class="form-actions">
-            <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <BotonSalir />
+            <BotonSalir v-if="mostrarSalir"/>
           </div>
         </div>
       </div>
     </template>
 
     <div class="table-responsive ">
-      <el-table ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
-        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
+      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
+        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno" 
         @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
@@ -370,16 +385,9 @@ defineExpose({
   border-bottom: 1px solid #ebeef5 !important;
 }
 
-:deep(.el-table .el-table__row:hover > td.el-table__cell) {
-  background-color: #f5f7fa !important;
-}
 
 
 :deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
-  background-color: #ddf6dd !important;
-}
-
-:deep(.el-table .fila-seleccionada-verde > td.el-table__cell) {
   background-color: #ddf6dd !important;
 }
 

@@ -12,15 +12,21 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@element-plus/icons-vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
 
 const selectedRowId = ref(null);
+
 const manejarClickFila = (row) => {
-  selectedRowId.value = row.IdAutorTaxon;
+  selectedRowId.value = row ? row.IdAutorTaxon : null;
+  if (tablaRef.value) {
+    tablaRef.value.selectedRow = row;
+  }
 };
+
 const tableRowClassName = ({ row }) => {
-  if (row.IdAutorTaxon === selectedRowId.value) {
+  if (selectedRowId.value && String(row.IdAutorTaxon) === String(selectedRowId.value)) {
     return 'fila-seleccionada-verde';
   }
   return '';
@@ -72,8 +78,11 @@ const traspasaDatos = () => {
   }
 }
 
-const agregarAutor = async (row) => {
-  autoridadTax.value = "";
+const agregarAutor = async () => {
+ 
+ let row = tablaRef.value.selectedRow;
+
+ autoridadTax.value = "";
   if (props.nombre) {
     const existe = autoresRel.value.some(autor => autor.IdAutorTaxon === row.IdAutorTaxon);
     if (!existe) {
@@ -216,38 +225,44 @@ const cerrarFormModal = () => {
 };
 
 
-const handleFormAutorSubmited = async (datosDelFormulario) => {
-  cerrarFormModal();
+const irAlRegistroEspecifico = async (idEncontrado) => {
+  try {
+    selectedRowId.value = null; 
+    if (tablaRef.value) {
+      tablaRef.value.selectedRow = null; 
+      tablaRef.value.limpiarTodosLosFiltros(); 
+    }
 
-  const irAlRegistroEspecifico = async (idEncontrado) => {
-    try {
-      if (tablaRef.value) {
-        tablaRef.value.limpiarTodosLosFiltros();
-      }
-      const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
-      const resPagina = await axios.post('/autores/obtener-pagina', {
-        id: idEncontrado,
-        perPage: 100,
-        sortBy: currentSort.prop || 'NombreAutoridad',
-        sortOrder: currentSort.order || 'asc'
-      });
-      const paginaDestino = resPagina.data.page;
-      selectedRowId.value = idEncontrado;
-      if (tablaRef.value) {
-        await tablaRef.value.irAPagina(paginaDestino);
-        await nextTick();
-        const filaEncontrada = datosDeAutores.value.find(d => d.IdAutorTaxon === idEncontrado);
-        if (filaEncontrada) {
-          tablaRef.value.selectedRow = filaEncontrada;
-        }
+    const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
+    const resPagina = await axios.post('/autores/obtener-pagina', {
+      id: idEncontrado,
+      perPage: 100,
+      sortBy: currentSort.prop || 'NombreAutoridad',
+      sortOrder: currentSort.order || 'asc'
+    });
+
+    const paginaDestino = resPagina.data.page;
+
+    if (tablaRef.value) {
+      await tablaRef.value.irAPagina(paginaDestino);
+      await nextTick();
+      const filaEncontrada = datosDeAutores.value.find(d => String(d.IdAutorTaxon) === String(idEncontrado));
+      if (filaEncontrada) {
+        selectedRowId.value = idEncontrado; 
+        tablaRef.value.selectedRow = filaEncontrada; 
         setTimeout(() => {
           tablaRef.value.forzarFocoFilaVerde();
-        }, 150);
+        }, 250); 
       }
-    } catch (err) {
-      console.error("Error al redirigir:", err);
     }
-  };
+  } catch (err) {
+    console.error("Error al redirigir al registro:", err);
+  }
+};
+
+
+const handleFormAutorSubmited = async (datosDelFormulario) => {
+  cerrarFormModal();
 
   const autorLocal = datosDeAutores.value.find(autor =>
     autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
@@ -261,7 +276,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       tablaRef.value.selectedRow = autorLocal;
       tablaRef.value.forzarFocoFilaVerde();
     }
-    mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe, por favor ingrese otra", "warning");
+    mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
     return;
   }
 
@@ -278,17 +293,19 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
         const response = await axios.post("/autores", payload);
         const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon || response.data.id;
         mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-        await irAlRegistroEspecifico(nuevoId);
+        if (nuevoId) {
+          await irAlRegistroEspecifico(nuevoId);
+        }
       } else {
         await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
-        mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+        mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
         if (tablaRef.value) await tablaRef.value.fetchData();
         await nextTick();
         if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response.data.idExistente) {
-        mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe, por favor ingrese otra", "warning");
+        mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
         await irAlRegistroEspecifico(error.response.data.idExistente);
       } else if (error.response?.status === 422) {
         const errors = error.response.data.errors;
@@ -451,7 +468,7 @@ const cerrarNotificacion = () => {
                     </el-icon></el-button></el-tooltip>
                 <el-tooltip effect="dark" content="Asociar Autores" placement="right-start"><el-button
                     @click="traspasaDatos" circle type="primary"><el-icon>
-                      <DArrowRight />
+                      <iconoTraspaso />
                     </el-icon></el-button></el-tooltip>
               </div>
             </el-collapse-item>
@@ -461,9 +478,10 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName"
-        @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem"
-        @row-dblclick="agregarAutor">
+        :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'" 
+        :mostrarSalir = "!props.nombre"        endpoint="/busca-autor" id-key="IdAutorTaxon" 
+        @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem" 
+        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
 
 
         <template #header-actions>
@@ -548,12 +566,11 @@ const cerrarNotificacion = () => {
 }
 
 .el-table .fila-seleccionada-verde {
-  --el-table-tr-bg-color: #ddf6dd !important;
+  background-color: #ddf6dd !important;
+  --el-table-tr-bg-color: #ddf6dd !important; 
 }
 
-.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
-  background-color: #a3e4d7 !important;
-}
+
 </style>
 
 <style scoped>
