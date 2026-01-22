@@ -23,9 +23,10 @@ const form = ref({
 });
 
 const formRef = ref(null);
+const grupoScatInputRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo grupo taxonómico' : 'Modificar el grupo taxonómico seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo grupo taxonómico' : 'Modificar el grupo taxonómico';
 });
 
 const rules = {
@@ -51,6 +52,11 @@ watch(() => props.visible, (newVal) => {
         }
         nextTick(() => {
             formRef.value?.clearValidate();
+            setTimeout(() => {
+                if (grupoScatInputRef.value) {
+                    grupoScatInputRef.value.focus();
+                }
+            }, 100);
         });
     }
 }, { immediate: true });
@@ -103,7 +109,7 @@ const cerrarDialogo = () => {
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
                     @submit.prevent="intentarGuardar">
                     <el-form-item label="Grupo SCAT" prop="GrupoSCAT">
-                        <el-input v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
+                        <el-input ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />

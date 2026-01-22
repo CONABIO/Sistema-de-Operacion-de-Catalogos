@@ -3,7 +3,12 @@
     <el-card>
       <el-container>
         <el-header class="header">
-          <h1 class="titulo">Información del taxón</h1>
+          <div class="header-content">
+            <h1 class="titulo">Información del taxón</h1>
+          </div>
+          <div class="form-actions">
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+            </div> 
         </el-header>
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
@@ -30,20 +35,19 @@
                                     title="¿Realmente desea guardar los cambios?" 
                                     @confirm="Guardar('nombreTax', accion)">
                       <template #reference>
-                        <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                        <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
                           <el-button circle type="warning">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
                                 <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
                             </svg>
                           </el-button>
-                        <!--/el-tooltip-->
+                        </el-tooltip>
                       </template>
                     </el-popconfirm>
                   </div>
                 </el-space>
               </el-col>
           </el-row>
-          <br />
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
             <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
               <el-option
@@ -54,7 +58,7 @@
               </el-option>
             </el-select>
           </el-form-item>     
-          <el-form-item label = "Estatus: ">
+          <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
                 <el-radio :disabled="estCor" :value="2">{{ estDinamico }}</el-radio>
@@ -134,7 +138,7 @@
             </el-tab-pane>
 
             <el-tab-pane label="SCAT" name="scat">
-                    <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
+                    <el-row :gutter="250" type="flex" align="middle" style="flex-wrap: nowrap;">
                       <el-col :span="10">
                         <table style="border: 1px solid black; width: 100%;">
                           <tbody>
@@ -153,6 +157,7 @@
                         <div  style="flex: 1; min-width:0; display: flex; align-items:center;">
                             <el-form-item label="Grupo" 
                                           prop="grpSelec" 
+                                          label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
@@ -330,7 +335,7 @@
 
     <div>
       <DialogComSnib v-model="dialogFormVisibleComentarios" :botCerrar="true" :pressEsc="true">
-        <ComenSnibNom :taxon = "taxonAct" />
+        <ComenSnibNom :taxon = "taxonAct"  @cerrar="closeDialogComSnib" />
       </DialogComSnib>
     </div>
 
@@ -362,6 +367,7 @@ import autoridades from '@/Components/Biotica/Icons/Autor.vue';
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const { permisos, usuario } = usePermisos();
 
@@ -387,7 +393,7 @@ const props = defineProps({
   },
   paginaActual: Number,
   categoria: [],
-  catalogos: []
+  catalogos: [], 
 });
 
 const habNuevo = ref(false);
@@ -536,8 +542,7 @@ const recibeAutores = (autores, autoridadTax) =>{
   dialogFormVisibleAutor.value= false;
 }
 
-const carga_inicio = () => {
-  tabInicial.value = "taxon";
+const carga_inicio = () => {  
   muestraGrd.value = props.muestraGuardar;
   estCor.value = true;
   estSin.value = true;
@@ -603,6 +608,11 @@ const carga_inicio = () => {
   }
 };
 
+  const cerrarDialogo = () => {
+        tabInicial.value = "taxon";
+        emit('cerrar');
+  };
+
 const carga_Grupos = () => {
   dialogFormVisibleGrupos.value = true;
 };
@@ -610,6 +620,10 @@ const carga_Grupos = () => {
 const comentarios_Snib = () => {
   dialogFormVisibleComentarios.value = true;
 };
+
+const closeDialogComSnib= () => {
+   dialogFormVisibleComentarios.value = false;
+}
 
 const cargaListGrp = async () => {
   const response = await axios.get('/carga-list-grp');
@@ -631,7 +645,6 @@ const cargaListGrp = async () => {
 
 const validaHijos = async () => {
   let params;
-
   params = {
     idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
     IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
@@ -1261,209 +1274,231 @@ onMounted(() => {
 
 
 <style scoped>
-.form-nombre-container {
-  padding: 20px;
-}
-
-.header {
-    text-align: left;
-    padding: 0.5rem; 
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
+  .form-nombre-container {
+    padding: 1px;
   }
 
-.form-header {
-  padding: 20px;
-  min-width: 190px;
-  height: 180px;
-  box-sizing: border-box;
-}
+  .header {
+          background-color: #d9e1eb;
+          padding: 15px;
+          border-bottom: 1px solid #e0e0e0;
+          height: auto !important;
+          min-height: auto !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 8px;
+          color: white;
+    }
 
-.icono {
-  margin-right: 8px;
-}
+  .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
 
-.custom-tree-node {
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  padding-right: 8px;
-  width: 50%;
-  overflow: auto;
-}
+    .titulo {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+        text-align: center;
+    }
 
-.filter-tree .el-tree-node.is-current>.el-tree-node__content {
-  background-color: rgb(203, 233, 200) !important;
-  color: rgb(0 17 255) !important;
-}
-
-.filter-tree .el-tree-node.is-current .el-tree-node__children {
-  background-color: transparent !important;
-  color: inherit !important;
-}
-
-.highlight-node {
-  color: #a52f2f !important;
-}
-
-.greenClass {
-  background: rgb(90, 177, 90);
-}
-
-.redClass {
-  background: rgb(226, 119, 119);
-}
-
-.context-menu {
-  display: block !important;
-  visibility: visible !important;
-  position: absolute;
-  z-index: 9999;
-  background-color: hsl(223, 41%, 93%);
-  border: 1px solid #dcdfe6;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  min-width: 190px;
-  height: auto;
-  box-sizing: border-box;
-}
-
-.el-menu-item {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.menu-item-submenu {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.el-submenu .el-menu-item {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.el-submenu__title {
-  padding: 4px 12px;
-  font-size: 14px;
-  line-height: 16px;
-  height: auto;
-}
-
-.icon-style {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-.el-icon {
-  font-size: 16px;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-
-.custom-form-item .el-form-item__content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.custom-form-item .el-form-item__label {
-  margin-bottom: 8px;
-}
-
-.flex-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.flex-container span {
-  white-space: nowrap;
-}
-
-.el-input,
-.el-cascader {
-  flex: 1;
-  min-width: 150px;
-}
-
-.tree-node-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.tree-node-logo {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.tree-node-label {
-  font-size: 14px;
-  line-height: 20px;
-}
-
-.el-tree-node:hover {
-  background-color: transparent !important;
-}
-
-@media (max-width: 768px) {
-  .filter-tree {
-    min-width: 98%;
+  .form-header {
+    padding: 20px;
+    min-width: 190px;
+    height: 180px;
+    box-sizing: border-box;
   }
 
-  .el-aside {
-    width: auto !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-width: 100%;
-    margin-bottom: 30px;
+  .icono {
+    margin-right: 8px;
   }
 
-  .d-table-cell {
-    max-width: 100%;
+  .custom-tree-node {
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    padding-right: 8px;
+    width: 50%;
+    overflow: auto;
   }
 
-  .el-header {
-    width: 100%;
+  .filter-tree .el-tree-node.is-current>.el-tree-node__content {
+    background-color: rgb(203, 233, 200) !important;
+    color: rgb(0 17 255) !important;
   }
 
-  .el-row {
-    justify-content: flex-start;
+  .filter-tree .el-tree-node.is-current .el-tree-node__children {
+    background-color: transparent !important;
+    color: inherit !important;
   }
+
+  .highlight-node {
+    color: #a52f2f !important;
+  }
+
+  .greenClass {
+    background: rgb(90, 177, 90);
+  }
+
+  .redClass {
+    background: rgb(226, 119, 119);
+  }
+
+  .context-menu {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    z-index: 9999;
+    background-color: hsl(223, 41%, 93%);
+    border: 1px solid #dcdfe6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    min-width: 190px;
+    height: auto;
+    box-sizing: border-box;
+  }
+
+  .el-menu-item {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .menu-item-submenu {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .el-submenu .el-menu-item {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .el-submenu__title {
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 16px;
+    height: auto;
+  }
+
+  .icon-style {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+
+  .el-icon {
+    font-size: 16px;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+
+  .custom-form-item .el-form-item__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .custom-form-item .el-form-item__label {
+    margin-bottom: 8px;
+  }
+
+  .flex-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .flex-container span {
+    white-space: nowrap;
+  }
+
+  .el-input,
+  .el-cascader {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .tree-node-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .tree-node-logo {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .tree-node-label {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .el-tree-node:hover {
+    background-color: transparent !important;
+  }
+
+  @media (max-width: 768px) {
+    .filter-tree {
+      min-width: 98%;
+    }
+
+    .el-aside {
+      width: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-width: 100%;
+      margin-bottom: 30px;
+    }
+
+    .d-table-cell {
+      max-width: 100%;
+    }
+
+    .el-header {
+      width: 100%;
+    }
+
+    .el-row {
+      justify-content: flex-start;
+    }
 }
 </style>
 
 <style>
-.el-dialog {
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 90%;
-}
-
-@media (min-width: 768px) {
   .el-dialog {
-    max-width: 900px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
   }
-}
 
-@media (max-width: 767px) {
-  .el-dialog {
-    width: 95%;
-    margin: 0 auto;
-    top: 15%;
-    max-width: none;
+  @media (min-width: 768px) {
+    .el-dialog {
+      max-width: 900px;
+    }
   }
-}
+
+  @media (max-width: 767px) {
+    .el-dialog {
+      width: 95%;
+      margin: 0 auto;
+      top: 15%;
+      max-width: none;
+    }
+  }
 </style>

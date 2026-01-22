@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import { router } from '@inertiajs/vue3';
+import DialogGeneral from "@/Components/Biotica/DialogGeneral.vue";
 
 const props = defineProps({
     accion: {
@@ -30,7 +31,7 @@ const form = ref({
 });
 
 const formTitle = computed(() => {
-    return props.accion === 'crear' ? 'Insertar una nueva bibliografía' : 'Modificar la bibliografía seleccionada';
+    return props.accion === 'crear' ? 'Insertar una nueva bibliografía' : 'Modificar la bibliografía';
 });
 
 watch(() => props.biblioEdit, (newVal) => {
@@ -77,7 +78,7 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true">
+    <!--DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :pressEsc="true"-->
         <div class="dialog-header">
             <h3>{{ formTitle }}</h3>
         </div>
@@ -157,7 +158,7 @@ const cerrarDialogo = () => {
 
             </div>
         </div>
-    </DialogGeneral>
+    <!--/DialogGeneral-->
 </template>
 
 <style scoped>
@@ -166,7 +167,7 @@ const cerrarDialogo = () => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;

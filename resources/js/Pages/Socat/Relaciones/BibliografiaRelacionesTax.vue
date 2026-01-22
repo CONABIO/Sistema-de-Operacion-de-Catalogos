@@ -32,7 +32,6 @@
                                 <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                                     <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
                                         v-model:datos = "tablaRelaciones" v-model:total-items="props.totalRegistros"
-                                        :opciones-filtro = "opcionesFiltroNomenclatura"
                                         :origen = "true"
                                         @row-click = "manejaClick">
                                         <template #expand-column>
@@ -62,7 +61,6 @@
                                 <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                                     <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidasBiblio"
                                         v-model:datos = "bibliografiaRel" v-model:total-items="bibliografiaRel.length"
-                                        :opciones-filtro = "opcionesFiltroNomenclatura"
                                         :origen = "true"
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "true"

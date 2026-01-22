@@ -5,3 +5,14 @@
 [x-cloak] {
     display: none;
 }
+
+
+/* 👇 tus estilos globales aquí */
+.btn-azul {
+    background-color: #3478f6;
+    color: white;
+}
+
+.texto-rojo {
+    color: red;
+}

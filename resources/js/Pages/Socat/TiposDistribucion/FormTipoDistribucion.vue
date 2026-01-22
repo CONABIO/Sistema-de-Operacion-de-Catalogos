@@ -21,6 +21,7 @@ const form = ref({
 });
 
 const formRef = ref(null);
+const descripcionInputRef = ref(null);
 
 const rules = {
     Descripcion: [
@@ -30,7 +31,7 @@ const rules = {
 };
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar un nuevo tipo de distribución' : 'Modificar el tipo de distribución seleccionado';
+    return props.accion === 'crear' ? 'Ingresar un nuevo tipo de distribución' : 'Modificar el tipo de distribución';
 });
 
 watch(() => props.visible, (newVal) => {
@@ -43,6 +44,16 @@ watch(() => props.visible, (newVal) => {
         }
         nextTick(() => {
             formRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
+                }
+            }, 100);
         });
     }
 }, { immediate: true });
@@ -91,7 +102,7 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Descripción" prop="Descripcion">
-                        <el-input type="text" v-model="form.Descripcion" maxlength="255" show-word-limit />
+                        <el-input  ref="descripcionInputRef" type="text" v-model="form.Descripcion" maxlength="255" show-word-limit />
                     </el-form-item>
                 </el-form>
 

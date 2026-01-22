@@ -36,15 +36,10 @@ class AutorTaxonController extends Controller
 
     public function buscaAutoresRel(Request $request)
     {
-
         Log::info("Entre a buscar lo autores: " . $request->ids);
         $ids = explode(',', $request->ids);
-
         $autores = AutorTaxon::whereIn('IdAutorTaxon', $ids)->get();
         Log::info(json_encode($autores, JSON_PRETTY_PRINT));
-        /*Forma de escribir la sentencia sql y la forma correcta de imprimir un arreglo en el log 
-        Log::info("Consulta SQL: " . AutorTaxon::whereIn('IdAutorTaxon', $ids)->toSql());
-        Log::info(json_encode($ids, JSON_PRETTY_PRINT));*/
         return response()->json([
             'status' => 200,
             'autores' => $autores
@@ -154,7 +149,8 @@ class AutorTaxonController extends Controller
             if ($existingAutorTaxon) {
                 return response()->json([
                     'status' => 400,
-                    'message' => 'Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.'
+                    'message' => 'Ya existe un autor con el mismo Nombre de Autoridad y Grupo Taxonómico.',
+                    'idExistente' => $existingAutorTaxon->IdAutorTaxon
                 ], 400);
             }
 
@@ -184,26 +180,37 @@ class AutorTaxonController extends Controller
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $autorTaxon = AutorTaxon::find($id);
 
         if (!$autorTaxon) {
             return response()->json(['message' => 'AutorTaxon not found'], 404);
         }
 
-        $autorTaxon->NombreAutoridad = $request->input('nombreAutoridad');
-        $autorTaxon->NombreCompleto = $request->input('nombreCompleto');
-        $autorTaxon->GrupoTaxonomico = $request->input('grupoTaxonomico');
+        $existing = AutorTaxon::where(DB::raw('lower(NombreAutoridad)'), strtolower($request->input('nombreAutoridad')))
+            ->where(DB::raw('lower(GrupoTaxonomico)'), strtolower($request->input('grupoTaxonomico')))
+            ->where('IdAutorTaxon', '!=', $id) 
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Ya existe otro autor con estos datos.',
+                'idExistente' => $existing->IdAutorTaxon
+            ], 400);
+        }
 
         try {
+            $autorTaxon->NombreAutoridad = $request->input('nombreAutoridad');
+            $autorTaxon->NombreCompleto = $request->input('nombreCompleto');
+            $autorTaxon->GrupoTaxonomico = $request->input('grupoTaxonomico');
             $autorTaxon->save();
+
             return response()->json([
                 'data' => $autorTaxon,
                 'message' => 'AutorTaxon Actualizado Exitosamente',
             ], 200);
         } catch (Exception $e) {
             Log::error("Error updating AutorTaxon: {$e->getMessage()}");
-
             return response()->json(['message' => 'Error updating AutorTaxon'], 500);
         }
     }
@@ -225,5 +232,27 @@ class AutorTaxonController extends Controller
             Log::error("Error al eliminar AutorTaxon con ID: {$id}: " . $e->getMessage());
             return response()->json(['message' => 'Error al eliminar el AutorTaxon'], 500);
         }
+    }
+
+
+    public function obtenerPaginaDeAutor(Request $request)
+    {
+        $id = $request->id;
+        $perPage = $request->perPage ?? 100;
+        $sortBy = $request->sortBy ?? 'NombreAutoridad';
+        $sortOrder = $request->sortOrder ?? 'asc';
+        $registroReferencia = AutorTaxon::find($id);
+        if (!$registroReferencia) return response()->json(['page' => 1]);
+        $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
+        $posicion = AutorTaxon::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
+            $valor = $registroReferencia->{$sortBy};
+            $query->where(DB::raw("LOWER(`$sortBy`)"), $operador, strtolower($valor))
+                ->orWhere(function ($q) use ($registroReferencia, $sortBy, $valor) {
+                    $q->where(DB::raw("LOWER(`$sortBy`)"), '=', strtolower($valor))
+                        ->where('IdAutorTaxon', '<', $registroReferencia->IdAutorTaxon);
+                });
+        })->count();
+        $pagina = floor($posicion / $perPage) + 1;
+        return response()->json(['page' => (int)$pagina]);
     }
 }

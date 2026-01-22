@@ -14,6 +14,8 @@ import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
+import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
+import { Plus, Download } from '@element-plus/icons-vue';
 
 const props = defineProps({
     treeDataProp: { type: Array, required: true, default: () => [] },
@@ -22,6 +24,161 @@ const props = defineProps({
 });
 
 
+const botonNuevoDeshabilitado = computed(() => {
+    if (!selectedTipoRegionNode.value) return true;
+    if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
+    if (filterText.value && filterText.value.trim() !== '') {
+        const textoBusqueda = filterText.value.toLowerCase();
+        const existeCoincidencia = (nodes) => {
+            return nodes.some(node => {
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) {
+                    return true;
+                }
+                if (node.children && node.children.length > 0) {
+                    return existeCoincidencia(node.children);
+                }
+                return false;
+            });
+        };
+        if (!existeCoincidencia(filteredRegionsTree.value)) {
+            return true;
+        }
+    }
+    return false;
+});
+
+
+const botonEditarDeshabilitado = computed(() => {
+    if (!selectedTipoRegionNode.value) return true;
+    if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
+    if (filterText.value && filterText.value.trim() !== '') {
+        const textoBusqueda = filterText.value.toLowerCase();
+        const existeCoincidencia = (nodes) => {
+            return nodes.some(node => {
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) {
+                    return true;
+                }
+                if (node.children && node.children.length > 0) {
+                    return existeCoincidencia(node.children);
+                }
+                return false;
+            });
+        };
+        if (!existeCoincidencia(filteredRegionsTree.value)) {
+            return true;
+        }
+    }
+    return false;
+});
+
+
+const botonEliminarDeshabilitado = computed(() => {
+    if (!selectedTipoRegionNode.value) return true;
+    if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
+    if (filterText.value && filterText.value.trim() !== '') {
+        const textoBusqueda = filterText.value.toLowerCase();
+        const existeCoincidencia = (nodes) => {
+            return nodes.some(node => {
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) {
+                    return true;
+                }
+                if (node.children && node.children.length > 0) {
+                    return existeCoincidencia(node.children);
+                }
+                return false;
+            });
+        };
+        if (!existeCoincidencia(filteredRegionsTree.value)) {
+            return true;
+        }
+    }
+    return false;
+});
+
+/* const botonNuevoDeshabilitado = computed(() => {
+
+    if (filterText.value && filterText.value.trim() !== '') {
+        const textoBusqueda = filterText.value.toLowerCase();
+        const existeCoincidencia = (nodes) => {
+            return nodes.some(node => {
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) return true;
+                if (node.children && node.children.length > 0) return existeCoincidencia(node.children);
+                return false;
+            });
+        };
+        if (!existeCoincidencia(filteredRegionsTree.value)) {
+            return true;
+        }
+    }
+
+    return false; 
+}); */
+
+
+const intentarAbrirModalInsertar = () => {
+    if (!selectedTipoRegionNode.value) {
+        mostrarNotificacion(
+            "Aviso",
+            "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
+            "warning"
+        );
+        return;
+    }
+    if (!selectedNode.value) {
+        mostrarNotificacion(
+            "Acción no permitida",
+            "Para agregar una nueva región, debe seleccionar una región existente del panel derecho.",
+            "warning"
+        );
+        return;
+    }
+    abrirModalParaInsertar();
+};
+
+const intentarAbrirModalEditar = () => {
+    if (!selectedTipoRegionNode.value) {
+        mostrarNotificacion(
+            "Aviso",
+            "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
+            "warning"
+        );
+        return;
+    }
+    if (!selectedNode.value) {
+        mostrarNotificacion(
+            "Acción no permitida",
+            "Para editar una nueva región, debe seleccionar una región existente del panel derecho.",
+            "warning"
+        );
+        return;
+    }
+    abrirModalParaEditar();
+};
+
+
+const intentarAbrirModalEliminar = () => {
+    if (!selectedTipoRegionNode.value) {
+        mostrarNotificacion(
+            "Aviso",
+            "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
+            "warning"
+        );
+        return;
+    }
+    if (!selectedNode.value) {
+        mostrarNotificacion(
+            "Acción no permitida",
+            "Para eliminar una nueva región, debe seleccionar una región existente del panel derecho.",
+            "warning"
+        );
+        return;
+    }
+    handleEliminar();
+};
+
+
+
+const treeKey = ref(0);
 const tiposRegionTreeRef = ref(null);
 const tiposRegionTreeData = ref([]);
 const selectedTipoRegionNode = ref(null);
@@ -32,6 +189,7 @@ const filterText = ref('');
 const listaTiposDeRegion = ref([]);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const nombreRegionInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
@@ -43,7 +201,7 @@ const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 
 const isTipoRegionReadonly = computed(() => {
-    return modalMode.value === 'editar'; // Hacer que el tipo de región sea de solo lectura en modo edición
+    return modalMode.value === 'editar';
 });
 
 
@@ -62,7 +220,7 @@ const opcionesTipoRegionDisponibles = computed(() => {
     return listaTiposDeRegion.value;
 });
 
-watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(JSON.stringify(newVal)); }, { immediate: true, deep: true });
+watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(JSON.stringify(newVal)); treeKey.value++; }, { immediate: true, deep: true });
 watch(() => props.tiposDeRegionTreeProp, (newVal) => { tiposRegionTreeData.value = JSON.parse(JSON.stringify(newVal)); }, { immediate: true, deep: true });
 watch(() => props.tiposDeRegionProp, (newVal) => { listaTiposDeRegion.value = newVal; }, { immediate: true, deep: true });
 watch(filterText, (val) => {
@@ -86,7 +244,6 @@ const filterNodeMethod = (value, data) => {
 };
 
 
-// Modificación para encontrar un nodo por ID y, opcionalmente, obtener su IdAscendente
 function findNodeById(nodes, id) {
     for (const node of nodes) {
         if (node.IdRegion === id) return node;
@@ -98,7 +255,6 @@ function findNodeById(nodes, id) {
     return null;
 }
 
-// Nueva función para encontrar el IdAscendente de un nodo específico
 function getAscendantId(nodeId, tree) {
     let ascendantId = null;
     function search(nodes, parentId = null) {
@@ -141,14 +297,14 @@ const puedeTenerNivelInferior = computed(() => {
 
 const filteredRegionsTree = computed(() => {
     if (!selectedTipoRegionNode.value) {
-        return []; 
+        return [];
     }
 
     const targetTypeId = selectedTipoRegionNode.value.IdTipoRegion;
 
     const filterAndPruneTree = (nodes) => {
         return nodes.reduce((accumulator, node) => {
-            if (node.IdTipoRegion === targetTypeId) {
+            if (node.IdTipoRegion == targetTypeId) {
                 accumulator.push({ ...node, children: [] });
                 return accumulator;
             }
@@ -241,12 +397,12 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     await formModalRef.value.validate();
-
-    // --- Lógica de validación para nombre de región único por ascendente ---
     const isNameTakenBySibling = (parentId, regionName, currentRegionId = null) => {
         let siblings = [];
-        if (parentId === null) { // Regiones de nivel raíz
-            siblings = localTreeData.value.filter(node => node.IdAscendente === null || node.IdAscendente === undefined);
+        if (parentId === null) {
+            siblings = localTreeData.value.filter(node =>
+                node.IdRegionAsc === null || node.IdRegionAsc === undefined
+            );
         } else {
             const parentNode = findNodeById(localTreeData.value, parentId);
             if (parentNode && parentNode.children) {
@@ -255,7 +411,7 @@ const guardarDesdeModal = async () => {
         }
         return siblings.some(node =>
             node.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
-            (currentRegionId === null || node.IdRegion !== currentRegionId) // Excluir el nodo actual si estamos editando
+            (currentRegionId === null || node.IdRegion !== currentRegionId)
         );
     };
 
@@ -263,42 +419,50 @@ const guardarDesdeModal = async () => {
 
     if (modalMode.value === "insertar") {
         if (opcionNivel.value === 'mismo' && selectedNode.value) {
-            // El nuevo nodo será hermano del seleccionado, busca el ascendente del seleccionado
             parentIdForValidation = getAscendantId(selectedNode.value.IdRegion, localTreeData.value);
         } else if (opcionNivel.value === 'inferior' && selectedNode.value) {
-            // El nuevo nodo será hijo del seleccionado, el seleccionado es su ascendente
             parentIdForValidation = selectedNode.value.IdRegion;
-        } else { // 'raiz'
+        } else {
             parentIdForValidation = null;
         }
     } else if (modalMode.value === "editar" && nodoEnModal.value) {
-        // Al editar, el ascendente del nodo no cambia.
         parentIdForValidation = getAscendantId(nodoEnModal.value.IdRegion, localTreeData.value);
     }
 
     if (isNameTakenBySibling(parentIdForValidation, formModal.value.NombreRegion, modalMode.value === 'editar' ? nodoEnModal.value.IdRegion : null)) {
         mostrarNotificacion("Error de Validación", "Ya existe una región con el mismo nombre en este nivel.", "error");
-        return; // Detener el proceso
+        return;
     }
-    // --- Fin de la lógica de validación ---
 
     const onSuccess = () => {
         cerrarModalOperacion();
         mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
-        // Aquí podrías recargar la parte del árbol afectada o todo el árbol
-        router.reload({ only: ['treeDataProp'] }); 
+
     };
+
     const onError = (errors) => {
-        // En caso de que el backend también devuelva errores de validación, se mostrarán aquí.
-        // Si el backend te devuelve un mensaje específico sobre el nombre duplicado, lo verás.
         mostrarNotificacion("Error del Servidor", Object.values(errors).flat().join("\n"), "error");
     };
 
     if (modalMode.value === "editar") {
-        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess,
+            onError
+        });
     } else {
-        const payload = { ...formModal.value, opcionNivel: opcionNivel.value, idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null };
-        router.post("/regiones", payload, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        const payload = {
+            ...formModal.value,
+            opcionNivel: opcionNivel.value,
+            idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
+        };
+        router.post("/regiones", payload, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess,
+            onError
+        });
     }
 };
 
@@ -332,130 +496,168 @@ const proceedWithDeletion = (nodeId, nombre) => {
     router.delete(`/regiones/${nodeId}`, {
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${nombre}" ha sido eliminado.`, "success");
+            mostrarNotificacion("Eliminación exitosa", `Lqa región "${nombre}" ha sido eliminado correctamente.`, "success");
             selectedNode.value = null;
-            router.reload({ only: ['treeDataProp'] }); // Recargar el árbol después de eliminar
+            router.reload({ only: ['treeDataProp'] });
         },
-        onError: (error) => mostrarNotificacion("Error al Eliminar", error.message || "Ocurrió un error.", "error"),
+        onError: (error) => mostrarNotificacion("Error", error.message || "Ocurrió un error.", "error"),
     });
 };
 </script>
 
 <template>
-        <LayoutCuerpo :usar-app-layout="false" titulo-pag="Regiones" titulo-area="Catálogo de regiones geográficas">
+    <LayoutCuerpo :usar-app-layout="false" titulo-pag="Regiones" titulo-area="Catálogo de regiones geográficas">
 
-            <div class="split-container">
-                <el-card class="panel-card list-panel">
-                    <template #header>
-                        <div class="header-container">
-                            <span class="details-header-title">Filtrar por tipo de región</span>
-                            <el-button style="background-color: springgreen;" circle @click="handleManageTiposRegion">
-                                <IconoMundo />
-                            </el-button>
-                        </div>
-                    </template>
-
-                    <el-tree v-if="tiposRegionTreeData.length" ref="tiposRegionTreeRef" :data="tiposRegionTreeData"
-                        :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRegion"
-                        :current-node-key="selectedTipoRegionNode?.IdTipoRegion" :highlight-current="true"
-                        :expand-on-click-node="true" @node-click="handleTipoRegionSelected"
-                        class="custom-element-tree" />
-                    <div v-else class="no-data-message">
-                        No hay tipos de región para mostrar.
+        <div class="split-container">
+            <el-card class="panel-card list-panel" shadow="never">
+                <template #header>
+                    <div class="header-container">
+                        <span class="details-header-title">Filtrar por tipo de región</span>
+                        <el-button style="background-color: springgreen;" circle @click="handleManageTiposRegion">
+                            <IconoMundo />
+                        </el-button>
                     </div>
-                </el-card>
+                </template>
 
-                <el-card class="panel-card details-panel">
-                    <template #header>
-                        <div class="header-container">
-                            <div class="header-buscador">
-                                <el-input v-model="filterText" placeholder="Buscar región..." clearable />
-                            </div>
-                            <span class="details-header-title"></span>
-                            <div class="right-header-content">
-                                <div class="action-group">
-                                    <NuevoButton @crear="abrirModalParaInsertar" />
-                                    <EditarButton @editar="abrirModalParaEditar" :disabled="!selectedNode" />
-                                    <EliminarButton @eliminar="handleEliminar" :disabled="!selectedNode" />
-                                    <BotonSalir />
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <el-tree v-if="filteredRegionsTree.length" ref="treeRef" :data="filteredRegionsTree"
-                        :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
-                        :current-node-key="selectedNode?.IdRegion" :highlight-current="true"
-                        :expand-on-click-node="true" @node-click="handleNodeSelected"
-                        :filter-node-method="filterNodeMethod" class="custom-element-tree">
-                    </el-tree>
-                    <div v-else class="no-data-message">
-                        <span v-if="!selectedTipoRegionNode">Seleccione un tipo de región de la izquierda para
-                            comenzar.</span>
-                        <span v-else>No hay regiones que coincidan con el filtro.</span>
-                    </div>
-                </el-card>
-
-            </div>
-
-        </LayoutCuerpo>
-
-        <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
-                <div class="dialog-header">
-                    <h3>{{ modalTitle }}</h3>
+                <el-tree v-if="tiposRegionTreeData.length" ref="tiposRegionTreeRef" :key="treeKey"
+                    :data="tiposRegionTreeData" :props="{ children: 'children', label: 'Descripcion' }"
+                    node-key="IdTipoRegion" :current-node-key="selectedTipoRegionNode?.IdTipoRegion"
+                    :highlight-current="true" :expand-on-click-node="true" @node-click="handleTipoRegionSelected"
+                    class="custom-element-tree" />
+                <div v-else class="no-data-message">
+                    No hay tipos de región para mostrar.
                 </div>
+            </el-card>
+
+            <el-card class="panel-card details-panel" shadow="never">
+                <template #header>
+                    <div class="header-container">
+                        <div class="header-buscador">
+                            <el-input v-model="filterText" placeholder="Buscar región..." clearable />
+                        </div>
+                        <span class="details-header-title"></span>
+                        <div class="right-header-content">
+                            <div class="action-group">
+                                <el-tooltip class="item" effect="dark" content="Ingresar">
+                                <el-button type="primary" circle @click="intentarAbrirModalInsertar"
+                                    :disabled="botonNuevoDeshabilitado" title="Nuevo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1h-2z" />
+                                        <path fill-rule="evenodd"
+                                            d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
+                                    </svg>
+                                </el-button>
+                                </el-tooltip>
+
+                                <el-tooltip class="item" effect="dark" content="Modificar">
+                                <el-button type="success" circle @click="intentarAbrirModalEditar"
+                                    :disabled="botonEditarDeshabilitado" title="Nuevo">
+                                    <el-icon>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                                            <path fill="currentColor"
+                                                d="m199.04 672.64 193.984 112 224-387.968-193.92-112-224 388.032zm-23.872 60.16 32.896 148.288 144.896-45.696zM455.04 229.248l193.92 112 56.704-98.112-193.984-112-56.64 98.112zM104.32 708.8l384-665.024 304.768 175.936L409.152 884.8h.064l-248.448 78.336zm384 254.272v-64h448v64h-448z">
+                                            </path>
+                                        </svg>
+                                    </el-icon>
+                                </el-button>
+                                </el-tooltip>
+
+                                <el-tooltip class="item" effect="dark" content="Eliminar">
+                                <el-button type="danger" circle @click="intentarAbrirModalEliminar"
+                                    :disabled="botonEliminarDeshabilitado" title="Nuevo">
+                                    <el-icon>
+                                        <el-icon>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                                                <path fill="currentColor"
+                                                    d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
+                                                </path>
+                                            </svg>
+                                        </el-icon>
+                                    </el-icon>
+                                </el-button>
+                                </el-tooltip>
+
+                                <BotonSalir />
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <el-tree v-if="filteredRegionsTree.length" ref="treeRef" :data="filteredRegionsTree"
+                    :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
+                    :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
+                    @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree">
+                </el-tree>
+                <div v-else class="no-data-message">
+                    <span v-if="!selectedTipoRegionNode">Seleccione un tipo de región de la izquierda para
+                        comenzar.</span>
+                    <span v-else>No hay regiones que coincidan con el filtro.</span>
+                </div>
+            </el-card>
+
+        </div>
+
+    </LayoutCuerpo>
+
+    <Teleport to="body">
+        <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <div class="dialog-header">
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="dialog-body-container">
                 <div class="form-actions">
                     <GuardarButton @click="guardarDesdeModal" />
                     <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
                 </div>
-                <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
-                        <div v-if="modalMode === 'insertar'" class="mb-4"> 
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                            <el-radio-group v-model="opcionNivel" @change="onOpcionNivelChange">
-                                <el-radio v-if="selectedNode" value="mismo">Mismo nivel</el-radio>
-                                <el-radio v-if="selectedNode" value="inferior" :disabled="!puedeTenerNivelInferior">
-                                    Nivel inferior
-                                </el-radio>
-                            </el-radio-group>
-                        </div>
+                <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                    @submit.prevent="guardarDesdeModal">
+                    <div v-if="modalMode === 'insertar'" class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                        <el-radio-group v-model="opcionNivel" @change="onOpcionNivelChange">
+                            <el-radio v-if="selectedNode" value="mismo">Mismo nivel</el-radio>
+                            <el-radio v-if="selectedNode" value="inferior" :disabled="!puedeTenerNivelInferior">
+                                Nivel inferior
+                            </el-radio>
+                        </el-radio-group>
+                    </div>
 
-                        <el-form-item prop="IdTipoRegion" label="Tipo de región:" class="form-item-con-boton">
-                            <el-select v-model="formModal.IdTipoRegion" class="main-input"
-                                placeholder="Seleccione un tipo" :disabled="isTipoRegionReadonly"> 
-                                <el-option v-for="tipo in opcionesTipoRegionDisponibles" :key="tipo.IdTipoRegion"
-                                    :label="tipo.Descripcion" :value="tipo.IdTipoRegion" />
-                            </el-select>
+                    <el-form-item prop="IdTipoRegion" label="Tipo de región:" class="form-item-con-boton">
+                        <el-select v-model="formModal.IdTipoRegion" class="main-input" placeholder="Seleccione un tipo"
+                            :disabled="isTipoRegionReadonly">
+                            <el-option v-for="tipo in opcionesTipoRegionDisponibles" :key="tipo.IdTipoRegion"
+                                :label="tipo.Descripcion" :value="tipo.IdTipoRegion" />
+                        </el-select>
 
-                        </el-form-item>
+                    </el-form-item>
 
-                        <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
-                                v-model="formModal.NombreRegion" clearable /></el-form-item>
+                    <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
+                            v-model="formModal.NombreRegion" clearable /></el-form-item>
 
 
-                        <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado"
-                                clearable /></el-form-item>
+                    <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado"
+                            clearable /></el-form-item>
 
-                        <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
-                                clearable /></el-form-item>
-                    </el-form>
-                </div>
-            </DialogGeneral>
+                    <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
+                            clearable /></el-form-item>
+                </el-form>
+            </div>
+        </DialogGeneral>
 
-            <DialogGeneral v-model="esModalTipoRegionVisible" :bot-cerrar="true" :press-esc="true" width="80%"
-                @close="cerrarModalTipoRegion">
-                <div class="dialog-header">
-                    <h3>Gestionar Tipos de Región</h3>
-                </div>
-                <div class="dialog-body-iframe-container"><iframe :src="route('tipos-region.index', { modal: true })"
-                        class="iframe-full" frameborder="0"></iframe></div>
-            </DialogGeneral>
+        <DialogGeneral v-model="esModalTipoRegionVisible" :bot-cerrar="true" :press-esc="true" width="90%"
+            @close="cerrarModalTipoRegion">
 
-            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="notificacionVisible = false" />
-        </Teleport>
+            <div class="dialog-body-container" style="padding: 10px; height: 800px; overflow: hidden;">
+                <CuerpoTipoRegion :treeDataProp="tiposDeRegionTreeProp" :flatTreeDataProp="tiposDeRegionProp"
+                    :isModal="true"
+                    @cerrar-modal="esModalTipoRegionVisible = false" />
+            </div>
+        </DialogGeneral>
+
+        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="notificacionVisible = false" />
+    </Teleport>
 </template>
 
 <style scoped>
@@ -526,9 +728,12 @@ const proceedWithDeletion = (nodeId, nombre) => {
 }
 
 .dialog-header {
-    background-color: #f1f7ff;
+    background-color: #f5f5f5;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
+    text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
 
 .dialog-header h3 {
@@ -539,15 +744,24 @@ const proceedWithDeletion = (nodeId, nombre) => {
 }
 
 .dialog-body-container {
-    padding: 24px 30px 30px;
+    background-color: #f3f3f3;
+    padding: 20px 24px;
+    border: 3px;
+    text-align: left;
+    border-radius: 10px;
+    background-color: #ffffff;
+    padding: 20px 24px;
+    text-align: left;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
 .form-actions {
     display: flex;
     justify-content: flex-end;
     gap: 25px;
-    padding: 0 24px 20px;
-    margin-top: 20px;
+
 }
 
 :deep(.form-item-con-boton .el-form-item__content) {

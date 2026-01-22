@@ -18,9 +18,10 @@ const dialogVisible = ref(false);
 
 const autorTax = ref({ nombreAutoridad: '', nombreCompleto: '', grupoTaxonomico: '' });
 const autorTaxFormRef = ref(null);
+const inputNombreRef = ref(null);
 
 const dialogTitle = computed(() => {
-    return props.accion === 'crear' ? 'Ingresar una nueva autoridad taxonómica' : 'Modificar la autoridad taxonómica seleccionada';
+    return props.accion === 'crear' ? 'Ingresar una nueva autoridad taxonómica' : 'Modificar la autoridad taxonómica';
 });
 
 const rules = {
@@ -53,6 +54,11 @@ watch(() => props.visible, (newVal) => {
             if (autorTaxFormRef.value) {
                 autorTaxFormRef.value.clearValidate();
             }
+            setTimeout(() => {
+                if (inputNombreRef.value) {
+                    inputNombreRef.value.focus();
+                }
+            }, 100);
         });
     }
 }, { immediate: true });
@@ -104,7 +110,7 @@ const cerrarDialogo = () => {
                 <el-form :model="autorTax" :rules="rules" ref="autorTaxFormRef" label-position="top"
                     @submit.prevent="intentarGuardar">
                     <el-form-item label="Nombre de la autoridad" prop="nombreAutoridad">
-                        <el-input type="text" maxlength="100" v-model="autorTax.nombreAutoridad"
+                        <el-input ref="inputNombreRef" type="text" maxlength="100" v-model="autorTax.nombreAutoridad"
                             show-word-limit></el-input>
                     </el-form-item>
 

@@ -93,7 +93,7 @@ class GrupoTaxonomicoController extends Controller
                         case 'termina':
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor));
                             break;
-                        default: // 'contiene'
+                        default: 
                             $query->where(DB::raw("LOWER(`{$campo}`)"), 'like', '%' . strtolower($valor) . '%');
                             break;
                     }
@@ -121,11 +121,17 @@ class GrupoTaxonomicoController extends Controller
 
     public function store(Request $request)
     {
-        $grupo = GrupoScat::where('GrupoScat', $request->nomGrupoScat)
-            ->get();
+        $existing = GrupoScat::where(DB::raw('lower(GrupoSCAT)'), strtolower($request->GrupoSCAT))->first();
 
-        if ($grupo->count() === 0) {
+        if ($existing) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'El grupo que intenta guardar ya existe.',
+                'idExistente' => $existing->IdGrupoSCAT 
+            ], 400);
+        }
 
+        try {
             $grupoScat = new GrupoScat;
             $grupoScat->GrupoScat = $request->GrupoSCAT;
             $grupoScat->GrupoAbreviado = $request->GrupoAbreviado;
@@ -133,46 +139,66 @@ class GrupoTaxonomicoController extends Controller
             $grupoScat->FechaModificacion = now()->toDateTimeString();
             $grupoScat->save();
 
-            return  response()->json([
+            return response()->json([
                 'status' => 200,
-                'message' => 'El grupo scat se dio de alta con exito',
-            ]);
-        } else {
-            return  response()->json([
-                'status' => 400,
-                'message' => 'El grupo scat que intenta guardar ya existe',
-            ]);
+                'message' => 'El grupo scat se dio de alta con éxito',
+                'grupo' => $grupoScat
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Error al guardar'], 500);
         }
     }
-
-
 
     public function update(Request $request, $IdGrupoSCAT)
     {
-        // dd($request->all());
         $grupoTaxonomico = GrupoScat::find($IdGrupoSCAT);
+        if (!$grupoTaxonomico) return response()->json(['message' => 'Not found'], 404);
+        $existing = GrupoScat::where(DB::raw('lower(GrupoSCAT)'), strtolower($request->input('GrupoSCAT')))
+            ->where('IdGrupoSCAT', '!=', $IdGrupoSCAT)
+            ->first();
 
-        if (!$grupoTaxonomico) {
-            return response()->json(['message' => 'GrupoTaxonomico not found'], 404);
-        }
-
-        $grupoTaxonomico->GrupoSCAT = $request->input('GrupoSCAT');
-        $grupoTaxonomico->GrupoAbreviado = $request->input('GrupoAbreviado');
-        $grupoTaxonomico->GrupoSNIB = $request->input('GrupoSNIB');
-
-        try {
-            $grupoTaxonomico->save();
+        if ($existing) {
             return response()->json([
-                'data' => $grupoTaxonomico,
-                'message' => 'GrupoTaxonomico Actualizado Exitosamente',
-            ], 200);
+                'status' => 400,
+                'message' => 'Ya existe otro grupo con ese nombre.',
+                'idExistente' => $existing->IdGrupoSCAT
+            ], 400);
+        }
+        try {
+            $grupoTaxonomico->GrupoSCAT = $request->input('GrupoSCAT');
+            $grupoTaxonomico->GrupoAbreviado = $request->input('GrupoAbreviado');
+            $grupoTaxonomico->GrupoSNIB = $request->input('GrupoSNIB');
+            $grupoTaxonomico->save();
+            return response()->json(['data' => $grupoTaxonomico, 'message' => 'Actualizado con éxito'], 200);
         } catch (Exception $e) {
-            Log::error("Error updating GrupoTaxonomico: {$e->getMessage()}");
-
-            return response()->json(['message' => 'Error updating GrupoTaxonomico'], 500);
+            return response()->json(['message' => 'Error'], 500);
         }
     }
 
+    public function obtenerPaginaDeGrupo(Request $request)
+    {
+        $id = $request->id;
+        $perPage = $request->perPage ?? 100;
+        $sortBy = $request->sortBy ?? 'GrupoSCAT';
+        $sortOrder = $request->sortOrder ?? 'asc';
+
+        $registroReferencia = GrupoScat::find($id);
+        if (!$registroReferencia) return response()->json(['page' => 1]);
+
+        $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
+
+        $posicion = GrupoScat::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
+            $valor = $registroReferencia->{$sortBy};
+            $query->where(DB::raw("LOWER(`$sortBy`)"), $operador, strtolower($valor))
+                ->orWhere(function ($q) use ($registroReferencia, $sortBy, $valor) {
+                    $q->where(DB::raw("LOWER(`$sortBy`)"), '=', strtolower($valor))
+                        ->where('IdGrupoSCAT', '<', $registroReferencia->IdGrupoSCAT);
+                });
+        })->count();
+
+        $pagina = floor($posicion / $perPage) + 1;
+        return response()->json(['page' => (int)$pagina]);
+    }
 
     public function destroy($IdGrupoSCAT)
     {

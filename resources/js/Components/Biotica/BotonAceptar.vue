@@ -28,7 +28,7 @@ const handleClick = (event) => { emit('click', event); };
         viewBox="0 0 24 24" 
         stroke-width="3.5" 
         stroke="currentColor"
-      >
+  >
         <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
       </svg>
     </el-icon>

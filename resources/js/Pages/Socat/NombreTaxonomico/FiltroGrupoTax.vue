@@ -23,12 +23,17 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+
 const datosOrdenados = computed(() => {
     const lista = [...props.grupos["original"]];
     return lista.sort((a, b) => {
-        return a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
+        const labelA = (a?.label ?? '').toString()
+        const labelB = (b?.label ?? '').toString()
+
+        return labelA.localeCompare(labelB, 'es', { sensitivity: 'base' });
     });
 });
+
 const checkAll = ref(false);
 const arbolRef = ref(null);
 const isIndeterminate = ref(false);
@@ -103,25 +108,34 @@ const cerrarNotificacion = () => {
         <el-card>
             <el-container>
                 <el-header class="header">
-                    <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
+                    <div class="header-content">
+                        <h1 class="titulo">Catálogo de grupos taxonómicos</h1>
+                    </div>
                 </el-header>
                 <el-main class="contenido">
                     <div>
-                        <btnTraspaso @traspasa="recuperaMarcados()" />
-                        <br />
-                        <div v-show="!checkAll">
+                        <div v-show="!checkAll" class="header-content">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="marcar">
                                 Marcar todos
-                            </el-checkbox>
+                            </el-checkbox> 
+                            <div class="header-button">
+                                <btnTraspaso @traspasa="recuperaMarcados()" />
+                            </div>
                         </div>
-                        <div v-show="checkAll">
+                        <div v-show="checkAll" class="header-content">
                             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="desmarcar">
                                 Desmarcar todos
                             </el-checkbox>
+                            <div class="header-button">
+                                <btnTraspaso @traspasa="recuperaMarcados()" />
+                            </div>
                         </div>
                     </div>
-                    <arbolCheck :datosArbol="datosOrdenados" :defaultProps="propiedades" ref="arbolRef" default-expand-all
-                        @regresaMarcados="recibeGrupos" />
+                    <div class="arbol-wrapper">
+                        <arbolCheck :datosArbol="datosOrdenados" :defaultProps="propiedades" 
+                                    ref="arbolRef" default-expand-all
+                            @regresaMarcados="recibeGrupos" />
+                    </div>
                 </el-main>
             </el-container>
         </el-card>
@@ -134,76 +148,88 @@ const cerrarNotificacion = () => {
 </template>
 
 <style scoped>
-.common-layout {
-    width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-}
-
-:deep(.el-card) {
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-:deep(.el-card__body) {
-    padding: 0 !important;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
-
-.header {
-    background-color: #f5f5f5;
-    padding: 15px;
-    border-bottom: 1px solid #e0e0e0;
-    height: auto !important;
-    min-height: auto !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.titulo {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: #333;
-    margin: 0;
-    text-align: center;
-    line-height: 1.3;
-    white-space: normal;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-.contenido {
-    padding: 15px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.contenido>div:first-child {
-    margin-bottom: 10px;
-    width: 100%;
-}
-
-@media (max-width: 480px) {
     .common-layout {
-        max-width: 95vw;
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+        height: auto;
+    }
+
+    .card-container {
+        display: flex;
+        flex-direction: column;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .header {
+        background-color: #d9e1eb;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        height: auto !important;
+        min-height: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        color: white;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .header-button {
+        margin-left: 15px; /* Espacio entre título y botón */
+        flex-shrink: 0; /* Evita que el botón se reduzca */
     }
 
     .titulo {
-        font-size: 1rem;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+        text-align: center;
     }
 
-    :deep(.el-card) {
-        max-height: 70vh;
+    .contenido {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        /* QUITAR overflow-y: auto de aquí */
     }
-}
+
+    /*Contenedor específico para el árbol*/
+    .arbol-wrapper {
+        flex: 1;
+        margin-top: 10px;
+        overflow: hidden; /* Sin scroll aquí */
+    }
+
+    /* Estilos profundos para el árbol */
+    :deep(.el-tree) {
+        max-height: 400px !important;
+        height: 400px !important;
+        overflow-y: auto !important;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 10px;
+        background-color: #fafafa;
+    }
+
+    @media (max-width: 480px) {
+        .common-layout {
+            max-width: 95vw;
+        }
+        
+        :deep(.el-tree) {
+            max-height: 300px !important;
+            height: 300px !important;
+        }
+    }
 </style>

@@ -31,6 +31,7 @@ const localTreeData = ref([]);
 const selectedNode = ref(null);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
+const descripcionInputRef = ref(null);
 const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
 
 
@@ -430,7 +431,17 @@ const abrirModalParaInsertar = () => {
     formModal.value = { Descripcion: "", Direccionalidad: null };
     opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                if (nativeInput) nativeInput.setSelectionRange(0, 0);
+            }
+        }, 100);
+    });
 };
 
 const abrirModalParaEditar = () => {
@@ -453,7 +464,21 @@ const abrirModalParaEditar = () => {
         Direccionalidad: selectedNode.value.Direccionalidad,
     };
     esModalVisible.value = true;
-    nextTick(() => formModalRef.value?.clearValidate());
+
+    nextTick(() => {
+        formModalRef.value?.clearValidate();
+        setTimeout(() => {
+            if (descripcionInputRef.value) {
+                descripcionInputRef.value.focus();
+
+                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                if (nativeInput) {
+                    const len = nativeInput.value.length;
+                    nativeInput.setSelectionRange(len, len);
+                }
+            }
+        }, 100);
+    });
 };
 
 const cerrarModalOperacion = () => {
@@ -464,7 +489,7 @@ const cerrarModalOperacion = () => {
     opcionNivel.value = "mismo";
 };
 
-const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación seleccionado" : "Ingresar un nuevo tipo de relación");
+const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación" : "Ingresar un nuevo tipo de relación");
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
@@ -490,19 +515,15 @@ const guardarDesdeModal = async () => {
                 onSuccess: onSuccessHandler, onError: onErrorHandler,
             });
         } else if (modalMode.value === "insertar") {
-            // Se calcula la posición del nuevo nodo
             const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
             if (!calculoNiveles) return;
-
-            // CONSTRUIMOS LOS DATOS PARA INSERTAR
             const datosInsert = {
                 Descripcion: formModal.value.Descripcion.trim(),
                 Direccionalidad: formModal.value.Direccionalidad,
                 ...calculoNiveles.niveles,
-                RutaIcono: ICONO_POR_DEFECTO // <--- SIEMPRE SE ASIGNA EL PUTO ICONO AQUÍ
+                RutaIcono: ICONO_POR_DEFECTO 
             };
 
-            // Se manda la petición POST
             router.post("/tipos-relacion", datosInsert, {
                 preserveState: true, preserveScroll: true,
                 onSuccess: (page) => {
@@ -588,7 +609,7 @@ const proceedWithDeletion = async () => {
         router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
             preserveScroll: true,
             onSuccess: () => {
-                mostrarNotificacion("¡Eliminación Exitosa!", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
+                mostrarNotificacion("Eliminación exitosa", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
                 if (parentNode) {
                     nodeIdToFocus.value = parentNode.IdTipoRelacion;
                 } else {
@@ -780,7 +801,7 @@ const cerrarDialogo = () => {
         </LayoutCuerpo>
 
         <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalOperacion">
                 <div class="dialog-header">
                     <h3>{{ modalTitle }}</h3>
                 </div>
@@ -802,7 +823,7 @@ const cerrarDialogo = () => {
                             </div>
 
                             <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
-                                <el-input v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
+                                <el-input  ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
                                     maxlength="255" show-word-limit />
                             </el-form-item>
 
@@ -821,7 +842,7 @@ const cerrarDialogo = () => {
                 </div>
             </DialogGeneral>
 
-            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" @close="cerrarModalIconos">
+            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalIconos">
                 <div class="dialog-header">
                     <h3>Seleccionar Ícono para "{{ selectedNode?.Descripcion }}"</h3>
                 </div>
