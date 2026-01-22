@@ -357,12 +357,12 @@ const manejarEliminarItem = (itemId) => {
 
       const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
 
-      const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreCompleto}"` : 'el registro seleccionado';
+      const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
       await axios.delete(`/autores/${itemId}`);
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion('Eliminación exitosa', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'success');
     }

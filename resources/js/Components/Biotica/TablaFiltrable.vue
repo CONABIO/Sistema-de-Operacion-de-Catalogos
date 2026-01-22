@@ -10,6 +10,8 @@ import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
+const inputsFiltro = ref({});
+
 const props = defineProps({
   columnas: { type: Array, required: true },
   datos: { type: Array, required: true },
@@ -37,11 +39,22 @@ const props = defineProps({
 });
 
 
+const handleVisibleChange = (visible, prop) => {
+  if (visible) {
+    nextTick(() => {
+      const inputRef = inputsFiltro.value[prop];
+      if (inputRef) {
+        inputRef.focus();
+      }
+    });
+  }
+};
+
+
 const limpiarTodosLosFiltros = () => {
   Object.keys(filtros.value).forEach(key => {
     filtros.value[key] = '';
   });
-  tipoDeBusqueda.value = 'inicia';
 };
 
 const irAPagina = async (numeroPagina) => {
@@ -71,7 +84,7 @@ const onEliminarInterno = () => {
 
 
 const rowClassNameInterno = ({ row }) => {
-  if (props.rowClassName) return props.rowClassName({ row }); 
+  if (props.rowClassName) return props.rowClassName({ row });
   const idFila = row[props.idKey];
   const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
   if (idFila == null || idSeleccionado == null) return '';
@@ -141,8 +154,11 @@ watch(tipoDeBusqueda, () => {
 
 const tableKey = ref(0);
 
+
 const fetchData = async () => {
   try {
+    const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
     const response = await axios.get(props.endpoint, {
       params: {
         filtros: filtros.value,
@@ -156,19 +172,27 @@ const fetchData = async () => {
 
     const resultados = response.data.data || [];
     const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
-    
-    selectedRow.value = null;
-    emit('row-click', null); 
+
     emit('update:datos', resultados);
     emit('update:totalItems', total);
-    tableKey.value++; 
+
     await nextTick();
+
     if (resultados.length > 0) {
-      if (resultados[0][props.idKey] != null) {
+      const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
+
+      if (coincidencia) {
+        selectedRow.value = coincidencia;
+        tableRefInterna.value?.setCurrentRow(coincidencia);
+        emit('row-click', coincidencia);
+      } else {
         selectedRow.value = resultados[0];
         tableRefInterna.value?.setCurrentRow(resultados[0]);
         emit('row-click', resultados[0]);
       }
+    } else {
+      selectedRow.value = null;
+      emit('row-click', null);
     }
   } catch (error) {
     console.error(`Error en fetchData:`, error);
@@ -179,18 +203,9 @@ const fetchData = async () => {
 
 let debounceTimer;
 
-
 const onFiltroInput = () => {
-  clearTimeout(debounceTimer);
-  if (tableRefInterna.value) {
-    tableRefInterna.value.setCurrentRow(null); 
-  }
-  selectedRow.value = null; 
-  emit('row-click', null);  
-  debounceTimer = setTimeout(() => {
-    currentPage.value = 1;
-    fetchData();
-  }, 500);
+  currentPage.value = 1;
+  fetchData();
 };
 
 const limpiarFiltro = (campo) => {
@@ -258,8 +273,8 @@ defineExpose({
     </template>
 
     <div class="table-responsive ">
-      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow" :data="props.datos"
-        :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno" 
+      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow"
+        :data="props.datos" :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
         @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
@@ -268,7 +283,8 @@ defineExpose({
           <template #header>
             <div class="custom-header">
               <span>{{ col.label }}</span>
-              <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false">
+              <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false"
+                @visible-change="(visible) => handleVisibleChange(visible, col.prop)">
                 <el-button @click.stop circle size="small" class="header-filter-button"
                   :type="filtros[col.prop] ? 'primary' : ''" style="margin-left: 10px;">
                   <el-icon>
@@ -279,8 +295,9 @@ defineExpose({
                   <el-dropdown-menu>
                     <el-dropdown-item class="filter-dropdown-item">
                       <div @click.stop>
-                        <el-input v-model="filtros[col.prop]" :placeholder="`Filtrar por ${col.label}`"
-                          @input="onFiltroInput" clearable @clear="onFiltroInput">
+                        <el-input :ref="el => { if (el) inputsFiltro[col.prop] = el }" v-model="filtros[col.prop]"
+                          :placeholder="`Filtrar por ${col.label}`" @keyup.enter="onFiltroInput" clearable
+                          @clear="onFiltroInput">
                         </el-input>
                       </div>
                     </el-dropdown-item>
