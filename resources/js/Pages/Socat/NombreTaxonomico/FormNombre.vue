@@ -27,7 +27,7 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                  <div v-if="muestraGrd">
+                  <template v-if="muestraGrd">
                     <el-popconfirm confirm-button-text="Si" 
                                     cancel-button-text="No" 
                                     :icon="InfoFilled" 
@@ -35,16 +35,16 @@
                                     title="¿Realmente desea guardar los cambios?" 
                                     @confirm="Guardar('nombreTax', accion)">
                       <template #reference>
-                        <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                        <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
                           <el-button circle type="warning">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
                                 <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
                             </svg>
                           </el-button>
-                        <!--/el-tooltip-->
+                        </el-tooltip>
                       </template>
                     </el-popconfirm>
-                  </div>
+                  </template>
                 </el-space>
               </el-col>
           </el-row>
@@ -58,7 +58,7 @@
               </el-option>
             </el-select>
           </el-form-item>     
-          <el-form-item label = "Estatus: ">
+          <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
                 <el-radio :disabled="estCor" :value="2">{{ estDinamico }}</el-radio>
@@ -138,7 +138,7 @@
             </el-tab-pane>
 
             <el-tab-pane label="SCAT" name="scat">
-                    <el-row :gutter="15" type="flex" align="middle" style="flex-wrap: nowrap;">
+                    <el-row :gutter="250" type="flex" align="middle" style="flex-wrap: nowrap;">
                       <el-col :span="10">
                         <table style="border: 1px solid black; width: 100%;">
                           <tbody>
@@ -157,6 +157,7 @@
                         <div  style="flex: 1; min-width:0; display: flex; align-items:center;">
                             <el-form-item label="Grupo" 
                                           prop="grpSelec" 
+                                          label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
@@ -174,7 +175,8 @@
                             placement="bottom">
                             <el-button @click="carga_Grupos()" 
                                         circle 
-                                        style="flex-shrink: 0; background-color: #a08223;">
+                                        style="flex-shrink: 0; background-color: #a08223;"
+                                        :disabled="true">
                               <el-icon>
                                 <filtroGrupos />
                               </el-icon>            

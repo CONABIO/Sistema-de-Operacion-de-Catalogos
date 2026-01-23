@@ -12,10 +12,13 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { DArrowRight, ArrowUp, ArrowDown, Switch, Search, CircleClose } from '@element-plus/icons-vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
 
 const selectedRowId = ref(null);
+
+const filaSeleccionada = ref(null);
 
 const manejarClickFila = (row) => {
   selectedRowId.value = row ? row.IdAutorTaxon : null;
@@ -77,8 +80,11 @@ const traspasaDatos = () => {
   }
 }
 
-const agregarAutor = async (row) => {
-  autoridadTax.value = "";
+const agregarAutor = async () => {
+ 
+ let row = tablaRef.value.selectedRow;
+
+ autoridadTax.value = "";
   if (props.nombre) {
     const existe = autoresRel.value.some(autor => autor.IdAutorTaxon === row.IdAutorTaxon);
     if (!existe) {
@@ -88,6 +94,9 @@ const agregarAutor = async (row) => {
         CadInicio: '',
         CadFinal: ''
       });
+    }
+    else{
+      mostrarNotificacion('Aviso', `El autor ya se encuentra listado`, 'success');
     }
   }
 }
@@ -109,22 +118,29 @@ const armaAutoridad = () => {
   autoridadTax.value = autorCompleto;
 }
 
-const subirRow = (index) => {
-  autoridadTax.value = "";
-  if (index > 0) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index - 1, 0, item);
-  }
+const subirRow = () => {
+  console.log("Estoy en la funcion de subirr: ", filaSeleccionada.value);
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+  
+  if (index <= 0) return;
+
+  autoresRel.value.splice(index - 1, 0, autoresRel.value.splice(index, 1)[0]);
 }
 
-const bajarRow = (index) => {
-  autoridadTax.value = "";
-  if (index < autoresRel.value.length - 1) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index + 1, 0, item);
-  }
+const bajarRow = () => {
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+ 
+  if (index === -1 || index >= autoresRel.value.length - 1) return;
+
+  autoresRel.value.splice(index + 1, 0, autoresRel.value.splice(index,1)[0]);
 }
 
 const deleteRow = (index) => {
@@ -407,6 +423,24 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
+
+const onRowChange = (row) => {
+  filaSeleccionada.value = row
+  //tablaAutores.value.setCurrentRow(row);
+}
+
+const onEliminarInterno = () => {
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+  
+  autoresRel.value.splice(index, 1);
+  
+  filaSeleccionada.value = null;
+
+}
 </script>
 
 <template>
@@ -420,40 +454,60 @@ const cerrarNotificacion = () => {
               <el-scrollbar max-height="400px">
                 <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
                   placeholder="Autoridad Taxonomica" />
-                <el-table :data="autoresRel" style="width: 100%" max-height="250" :show-header="false">
+                
+                <div style="display: flex; justify-content: space-between; gap: 3px;
+                                margin-bottom: 10px;">
+                  <div>
+                    <el-tooltip effect="dark" content="Generar" placement="right-start">
+                      <el-button
+                        @click="armaAutoridad" circle type="primary"><el-icon>
+                          <Switch />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Traspasar" placement="right-start"><el-button
+                        @click="traspasaDatos" circle type="primary"><el-icon>
+                          <iconoTraspaso />
+                        </el-icon></el-button>
+                    </el-tooltip>
+                  </div>
+                  <div>
+                    <el-tooltip effect="dark" content="Subir" placement="right-start">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "subirRow()">
+                        <el-icon class="icon-bold">
+                          <ArrowUp />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Bajar" placement="right-start">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "bajarRow()">
+                        <el-icon class="icon-bold">
+                          <ArrowDown />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <EliminarButton :disabled="!filaSeleccionada" @eliminar="onEliminarInterno" /> 
+                  </div>                 
+                </div>
+                <el-table ref="tablaAutores"
+                            :data="autoresRel" 
+                            class="tabla-autores-personalizada"
+                            style="width: 100%" 
+                            max-height="250" 
+                            :show-header="false" 
+                            highlight-current-row
+                            @current-change="onRowChange">
                   <el-table-column prop="IdAutorTaxon" label="Id" width="80" v-if="false" />
                   <el-table-column label="Texto Inicio" width="120">
                     <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto"
                         maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')" /></template>
                   </el-table-column>
                   <el-table-column prop="NombreAutoridad" label="Nombre" min-width="180" />
-                  <el-table-column label="Texto Final" width="120">
+                  <el-table-column label="Texto Final" width="300">
                     <template #default="scope"><el-input v-model="scope.row.CadFinal" placeholder="Texto" maxlength="15"
                         @input="val => handleInput(val, scope, 'CadFinal')" @keydown.native.prevent="onKeyDown($event)"
                         @paste.native.prevent="onPaste($event, scope)" /></template>
-                  </el-table-column>
-                  <el-table-column label="Mover" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="warning"
-                          size="small" :disabled="scope.$index === 0" @click="subirRow(scope.$index)"><el-icon>
-                            <ArrowUp />
-                          </el-icon></el-button><el-button circle type="warning" size="small"
-                          :disabled="scope.$index === autoresRel.length - 1" @click="bajarRow(scope.$index)"><el-icon>
-                            <ArrowDown />
-                          </el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="Acciones" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="danger"
-                          @click.prevent="deleteRow(scope.$index)"><el-icon><svg xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 1024 1024">
-                              <path fill="currentColor"
-                                d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
-                              </path>
-                            </svg></el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
+                  </el-table-column>                  
                 </el-table>
               </el-scrollbar>
               <br>
@@ -464,7 +518,7 @@ const cerrarNotificacion = () => {
                     </el-icon></el-button></el-tooltip>
                 <el-tooltip effect="dark" content="Asociar Autores" placement="right-start"><el-button
                     @click="traspasaDatos" circle type="primary"><el-icon>
-                      <DArrowRight />
+                      <iconoTraspaso />
                     </el-icon></el-button></el-tooltip>
               </div>
             </el-collapse-item>
@@ -474,9 +528,10 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName"
-        @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem"
-        @row-dblclick="agregarAutor" :highlight-current-row="false">
+        :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'" 
+        :mostrarSalir = "!props.nombre"        endpoint="/busca-autor" id-key="IdAutorTaxon" 
+        @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem" 
+        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
 
 
         <template #header-actions>
@@ -560,20 +615,41 @@ const cerrarNotificacion = () => {
   margin-top: 35px;
 }
 
+/*Leonardo - 22/01/2026 
+Etiqueta que marca en verde las filas de la tabla*/
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important; 
 }
+/*Leonardo - 22/01/2026*/
+
+/* Este estilo NO tiene scoped y se aplica globalmente */
+.tabla-autores-personalizada .el-table__body tr.current-row > td {
+  background-color: #ddf6dd !important;
+}
+
+.tabla-autores-personalizada .el-table__body tr.current-row > td.el-table__cell {
+  background-color: #ddf6dd !important;
+  border-color: #ddf6dd !important;
+}
 
 
-</style>
+.tabla-autores-personalizada .el-table--enable-row-hover .el-table__body tr.current-row:hover > td {
+  background-color: #ddf6dd !important;
+}
 
-<style scoped>
-.main-section {}
+/* Estilos para la tabla principal (si es necesario) */
+.main-section .el-table__body tr.current-row > td {
+  background-color: #ddf6dd !important;
+}
+/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
+.icon-bold{
+  font-size: 12px !important;
+}
 
-.expand-content-detail {
-  padding: 10px 15px;
-  background-color: #fdfdfd;
-  font-size: 13px;
+/* JC 23/01/2026 jira 06 */
+
+.icon-bold svg path{
+  stroke-width: 1.5 !important;   /* por defecto es ~2 */
 }
 </style>

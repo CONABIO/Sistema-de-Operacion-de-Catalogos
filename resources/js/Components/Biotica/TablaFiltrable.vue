@@ -25,6 +25,16 @@ const props = defineProps({
   highlightCurrentRow: {
     type: Boolean,
     default: false
+  }, 
+  asignaTrasp: { 
+    type: String, 
+    required: false,
+    default: "izq"
+  },
+  mostrarSalir: {
+    type: Boolean,
+    required: false,
+    default: true
   }
 });
 
@@ -114,6 +124,7 @@ const emit = defineEmits([
   'row-dblclick',
   'row-click',
   'traspasaBiblio',
+  'traspasaSeleccionado',
   'cerrar'
 ]);
 
@@ -220,6 +231,7 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
+//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -250,11 +262,11 @@ defineExpose({
         </div>
         <div class="left">
           <div class="form-actions">
-            <BotonTraspaso v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <BotonSalir />
+            <BotonSalir v-if="mostrarSalir"/>
           </div>
         </div>
       </div>
