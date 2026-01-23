@@ -488,7 +488,6 @@ const onEliminarInterno = () => {
                     </el-tooltip>
                     <EliminarButton :disabled="!filaSeleccionada" @eliminar="onEliminarInterno" /> 
                   </div>                 
-                  
                 </div>
                 <el-table ref="tablaAutores"
                             :data="autoresRel" 
@@ -604,11 +603,14 @@ const onEliminarInterno = () => {
   gap: 10px;
   margin-top: 35px;
 }
-/*
+
+/*Leonardo - 22/01/2026 
+Etiqueta que marca en verde las filas de la tabla*/
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important; 
-}*/
+}
+/*Leonardo - 22/01/2026*/
 
 /* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row > td {
@@ -620,7 +622,7 @@ const onEliminarInterno = () => {
   border-color: #ddf6dd !important;
 }
 
-/* Sobrescribe el hover por defecto de Element Plus */
+
 .tabla-autores-personalizada .el-table--enable-row-hover .el-table__body tr.current-row:hover > td {
   background-color: #ddf6dd !important;
 }
@@ -629,10 +631,12 @@ const onEliminarInterno = () => {
 .main-section .el-table__body tr.current-row > td {
   background-color: #ddf6dd !important;
 }
-
+/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
 .icon-bold{
   font-size: 12px !important;
 }
+
+/* JC 23/01/2026 jira 06 */
 
 .icon-bold svg path{
   stroke-width: 1.5 !important;   /* por defecto es ~2 */
