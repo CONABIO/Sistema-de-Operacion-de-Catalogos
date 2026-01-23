@@ -213,7 +213,7 @@ const seleccionarIcono = async (iconName) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                mostrarNotificacion("¡Éxito!", "Ícono actualizado correctamente.", "success");
+                mostrarNotificacion("Modificación", "El ícono ha sido modificado correctamente.", "success");
                 cerrarModalIconos();
             },
             onError: (errors) => {
@@ -498,9 +498,14 @@ const guardarDesdeModal = async () => {
 
     const proceedWithSave = () => {
         ElMessageBox.close();
+        const modoActual = modalMode.value;
         const onSuccessHandler = (page) => {
+            const tituloNotif = modoActual === "editar" ? "Modificación" : "Ingreso";
+            const mensajeNotif = modoActual === "editar"
+                ? "La información ha sido modificada correctamente."
+                : "La información ha sido ingresada correctamente.";
             cerrarModalOperacion();
-            mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+            mostrarNotificacion(tituloNotif, mensajeNotif, "success");
         };
         const onErrorHandler = (errors) => {
             mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
@@ -521,7 +526,7 @@ const guardarDesdeModal = async () => {
                 Descripcion: formModal.value.Descripcion.trim(),
                 Direccionalidad: formModal.value.Direccionalidad,
                 ...calculoNiveles.niveles,
-                RutaIcono: ICONO_POR_DEFECTO 
+                RutaIcono: ICONO_POR_DEFECTO
             };
 
             router.post("/tipos-relacion", datosInsert, {
@@ -662,7 +667,7 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
         }
         const nivelParaSecuencia = profundidadPadre + 1;
         if (nivelParaSecuencia > MAX_NIVELES) {
-            mostrarNotificacion("Error", "Profundidad máxima de niveles excedida.", "error");
+            mostrarNotificacion("Aviso", "Profundidad máxima de niveles excedida.", "error");
             return null;
         }
         let maxValorSecuencia = 0;
@@ -823,8 +828,8 @@ const cerrarDialogo = () => {
                             </div>
 
                             <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
-                                <el-input  ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                    maxlength="255" show-word-limit />
+                                <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
+                                    placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
                             </el-form-item>
 
                             <el-form-item prop="Direccionalidad" label="Direccionalidad:">
@@ -842,7 +847,8 @@ const cerrarDialogo = () => {
                 </div>
             </DialogGeneral>
 
-            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalIconos">
+            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true"
+                @close="cerrarModalIconos">
                 <div class="dialog-header">
                     <h3>Seleccionar Ícono para "{{ selectedNode?.Descripcion }}"</h3>
                 </div>
