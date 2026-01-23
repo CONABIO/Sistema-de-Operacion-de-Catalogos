@@ -18,6 +18,8 @@ import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 const selectedRowId = ref(null);
 
+const filaSeleccionada = ref(null);
+
 const manejarClickFila = (row) => {
   selectedRowId.value = row ? row.IdAutorTaxon : null;
   if (tablaRef.value) {
@@ -93,6 +95,9 @@ const agregarAutor = async () => {
         CadFinal: ''
       });
     }
+    else{
+      mostrarNotificacion('Aviso', `El autor ya se encuentra listado`, 'success');
+    }
   }
 }
 
@@ -113,22 +118,29 @@ const armaAutoridad = () => {
   autoridadTax.value = autorCompleto;
 }
 
-const subirRow = (index) => {
-  autoridadTax.value = "";
-  if (index > 0) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index - 1, 0, item);
-  }
+const subirRow = () => {
+  console.log("Estoy en la funcion de subirr: ", filaSeleccionada.value);
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+  
+  if (index <= 0) return;
+
+  autoresRel.value.splice(index - 1, 0, autoresRel.value.splice(index, 1)[0]);
 }
 
-const bajarRow = (index) => {
-  autoridadTax.value = "";
-  if (index < autoresRel.value.length - 1) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index + 1, 0, item);
-  }
+const bajarRow = () => {
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+ 
+  if (index === -1 || index >= autoresRel.value.length - 1) return;
+
+  autoresRel.value.splice(index + 1, 0, autoresRel.value.splice(index,1)[0]);
 }
 
 const deleteRow = (index) => {
@@ -411,6 +423,24 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
+
+const onRowChange = (row) => {
+  filaSeleccionada.value = row
+  //tablaAutores.value.setCurrentRow(row);
+}
+
+const onEliminarInterno = () => {
+  if(!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+  
+  autoresRel.value.splice(index, 1);
+  
+  filaSeleccionada.value = null;
+
+}
 </script>
 
 <template>
@@ -473,33 +503,11 @@ const cerrarNotificacion = () => {
                         maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')" /></template>
                   </el-table-column>
                   <el-table-column prop="NombreAutoridad" label="Nombre" min-width="180" />
-                  <el-table-column label="Texto Final" width="120">
+                  <el-table-column label="Texto Final" width="300">
                     <template #default="scope"><el-input v-model="scope.row.CadFinal" placeholder="Texto" maxlength="15"
                         @input="val => handleInput(val, scope, 'CadFinal')" @keydown.native.prevent="onKeyDown($event)"
                         @paste.native.prevent="onPaste($event, scope)" /></template>
-                  </el-table-column>
-                  <el-table-column label="Mover" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="warning"
-                          size="small" :disabled="scope.$index === 0" @click="subirRow(scope.$index)"><el-icon>
-                            <ArrowUp />
-                          </el-icon></el-button><el-button circle type="warning" size="small"
-                          :disabled="scope.$index === autoresRel.length - 1" @click="bajarRow(scope.$index)"><el-icon>
-                            <ArrowDown />
-                          </el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="Acciones" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="danger"
-                          @click.prevent="deleteRow(scope.$index)"><el-icon><svg xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 1024 1024">
-                              <path fill="currentColor"
-                                d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
-                              </path>
-                            </svg></el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
+                  </el-table-column>                  
                 </el-table>
               </el-scrollbar>
               <br>
