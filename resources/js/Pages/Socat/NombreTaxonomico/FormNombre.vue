@@ -27,7 +27,7 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                  <div v-if="muestraGrd">
+                  <template v-if="muestraGrd">
                     <el-popconfirm confirm-button-text="Si" 
                                     cancel-button-text="No" 
                                     :icon="InfoFilled" 
@@ -44,7 +44,7 @@
                         </el-tooltip>
                       </template>
                     </el-popconfirm>
-                  </div>
+                  </template>
                 </el-space>
               </el-col>
           </el-row>
@@ -175,7 +175,8 @@
                             placement="bottom">
                             <el-button @click="carga_Grupos()" 
                                         circle 
-                                        style="flex-shrink: 0; background-color: #a08223;">
+                                        style="flex-shrink: 0; background-color: #a08223;"
+                                        :disabled="true">
                               <el-icon>
                                 <filtroGrupos />
                               </el-icon>            

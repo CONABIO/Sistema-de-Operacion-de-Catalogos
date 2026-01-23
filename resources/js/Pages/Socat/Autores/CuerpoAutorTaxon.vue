@@ -424,7 +424,49 @@ const cerrarNotificacion = () => {
               <el-scrollbar max-height="400px">
                 <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
                   placeholder="Autoridad Taxonomica" />
-                <el-table :data="autoresRel" style="width: 100%" max-height="250" :show-header="false">
+                
+                <div style="display: flex; justify-content: space-between; gap: 3px;
+                                margin-bottom: 10px;">
+                  <div>
+                    <el-tooltip effect="dark" content="Generar" placement="right-start">
+                      <el-button
+                        @click="armaAutoridad" circle type="primary"><el-icon>
+                          <Switch />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Traspasar" placement="right-start"><el-button
+                        @click="traspasaDatos" circle type="primary"><el-icon>
+                          <iconoTraspaso />
+                        </el-icon></el-button>
+                    </el-tooltip>
+                  </div>
+                  <div>
+                    <el-tooltip effect="dark" content="Subir" placement="right-start">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "subirRow()">
+                        <el-icon class="icon-bold">
+                          <ArrowUp />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Bajar" placement="right-start">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "bajarRow()">
+                        <el-icon class="icon-bold">
+                          <ArrowDown />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <EliminarButton :disabled="!filaSeleccionada" @eliminar="onEliminarInterno" /> 
+                  </div>                 
+                </div>
+                <el-table ref="tablaAutores"
+                            :data="autoresRel" 
+                            class="tabla-autores-personalizada"
+                            style="width: 100%" 
+                            max-height="250" 
+                            :show-header="false" 
+                            highlight-current-row
+                            @current-change="onRowChange">
                   <el-table-column prop="IdAutorTaxon" label="Id" width="80" v-if="false" />
                   <el-table-column label="Texto Inicio" width="120">
                     <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto"
@@ -565,20 +607,41 @@ const cerrarNotificacion = () => {
   margin-top: 35px;
 }
 
+/*Leonardo - 22/01/2026 
+Etiqueta que marca en verde las filas de la tabla*/
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important; 
 }
+/*Leonardo - 22/01/2026*/
+
+/* Este estilo NO tiene scoped y se aplica globalmente */
+.tabla-autores-personalizada .el-table__body tr.current-row > td {
+  background-color: #ddf6dd !important;
+}
+
+.tabla-autores-personalizada .el-table__body tr.current-row > td.el-table__cell {
+  background-color: #ddf6dd !important;
+  border-color: #ddf6dd !important;
+}
 
 
-</style>
+.tabla-autores-personalizada .el-table--enable-row-hover .el-table__body tr.current-row:hover > td {
+  background-color: #ddf6dd !important;
+}
 
-<style scoped>
-.main-section {}
+/* Estilos para la tabla principal (si es necesario) */
+.main-section .el-table__body tr.current-row > td {
+  background-color: #ddf6dd !important;
+}
+/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
+.icon-bold{
+  font-size: 12px !important;
+}
 
-.expand-content-detail {
-  padding: 10px 15px;
-  background-color: #fdfdfd;
-  font-size: 13px;
+/* JC 23/01/2026 jira 06 */
+
+.icon-bold svg path{
+  stroke-width: 1.5 !important;   /* por defecto es ~2 */
 }
 </style>
