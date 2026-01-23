@@ -511,16 +511,6 @@ const onEliminarInterno = () => {
                 </el-table>
               </el-scrollbar>
               <br>
-              <div style="display: flex; justify-content: space-between;">
-                <el-tooltip effect="dark" content="Genera Autoridad Taxonomica" placement="right-start"><el-button
-                    @click="armaAutoridad" circle type="primary"><el-icon>
-                      <Switch />
-                    </el-icon></el-button></el-tooltip>
-                <el-tooltip effect="dark" content="Asociar Autores" placement="right-start"><el-button
-                    @click="traspasaDatos" circle type="primary"><el-icon>
-                      <iconoTraspaso />
-                    </el-icon></el-button></el-tooltip>
-              </div>
             </el-collapse-item>
           </el-collapse>
         </el-card>
