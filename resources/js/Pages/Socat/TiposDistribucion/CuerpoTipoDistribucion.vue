@@ -217,7 +217,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
-                @nuevo-item="nuevoTipoDistribucion">
+                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila">
                 <template #expand-column>
                     <el-table-column type="expand">
                         <template #default="{ row }">
@@ -294,9 +294,17 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
     gap: 10px;
     margin-top: 35px;
 }
+
+
 </style>
 
 <style scoped>
+:deep(.fila-seleccionada-verde) {
+  background-color: #ddf6dd !important;
+  --el-table-tr-bg-color: #ddf6dd !important; /* Variable interna de Element Plus */
+}
+
+
 .expand-content-detail {
     padding: 10px 15px;
     background-color: #fdfdfd;
