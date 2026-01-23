@@ -225,7 +225,6 @@ class TipoRelacionController extends Controller
             'Nivel4' => 'required|integer',
             'Nivel5' => 'required|integer',
         ], [
-            // Agregamos este arreglo con el mensaje personalizado
             'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
         ]);
 

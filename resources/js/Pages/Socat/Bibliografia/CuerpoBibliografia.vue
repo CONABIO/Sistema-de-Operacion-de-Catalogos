@@ -782,22 +782,9 @@ onMounted(() => {
 }
 
 
-
-:deep(.el-table__body tr.current-row > td.el-table__cell) {
-  background-color: #ddf6dd !important;
-}
-
-:deep(.el-table .fila-seleccionada-verde) {
-  background-color: #ddf6dd !important;
-}
-
 :deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
   background-color: #ddf6dd !important;
   color: #000;
 }
 
-/* Color cuando pasas el mouse por encima de la fila verde */
-:deep(.el-table .fila-seleccionada-verde:hover td.el-table__cell) {
-  background-color: #cce8cc !important;
-}
 </style>

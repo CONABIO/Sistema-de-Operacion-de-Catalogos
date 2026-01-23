@@ -15,9 +15,9 @@ import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
-const tablaAutores = ref(null);
 
 const selectedRowId = ref(null);
+
 const filaSeleccionada = ref(null);
 
 const manejarClickFila = (row) => {
@@ -44,7 +44,7 @@ const tablaRef = ref(null);
 const datosDeAutores = ref([]);
 const totalAutores = ref(0);
 const columnasDefinidas = ref([
-  { prop: 'NombreAutoridad', label: 'Abreviado', minWidth: '180', sortable: true, align: 'left', filtrable: true },
+  { prop: 'NombreAutoridad', label: 'Nombre de la autoridad', minWidth: '180', sortable: true, align: 'left', filtrable: true },
   { prop: 'NombreCompleto', label: 'Nombre completo', minWidth: '250', sortable: true, align: 'left', filtrable: true },
   { prop: 'GrupoTaxonomico', label: 'Grupo taxonomico', minWidth: '180', sortable: true, align: 'left', filtrable: true }
 ]);
@@ -119,6 +119,7 @@ const armaAutoridad = () => {
 }
 
 const subirRow = () => {
+  console.log("Estoy en la funcion de subirr: ", filaSeleccionada.value);
   if(!filaSeleccionada.value) return;
 
   const index = autoresRel.value.findIndex(
@@ -440,7 +441,6 @@ const onEliminarInterno = () => {
   filaSeleccionada.value = null;
 
 }
-
 </script>
 
 <template>
@@ -452,7 +452,7 @@ const onEliminarInterno = () => {
           <el-collapse v-model="activeNames">
             <el-collapse-item title="Autores Relacionados" name="1">
               <el-scrollbar max-height="400px">
-                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea" style="margin-bottom: 12px;"
+                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
                   placeholder="Autoridad Taxonomica" />
                 
                 <div style="display: flex; justify-content: space-between; gap: 3px;
@@ -488,7 +488,6 @@ const onEliminarInterno = () => {
                     </el-tooltip>
                     <EliminarButton :disabled="!filaSeleccionada" @eliminar="onEliminarInterno" /> 
                   </div>                 
-                  
                 </div>
                 <el-table ref="tablaAutores"
                             :data="autoresRel" 
@@ -508,9 +507,10 @@ const onEliminarInterno = () => {
                     <template #default="scope"><el-input v-model="scope.row.CadFinal" placeholder="Texto" maxlength="15"
                         @input="val => handleInput(val, scope, 'CadFinal')" @keydown.native.prevent="onKeyDown($event)"
                         @paste.native.prevent="onPaste($event, scope)" /></template>
-                  </el-table-column>
+                  </el-table-column>                  
                 </el-table>
-              </el-scrollbar>             
+              </el-scrollbar>
+              <br>
             </el-collapse-item>
           </el-collapse>
         </el-card>
@@ -554,7 +554,7 @@ const onEliminarInterno = () => {
   </LayoutCuerpo>
 </template>
 
-<style scope>
+<style>
 .message-box-diseno-limpio .el-message-box__header {
   border-bottom: none;
 }
@@ -604,11 +604,14 @@ const onEliminarInterno = () => {
   gap: 10px;
   margin-top: 35px;
 }
-/*
+
+/*Leonardo - 22/01/2026 
+Etiqueta que marca en verde las filas de la tabla*/
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important; 
-}*/
+}
+/*Leonardo - 22/01/2026*/
 
 /* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row > td {
@@ -620,7 +623,7 @@ const onEliminarInterno = () => {
   border-color: #ddf6dd !important;
 }
 
-/* Sobrescribe el hover por defecto de Element Plus */
+
 .tabla-autores-personalizada .el-table--enable-row-hover .el-table__body tr.current-row:hover > td {
   background-color: #ddf6dd !important;
 }
@@ -629,10 +632,12 @@ const onEliminarInterno = () => {
 .main-section .el-table__body tr.current-row > td {
   background-color: #ddf6dd !important;
 }
-
+/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
 .icon-bold{
   font-size: 12px !important;
 }
+
+/* JC 23/01/2026 jira 06 */
 
 .icon-bold svg path{
   stroke-width: 1.5 !important;   /* por defecto es ~2 */
