@@ -150,6 +150,9 @@ const cerrarModal = () => {
 const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = grupoEditado.value !== null;
+    const mensajeDuplicado = esEdicion 
+        ? "El grupo taxonómico que desea modificar ya existe, las modificaciones no se realizaron." 
+        : "El grupo taxonómico que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
         return esEdicion
@@ -161,7 +164,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
         selectedRowId.value = registroExistenteLocal.IdGrupoSCAT;
         tablaRef.value.selectedRow = registroExistenteLocal;
         tablaRef.value.forzarFocoFilaVerde();
-        mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         return;
     }
 
@@ -188,7 +191,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
             }
         } catch (error) {
             if (error.response?.status === 400 && error.response.data.idExistente) {
-                mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
+                mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
                 await irAlRegistroEspecifico(error.response.data.idExistente);
             } else if (error.response?.status === 422) {
                 const errors = error.response.data.errors;
@@ -205,13 +208,16 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     if (!esEdicion) {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de guardar los cambios para "${datosDelFormulario.GrupoSCAT}"?`;
+        const mensajeConsignacion = `¿Estás seguro de guardar los cambios para "${datosDelFormulario.GrupoSCAT}"?`;
         ElMessageBox({
-            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            title: 'Confirmar modificación', 
+            showConfirmButton: false, 
+            showCancelButton: false, 
+            customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                    h('div', { class: 'text-container' }, [h('p', null, mensajeConsignacion)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),

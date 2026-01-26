@@ -305,11 +305,15 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
+  const esEdicion = accBiblio.value === 'editar';
+  const mensajeDuplicado = esEdicion 
+    ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron." 
+    : "La bibliografía que desea ingresar ya existe.";
   const duplicadoLocal = localTableData.value.find(b => 
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&
     b.TituloPublicacion.trim().toLowerCase() === datosDelFormulario.TituloPublicacion.trim().toLowerCase() &&
-    (accBiblio.value === 'crear' || b.IdBibliografia !== rowEdit.value.IdBibliografia)
+    (esEdicion ? b.IdBibliografia !== rowEdit.value.IdBibliografia : true)
   );
 
   if (duplicadoLocal) {
@@ -317,13 +321,13 @@ const handleFormSubmited = (datosDelFormulario) => {
     tablaRef.value.selectedRow = duplicadoLocal;
     handleRowClick(duplicadoLocal);
     tablaRef.value.forzarFocoFilaVerde();
-    mostrarNotificacion("Aviso", "La bibliografía que ingresó ya existe, por favor ingrese otra", "warning");
+    mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
     return;
   }
 
   const procederConGuardado = async () => {
     try {
-      if (accBiblio.value === 'crear') {
+      if (!esEdicion) {
         const response = await axios.post('/bibliografias', datosDelFormulario);
         mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
         const nuevoId = response.data.data?.IdBibliografia;
@@ -337,31 +341,39 @@ const handleFormSubmited = (datosDelFormulario) => {
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response.data.idExistente) {
-        mostrarNotificacion("Aviso", "La bibliografía que ingresó ya existe, por favor ingrese otra", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         await irAlRegistroEspecifico(error.response.data.idExistente);
       } else if (error.response?.status === 422) {
         let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0);
+        mostrarNotificacion("Error", errorMsg, "error", 0, true);
       } else {
         mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
       }
     }
   };
 
-  if (accBiblio.value === 'crear') {
+  if (!esEdicion) {
     procederConGuardado();
   } else {
-    const mensaje = `¿Estás seguro de guardar los cambios para la bibliografía de "${datosDelFormulario.Autor}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la bibliografía de "${datosDelFormulario.Autor}"?`;
     ElMessageBox({
-      title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      title: 'Confirmar modificación',
+      showConfirmButton: false,
+      showCancelButton: false,
+      customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
           h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+          h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
         ]),
         h('div', { class: 'footer-buttons' }, [
           h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
-          h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
+          h(BotonAceptar, { 
+            onClick: () => { 
+              ElMessageBox.close(); 
+              procederConGuardado(); 
+            } 
+          }),
         ])
       ])
     }).catch(() => { });
