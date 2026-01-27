@@ -140,12 +140,12 @@ const handleFormSubmited = (datosDelFormulario) => {
 
             if (datosDelFormulario.accionOriginal === 'crear') {
                 const response = await axios.post('/nombres-comunes', payload);
-                mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El nombre común ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdNomComun;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/nombres-comunes/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "Información modificada correctamente.", "success");
+                mostrarNotificacion("Modificación", "El nombre común ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();

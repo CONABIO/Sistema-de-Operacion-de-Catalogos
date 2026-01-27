@@ -369,41 +369,84 @@ const sortNodesAlphabetically = (nodes) => {
     nodes.forEach((node) => { if (node.children && node.children.length) sortNodesAlphabetically(node.children); });
 };
 
-const selectAndFocusNode = (nodeId, retries = 0) => {
-    const MAX_RETRIES = 10;
-    const RETRY_DELAY = 100;
+
+
+const selectAndFocusNode = (nodeId) => {
+    if (!nodeId || !treeRef.value) return;
+
+    const targetId = Number(nodeId);
+
+    // 1. Limpiar cualquier selección previa para que no se quede en el padre
+    treeRef.value.setCurrentKey(null);
+
+    // 2. Intentar obtener el nodo del árbol
+    const node = treeRef.value.getNode(targetId);
+
+    if (!node) {
+        // Si el árbol aún no lo ve, reintentamos en 100ms hasta que aparezca
+        setTimeout(() => selectAndFocusNode(targetId), 100);
+        return;
+    }
+
+    // 3. Forzar expansión de todos los padres hacia arriba
+    let curr = node;
+    while (curr && curr.parent) {
+        curr.expanded = true;
+        curr = curr.parent;
+    }
+
+    // 4. Clavar la selección y actualizar la variable que usan los botones
+    treeRef.value.setCurrentKey(targetId);
+    selectedNode.value = node.data;
+
+    // 5. Esperar a que el HTML exista para hacer scroll
     nextTick(() => {
-        if (!treeRef.value) return;
-        const node = treeRef.value.getNode(nodeId);
-        if (node) {
-            expandAncestors(nodeId);
-            treeRef.value.setCurrentKey(nodeId);
-            selectedNode.value = node.data;
-            setTimeout(() => scrollToNode(nodeId), 200);
-            nodeIdToSelectAfterInsert.value = null;
-            nodeIdToFocus.value = null;
-        } else if (retries < MAX_RETRIES) {
-            setTimeout(() => selectAndFocusNode(nodeId, retries + 1), RETRY_DELAY);
-        }
+        const checkExist = setInterval(() => {
+            const element = document.getElementById(`tree-node-${targetId}`);
+            if (element) {
+                clearInterval(checkExist);
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+                
+                // Pintar de verde la fila manualmente si el CSS falla
+                const row = element.closest('.el-tree-node__content');
+                if (row) {
+                    row.classList.add('newly-added-highlight');
+                    setTimeout(() => row.classList.remove('newly-added-highlight'), 3000);
+                }
+            }
+        }, 100);
+        // Timeout de seguridad por si acaso
+        setTimeout(() => clearInterval(checkExist), 3000);
     });
+
+    nodeIdToSelectAfterInsert.value = null;
 };
 
-watch(() => page.props.flash?.newNodeId, (newNodeId) => {
-    if (newNodeId) {
-        nodeIdToSelectAfterInsert.value = newNodeId;
+
+watch(() => page.props.flash?.newNodeId, (id) => {
+    if (id) {
+        nodeIdToSelectAfterInsert.value = id;
     }
 }, { immediate: true });
 
+
 watch(() => props.treeDataProp, (newVal) => {
+    // Carga de datos
     const copiedData = deepCopy(newVal);
     sortNodesAlphabetically(copiedData);
     localTreeData.value = copiedData;
 
-    let idToProcess = nodeIdToSelectAfterInsert.value || nodeIdToFocus.value;
+    // Si hay un ID esperando (Insertar) o un ID de foco (Editar/Eliminar)
+    const idToProcess = nodeIdToSelectAfterInsert.value || nodeIdToFocus.value;
+
     if (idToProcess) {
-        selectAndFocusNode(String(idToProcess));
+        // Le damos un respiro al componente para que procese el nuevo array
+        setTimeout(() => {
+            selectAndFocusNode(idToProcess);
+        }, 200);
     }
 }, { immediate: true, deep: true });
+
 
 onMounted(() => {
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
@@ -530,12 +573,14 @@ const guardarDesdeModal = async () => {
             };
 
             router.post("/tipos-relacion", datosInsert, {
-                preserveState: true, preserveScroll: true,
+                preserveState: true,
+                preserveScroll: true,
                 onSuccess: (page) => {
                     onSuccessHandler(page);
                     const finalNewNodeId = page.props.flash?.newNodeId;
                     if (finalNewNodeId) {
-                        nodeIdToScrollToAfterNotification.value = finalNewNodeId;
+                        // Guardamos el ID para que el watcher de props.treeDataProp lo procese
+                        nodeIdToSelectAfterInsert.value = finalNewNodeId;
                     }
                 },
                 onError: onErrorHandler,
@@ -667,7 +712,7 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
         }
         const nivelParaSecuencia = profundidadPadre + 1;
         if (nivelParaSecuencia > MAX_NIVELES) {
-            mostrarNotificacion("Aviso", "Profundidad máxima de niveles excedida.", "error");
+            mostrarNotificacion("Aviso", "Ya no es posible ingresar un nivel inferior.", "error");
             return null;
         }
         let maxValorSecuencia = 0;
@@ -777,10 +822,8 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :current-node-key="selectedNode?.IdTipoRelacion" :highlight-current="true"
-                    :expand-on-click-node="true" :default-expanded-keys="expandedKeysArray"
-                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
-                    class="custom-element-tree">
+                    :highlight-current="true" :expand-on-click-node="false" class="custom-element-tree"
+                    @node-click="handleNodeSelected">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
 
@@ -970,6 +1013,27 @@ const cerrarDialogo = () => {
     border: 1px solid #ebeef5;
     border-radius: 4px;
     margin: 0 24px 24px 24px;
+}
+
+
+
+.custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: #d4edda !important; /* Verde pastel */
+    border-left: 5px solid #28a745 !important; /* Línea verde */
+    color: #155724 !important;
+}
+
+/* EFECTO CUANDO SE AGREGA */
+:deep(.newly-added-highlight) {
+    background-color: #c3e6cb !important;
+    transition: background-color 2s ease;
+}
+
+.custom-tree-node-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
 }
 </style>
 

@@ -329,12 +329,12 @@ const handleFormSubmited = (datosDelFormulario) => {
     try {
       if (!esEdicion) {
         const response = await axios.post('/bibliografias', datosDelFormulario);
-        mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+        mostrarNotificacion("Ingreso", "La referencia bibliográfica ha sido ingresada correctamente.", "success");
         const nuevoId = response.data.data?.IdBibliografia;
         if (nuevoId) await irAlRegistroEspecifico(nuevoId);
       } else {
         await axios.put(`/bibliografias/${rowEdit.value.IdBibliografia}`, datosDelFormulario);
-        mostrarNotificacion("Éxito", "Información modificada correctamente.", "success");
+        mostrarNotificacion("Modificación", "La referencia bibliografica ha sido modificada correctamente.", "success");
         if (tablaRef.value) await tablaRef.value.fetchData();
         await nextTick();
         tablaRef.value.forzarFocoFilaVerde();
