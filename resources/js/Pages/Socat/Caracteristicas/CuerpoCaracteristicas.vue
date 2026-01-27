@@ -135,7 +135,7 @@ const selectAndFocusNode = (nodeId, retries = 0) => {
     if (node) {
       let parent = node.parent;
       while (parent && parent.level > 0) {
-        parent.expanded = true; 
+        parent.expanded = true;
         expandedNodeIds.value.add(parent.data.IdCatNombre);
         parent = parent.parent;
       }
@@ -274,8 +274,8 @@ const guardarDesdeModal = async () => {
 
     if (modalMode.value === "editar") {
       const idPadreActual = nodoEnModal.value.IdAscendente;
-      const esDuplicado = props.flatTreeDataProp.some(nodo => 
-        String(nodo.IdAscendente) === String(idPadreActual) && 
+      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+        String(nodo.IdAscendente) === String(idPadreActual) &&
         nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
         String(nodo.IdCatNombre) !== String(nodoEnModal.value.IdCatNombre)
       );
@@ -291,7 +291,7 @@ const guardarDesdeModal = async () => {
       ElMessageBox.close();
       const datosUpdate = { Descripcion: nuevaDesc };
       const nodeId = nodoEnModal.value.IdCatNombre;
-      
+
       router.put(`/caracteristicas-taxon/${nodeId}`, datosUpdate, {
         preserveState: true,
         preserveScroll: true,
@@ -329,8 +329,8 @@ const guardarDesdeModal = async () => {
       );
       if (!calculoNiveles) return;
       const idPadreDestino = calculoNiveles.idPadre;
-      const esDuplicado = props.flatTreeDataProp.some(nodo => 
-        String(nodo.IdAscendente) === String(idPadreDestino) && 
+      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+        String(nodo.IdAscendente) === String(idPadreDestino) &&
         nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
       );
 
@@ -356,10 +356,8 @@ const guardarDesdeModal = async () => {
           cerrarModalOperacion();
           const finalNewNodeId = page.props.flash?.newNodeId;
           if (finalNewNodeId) {
-            // Aseguramos que el watch del árbol lo detecte para seleccionarlo
             nodeIdToSelectAfterInsert.value = finalNewNodeId;
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
-
             mostrarNotificacion(
               "Ingreso",
               "La característica ha sido ingresada correctamente.",
@@ -375,7 +373,6 @@ const guardarDesdeModal = async () => {
     }
   };
 
-  // Lógica de confirmación (MessageBox)
   if (modalMode.value === 'insertar') {
     proceedWithSave();
   } else {
@@ -399,7 +396,7 @@ const guardarDesdeModal = async () => {
           h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
         ]),
       ]),
-    }).catch(() => {});
+    }).catch(() => { });
   }
 };
 
@@ -462,39 +459,33 @@ const handleEliminar = () => {
   }).catch();
 };
 
+
 const proceedWithDeletion = async () => {
   ElMessageBox.close();
   if (!nodeDataForDeleteConfirmation.value) return;
-
-  const { IdCatNombre, Descripcion, IdAscendente } =
-    nodeDataForDeleteConfirmation.value;
+  const { IdCatNombre, Descripcion } = nodeDataForDeleteConfirmation.value;
   const targetUrl = `/caracteristicas-taxon/${IdCatNombre}`;
   const nombreCaracteristica = Descripcion || IdCatNombre;
-
   try {
     await axios.delete(targetUrl);
-
     router.reload({
       only: ["treeDataProp", "flatTreeDataProp"],
       preserveScroll: true,
       onSuccess: () => {
         mostrarNotificacion(
-          "Eliminación exitosa",
+          "Eliminación",
           `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
           "success"
         );
-
-        const parentNodeData = findNodeInTree(
-          localTreeData.value,
-          IdAscendente
-        );
-        if (parentNodeData) {
-          selectedNode.value = parentNodeData;
-          treeRef.value?.setCurrentKey(IdAscendente);
-          scrollToNode(IdAscendente);
-        } else {
-          selectedNode.value = null;
-        }
+        nextTick(() => {
+          if (localTreeData.value && localTreeData.value.length > 0) {
+            const firstNodeId = localTreeData.value[0].IdCatNombre;
+            selectAndFocusNode(firstNodeId);
+          } else {
+            selectedNode.value = null;
+            treeRef.value?.setCurrentKey(null);
+          }
+        });
       },
     });
   } catch (error) {
@@ -506,6 +497,8 @@ const proceedWithDeletion = async () => {
     nodeDataForDeleteConfirmation.value = null;
   }
 };
+
+
 
 const MAX_NIVELES = 7;
 const calcularNivelesParaNuevoNodo = (
@@ -564,9 +557,9 @@ const calcularNivelesParaNuevoNodo = (
       nuevosNiveles[columnaNivelSecuencia] = maxValorSecuencia + 1;
     } else {
       mostrarNotificacion(
-        "Error",
-        "Profundidad máxima de niveles excedida para hijo.",
-        "error"
+        "Aviso",
+        "Ya no es posible ingresar un nuevo nivel, el máximo ha sido alcanzado.",
+        "warning"
       );
       return null;
     }
