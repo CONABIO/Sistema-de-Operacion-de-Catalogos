@@ -244,7 +244,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación exitosa", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
         }

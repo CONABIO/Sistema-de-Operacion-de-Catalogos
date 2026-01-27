@@ -394,7 +394,7 @@ const borrarDatos = (idBibliografia) => {
       if (tablaRef.value) {
         await tablaRef.value.fetchData();
       }
-      mostrarNotificacion("Eliminación exitosa", "El registro fue eliminado correctamente.", "success");
+      mostrarNotificacion("Eliminación", "El registro fue eliminado correctamente.", "success");
     } catch (apiError) {
       console.error(apiError);
       mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
