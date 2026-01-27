@@ -106,10 +106,16 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
+    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+    const mensajeDuplicado = esEdicion 
+        ? "El nombre común que desea modificar ya existe, las modificaciones no se realizaron." 
+        : "El nombre común que desea ingresar ya existe.";
+
     const registroExistenteLocal = currentData.value.find(item => {  
         const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();
         const mismaLengua = item.Lengua.trim().toLowerCase() === datosDelFormulario.Lengua.trim().toLowerCase();
-        return datosDelFormulario.accionOriginal === 'editar' 
+        
+        return esEdicion 
             ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar) 
             : (mismoNombre && mismaLengua);
     });
@@ -120,7 +126,7 @@ const handleFormSubmited = (datosDelFormulario) => {
             tablaRef.value.selectedRow = registroExistenteLocal;
             tablaRef.value.forzarFocoFilaVerde();
         }
-        mostrarNotificacion("Aviso", "El nombre común que ingresó ya existe, por favor ingrese otro", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         return; 
     }
 
@@ -134,19 +140,19 @@ const handleFormSubmited = (datosDelFormulario) => {
 
             if (datosDelFormulario.accionOriginal === 'crear') {
                 const response = await axios.post('/nombres-comunes', payload);
-                mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El nombre común ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdNomComun;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/nombres-comunes/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "Información modificada correctamente.", "success");
+                mostrarNotificacion("Modificación", "El nombre común ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
             if (error.response?.status === 400 && error.response.data.idExistente) {
-                mostrarNotificacion("Aviso", "El nombre común que ingresó ya existe, por favor ingrese otro", "warning");
+                mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
                 await irAlRegistroEspecifico(error.response.data.idExistente);
             } else if (error.response?.status === 422) {
                 let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
@@ -160,13 +166,13 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de guardar cambios para "${datosDelFormulario.NomComun}"?`;
+        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para "${datosDelFormulario.NomComun}"?`;
         ElMessageBox({
             title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                    h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -187,7 +193,7 @@ const eliminarNombreComun = (idNomComun) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación exitosa", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El nombre común ${nombreItem} no se puede eliminar. Este nombre común esta asociado.`, 'success');
 
