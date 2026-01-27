@@ -126,40 +126,28 @@ const sortNodesAlphabetically = (nodes) => {
 
 const selectAndFocusNode = (nodeId, retries = 0) => {
   const MAX_RETRIES = 10;
-  const RETRY_DELAY = 100;
+  const RETRY_DELAY = 150;
 
   nextTick(() => {
-    if (!treeRef.value) {
-      return;
-    }
-
-    const node = treeRef.value.getNode(nodeId);
-
+    if (!treeRef.value) return;
+    const targetId = String(nodeId);
+    const node = treeRef.value.getNode(targetId);
     if (node) {
-
-      expandAncestors(nodeId);
-
-      let parentNode = node.parent;
-      while (parentNode && parentNode.level > 0) {
-        expandedNodeIds.value.add(parentNode.data.IdCatNombre);
-        parentNode = parentNode.parent;
+      let parent = node.parent;
+      while (parent && parent.level > 0) {
+        parent.expanded = true;
+        expandedNodeIds.value.add(parent.data.IdCatNombre);
+        parent = parent.parent;
       }
-
-      treeRef.value.setCurrentKey(nodeId);
+      treeRef.value.setCurrentKey(targetId);
       selectedNode.value = node.data;
       setTimeout(() => {
-        scrollToNode(nodeId);
-      }, 150);
-
+        scrollToNode(targetId);
+      }, 200);
       nodeIdToSelectAfterInsert.value = null;
       nodeIdToFocus.value = null;
-
     } else if (retries < MAX_RETRIES) {
-      setTimeout(() => selectAndFocusNode(nodeId, retries + 1), RETRY_DELAY);
-    } else {
-      console.error(`selectAndFocusNode: Fallo al encontrar el nodo con ID ${nodeId} después de ${MAX_RETRIES} intentos.`);
-      nodeIdToSelectAfterInsert.value = null;
-      nodeIdToFocus.value = null;
+      setTimeout(() => selectAndFocusNode(targetId, retries + 1), RETRY_DELAY);
     }
   });
 };
@@ -273,25 +261,44 @@ const modalTitle = computed(() => {
   return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
 });
 
+
+
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
-  if (!isValid) {
-    return;
-  }
+  if (!isValid) return;
 
   const proceedWithSave = () => {
-    ElMessageBox.close();
+    const nuevaDesc = formModal.value.Descripcion.trim();
+    const nuevaDescLower = nuevaDesc.toLowerCase();
+
     if (modalMode.value === "editar") {
-      const datosUpdate = { Descripcion: formModal.value.Descripcion.trim() };
+      const idPadreActual = nodoEnModal.value.IdAscendente;
+      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+        String(nodo.IdAscendente) === String(idPadreActual) &&
+        nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
+        String(nodo.IdCatNombre) !== String(nodoEnModal.value.IdCatNombre)
+      );
+
+      if (esDuplicado) {
+        return mostrarNotificacion(
+          "Aviso",
+          `Ya existe una característica llamada "${nuevaDesc}" en este nivel.`,
+          "warning"
+        );
+      }
+
+      ElMessageBox.close();
+      const datosUpdate = { Descripcion: nuevaDesc };
       const nodeId = nodoEnModal.value.IdCatNombre;
+
       router.put(`/caracteristicas-taxon/${nodeId}`, datosUpdate, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
           mostrarNotificacion(
-            "Ingreso",
+            "Modificación",
             "La información ha sido modificada correctamente.",
             "success"
           );
@@ -306,22 +313,14 @@ const guardarDesdeModal = async () => {
           });
         },
         onError: (errors) => {
-          const displayErrorMessage =
-            errors.Descripcion?.[0] || "Ocurrió un error al actualizar.";
-          mostrarNotificacion(
-            "Error del Servidor",
-            displayErrorMessage,
-            "error"
-          );
+          const displayErrorMessage = errors.Descripcion?.[0] || "Ocurrió un error al actualizar.";
+          mostrarNotificacion("Error", displayErrorMessage, "error");
         },
       });
+
     } else if (modalMode.value === "insertar") {
       if (opcionNivel.value !== "raiz" && !selectedNode.value) {
-        return mostrarNotificacion(
-          "Error",
-          "Se requiere un nodo de referencia.",
-          "error"
-        );
+        return mostrarNotificacion("Error", "Se requiere un nodo de referencia.", "error");
       }
       const calculoNiveles = calcularNivelesParaNuevoNodo(
         selectedNode.value,
@@ -329,24 +328,47 @@ const guardarDesdeModal = async () => {
         props.flatTreeDataProp
       );
       if (!calculoNiveles) return;
+      const idPadreDestino = calculoNiveles.idPadre;
+      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+        String(nodo.IdAscendente) === String(idPadreDestino) &&
+        nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
+      );
+
+      if (esDuplicado) {
+        return mostrarNotificacion(
+          "Aviso",
+          `No se puede crear la característica "${nuevaDesc}" porque ya existe en el nivel seleccionado.`,
+          "warning"
+        );
+      }
+
+      ElMessageBox.close();
       const datosInsert = {
-        Descripcion: formModal.value.Descripcion.trim(),
-        IdAscendente: calculoNiveles.idPadre,
+        Descripcion: nuevaDesc,
+        IdAscendente: idPadreDestino,
         ...calculoNiveles.niveles,
       };
+
       router.post("/caracteristicas-taxon", datosInsert, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-
           const finalNewNodeId = page.props.flash?.newNodeId;
           if (finalNewNodeId) {
+            nodeIdToSelectAfterInsert.value = finalNewNodeId;
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
+            mostrarNotificacion(
+              "Ingreso",
+              "La característica ha sido ingresada correctamente.",
+              "success"
+            );
           }
         },
         onError: (errors) => {
-        },
+          const msg = errors.Descripcion?.[0] || "Error al intentar guardar.";
+          mostrarNotificacion("Error", msg, "error");
+        }
       });
     }
   };
@@ -363,21 +385,10 @@ const guardarDesdeModal = async () => {
       message: h("div", { class: "custom-message-content" }, [
         h("div", { class: "body-content" }, [
           h("div", { class: "custom-warning-icon-container" }, [
-            h(
-              "div",
-              {
-                class: "custom-warning-circle",
-                style: "background-color: #e6a23c;",
-              },
-              "!"
-            ),
+            h("div", { class: "custom-warning-circle", style: "background-color: #e6a23c;" }, "!")
           ]),
           h("div", { class: "text-container" }, [
-            h(
-              "p",
-              null,
-              `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`
-            ),
+            h("p", null, `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`)
           ]),
         ]),
         h("div", { class: "footer-buttons" }, [
@@ -385,10 +396,12 @@ const guardarDesdeModal = async () => {
           h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
         ]),
       ]),
-    }).catch(() => {
-    });
+    }).catch(() => { });
   }
 };
+
+
+
 
 const cerrarModalOperacion = () => {
   esModalVisible.value = false;
@@ -396,7 +409,7 @@ const cerrarModalOperacion = () => {
   formModal.value = { Descripcion: "" };
   modalMode.value = "";
   opcionNivel.value = "mismo";
-  
+
   if (formModalRef.value) {
     formModalRef.value.clearValidate();
   }
@@ -446,39 +459,33 @@ const handleEliminar = () => {
   }).catch();
 };
 
+
 const proceedWithDeletion = async () => {
   ElMessageBox.close();
   if (!nodeDataForDeleteConfirmation.value) return;
-
-  const { IdCatNombre, Descripcion, IdAscendente } =
-    nodeDataForDeleteConfirmation.value;
+  const { IdCatNombre, Descripcion } = nodeDataForDeleteConfirmation.value;
   const targetUrl = `/caracteristicas-taxon/${IdCatNombre}`;
   const nombreCaracteristica = Descripcion || IdCatNombre;
-
   try {
     await axios.delete(targetUrl);
-
     router.reload({
       only: ["treeDataProp", "flatTreeDataProp"],
       preserveScroll: true,
       onSuccess: () => {
         mostrarNotificacion(
-          "Eliminación exitosa",
+          "Eliminación",
           `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
           "success"
         );
-
-        const parentNodeData = findNodeInTree(
-          localTreeData.value,
-          IdAscendente
-        );
-        if (parentNodeData) {
-          selectedNode.value = parentNodeData;
-          treeRef.value?.setCurrentKey(IdAscendente);
-          scrollToNode(IdAscendente);
-        } else {
-          selectedNode.value = null;
-        }
+        nextTick(() => {
+          if (localTreeData.value && localTreeData.value.length > 0) {
+            const firstNodeId = localTreeData.value[0].IdCatNombre;
+            selectAndFocusNode(firstNodeId);
+          } else {
+            selectedNode.value = null;
+            treeRef.value?.setCurrentKey(null);
+          }
+        });
       },
     });
   } catch (error) {
@@ -490,6 +497,8 @@ const proceedWithDeletion = async () => {
     nodeDataForDeleteConfirmation.value = null;
   }
 };
+
+
 
 const MAX_NIVELES = 7;
 const calcularNivelesParaNuevoNodo = (
@@ -548,9 +557,9 @@ const calcularNivelesParaNuevoNodo = (
       nuevosNiveles[columnaNivelSecuencia] = maxValorSecuencia + 1;
     } else {
       mostrarNotificacion(
-        "Error",
-        "Profundidad máxima de niveles excedida para hijo.",
-        "error"
+        "Aviso",
+        "Ya no es posible ingresar un nuevo nivel, el máximo ha sido alcanzado.",
+        "warning"
       );
       return null;
     }
@@ -675,8 +684,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
             <template #label>
               {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
             </template>
-            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
-              clearable maxlength="255" show-word-limit />
+            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
+              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
           </el-form-item>
 
         </el-form>

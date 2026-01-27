@@ -275,12 +275,18 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
 
 const handleFormAutorSubmited = async (datosDelFormulario) => {
   cerrarFormModal();
-
-  const autorLocal = datosDeAutores.value.find(autor =>
-    autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
-    autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
-    autor.IdAutorTaxon !== datosDelFormulario.idParaEditar
-  );
+  const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+  
+  const mensajeDuplicado = esEdicion 
+    ? "La autoridad taxonómica que desea modificar ya existe, las modificaciones no se realizaron." 
+    : "La autoridad taxonómica que desea ingresar ya existe.";
+  const autorLocal = datosDeAutores.value.find(autor => {
+    const mismoNombre = autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase();
+    const mismoGrupo = autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase();
+    return esEdicion
+      ? (mismoNombre && mismoGrupo && autor.IdAutorTaxon !== datosDelFormulario.idParaEditar)
+      : (mismoNombre && mismoGrupo);
+  });
 
   if (autorLocal) {
     selectedRowId.value = autorLocal.IdAutorTaxon;
@@ -288,7 +294,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       tablaRef.value.selectedRow = autorLocal;
       tablaRef.value.forzarFocoFilaVerde();
     }
-    mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
+    mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
     return;
   }
 
@@ -303,11 +309,9 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
 
       if (datosDelFormulario.accionOriginal === 'crear') {
         const response = await axios.post("/autores", payload);
-        const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon || response.data.id;
+        const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon;
         mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-        if (nuevoId) {
-          await irAlRegistroEspecifico(nuevoId);
-        }
+        if (nuevoId) await irAlRegistroEspecifico(nuevoId);
       } else {
         await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
         mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
@@ -317,12 +321,12 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response.data.idExistente) {
-        mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         await irAlRegistroEspecifico(error.response.data.idExistente);
       } else if (error.response?.status === 422) {
         const errors = error.response.data.errors;
         let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0);
+        mostrarNotificacion("Error", errorMsg, "error", 0, true);
       } else {
         mostrarNotificacionError("Error", "No se pudo procesar la información.");
       }
@@ -334,7 +338,8 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
   if (datosDelFormulario.accionOriginal === 'crear') {
     await procederConGuardado();
   } else {
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad}"?`;
+    
     ElMessageBox({
       title: 'Confirmar modificación',
       showConfirmButton: false,
@@ -343,7 +348,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
           h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+          h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
         ]),
         h('div', { class: 'footer-buttons' }, [
           h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -383,7 +388,7 @@ const manejarEliminarItem = (itemId) => {
     ElMessageBox.close();
   };
   const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
-  const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreCompleto}"` : 'el registro seleccionado';
+  const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
   const mensaje = `¿Está seguro de eliminar el autor ${nombreAutorEliminado}? Esta acción no se puede revertir.`;
   ElMessageBox({
     title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
