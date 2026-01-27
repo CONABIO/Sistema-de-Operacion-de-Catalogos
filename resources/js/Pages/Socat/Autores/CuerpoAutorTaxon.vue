@@ -381,7 +381,7 @@ const manejarEliminarItem = (itemId) => {
       }
       mostrarNotificacion('Eliminación', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
     } catch (apiError) {
-      mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'success');
+      mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
     }
   };
   const cancelarEliminacion = () => {
@@ -419,7 +419,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
   notificacionTipo.value = tipo;
-  notificacionDuracion.value = 0;
+  notificacionDuracion.value = 5000;
   notificacionVisible.value = true;
 };
 

@@ -103,18 +103,25 @@ class CaracteristicasController extends Controller
         if (!$nodo) {
             return response()->json(['error' => 'Característica no encontrada.'], 404);
         }
-
         if ($nodo->tieneHijos()) {
-            $errorMsg = 'No se puede eliminar la característica "' . ($nodo->Descripcion ?? $nodo->IdCatNombre) . '" porque tiene hijos asociados.';
-            return response()->json(['error' => $errorMsg], 409); // 409 Conflict es un buen código para esto
+            return response()->json([
+                'error' => 'No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.'
+            ], 409);
         }
-
         try {
             $nodo->delete();
             return response()->json(['message' => 'Característica eliminada correctamente.'], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == "23000" || str_contains($e->getMessage(), '1451')) {
+                return response()->json([
+                    'error' => 'No es posible eliminar la característica seleccionada porque se encuentra asociada a un taxón.'
+                ], 422); 
+            }
+            Log::error("Error SQL al eliminar característica {$id}: " . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error interno en el servidor.'], 500);
         } catch (\Exception $e) {
-            Log::error("Error al eliminar característica {$id}: " . $e->getMessage());
-            return response()->json(['error' => 'Ocurrió un error del servidor al intentar eliminar.'], 500);
+            Log::error("Error general al eliminar característica {$id}: " . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error al intentar eliminar.'], 500);
         }
     }
 

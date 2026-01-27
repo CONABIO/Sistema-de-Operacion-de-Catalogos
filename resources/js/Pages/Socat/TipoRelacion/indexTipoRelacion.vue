@@ -371,55 +371,42 @@ const sortNodesAlphabetically = (nodes) => {
 
 
 
-const selectAndFocusNode = (nodeId) => {
-    if (!nodeId || !treeRef.value) return;
+const selectAndFocusNode = (nodeId, retries = 0) => {
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY = 150;
 
-    const targetId = Number(nodeId);
-
-    // 1. Limpiar cualquier selección previa para que no se quede en el padre
-    treeRef.value.setCurrentKey(null);
-
-    // 2. Intentar obtener el nodo del árbol
-    const node = treeRef.value.getNode(targetId);
-
-    if (!node) {
-        // Si el árbol aún no lo ve, reintentamos en 100ms hasta que aparezca
-        setTimeout(() => selectAndFocusNode(targetId), 100);
-        return;
-    }
-
-    // 3. Forzar expansión de todos los padres hacia arriba
-    let curr = node;
-    while (curr && curr.parent) {
-        curr.expanded = true;
-        curr = curr.parent;
-    }
-
-    // 4. Clavar la selección y actualizar la variable que usan los botones
-    treeRef.value.setCurrentKey(targetId);
-    selectedNode.value = node.data;
-
-    // 5. Esperar a que el HTML exista para hacer scroll
     nextTick(() => {
-        const checkExist = setInterval(() => {
-            const element = document.getElementById(`tree-node-${targetId}`);
-            if (element) {
-                clearInterval(checkExist);
-                element.scrollIntoView({ behavior: "smooth", block: "center" });
-                
-                // Pintar de verde la fila manualmente si el CSS falla
-                const row = element.closest('.el-tree-node__content');
-                if (row) {
-                    row.classList.add('newly-added-highlight');
-                    setTimeout(() => row.classList.remove('newly-added-highlight'), 3000);
-                }
-            }
-        }, 100);
-        // Timeout de seguridad por si acaso
-        setTimeout(() => clearInterval(checkExist), 3000);
-    });
+        if (!treeRef.value) return;
 
-    nodeIdToSelectAfterInsert.value = null;
+        const targetId = Number(nodeId);
+        const node = treeRef.value.getNode(targetId);
+
+        if (node) {
+            // 1. Expandir ancestros
+            let parent = node.parent;
+            while (parent && parent.level > 0) {
+                parent.expanded = true;
+                expandedNodeIds.value.add(parent.data.IdTipoRelacion);
+                parent = parent.parent;
+            }
+
+            // 2. Seleccionar visualmente
+            treeRef.value.setCurrentKey(targetId);
+            selectedNode.value = node.data;
+
+            // 3. Scroll suave
+            setTimeout(() => {
+                scrollToNode(targetId);
+            }, 200);
+
+            // Limpiar variables de control
+            nodeIdToSelectAfterInsert.value = null;
+            nodeIdToFocus.value = null;
+        } else if (retries < MAX_RETRIES) {
+            // Si el nodo aún no existe en el DOM, reintentar
+            setTimeout(() => selectAndFocusNode(targetId, retries + 1), RETRY_DELAY);
+        }
+    });
 };
 
 
@@ -431,29 +418,26 @@ watch(() => page.props.flash?.newNodeId, (id) => {
 
 
 watch(() => props.treeDataProp, (newVal) => {
-    // Carga de datos
     const copiedData = deepCopy(newVal);
     sortNodesAlphabetically(copiedData);
     localTreeData.value = copiedData;
 
-    // Si hay un ID esperando (Insertar) o un ID de foco (Editar/Eliminar)
+    // Prioridad: 1. Nuevo insertado, 2. Nodo enfocado (editar/eliminar)
     const idToProcess = nodeIdToSelectAfterInsert.value || nodeIdToFocus.value;
 
     if (idToProcess) {
-        // Le damos un respiro al componente para que procese el nuevo array
-        setTimeout(() => {
-            selectAndFocusNode(idToProcess);
-        }, 200);
+        selectAndFocusNode(idToProcess);
     }
 }, { immediate: true, deep: true });
 
-
+// --- SELECCIÓN INICIAL AL MONTAR ---
 onMounted(() => {
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
         const firstNodeId = localTreeData.value[0].IdTipoRelacion;
         selectAndFocusNode(firstNodeId);
     }
 });
+
 
 const handleNodeSelected = (data, node) => {
     if (esModalVisible.value) {
@@ -540,64 +524,85 @@ const guardarDesdeModal = async () => {
     if (!isValid) return;
 
     const proceedWithSave = () => {
-        ElMessageBox.close();
-        const modoActual = modalMode.value;
-        const onSuccessHandler = (page) => {
-            const tituloNotif = modoActual === "editar" ? "Modificación" : "Ingreso";
-            const mensajeNotif = modoActual === "editar"
-                ? "La información ha sido modificada correctamente."
-                : "La información ha sido ingresada correctamente.";
-            cerrarModalOperacion();
-            mostrarNotificacion(tituloNotif, mensajeNotif, "success");
-        };
-        const onErrorHandler = (errors) => {
-            mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
-        };
+        const nuevaDesc = formModal.value.Descripcion.trim();
+        const nuevaDescLower = nuevaDesc.toLowerCase();
 
         if (modalMode.value === "editar") {
-            const datosUpdate = { Descripcion: formModal.value.Descripcion.trim(), Direccionalidad: formModal.value.Direccionalidad };
+            const idPadreActual = nodoEnModal.value.IdAscendente;
+            // Validar duplicado en el mismo nivel
+            const esDuplicado = props.flatTreeDataProp.some(nodo => 
+                String(nodo.IdAscendente) === String(idPadreActual) && 
+                nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
+                String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
+            );
+
+            if (esDuplicado) {
+                return mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
+            }
+
+            ElMessageBox.close();
+            const datosUpdate = { Descripcion: nuevaDesc, Direccionalidad: formModal.value.Direccionalidad };
             const nodeId = nodoEnModal.value.IdTipoRelacion;
-            nodeIdToFocus.value = nodeId;
+            nodeIdToFocus.value = nodeId; // Para re-seleccionar después
+
             router.put(`/tipos-relacion/${nodeId}`, datosUpdate, {
-                preserveState: true, preserveScroll: true,
-                onSuccess: onSuccessHandler, onError: onErrorHandler,
+                preserveState: true,
+                onSuccess: () => {
+                    cerrarModalOperacion();
+                    mostrarNotificacion("Modificación", "Información modificada correctamente.", "success");
+                }
             });
+
         } else if (modalMode.value === "insertar") {
             const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
             if (!calculoNiveles) return;
+
+            const idPadreDestino = calculoNiveles.idPadre;
+            // Validar duplicado en el mismo nivel
+            const esDuplicado = props.flatTreeDataProp.some(nodo => 
+                String(nodo.IdAscendente) === String(idPadreDestino) && 
+                nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
+            );
+
+            if (esDuplicado) {
+                return mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
+            }
+
+            ElMessageBox.close();
             const datosInsert = {
-                Descripcion: formModal.value.Descripcion.trim(),
+                Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad,
                 ...calculoNiveles.niveles,
                 RutaIcono: ICONO_POR_DEFECTO
             };
 
             router.post("/tipos-relacion", datosInsert, {
-                preserveState: true,
-                preserveScroll: true,
                 onSuccess: (page) => {
-                    onSuccessHandler(page);
+                    cerrarModalOperacion();
                     const finalNewNodeId = page.props.flash?.newNodeId;
                     if (finalNewNodeId) {
-                        // Guardamos el ID para que el watcher de props.treeDataProp lo procese
                         nodeIdToSelectAfterInsert.value = finalNewNodeId;
                     }
-                },
-                onError: onErrorHandler,
+                    mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+                }
             });
         }
     };
 
+    // Confirmación MessageBox para editar
     if (modalMode.value === 'insertar') {
         proceedWithSave();
     } else {
-        const nombreTipoRelacion = formModal.value.Descripcion.trim();
+        const nombreRelacion = formModal.value.Descripcion.trim();
         ElMessageBox({
-            title: "Confirmar modificación", showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
+            title: "Confirmar modificación",
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: "message-box-diseno-limpio",
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nombreTipoRelacion}"?`)]),
+                    h('div', { class: 'text-container' }, [h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nombreRelacion}"?`)]),
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -622,7 +627,7 @@ const handleEliminar = () => {
     }
 
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Acción no permitida", "No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.", "error");
+        return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.", "warning");
     }
 
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
@@ -1018,12 +1023,11 @@ const cerrarDialogo = () => {
 
 
 .custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-    background-color: #d4edda !important; /* Verde pastel */
-    border-left: 5px solid #28a745 !important; /* Línea verde */
+    background-color: #d4edda !important; 
+    border-left: 5px solid #28a745 !important; 
     color: #155724 !important;
 }
 
-/* EFECTO CUANDO SE AGREGA */
 :deep(.newly-added-highlight) {
     background-color: #c3e6cb !important;
     transition: background-color 2s ease;
