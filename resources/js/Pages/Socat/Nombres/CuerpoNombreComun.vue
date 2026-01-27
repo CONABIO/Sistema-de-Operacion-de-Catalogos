@@ -193,7 +193,7 @@ const eliminarNombreComun = (idNomComun) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación exitosa", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
         } catch (apiError) {
             mostrarNotificacionError('Aviso', `El nombre común ${nombreItem} no se puede eliminar. Este nombre común esta asociado.`, 'success');
 
