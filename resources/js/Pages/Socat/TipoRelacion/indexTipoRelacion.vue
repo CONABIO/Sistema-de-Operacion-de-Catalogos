@@ -370,7 +370,7 @@ const selectAndFocusNode = (nodeId, retries = 0) => {
 
     nextTick(() => {
         if (!treeRef.value) return;
-        const targetId = String(nodeId); 
+        const targetId = String(nodeId);
         const node = treeRef.value.getNode(targetId);
 
         if (node) {
@@ -408,7 +408,7 @@ watch(() => props.treeDataProp, async (newVal) => {
     let idToProcess = null;
     if (nodeIdToSelectAfterInsert.value) {
         idToProcess = nodeIdToSelectAfterInsert.value;
-    } 
+    }
     else if (nodeIdToFocus.value) {
         idToProcess = nodeIdToFocus.value;
     }
@@ -470,15 +470,62 @@ const abrirModalParaEditar = () => {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
 
+    const ejecutarApertura = () => {
+        modalMode.value = "editar";
+        nodoEnModal.value = { ...selectedNode.value };
+        formModal.value = {
+            Descripcion: selectedNode.value.Descripcion,
+            Direccionalidad: selectedNode.value.Direccionalidad,
+        };
+        esModalVisible.value = true;
+
+        nextTick(() => {
+            formModalRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
+                }
+            }, 100);
+        });
+    };
+
     if (selectedNode.value.IdTipoRelacion <= 8) {
-        return mostrarNotificacion(
-            "Acción no permitida",
-            "La relación seleccionada no puede ser modificada.",
-            "error"
-        );
+        ElMessageBox({
+            title: "Confirmar modificación",
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: "message-box-diseno-limpio",
+            message: h('div', { class: 'custom-message-content' }, [
+                h('div', { class: 'body-content' }, [
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, `¿Estás seguro de que deseas modificar "${selectedNode.value.Descripcion}"? Se trata de un registro que es parte de la información del sistema.`)
+                    ]),
+                ]),
+                h('div', { class: 'footer-buttons' }, [
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, {
+                        texto: "Sí, Modificar",
+                        onClick: () => {
+                            ElMessageBox.close();
+                            ejecutarApertura();
+                        }
+                    }),
+                ]),
+            ]),
+        }).catch(() => { });
+    } else {
+        ejecutarApertura();
     }
 
-    modalMode.value = "editar";
+    /* modalMode.value = "editar";
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = {
         Descripcion: selectedNode.value.Descripcion,
@@ -499,7 +546,7 @@ const abrirModalParaEditar = () => {
                 }
             }
         }, 100);
-    });
+    }); */
 };
 
 const cerrarModalOperacion = () => {
@@ -514,53 +561,62 @@ const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el t
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    const isValid = await formModalRef.value.validate();
+    const isValid = await formModalRef.value.validate().catch(() => false);
     if (!isValid) return;
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
         const idPadreActual = nodoEnModal.value.IdAscendente;
-        const esDuplicado = props.flatTreeDataProp.some(nodo => 
-            String(nodo.IdAscendente) === String(idPadreActual) && 
+        const duplicado = props.flatTreeDataProp.find(nodo =>
+            String(nodo.IdAscendente) === String(idPadreActual) &&
             nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
             String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
         );
 
-        if (esDuplicado) {
-            return mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
+        if (duplicado) {
+            mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
+            return; 
         }
     } else if (modalMode.value === "insertar") {
         const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculoNiveles) return;
 
         const idPadreDestino = calculoNiveles.idPadre;
-        const esDuplicado = props.flatTreeDataProp.some(nodo => 
-            String(nodo.IdAscendente) === String(idPadreDestino) && 
+        const duplicado = props.flatTreeDataProp.find(nodo =>
+            String(nodo.IdAscendente) === String(idPadreDestino) &&
             nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
         );
 
-        if (esDuplicado) {
-            return mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
+        if (duplicado) {
+            mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
+            return;
         }
-        formModal.value._calculoNiveles = calculoNiveles; 
+        formModal.value._calculoNiveles = calculoNiveles;
     }
 
-    const proceedWithSave = () => {
-        ElMessageBox.close();
-
+    const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
-            const datosUpdate = { Descripcion: nuevaDesc, Direccionalidad: formModal.value.Direccionalidad };
             const nodeId = nodoEnModal.value.IdTipoRelacion;
-            nodeIdToFocus.value = nodeId;
+            const datosUpdate = {
+                Descripcion: nuevaDesc,
+                Direccionalidad: formModal.value.Direccionalidad
+            };
 
             router.put(`/tipos-relacion/${nodeId}`, datosUpdate, {
                 preserveState: true,
                 onSuccess: () => {
                     cerrarModalOperacion();
-                    mostrarNotificacion("Modificación", "El tipo de relación ha modificado correctamente.", "success");
+                    mostrarNotificacion("Modificación", "El tipo de relación ha sido modificado correctamente.", "success");
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    mostrarNotificacion("Aviso", firstError, "error");
+                    if (errors.protected || firstError.includes('protegido')) {
+                        cerrarModalOperacion();
+                    }
                 }
             });
-        } else if (modalMode.value === "insertar") {
+        } else {
             const calculo = formModal.value._calculoNiveles;
             const datosInsert = {
                 Descripcion: nuevaDesc,
@@ -571,22 +627,25 @@ const guardarDesdeModal = async () => {
 
             router.post("/tipos-relacion", datosInsert, {
                 preserveState: true,
-                preserveScroll: true,
                 onSuccess: (page) => {
                     cerrarModalOperacion();
                     const finalNewNodeId = page.props.flash?.newNodeId;
                     if (finalNewNodeId) {
                         nodeIdToSelectAfterInsert.value = finalNewNodeId;
-                        nodeIdToScrollToAfterNotification.value = finalNewNodeId;
                         selectAndFocusNode(finalNewNodeId);
                     }
                     mostrarNotificacion("Ingreso", "El tipo de relación ha sido ingresado correctamente.", "success");
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    mostrarNotificacion("Error", firstError, "error");
                 }
             });
         }
     };
+
     if (modalMode.value === 'insertar') {
-        proceedWithSave();
+        ejecutarEnvio();
     } else {
         ElMessageBox({
             title: "Confirmar modificación",
@@ -595,12 +654,22 @@ const guardarDesdeModal = async () => {
             customClass: "message-box-diseno-limpio",
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
-                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nuevaDesc}"?`)]),
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nuevaDesc}"?`)
+                    ]),
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                    h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
+                    h(BotonAceptar, {
+                        texto: "Sí, Guardar",
+                        onClick: () => {
+                            ElMessageBox.close();
+                            ejecutarEnvio();
+                        }
+                    }),
                 ]),
             ]),
         }).catch(() => { });
@@ -615,7 +684,7 @@ const handleEliminar = () => {
     if (selectedNode.value.IdTipoRelacion <= 8) {
         return mostrarNotificacion(
             "Aviso",
-            "No es posible eliminar el tipo de relación seleccionado porque se encuentra asociado a un taxón.",
+            "No es posible eliminar el tipo de relación seleccionado porque es parte de la información del sistema",
             "warning"
         );
     }
@@ -656,7 +725,7 @@ const proceedWithDeletion = async () => {
             preserveScroll: true,
             onSuccess: () => {
                 mostrarNotificacion("Eliminación", `El tipo de relación "${Descripcion}" ha sido eliminado.`, "success");
-                
+
                 if (parentNode) {
                     nodeIdToFocus.value = parentNode.IdTipoRelacion;
                 } else {
@@ -820,10 +889,10 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :current-node-key="selectedNode?.IdTipoRelacion" 
-                    :default-expanded-keys="expandedKeysArray" :highlight-current="true"
-                    :expand-on-click-node="true" class="custom-element-tree" @node-expand="handleNodeExpand"
-                    @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected">
+                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="expandedKeysArray"
+                    :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
+                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+                    @node-click="handleNodeSelected">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
                             <!-- Iconos (Mantenlos como los tenías) -->
