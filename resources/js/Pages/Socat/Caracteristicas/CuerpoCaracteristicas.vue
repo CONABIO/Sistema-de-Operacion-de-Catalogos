@@ -426,9 +426,9 @@ const handleEliminar = () => {
     selectedNode.value.children && selectedNode.value.children.length > 0;
   if (tieneHijos)
     return mostrarNotificacion(
-      "Acción no permitida",
+      "Aviso",
       "No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.",
-      "error"
+      "warning"
     );
 
   nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
@@ -489,10 +489,13 @@ const proceedWithDeletion = async () => {
       },
     });
   } catch (error) {
-    const errorMsg =
-      error.response?.data?.error ||
-      "Ocurrió un error al eliminar la característica.";
-    mostrarNotificacion("Error al Eliminar", errorMsg, "error");
+    const status = error.response?.status;
+    const errorMsg = error.response?.data?.error || "Ocurrió un error al eliminar la característica.";
+    if (status === 409 || status === 422) {
+      mostrarNotificacion("Aviso", errorMsg, "warning");
+    } else {
+      mostrarNotificacion("Error al Eliminar", errorMsg, "error");
+    }
   } finally {
     nodeDataForDeleteConfirmation.value = null;
   }
