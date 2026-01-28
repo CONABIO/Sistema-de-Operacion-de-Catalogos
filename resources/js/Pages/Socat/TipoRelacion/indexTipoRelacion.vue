@@ -232,14 +232,10 @@ const seleccionarIcono = async (iconName) => {
 
 const buscarIconos = async () => {
     let terminoDeBusqueda = terminoBusquedaIcono.value.toLowerCase().trim();
-
-    // Si el campo de búsqueda está vacío, mostramos los sugeridos y terminamos.
     if (terminoDeBusqueda === '') {
         listaIconosEncontrados.value = iconosSugeridos;
         return;
     }
-
-    // Si escribe menos de 3 letras, no hacemos nada (para no saturar)
     if (terminoDeBusqueda.length < 3) {
         return;
     }
@@ -248,7 +244,6 @@ const buscarIconos = async () => {
     if (traduccion) {
         terminoDeBusqueda = traduccion;
     }
-
     cargandoIconos.value = true;
     try {
         const response = await fetch(`https://api.iconify.design/search?query=${terminoDeBusqueda}&limit=48`);
@@ -293,14 +288,12 @@ const page = usePage();
 
 const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 
-const handleNodeExpand = (data, node) => {
+const handleNodeExpand = (data) => {
     expandedNodeIds.value.add(data.IdTipoRelacion);
-    handleNodeSelected(data, node);
 };
 
-const handleNodeCollapse = (data, node) => {
+const handleNodeCollapse = (data) => {
     expandedNodeIds.value.delete(data.IdTipoRelacion);
-    handleNodeSelected(data, node);
 };
 
 const scrollToNode = (nodeId) => {
@@ -350,7 +343,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error",) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = 5000;
     notificacionVisible.value = true;
 };
 
@@ -370,44 +363,34 @@ const sortNodesAlphabetically = (nodes) => {
 };
 
 
-
 const selectAndFocusNode = (nodeId, retries = 0) => {
-    const MAX_RETRIES = 10;
+    const MAX_RETRIES = 15;
     const RETRY_DELAY = 150;
+    if (!nodeId) return;
 
     nextTick(() => {
         if (!treeRef.value) return;
-
-        const targetId = Number(nodeId);
+        const targetId = String(nodeId);
         const node = treeRef.value.getNode(targetId);
 
         if (node) {
-            // 1. Expandir ancestros
             let parent = node.parent;
             while (parent && parent.level > 0) {
                 parent.expanded = true;
                 expandedNodeIds.value.add(parent.data.IdTipoRelacion);
                 parent = parent.parent;
             }
-
-            // 2. Seleccionar visualmente
             treeRef.value.setCurrentKey(targetId);
             selectedNode.value = node.data;
+            setTimeout(() => scrollToNode(targetId), 200);
 
-            // 3. Scroll suave
-            setTimeout(() => {
-                scrollToNode(targetId);
-            }, 200);
-
-            // Limpiar variables de control
             nodeIdToSelectAfterInsert.value = null;
-            nodeIdToFocus.value = null;
         } else if (retries < MAX_RETRIES) {
-            // Si el nodo aún no existe en el DOM, reintentar
             setTimeout(() => selectAndFocusNode(targetId, retries + 1), RETRY_DELAY);
         }
     });
 };
+
 
 
 watch(() => page.props.flash?.newNodeId, (id) => {
@@ -417,20 +400,31 @@ watch(() => page.props.flash?.newNodeId, (id) => {
 }, { immediate: true });
 
 
-watch(() => props.treeDataProp, (newVal) => {
+watch(() => props.treeDataProp, async (newVal) => {
     const copiedData = deepCopy(newVal);
     sortNodesAlphabetically(copiedData);
     localTreeData.value = copiedData;
-
-    // Prioridad: 1. Nuevo insertado, 2. Nodo enfocado (editar/eliminar)
-    const idToProcess = nodeIdToSelectAfterInsert.value || nodeIdToFocus.value;
+    await nextTick();
+    let idToProcess = null;
+    if (nodeIdToSelectAfterInsert.value) {
+        idToProcess = nodeIdToSelectAfterInsert.value;
+    }
+    else if (nodeIdToFocus.value) {
+        idToProcess = nodeIdToFocus.value;
+    }
+    const nodeExists = idToProcess ? findNodeInTree(localTreeData.value, idToProcess) : false;
+    if (!idToProcess || !nodeExists) {
+        if (localTreeData.value.length > 0) {
+            idToProcess = localTreeData.value[0].IdTipoRelacion;
+        }
+    }
 
     if (idToProcess) {
         selectAndFocusNode(idToProcess);
     }
 }, { immediate: true, deep: true });
 
-// --- SELECCIÓN INICIAL AL MONTAR ---
+
 onMounted(() => {
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
         const firstNodeId = localTreeData.value[0].IdTipoRelacion;
@@ -476,15 +470,62 @@ const abrirModalParaEditar = () => {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
 
+    const ejecutarApertura = () => {
+        modalMode.value = "editar";
+        nodoEnModal.value = { ...selectedNode.value };
+        formModal.value = {
+            Descripcion: selectedNode.value.Descripcion,
+            Direccionalidad: selectedNode.value.Direccionalidad,
+        };
+        esModalVisible.value = true;
+
+        nextTick(() => {
+            formModalRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
+                }
+            }, 100);
+        });
+    };
+
     if (selectedNode.value.IdTipoRelacion <= 8) {
-        return mostrarNotificacion(
-            "Acción no permitida",
-            "La relación seleccionada no puede ser modificada.",
-            "error"
-        );
+        ElMessageBox({
+            title: "Confirmar modificación",
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: "message-box-diseno-limpio",
+            message: h('div', { class: 'custom-message-content' }, [
+                h('div', { class: 'body-content' }, [
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, `¿Estás seguro de que deseas modificar "${selectedNode.value.Descripcion}"? Se trata de un registro que es parte de la información del sistema.`)
+                    ]),
+                ]),
+                h('div', { class: 'footer-buttons' }, [
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, {
+                        texto: "Sí, Modificar",
+                        onClick: () => {
+                            ElMessageBox.close();
+                            ejecutarApertura();
+                        }
+                    }),
+                ]),
+            ]),
+        }).catch(() => { });
+    } else {
+        ejecutarApertura();
     }
 
-    modalMode.value = "editar";
+    /* modalMode.value = "editar";
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = {
         Descripcion: selectedNode.value.Descripcion,
@@ -505,7 +546,7 @@ const abrirModalParaEditar = () => {
                 }
             }
         }, 100);
-    });
+    }); */
 };
 
 const cerrarModalOperacion = () => {
@@ -520,80 +561,92 @@ const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el t
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    const isValid = await formModalRef.value.validate();
+    const isValid = await formModalRef.value.validate().catch(() => false);
     if (!isValid) return;
+    const nuevaDesc = formModal.value.Descripcion.trim();
+    const nuevaDescLower = nuevaDesc.toLowerCase();
+    if (modalMode.value === "editar") {
+        const idPadreActual = nodoEnModal.value.IdAscendente;
+        const duplicado = props.flatTreeDataProp.find(nodo =>
+            String(nodo.IdAscendente) === String(idPadreActual) &&
+            nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
+            String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
+        );
 
-    const proceedWithSave = () => {
-        const nuevaDesc = formModal.value.Descripcion.trim();
-        const nuevaDescLower = nuevaDesc.toLowerCase();
+        if (duplicado) {
+            mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
+            return; 
+        }
+    } else if (modalMode.value === "insertar") {
+        const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+        if (!calculoNiveles) return;
 
+        const idPadreDestino = calculoNiveles.idPadre;
+        const duplicado = props.flatTreeDataProp.find(nodo =>
+            String(nodo.IdAscendente) === String(idPadreDestino) &&
+            nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
+        );
+
+        if (duplicado) {
+            mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
+            return;
+        }
+        formModal.value._calculoNiveles = calculoNiveles;
+    }
+
+    const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
-            const idPadreActual = nodoEnModal.value.IdAscendente;
-            // Validar duplicado en el mismo nivel
-            const esDuplicado = props.flatTreeDataProp.some(nodo => 
-                String(nodo.IdAscendente) === String(idPadreActual) && 
-                nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
-                String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
-            );
-
-            if (esDuplicado) {
-                return mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
-            }
-
-            ElMessageBox.close();
-            const datosUpdate = { Descripcion: nuevaDesc, Direccionalidad: formModal.value.Direccionalidad };
             const nodeId = nodoEnModal.value.IdTipoRelacion;
-            nodeIdToFocus.value = nodeId; // Para re-seleccionar después
+            const datosUpdate = {
+                Descripcion: nuevaDesc,
+                Direccionalidad: formModal.value.Direccionalidad
+            };
 
             router.put(`/tipos-relacion/${nodeId}`, datosUpdate, {
                 preserveState: true,
                 onSuccess: () => {
                     cerrarModalOperacion();
-                    mostrarNotificacion("Modificación", "Información modificada correctamente.", "success");
+                    mostrarNotificacion("Modificación", "El tipo de relación ha sido modificado correctamente.", "success");
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    mostrarNotificacion("Aviso", firstError, "error");
+                    if (errors.protected || firstError.includes('protegido')) {
+                        cerrarModalOperacion();
+                    }
                 }
             });
-
-        } else if (modalMode.value === "insertar") {
-            const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-            if (!calculoNiveles) return;
-
-            const idPadreDestino = calculoNiveles.idPadre;
-            // Validar duplicado en el mismo nivel
-            const esDuplicado = props.flatTreeDataProp.some(nodo => 
-                String(nodo.IdAscendente) === String(idPadreDestino) && 
-                nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
-            );
-
-            if (esDuplicado) {
-                return mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
-            }
-
-            ElMessageBox.close();
+        } else {
+            const calculo = formModal.value._calculoNiveles;
             const datosInsert = {
                 Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad,
-                ...calculoNiveles.niveles,
+                ...calculo.niveles,
                 RutaIcono: ICONO_POR_DEFECTO
             };
 
             router.post("/tipos-relacion", datosInsert, {
+                preserveState: true,
                 onSuccess: (page) => {
                     cerrarModalOperacion();
                     const finalNewNodeId = page.props.flash?.newNodeId;
                     if (finalNewNodeId) {
                         nodeIdToSelectAfterInsert.value = finalNewNodeId;
+                        selectAndFocusNode(finalNewNodeId);
                     }
-                    mostrarNotificacion("Ingreso", "Información ingresada correctamente.", "success");
+                    mostrarNotificacion("Ingreso", "El tipo de relación ha sido ingresado correctamente.", "success");
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    mostrarNotificacion("Error", firstError, "error");
                 }
             });
         }
     };
 
-    // Confirmación MessageBox para editar
     if (modalMode.value === 'insertar') {
-        proceedWithSave();
+        ejecutarEnvio();
     } else {
-        const nombreRelacion = formModal.value.Descripcion.trim();
         ElMessageBox({
             title: "Confirmar modificación",
             showConfirmButton: false,
@@ -601,12 +654,22 @@ const guardarDesdeModal = async () => {
             customClass: "message-box-diseno-limpio",
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
-                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nombreRelacion}"?`)]),
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nuevaDesc}"?`)
+                    ]),
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                    h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
+                    h(BotonAceptar, {
+                        texto: "Sí, Guardar",
+                        onClick: () => {
+                            ElMessageBox.close();
+                            ejecutarEnvio();
+                        }
+                    }),
                 ]),
             ]),
         }).catch(() => { });
@@ -620,9 +683,9 @@ const handleEliminar = () => {
 
     if (selectedNode.value.IdTipoRelacion <= 8) {
         return mostrarNotificacion(
-            "Acción no permitida",
-            "La relación seleccionada no puede ser eliminada.",
-            "error"
+            "Aviso",
+            "No es posible eliminar el tipo de relación seleccionado porque es parte de la información del sistema",
+            "warning"
         );
     }
 
@@ -656,23 +719,22 @@ const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
         if (!nodeDataForDeleteConfirmation.value) return;
-
         const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
-
         const parentNode = findNodeInTree(localTreeData.value, nodeDataForDeleteConfirmation.value.IdAscendente);
-
         router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
             preserveScroll: true,
             onSuccess: () => {
-                mostrarNotificacion("Eliminación exitosa", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
+                mostrarNotificacion("Eliminación", `El tipo de relación "${Descripcion}" ha sido eliminado.`, "success");
+
                 if (parentNode) {
                     nodeIdToFocus.value = parentNode.IdTipoRelacion;
                 } else {
                     selectedNode.value = null;
+                    nodeIdToFocus.value = 'FIRST';
                 }
             },
             onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relacion ${Descripcion} no se puede eliminar. Este tipo de relacion está en uso en otra parte del sistema.`, 'success');
+                mostrarNotificacionError('Aviso', `El tipo de relacion ${Descripcion} no se puede eliminar...`, 'error');
             },
             onFinish: () => {
                 nodeDataForDeleteConfirmation.value = null;
@@ -717,7 +779,7 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
         }
         const nivelParaSecuencia = profundidadPadre + 1;
         if (nivelParaSecuencia > MAX_NIVELES) {
-            mostrarNotificacion("Aviso", "Ya no es posible ingresar un nivel inferior.", "error");
+            mostrarNotificacion("Aviso", "Ya no es posible ingresar un nuevo nivel, el máximo ha sido alcanzado.", "warning");
             return null;
         }
         let maxValorSecuencia = 0;
@@ -827,21 +889,21 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :highlight-current="true" :expand-on-click-node="false" class="custom-element-tree"
+                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="expandedKeysArray"
+                    :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
+                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
                     @node-click="handleNodeSelected">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
-
+                            <!-- Iconos (Mantenlos como los tenías) -->
                             <img v-if="!data.RutaIcono"
                                 src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
-                                class="node-icon-wrapper static-icon" alt="ícono por defecto" />
-
+                                class="node-icon-wrapper static-icon" />
                             <template v-else>
                                 <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono"
                                     class="node-icon-wrapper"></span>
-                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon" alt="ícono">
+                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon">
                             </template>
-
                             <span>{{ node.label }}</span>
                         </span>
                     </template>
@@ -1023,8 +1085,8 @@ const cerrarDialogo = () => {
 
 
 .custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-    background-color: #d4edda !important; 
-    border-left: 5px solid #28a745 !important; 
+    background-color: #d4edda !important;
+    border-left: 5px solid #28a745 !important;
     color: #155724 !important;
 }
 

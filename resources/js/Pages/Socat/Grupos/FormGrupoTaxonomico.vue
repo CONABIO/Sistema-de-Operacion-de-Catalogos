@@ -31,11 +31,15 @@ const dialogTitle = computed(() => {
 
 const rules = {
     GrupoSCAT: [
-        { required: true, message: 'El nombre del grupo es obligatorio', trigger: 'blur' },
+        { required: true, message: 'El nombre del grupo SCAT es obligatorio', trigger: 'blur' },
         { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
-    GrupoAbreviado: [{ max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
-    GrupoSNIB: [{ max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
+    GrupoAbreviado: [
+        { required: true, message: 'El nombre del grupo abreviado es obligatorio', trigger: 'blur' },
+        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
+    GrupoSNIB: [
+        { required: true, message: 'El nombre del grupo SNIB es obligatorio', trigger: 'blur' },
+        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
 };
 
 watch(() => props.visible, (newVal) => {

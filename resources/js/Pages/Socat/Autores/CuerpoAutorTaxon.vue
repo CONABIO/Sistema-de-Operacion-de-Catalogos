@@ -431,7 +431,6 @@ const cerrarNotificacion = () => {
 
 const onRowChange = (row) => {
   filaSeleccionada.value = row
-  //tablaAutores.value.setCurrentRow(row);
 }
 
 const onEliminarInterno = () => {
