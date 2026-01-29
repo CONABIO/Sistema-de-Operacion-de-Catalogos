@@ -229,6 +229,11 @@ class TipoRelacionController extends Controller
 
     public function update(Request $request, Tipo_Relacion $tipoRelacion)
     {
+        if ($tipoRelacion->IdTipoRelacion <= 8) {
+            throw ValidationException::withMessages([
+                'protected' => 'La relación seleccionada no puede ser modificada por ser un registro protegido del sistema.'
+            ]);
+        } else {
             $validatedData = $request->validate([
                 'Descripcion' => [
                     'required',
@@ -246,6 +251,7 @@ class TipoRelacionController extends Controller
             return redirect()->route('tipos-relacion.index')
                 ->with('success', 'Tipo de Relación actualizado correctamente.')
                 ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
+        }
     }
 
     public function destroy(Tipo_Relacion $tipoRelacion)
