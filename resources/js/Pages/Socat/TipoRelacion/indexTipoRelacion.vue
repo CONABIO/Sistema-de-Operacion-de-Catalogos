@@ -470,62 +470,15 @@ const abrirModalParaEditar = () => {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
 
-    const ejecutarApertura = () => {
-        modalMode.value = "editar";
-        nodoEnModal.value = { ...selectedNode.value };
-        formModal.value = {
-            Descripcion: selectedNode.value.Descripcion,
-            Direccionalidad: selectedNode.value.Direccionalidad,
-        };
-        esModalVisible.value = true;
-
-        nextTick(() => {
-            formModalRef.value?.clearValidate();
-            setTimeout(() => {
-                if (descripcionInputRef.value) {
-                    descripcionInputRef.value.focus();
-                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
-                    if (nativeInput) {
-                        const len = nativeInput.value.length;
-                        nativeInput.setSelectionRange(len, len);
-                    }
-                }
-            }, 100);
-        });
-    };
-
     if (selectedNode.value.IdTipoRelacion <= 8) {
-        ElMessageBox({
-            title: "Confirmar modificación",
-            showConfirmButton: false,
-            showCancelButton: false,
-            customClass: "message-box-diseno-limpio",
-            message: h('div', { class: 'custom-message-content' }, [
-                h('div', { class: 'body-content' }, [
-                    h('div', { class: 'custom-warning-icon-container' }, [
-                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
-                    ]),
-                    h('div', { class: 'text-container' }, [
-                        h('p', null, `¿Estás seguro de que deseas modificar "${selectedNode.value.Descripcion}"? Se trata de un registro que es parte de la información del sistema.`)
-                    ]),
-                ]),
-                h('div', { class: 'footer-buttons' }, [
-                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                    h(BotonAceptar, {
-                        texto: "Sí, Modificar",
-                        onClick: () => {
-                            ElMessageBox.close();
-                            ejecutarApertura();
-                        }
-                    }),
-                ]),
-            ]),
-        }).catch(() => { });
-    } else {
-        ejecutarApertura();
+        return mostrarNotificacion(
+            "Aviso",
+            "La relación seleccionada no puede ser modificada porque es parte de la información del sistema.",
+            "warning"
+        );
     }
 
-    /* modalMode.value = "editar";
+    modalMode.value = "editar";
     nodoEnModal.value = { ...selectedNode.value };
     formModal.value = {
         Descripcion: selectedNode.value.Descripcion,
@@ -546,7 +499,7 @@ const abrirModalParaEditar = () => {
                 }
             }
         }, 100);
-    }); */
+    });
 };
 
 const cerrarModalOperacion = () => {
@@ -559,10 +512,13 @@ const cerrarModalOperacion = () => {
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación" : "Ingresar un nuevo tipo de relación");
 
+
+
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     const isValid = await formModalRef.value.validate().catch(() => false);
     if (!isValid) return;
+
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
@@ -574,10 +530,13 @@ const guardarDesdeModal = async () => {
         );
 
         if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
+            cerrarModalOperacion(); 
             mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
             return; 
         }
-    } else if (modalMode.value === "insertar") {
+    } 
+    else if (modalMode.value === "insertar") {
         const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculoNiveles) return;
 
@@ -588,6 +547,8 @@ const guardarDesdeModal = async () => {
         );
 
         if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
+            cerrarModalOperacion(); 
             mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
             return;
         }
@@ -944,7 +905,7 @@ const cerrarDialogo = () => {
 
                             <el-form-item prop="Direccionalidad" label="Direccionalidad:">
                                 <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
-                                    style="width: 100%;">
+                                    style="width: 100%;" :disabled="modalMode === 'editar'">
                                     <el-option label="1 - Unidireccional" :value="1" />
                                     <el-option label="2 - Reciproca" :value="2" />
                                     <el-option label="3 - No aplica" :value="3" />

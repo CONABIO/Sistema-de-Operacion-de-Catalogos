@@ -171,29 +171,12 @@ class CategoriaTaxonomicaController extends Controller
 
     public function destroy(CategoriasTaxonomicas $categoria_taxonomica)
     {
-        $query = CategoriasTaxonomicas::query();
-        $profundidad = 0;
-        for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
-            if ($categoria_taxonomica->{"IdNivel{$i}"} > 0) {
-                $query->where("IdNivel{$i}", $categoria_taxonomica->{"IdNivel{$i}"});
-                $profundidad = $i;
-            } else {
-                break;
-            }
-        }
-
-        if ($profundidad < self::MAX_NIVELES) {
-            $query->where("IdNivel" . ($profundidad + 1), '>', 0);
-        }
-
-        $tieneHijos = $profundidad < self::MAX_NIVELES && $query->exists();
-
+        $tieneHijos = CategoriasTaxonomicas::where('IdAscendente', $categoria_taxonomica->IdCategoriaTaxonomica)->exists();
         if ($tieneHijos) {
             throw ValidationException::withMessages([
-                'message' => 'No se puede eliminar porque tiene categorías dependientes.'
+                'message' => 'No se puede eliminar porque tiene categorías dependientes (sub-niveles).'
             ]);
         }
-
         $categoria_taxonomica->delete();
 
         return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
