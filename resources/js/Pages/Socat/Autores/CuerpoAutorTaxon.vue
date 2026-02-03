@@ -431,7 +431,6 @@ const cerrarNotificacion = () => {
 
 const onRowChange = (row) => {
   filaSeleccionada.value = row
-  //tablaAutores.value.setCurrentRow(row);
 }
 
 const onEliminarInterno = () => {
@@ -458,35 +457,40 @@ const onEliminarInterno = () => {
             <el-collapse-item title="Autores Relacionados" name="1">
               <el-scrollbar max-height="400px">
                 <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
-                  placeholder="Autoridad Taxonomica" />
+                  placeholder="Autoridad Taxonomica" style = "margin-bottom: 10px;"/>
                 
                 <div style="display: flex; justify-content: space-between; gap: 3px;
                                 margin-bottom: 10px;">
                   <div>
                     <el-tooltip effect="dark" content="Generar" placement="right-start">
                       <el-button
-                        @click="armaAutoridad" circle type="primary"><el-icon>
+                        @click="armaAutoridad" circle type="primary"
+                        color="#9C2007"
+                        ><el-icon>
                           <Switch />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <el-tooltip effect="dark" content="Traspasar" placement="right-start"><el-button
-                        @click="traspasaDatos" circle type="primary"><el-icon>
+                    <el-tooltip effect="dark" content="Traspasar" placement="right-start">
+                      <el-button
+                        @click="traspasaDatos" circle type="primary" color="#8e44ad">
+                        <el-icon>
                           <iconoTraspaso />
-                        </el-icon></el-button>
+                        </el-icon>
+                      </el-button>
                     </el-tooltip>
                   </div>
                   <div>
                     <el-tooltip effect="dark" content="Subir" placement="right-start">
-                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "subirRow()">
-                        <el-icon class="icon-bold">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "subirRow()" color="#60A3A3">
+                        <el-icon class="icon-bold" color="#FCFFFF">
                           <ArrowUp />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
                     <el-tooltip effect="dark" content="Bajar" placement="right-start">
-                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "bajarRow()">
-                        <el-icon class="icon-bold">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "bajarRow()" color="#60A3A3">
+                        <el-icon class="icon-bold" color="#FCFFFF">
                           <ArrowDown />
                         </el-icon>
                       </el-button>
