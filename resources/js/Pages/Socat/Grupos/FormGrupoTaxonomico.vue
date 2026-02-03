@@ -112,10 +112,10 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
                     @submit.prevent="intentarGuardar">
-                    <el-form-item label="Grupo SCAT" prop="GrupoSCAT">
+                    <el-form-item label="Nombre del grupo" prop="GrupoSCAT">
                         <el-input ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="Grupo abreviado" prop="GrupoAbreviado">
+                    <el-form-item label="Abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo SNIB" prop="GrupoSNIB">

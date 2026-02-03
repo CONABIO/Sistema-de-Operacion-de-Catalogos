@@ -856,7 +856,6 @@ const cerrarDialogo = () => {
                     @node-click="handleNodeSelected">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
-                            <!-- Iconos (Mantenlos como los tenías) -->
                             <img v-if="!data.RutaIcono"
                                 src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
                                 class="node-icon-wrapper static-icon" />
