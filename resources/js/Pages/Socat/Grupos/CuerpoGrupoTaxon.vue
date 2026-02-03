@@ -10,9 +10,21 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
 const props = defineProps({
-    isModal: Boolean,
-    datosGrupo: Object
+    /*Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6 
+        Se modifica la variable isModal, y traspaso
+        para determinar si se cierra el modal o si sale a la pantalla principal */
+    isModal: { type: Boolean,
+               required: false, 
+               default: false }, 
+    datosGrupo: Object, 
+    traspaso: {type: Boolean,
+               required:false, 
+               default: true
+    }
 });
+/*Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    Se define la variable emit para pasar funciones o datos al componente padre*/
+const emit = defineEmits(['cerrar']);
 
 const tableRowClassName = ({ row }) => {
     const idFila = row.IdGrupoSCAT;
@@ -77,6 +89,7 @@ const asociarSeleccionado = () => {
 };
 
 const cerrarVentana = () => {
+    emit('cerrar');
     window.parent.postMessage({
         type: 'cerrarModal'
     }, '*');
@@ -299,15 +312,14 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <h2 style="margin-top: 14px; margin-left: 20px;">Catálogo de grupos taxonómicos</h2>
         </div>
         <div class="h-full flex flex-col flex-grow">
-
+            <!-- Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              Se agrega variable para indicar si es modal :botCerrar -->
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
                 class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
-                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="true"
-                @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana"
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
+                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" @cerrar="cerrarVentana"
                 :highlight-current-row="true">
-
-
             </TablaFiltrable>
         </div>
     </div>
