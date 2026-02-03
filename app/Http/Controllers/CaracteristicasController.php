@@ -32,7 +32,7 @@ class CaracteristicasController extends Controller
             'treeDataProp' => $treeDataParaVisualizacion,
             'flatTreeDataProp' => $todosLosNodosPlanos,
             'errors' => session('errors') ? session('errors')->getBag('default')->getMessages() : (object) [],
-            
+
 
         ]);
     }
@@ -103,18 +103,25 @@ class CaracteristicasController extends Controller
         if (!$nodo) {
             return response()->json(['error' => 'Característica no encontrada.'], 404);
         }
-
         if ($nodo->tieneHijos()) {
-            $errorMsg = 'No se puede eliminar la característica "' . ($nodo->Descripcion ?? $nodo->IdCatNombre) . '" porque tiene hijos asociados.';
-            return response()->json(['error' => $errorMsg], 409); // 409 Conflict es un buen código para esto
+            return response()->json([
+                'error' => 'No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.'
+            ], 409);
         }
-
         try {
             $nodo->delete();
             return response()->json(['message' => 'Característica eliminada correctamente.'], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == "23000" || str_contains($e->getMessage(), '1451')) {
+                return response()->json([
+                    'error' => 'No es posible eliminar la característica seleccionada porque se encuentra asociada a un taxón.'
+                ], 422); 
+            }
+            Log::error("Error SQL al eliminar característica {$id}: " . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error interno en el servidor.'], 500);
         } catch (\Exception $e) {
-            Log::error("Error al eliminar característica {$id}: " . $e->getMessage());
-            return response()->json(['error' => 'Ocurrió un error del servidor al intentar eliminar.'], 500);
+            Log::error("Error general al eliminar característica {$id}: " . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error al intentar eliminar.'], 500);
         }
     }
 
@@ -124,7 +131,6 @@ class CaracteristicasController extends Controller
         $nodo = CatalogoNombre::find($id);
 
         if (!$nodo) {
-            // El return aquí debería ser con flash para que el frontend lo muestre.
             return redirect()->back()->with('error', 'Característica no encontrada.');
         }
 
@@ -133,12 +139,16 @@ class CaracteristicasController extends Controller
                 'required',
                 'string',
                 'max:255',
+                // Regla de unicidad combinada: Descripción + IdAscendente
                 Rule::unique('catcentral.CatalogoNombre', 'Descripcion')
-                    ->ignore($nodo->IdCatNombre, $nodo->getKeyName())
+                    ->where(function ($query) use ($nodo) {
+                        return $query->where('IdAscendente', $nodo->IdAscendente);
+                    })
+                    ->ignore($nodo->IdCatNombre, 'IdCatNombre') // Ignorar este nodo
             ],
         ], [
             'Descripcion.required' => 'La descripción es obligatoria.',
-            'Descripcion.unique' => 'La descripción ingresada ya existe en el catálogo.',
+            'Descripcion.unique' => 'Ya existe una característica con ese nombre en este mismo nivel.',
             'Descripcion.max' => 'La descripción no puede tener más de 255 caracteres.',
         ]);
 
@@ -146,52 +156,65 @@ class CaracteristicasController extends Controller
             $nodo->Descripcion = $validatedData['Descripcion'];
             $nodo->save();
 
-            // CAMBIO 2: Añadimos el ID del nodo actualizado a la sesión flash.
-            // Ahora, después de editar, el frontend también sabrá qué nodo enfocar.
             return redirect()->route('caracteristicas-taxon.index')
-                ->with('success', 'Característica "' . $nodo->Descripcion . '" actualizada correctamente.')
+                ->with('success', 'Característica actualizada correctamente.')
                 ->with('newNodeId', $nodo->IdCatNombre);
         } catch (\Exception $e) {
             Log::error("Error al actualizar característica {$id}: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Ocurrió un error al intentar actualizar la característica.');
+            return redirect()->back()->with('error', 'Ocurrió un error al intentar actualizar.');
         }
     }
 
+
+
+
     public function store(Request $request)
     {
-        $maxNiveles = 7;
-        $validationRules = [ ];
-        Validator::make($request->all(), $validationRules, [ /* ... */])->after(function ($validator) { /* ... */
-        })->validate();
+        // 1. Validar antes de procesar cualquier dato
+        $request->validate([
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('catcentral.CatalogoNombre', 'Descripcion')
+                    ->where(function ($query) use ($request) {
+                        return $query->where('IdAscendente', $request->IdAscendente);
+                    }),
+            ],
+            'IdAscendente' => 'nullable',
+        ], [
+            'Descripcion.required' => 'La descripción es obligatoria.',
+            'Descripcion.unique' => 'No se puede duplicar el nombre en el mismo nivel jerárquico.',
+        ]);
 
-
-        $caracteristica = new CatalogoNombre();
-        $caracteristica->fill($request->only([
-            'Descripcion',
-            'IdAscendente',
-            'Nivel1',
-            'Nivel2',
-            'Nivel3',
-            'Nivel4',
-            'Nivel5',
-            'Nivel6',
-            'Nivel7'
-        ]));
-        $caracteristica->FechaCaptura = now();
-        $caracteristica->save();
-
-        Log::info('ID Generado después de guardar: ' . $caracteristica->IdCatNombre);
-        if (!$caracteristica->IdCatNombre) {
-            Log::error('El IdCatNombre es nulo después de guardar la característica.');
-        }
-
-        if (!$caracteristica->IdOriginal && $caracteristica->IdCatNombre) {
-            $caracteristica->IdOriginal = $caracteristica->IdCatNombre;
+        try {
+            $caracteristica = new CatalogoNombre();
+            $caracteristica->fill($request->only([
+                'Descripcion',
+                'IdAscendente',
+                'Nivel1',
+                'Nivel2',
+                'Nivel3',
+                'Nivel4',
+                'Nivel5',
+                'Nivel6',
+                'Nivel7'
+            ]));
+            $caracteristica->FechaCaptura = now();
             $caracteristica->save();
-        }
 
-        return redirect()->route('caracteristicas-taxon.index')
-            ->with('success', 'Característica creada correctamente.')
-            ->with('newNodeId', $caracteristica->IdCatNombre);
+            // Manejo de IDs adicionales
+            if (!$caracteristica->IdOriginal && $caracteristica->IdCatNombre) {
+                $caracteristica->IdOriginal = $caracteristica->IdCatNombre;
+                $caracteristica->save();
+            }
+
+            return redirect()->route('caracteristicas-taxon.index')
+                ->with('success', 'Característica creada correctamente.')
+                ->with('newNodeId', $caracteristica->IdCatNombre);
+        } catch (\Exception $e) {
+            Log::error('Error al crear característica: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al guardar en la base de datos.');
+        }
     }
 }
