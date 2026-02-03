@@ -103,8 +103,8 @@ const grupoEditado = ref(null);
 const guardandoDatosServer = ref(false);
 
 const columnasDefinidas = ref([
-    { prop: 'GrupoSCAT', label: 'Grupo SCAT', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
-    { prop: 'GrupoAbreviado', label: 'Grupo abreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoSCAT', label: 'Nombre del grupo', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoAbreviado', label: 'Abreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
     { prop: 'GrupoSNIB', label: 'Grupo SNIB', minWidth: '150', sortable: true, filtrable: true, align: 'left' }
 ]);
 
