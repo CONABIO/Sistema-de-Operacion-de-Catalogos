@@ -632,7 +632,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="header-container">
           <div class="left-header-content"></div>
           <div class="right-header-content">
-            <div class="action-group">
+            <div class="botonera-biotica">
               <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
@@ -668,7 +668,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <h3>{{ modalTitle }}</h3>
       </div>
       <div class="dialog-body-container">
-        <div class="form-actions">
+        <div class="form-actions botonera-biotica">
           <GuardarButton @click="guardarDesdeModal" />
           <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
         </div>
@@ -892,5 +892,25 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   line-height: normal !important;
   font-size: 0.9em;
   color: #606266;
+}
+
+
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px; 
+  align-items: center; 
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

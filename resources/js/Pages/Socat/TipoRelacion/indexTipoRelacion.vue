@@ -521,40 +521,65 @@ const guardarDesdeModal = async () => {
 
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
+
     if (modalMode.value === "editar") {
-        const idPadreActual = nodoEnModal.value.IdAscendente;
         const duplicado = props.flatTreeDataProp.find(nodo =>
-            String(nodo.IdAscendente) === String(idPadreActual) &&
+            nodo.Nivel1 === nodoEnModal.value.Nivel1 &&
+            nodo.Nivel2 === nodoEnModal.value.Nivel2 &&
+            nodo.Nivel3 === nodoEnModal.value.Nivel3 &&
+            nodo.Nivel4 === nodoEnModal.value.Nivel4 &&
+            nodo.Nivel5 === nodoEnModal.value.Nivel5 &&
             nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
             String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
         );
-
         if (duplicado) {
-            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
-            cerrarModalOperacion(); 
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
             mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
-            return; 
-        }
-    } 
-    else if (modalMode.value === "insertar") {
-        const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-        if (!calculoNiveles) return;
-
-        const idPadreDestino = calculoNiveles.idPadre;
-        const duplicado = props.flatTreeDataProp.find(nodo =>
-            String(nodo.IdAscendente) === String(idPadreDestino) &&
-            nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
-        );
-
-        if (duplicado) {
-            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
-            cerrarModalOperacion(); 
-            mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
             return;
         }
-        formModal.value._calculoNiveles = calculoNiveles;
     }
+    else if (modalMode.value === "insertar") {
+        const calculo = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+        if (!calculo) return;
 
+        const nuevosNiv = calculo.niveles;
+        let profundidadActual = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (nuevosNiv[`Nivel${i}`] > 0) profundidadActual = i;
+        }
+
+        const duplicado = props.flatTreeDataProp.find(nodo => {
+            const coincideNombre = nodo.Descripcion.trim().toLowerCase() === nuevaDescLower;
+            if (!coincideNombre) return false;
+
+            let mismoPadreYNivel = true;
+            for (let i = 1; i < profundidadActual; i++) {
+                if (nodo[`Nivel${i}`] !== nuevosNiv[`Nivel${i}`]) {
+                    mismoPadreYNivel = false;
+                    break;
+                }
+            }
+            if (mismoPadreYNivel) {
+                for (let i = profundidadActual + 1; i <= 5; i++) {
+                    if (nodo[`Nivel${i}`] !== 0) {
+                        mismoPadreYNivel = false;
+                        break;
+                    }
+                }
+            }
+            return mismoPadreYNivel;
+        });
+
+        if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
+            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            return;
+        }
+        
+        formModal.value._calculoNiveles = calculo;
+    }
     const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
             const nodeId = nodoEnModal.value.IdTipoRelacion;
@@ -572,9 +597,6 @@ const guardarDesdeModal = async () => {
                 onError: (errors) => {
                     const firstError = Object.values(errors)[0];
                     mostrarNotificacion("Aviso", firstError, "error");
-                    if (errors.protected || firstError.includes('protegido')) {
-                        cerrarModalOperacion();
-                    }
                 }
             });
         } else {
@@ -1149,7 +1171,7 @@ const cerrarDialogo = () => {
     display: flex;
     justify-content: flex-end;
     margin-top: 24px;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {

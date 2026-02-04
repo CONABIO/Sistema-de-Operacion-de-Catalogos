@@ -231,7 +231,6 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
-//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -261,7 +260,7 @@ defineExpose({
           </slot>
         </div>
         <div class="left">
-          <div class="form-actions">
+          <div class="botonera-biotica">
             <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
@@ -460,5 +459,24 @@ defineExpose({
   margin-top: 4px;
   margin-right: 35px;
   gap: 4px;
+}
+
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px; 
+  align-items: center; 
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

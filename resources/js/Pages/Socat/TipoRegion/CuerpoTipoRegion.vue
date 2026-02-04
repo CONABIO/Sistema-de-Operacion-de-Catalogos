@@ -552,7 +552,7 @@ const handleNodeDoubleClick = (data) => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {

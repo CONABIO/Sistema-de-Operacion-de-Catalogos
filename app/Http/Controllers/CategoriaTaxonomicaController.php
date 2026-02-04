@@ -190,7 +190,6 @@ class CategoriaTaxonomicaController extends Controller
             'RutaIcono' => 'nullable|string',
         ]);
 
-        // Usamos la variable con el nuevo nombre
         $categoriaTaxonomica->update([
             'RutaIcono' => $request->RutaIcono,
         ]);
