@@ -521,27 +521,17 @@ const guardarDesdeModal = async () => {
 
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
-
-    // --- 1. VALIDACIÓN LOCAL DE DUPLICADOS ---
     if (modalMode.value === "editar") {
         const nodoEditando = nodoEnModal.value;
 
-        // Determinamos la profundidad del nodo que estamos editando
         let profundidad = 0;
         for (let i = 1; i <= 5; i++) {
             if (nodoEditando[`Nivel${i}`] > 0) profundidad = i;
         }
-
         const duplicado = props.flatTreeDataProp.find(nodo => {
-            // Ignorar el mismo registro que estamos editando
             if (String(nodo.IdTipoRelacion) === String(nodoEditando.IdTipoRelacion)) return false;
-
-            // Validar nombre
             if (nodo.Descripcion.trim().toLowerCase() !== nuevaDescLower) return false;
-
-            // VALIDAR SI ES HERMANO (Mismo Padre)
             let esMismoPadre = true;
-            // a) Los niveles por ENCIMA de la profundidad actual deben ser idénticos (mismo ancestro)
             for (let i = 1; i < profundidad; i++) {
                 if (nodo[`Nivel${i}`] !== nodoEditando[`Nivel${i}`]) {
                     esMismoPadre = false;
@@ -565,12 +555,12 @@ const guardarDesdeModal = async () => {
         if (duplicado) {
             nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
             cerrarModalOperacion();
+            selectAndFocusNode(duplicado.IdTipoRelacion);
             mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
             return;
         }
     }
     else if (modalMode.value === "insertar") {
-        // ... (Tu lógica de insertar que ya funciona bien)
         const calculo = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculo) return;
 
@@ -609,7 +599,6 @@ const guardarDesdeModal = async () => {
         formModal.value._calculoNiveles = calculo;
     }
 
-    // --- 2. ENVÍO AL SERVIDOR ---
     const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
             const nodeId = nodoEnModal.value.IdTipoRelacion;
@@ -651,7 +640,6 @@ const guardarDesdeModal = async () => {
     if (modalMode.value === 'insertar') {
         ejecutarEnvio();
     } else {
-        // Confirmación para edición
         ElMessageBox({
             title: "Confirmar modificación",
             showConfirmButton: false,
@@ -868,13 +856,9 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <!-- 1. Ponemos true para que se vea el menú lateral/superior -->
     <LayoutCuerpo :usar-app-layout="true" titulo-pag="Tipos de Relación"
         titulo-area="Catálogo de tipos de relaciones taxonómicas">
-
-        <!-- 2. Este DIV recrea los "marcos" (el fondo gris y el espacio) -->
         <div class="contenedor-marcos-manual">
-
             <el-card class="box-card tree-card" shadow="never">
                 <template #header>
                     <div class="header-container">
@@ -896,25 +880,25 @@ const cerrarDialogo = () => {
                 </template>
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
-                :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="expandedKeysArray"
-                :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
-                @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                @node-click="handleNodeSelected">
-                <template #default="{ node, data }">
-                    <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
-                        <img v-if="!data.RutaIcono"
-                            src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
-                            class="node-icon-wrapper static-icon" />
-                        <template v-else>
-                            <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono"
-                                class="node-icon-wrapper"></span>
-                            <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon">
-                        </template>
-                        <span>{{ node.label }}</span>
-                    </span>
-                </template>
-            </el-tree>
+                    :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
+                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="expandedKeysArray"
+                    :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
+                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+                    @node-click="handleNodeSelected">
+                    <template #default="{ node, data }">
+                        <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
+                            <img v-if="!data.RutaIcono"
+                                src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
+                                class="node-icon-wrapper static-icon" />
+                            <template v-else>
+                                <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono"
+                                    class="node-icon-wrapper"></span>
+                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon">
+                            </template>
+                            <span>{{ node.label }}</span>
+                        </span>
+                    </template>
+                </el-tree>
 
                 <div v-else class="no-data-message"> No hay datos de tipos de relación para mostrar. </div>
             </el-card>
@@ -984,7 +968,7 @@ const cerrarDialogo = () => {
 
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
             :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-            @close="notificacionVisible = false" />
+            @close="cerrarNotificacion" />
     </Teleport>
 </template>
 
