@@ -827,7 +827,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 24px;
-  gap: 25px;
+  gap: 30px;
 }
 
 :deep(.el-form-item) {

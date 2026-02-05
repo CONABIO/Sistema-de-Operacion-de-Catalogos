@@ -169,14 +169,6 @@ const cerrarDialogo = () => {
     padding: 30px;
 }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-    margin-right: 35px;
-    gap: 25px;
-}
-
 
 :deep(.el-form-item) {
     margin-bottom: 22px;
@@ -187,5 +179,12 @@ const cerrarDialogo = () => {
     line-height: normal;
     font-size: 0.9em;
     color: #606266;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

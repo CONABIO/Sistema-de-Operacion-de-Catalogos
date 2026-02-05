@@ -41,7 +41,7 @@ class TipoRelacionController extends Controller
             'Nivel5'
         );
         foreach ($valoresAnteriores as $nivel => $valor) {
-            $numeroNivel = str_replace('Nivel', '', $nivel); 
+            $numeroNivel = str_replace('Nivel', '', $nivel);
             $query->where("Nivel$numeroNivel", $valor);
         }
         if ($nivelPadre > 0) {
@@ -209,7 +209,18 @@ class TipoRelacionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'Descripcion' => ['required', 'string', 'max:255', Rule::unique(Tipo_Relacion::class)],
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(Tipo_Relacion::class, 'Descripcion')->where(function ($query) use ($request) {
+                    return $query->where('Nivel1', $request->Nivel1)
+                        ->where('Nivel2', $request->Nivel2)
+                        ->where('Nivel3', $request->Nivel3)
+                        ->where('Nivel4', $request->Nivel4)
+                        ->where('Nivel5', $request->Nivel5);
+                })
+            ],
             'Direccionalidad' => 'required|integer|in:1,2,3',
             'Nivel1' => 'required|integer',
             'Nivel2' => 'required|integer',
@@ -217,7 +228,7 @@ class TipoRelacionController extends Controller
             'Nivel4' => 'required|integer',
             'Nivel5' => 'required|integer',
         ], [
-            'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
+            'Descripcion.unique' => 'Ya existe una relación con este nombre en el mismo nivel y padre.',
         ]);
 
         $tipoRelacion = Tipo_Relacion::create($validatedData);
@@ -231,27 +242,35 @@ class TipoRelacionController extends Controller
     {
         if ($tipoRelacion->IdTipoRelacion <= 8) {
             throw ValidationException::withMessages([
-                'protected' => 'La relación seleccionada no puede ser modificada por ser un registro protegido del sistema.'
+                'protected' => 'La relación seleccionada no puede ser modificada.'
             ]);
-        } else {
-            $validatedData = $request->validate([
-                'Descripcion' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique(Tipo_Relacion::class)->ignore($tipoRelacion->IdTipoRelacion, 'IdTipoRelacion')
-                ],
-                'Direccionalidad' => 'required|integer|in:1,2,3',
-            ], [
-                'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
-            ]);
-
-            $tipoRelacion->update($validatedData);
-
-            return redirect()->route('tipos-relacion.index')
-                ->with('success', 'Tipo de Relación actualizado correctamente.')
-                ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
         }
+
+        $validatedData = $request->validate([
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(Tipo_Relacion::class, 'Descripcion')
+                    ->ignore($tipoRelacion->IdTipoRelacion, 'IdTipoRelacion')
+                    ->where(function ($query) use ($tipoRelacion) {
+                        return $query->where('Nivel1', $tipoRelacion->Nivel1)
+                            ->where('Nivel2', $tipoRelacion->Nivel2)
+                            ->where('Nivel3', $tipoRelacion->Nivel3)
+                            ->where('Nivel4', $tipoRelacion->Nivel4)
+                            ->where('Nivel5', $tipoRelacion->Nivel5);
+                    })
+            ],
+            'Direccionalidad' => 'required|integer|in:1,2,3',
+        ], [
+            'Descripcion.unique' => 'Ya existe una relación con este nombre en este nivel.',
+        ]);
+
+        $tipoRelacion->update($validatedData);
+
+        return redirect()->route('tipos-relacion.index')
+            ->with('success', 'Tipo de Relación actualizado correctamente.')
+            ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
     }
 
     public function destroy(Tipo_Relacion $tipoRelacion)
