@@ -13,8 +13,8 @@
           </el-header>
             <el-main style="padding: 15px; background: #fff; overflow: hidden;">
                 <el-row>
-                    <el-card class="main-content-card">
-                        <div class="dual-panel-container">
+                
+                    <div class="dual-panel-container">
                             <el-card class="table-panel">
                                 <span style="font-size: 20px; font-weight: bold;">
                                     Cita(s) bibliografica(s) asociada(s) a:
@@ -60,9 +60,9 @@
                                     </TablaFiltrable>
                                 </div>
                             </el-card>
-                        </div>
-                        <br/>
-                        <el-card class="table-panel">
+                    </div>
+                    <br/>
+                    <el-card class="table-panel">
                             <div style="display: flex; flex-direction: column; height: 100%;">
                                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                     <span style="font-size: 18px; font-weight: bold;">
@@ -92,9 +92,9 @@
                                     </el-popconfirm>
                                 </div>
                             </div>
-                        </el-card>
-                        <br/>
-                        <el-card class="table-panel">
+                    </el-card>
+                    <br/>
+                    <el-card class="table-panel">
                             <span style="font-size: 18px; font-weight: bold;">
                                 Cita bibliográfica:
                             </span>
@@ -104,8 +104,7 @@
                                        :disable = true
                                        v-model="citaCompleta">
                             </el-input>
-                        </el-card> 
-                    </el-card>
+                    </el-card> 
                 </el-row>
             </el-main>
         </el-container>

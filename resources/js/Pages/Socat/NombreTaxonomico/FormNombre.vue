@@ -6,9 +6,6 @@
           <div class="header-content">
             <h1 class="titulo">Información del taxón</h1>
           </div>
-          <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div> 
         </el-header>
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
@@ -27,8 +24,8 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                  <template v-if="muestraGrd">
-                    <el-popconfirm confirm-button-text="Si" 
+                    <el-popconfirm 
+                                    confirm-button-text="Si" 
                                     cancel-button-text="No" 
                                     :icon="InfoFilled" 
                                     icon-color="#E6A23C"
@@ -36,15 +33,18 @@
                                     @confirm="Guardar('nombreTax', accion)">
                       <template #reference>
                         <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
-                          <el-button circle type="warning">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                            </svg>
-                          </el-button>
+                          <span style="display: inline-flex">
+                            <el-button circle type="warning" :disabled = "muestraGrd" @click.stop>
+                              <!--:disabled = autorAct-->
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                  <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                              </svg>
+                            </el-button>
+                          </span>
                         </el-tooltip>
                       </template>
                     </el-popconfirm>
-                  </template>
+                  <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </el-space>
               </el-col>
           </el-row>
@@ -176,7 +176,7 @@
                             <el-button @click="carga_Grupos()" 
                                         circle 
                                         style="flex-shrink: 0; background-color: #a08223;"
-                                        :disabled="true">
+                                        :disabled="actGrupo">
                               <el-icon>
                                 <filtroGrupos />
                               </el-icon>            
@@ -329,8 +329,11 @@
     </div>
       
     <div>
+      <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+        Se agregaron las propiedades para determinar si es modal y se muestra el
+        boton de traspaso-->>
       <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
-        <CurpGruposTax />
+        <CurpGruposTax :isModal = "true"  @cerrar="cerrar_Grupos" :traspaso ="false" />
       </DialogGrp>
     </div>
 
@@ -351,6 +354,7 @@
 <script setup>
 import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
 import { usePage } from '@inertiajs/inertia-vue3';
+import { nextTick } from 'vue';
 import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
 import axios from 'axios';
 import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
@@ -390,7 +394,8 @@ const abrirAutorTaxon = () => {
 const props = defineProps({
   autTaxEdit: [],
   taxonAct: {
-    type: Object
+    type: Object,
+    default: () => ({})
   },
   paginaActual: Number,
   categoria: [],
@@ -544,7 +549,9 @@ const recibeAutores = (autores, autoridadTax) =>{
 }
 
 const carga_inicio = () => {  
-  muestraGrd.value = props.muestraGuardar;
+  console.log("Carga de inicio: ", props.taxonAct
+  .completo);
+  muestraGrd.value = true;
   estCor.value = true;
   estSin.value = true;
   estNa.value = true;
@@ -588,6 +595,10 @@ const carga_inicio = () => {
   habModTax.value = false;
   cargaCategorias();
   
+  if (props?.taxonAct?.completo?.categoria?.IdNivel1 < 5) {
+    actGrupo.value = true;
+  }
+
   if (props.taxonAct?.completo?.IdNivel2 === 1) {
     estDinamico.value = "Valido";
   } else {
@@ -618,6 +629,14 @@ const carga_Grupos = () => {
   dialogFormVisibleGrupos.value = true;
 };
 
+/*Esta función es para cerrar el dialog de grupos taxonomicos*/
+const cerrar_Grupos = () => {
+  
+  cargaListGrp();
+
+  dialogFormVisibleGrupos.value = false;
+};
+
 const comentarios_Snib = () => {
   dialogFormVisibleComentarios.value = true;
 };
@@ -627,63 +646,70 @@ const closeDialogComSnib= () => {
 }
 
 const cargaListGrp = async () => {
-  const response = await axios.get('/carga-list-grp');
+  if(Object.keys(props.taxonAct).length > 0)
+  {
+    const response = await axios.get('/carga-list-grp');
 
-  if (response.status === 200) {
-    listGrp.value = response.data;
-    let idGrp = props.taxonAct.completo.scat.IdGrupoSCAT;
-    const resp = listGrp.value.find(grupo => grupo.id === idGrp);
-    if(resp){
-      nombreTax.grpSelec = resp.label;
+    if (response.status === 200) {
+      listGrp.value = response.data;
+      let idGrp = props.taxonAct.completo.scat.IdGrupoSCAT;
+      const resp = listGrp.value.find(grupo => grupo.id === idGrp);
+      if(resp){
+        nombreTax.grpSelec = resp.label;
+      }
+      grpSelec.value = resp.id;
     }
-    grpSelec.value = resp.id;
+    else {
+      console.log("Se presentó un error en la recuperación de los datos");
+    }
   }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
-  }
-
 };
 
 const validaHijos = async () => {
-  let params;
-  params = {
-    idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
-    IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
-    IdNivel2: props.taxonAct.completo.categoria.IdNivel2
-  };
+  if(Object.keys(props.taxonAct).length > 0)
+  {
+    let params;
+    params = {
+      idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
+      IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
+      IdNivel2: props.taxonAct.completo.categoria.IdNivel2
+    };
 
-  const response = await axios.get('/carga-categ', params);
-  
-  if (response.status === 200) {
-    if(response.data.length === 0)
-    {
-      habActTax.value = true;
-    }else{
-      habActTax.value = false;
+    const response = await axios.get('/carga-categ', params);
+    
+    if (response.status === 200) {
+      if(response.data.length === 0)
+      {
+        habActTax.value = true;
+      }else{
+        habActTax.value = false;
+      }
     }
-  }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
+    else {
+      console.log("Se presentó un error en la recuperación de los datos");
+    }
   }
 }; 
 
 const cargaCategorias = async () => {
-
-  let params = {
-    idNombre: props.taxonAct?.completo?.IdCategoriaTaxonomica,
-    IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
-    IdNivel2: props.taxonAct.completo.categoria.IdNivel2
-  };
-  
-  const response = await axios.get('carga-categ', { params });
-  if (response.status === 200) {
-    categorias.value = response.data;
-    categorias.value.push({
-      id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
-      label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
-    });
-  }else {
-    console.log("Se presentó un error en la recuperación de los datos");
+  if(Object.keys(props.taxonAct).length > 0)
+  {
+    let params = {
+      idNombre: props.taxonAct?.completo?.IdCategoriaTaxonomica,
+      IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
+      IdNivel2: props.taxonAct.completo.categoria.IdNivel2
+    };
+    
+    const response = await axios.get('carga-categ', { params });
+    if (response.status === 200) {
+      categorias.value = response.data;
+      categorias.value.push({
+        id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
+        label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
+      });
+    }else {
+      console.log("Se presentó un error en la recuperación de los datos");
+    }
   }
 };
 
@@ -723,31 +749,34 @@ const cargaNivRev = async () => {
 };
 
 const cargaComSnib = async () => {
+  if(Object.keys(props.taxonAct).length > 0)
+  {  
 
-  if (props.taxonAct.completo.scat) {
-    homonimiaSnib.value = props.taxonAct.completo.scat.HomonimiaSNIB;
-    idInvasora.value = props.taxonAct.completo.scat.ListaInvasoras;
-  }
+    if (props.taxonAct.completo.scat) {
+      homonimiaSnib.value = props.taxonAct.completo.scat.HomonimiaSNIB;
+      idInvasora.value = props.taxonAct.completo.scat.ListaInvasoras;
+    }
 
-  let params = {
-    idNombre: props.taxonAct.id
-  };
- 
-  const response = await axios.get('/cargar-comSnib', {params});
+    let params = {
+      idNombre: props.taxonAct.id
+    };
   
-  if (response.status === 200) {
+    const response = await axios.get('/cargar-comSnib', {params});
     
-    comentariosSnib.value = response.data[0].NumEjemplares;
-   
-    if (comentariosSnib.value > 0) {
-        comDet.value = false;
-       
-      } else {
-        comDet.value = true;
-      }
-  }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
+    if (response.status === 200) {
+      
+      comentariosSnib.value = response.data[0].NumEjemplares;
+    
+      if (comentariosSnib.value > 0) {
+          comDet.value = false;
+        
+        } else {
+          comDet.value = true;
+        }
+    }
+    else {
+      console.log("Se presentó un error en la recuperación de los datos");
+    }
   }
 };
 
@@ -793,7 +822,7 @@ const AltaEstatus = async () =>{
 };
 
 const nuevoTax = async() => {
-  muestraGrd.value = true;
+  muestraGrd.value = false;
 
   if (props.taxonAct.estatus.value === 'NA') {
     await mostrarNotificacion(
@@ -807,6 +836,8 @@ const nuevoTax = async() => {
  
   if (props.taxonAct.completo.categoria.IdNivel1 < 5) {
     actGrupo.value = false;
+  }else{
+    actGrupo.value = true;
   }
   
   habNuevo.value = true;
@@ -852,10 +883,13 @@ const nuevoTax = async() => {
 };
 
 const editarTax = () => {
+  if (props.taxonAct.completo.categoria.IdNivel1 < 5) {
+    actGrupo.value = false;
+  }
   habNuevo.value = true;
   habMod.value = true; 
   habElim.value = true;
-  muestraGrd.value = true;
+  muestraGrd.value = false;
   comDet.value = true;
   borrarAct.value = true;
   habAltEdic.value = false;
@@ -919,6 +953,7 @@ const CambioEstatus = () => {
 };
 
 const borrarDatos = async () => {
+  console.log("Esto llega al presionar Borrar: ", props.taxonAct.completo);
 
   let rel = props.taxonAct.completo.nombre_rel.length;
   let hijos = props.taxonAct.completo.hijos.length;
@@ -1063,7 +1098,9 @@ const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-const Guardar = async () =>{
+const Guardar = async (tipo, accionParam) =>{
+
+  console.log("Esto es lo que tiene tipo: ", tipo);
   
   if (!formRef.value) return;
   

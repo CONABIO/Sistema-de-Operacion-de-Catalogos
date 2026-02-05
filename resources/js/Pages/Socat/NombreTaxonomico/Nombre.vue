@@ -193,7 +193,8 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const openDialog = (nodeData) => {
-
+  console.log("Este es el valor de nodeData: ", nodeData);
+  taxonAct.value = nodeData;
   //mostrarLoading.value = false;
 
   emit('reset-form');
@@ -205,7 +206,11 @@ const resetFormNombre = () => {
   emit('reset-form');
 }
 
+/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+  Se agrega la reasignacion de referencia para que cuando cierra 
+    la ventana se actualice como si se ingresara de inicio*/
 const closeDialog = () => {
+  taxonAct.value = { ...taxonAct.value };
   dialogFormVisibleAlta.value = false;
 };
 
@@ -367,6 +372,8 @@ const handleChange = async (value) => {
       const response = await axios.get('/cargar-nomArb', { params });
 
       if (response.status === 200) {
+        
+        console.log("Este es el valor de response: ", response.data);
 
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
