@@ -848,9 +848,11 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .node-icon-wrapper {
-  width: 20px;
-  height: 20px;
-  margin-right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; 
+    height: 28px;
 }
 
 .icon-grid {

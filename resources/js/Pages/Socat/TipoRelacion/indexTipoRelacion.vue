@@ -1116,14 +1116,14 @@ const cerrarDialogo = () => {
     width: 100%;
 }
 
-/* 4. Estilos de los iconos de los nodos */
+
 .node-icon-wrapper {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2em;
-    width: 20px;
-    height: 20px;
+    width: 32px; 
+    height: 32px;
+    font-size: 23px; 
 }
 
 .static-icon {
@@ -1291,12 +1291,7 @@ const cerrarDialogo = () => {
     gap: 4px;
 }
 
-.node-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-}
+
 
 .icon-grid {
     display: grid;
