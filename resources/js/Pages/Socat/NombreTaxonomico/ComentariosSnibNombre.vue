@@ -1,13 +1,10 @@
 <template>
     <div class="common-layout">
-        <el-card>
-            <el-container style="height: 500px; border: 1px solid #eee">
+        <!--el-container style="height: 500px; border: 1px solid #eee"-->
+        <el-container >
                 <el-header class="header">
                     <div class=" header-content ">
                         <h1 class="titulo">Comentarios al taxón en el SNIB</h1>
-                    </div>
-                    <div class =" form-actions ">
-                        <BotonSalir accion="cerrar" @salir="cerrarDialogo"/>
                     </div>
                 </el-header>
                 <el-main class="contenido" style="text-align: right; 
@@ -16,7 +13,12 @@
                         :columnas="columnasDefinidas" 
                         :datos="comSnib"
                         :totalItems = "totalComSnib"
-                        :itemsPerPage="10">
+                        :itemsPerPage="10"
+                        :botCerrar="true"
+                        :mostrarNuevo="false"
+                        :mostrarEditar="false"
+                        :mostrarBorrar="false"
+                        @cerrar="cerrarDialogo">
                         <template #expand-column>
                             <el-table-column type="expand">
                                 <template #default="{ row }">
@@ -35,8 +37,7 @@
                         </template>
                     </TablaFiltrable>
                 </el-main>
-            </el-container>
-        </el-card>
+        </el-container>
     </div>
 </template>
 <script setup>
@@ -46,7 +47,7 @@
     import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
     import BotonSalir from '@/Components/Biotica/SalirButton.vue';
     import { ElLoading } from 'element-plus';
-    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 
     const props = defineProps({
         taxon: {
@@ -159,7 +160,7 @@
           color: white;
     }
 
-    .header-content {
+  .header-content {
         display: flex;
         justify-content: space-between;
         align-items: center;

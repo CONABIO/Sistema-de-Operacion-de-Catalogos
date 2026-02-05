@@ -12,6 +12,8 @@ import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
 const inputsFiltro = ref({});
 
+/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+  Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
   columnas: { type: Array, required: true },
   datos: { type: Array, required: true },
@@ -21,6 +23,9 @@ const props = defineProps({
   idKey: { type: String, required: true },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
+  mostrarNuevo: { type: Boolean, default: true },
+  mostrarEditar: { type: Boolean, default: true },
+  mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
   highlightCurrentRow: {
     type: Boolean,
@@ -128,7 +133,10 @@ const emit = defineEmits([
   'cerrar'
 ]);
 
-const accionModal = computed(() => props.botCerrar ? "cerrar" : "salir ")
+const accionModal = computed(() => {
+  return props.botCerrar ? "cerrar" : "salida"}
+);
+
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
@@ -231,7 +239,6 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
-//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -261,17 +268,23 @@ defineExpose({
           </slot>
         </div>
         <div class="left">
-          <div class="form-actions">
-            <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
-            <NuevoButton @crear="onNuevo" />
-            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
-            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <BotonSalir v-if="mostrarSalir"/>
+          <div class="botonera-biotica">
+             <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
+            <BotonTraspaso :icono="props.asignaTrasp" 
+                            v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
+            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" 
+                          v-if="props.mostrarEditar" />
+            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" 
+                            v-if="props.mostrarBorrar" />
+            <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              Se agrego la propiedad accion -->
+            <BotonSalir v-if="mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
           </div>
         </div>
       </div>
     </template>
-
     <div class="table-responsive ">
       <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow"
         :data="props.datos" :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
@@ -460,5 +473,24 @@ defineExpose({
   margin-top: 4px;
   margin-right: 35px;
   gap: 4px;
+}
+
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px; 
+  align-items: center; 
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

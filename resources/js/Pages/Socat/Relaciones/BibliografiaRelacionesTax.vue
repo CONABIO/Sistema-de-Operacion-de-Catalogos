@@ -13,7 +13,7 @@
           </el-header>
             <el-main style="padding: 15px; background: #fff; overflow: hidden;">
                 <el-row>
-                    <el-card class="main-content-card">
+                    
                         <div class="dual-panel-container">
                             <el-card class="table-panel">
                                 <span style="font-size: 20px; font-weight: bold;">
@@ -134,7 +134,7 @@
                                        v-model="citaCompleta">
                             </el-input>
                         </el-card> 
-                    </el-card>
+                    
                 </el-row>
             </el-main>
         </el-container>
