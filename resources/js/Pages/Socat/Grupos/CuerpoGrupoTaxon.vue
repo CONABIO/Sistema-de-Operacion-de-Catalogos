@@ -143,6 +143,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 50
     notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
+
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
