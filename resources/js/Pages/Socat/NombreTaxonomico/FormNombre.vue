@@ -12,7 +12,7 @@
           <el-row :gutter="21">
               <el-col :span="20">
                 <span class="subtitulo" style="color: red;">
-                  Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
+                  Taxón seleccionado: {{ taxonAct?.label }}
                 </span>
               </el-col>
 
@@ -24,26 +24,9 @@
                               @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
                   <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
                               @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                    <el-popconfirm 
-                                    confirm-button-text="Si" 
-                                    cancel-button-text="No" 
-                                    :icon="InfoFilled" 
-                                    icon-color="#E6A23C"
-                                    title="¿Realmente desea guardar los cambios?" 
-                                    @confirm="Guardar('nombreTax', accion)">
-                      <template #reference>
-                        <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
-                          <span style="display: inline-flex">
-                            <el-button circle type="warning" :disabled = "muestraGrd" @click.stop>
-                              <!--:disabled = autorAct-->
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                  <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                              </svg>
-                            </el-button>
-                          </span>
-                        </el-tooltip>
-                      </template>
-                    </el-popconfirm>
+                   <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                      Se cambia el boton de guardar por el componente del boton guardar-->  
+                  <GuardarButton :habilitar = "habGuardar" @click="Guardar"/>
                   <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </el-space>
               </el-col>
@@ -331,7 +314,7 @@
     <div>
       <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
         Se agregaron las propiedades para determinar si es modal y se muestra el
-        boton de traspaso-->>
+        boton de traspaso-->
       <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
         <CurpGruposTax :isModal = "true"  @cerrar="cerrar_Grupos" :traspaso ="false" />
       </DialogGrp>
@@ -355,7 +338,7 @@
 import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
 import { usePage } from '@inertiajs/inertia-vue3';
 import { nextTick } from 'vue';
-import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
+import { ElMessage, ElInput, ElPopconfirm, ElMessageBox} from 'element-plus';
 import axios from 'axios';
 import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
 import CurpAutorTax from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
@@ -373,6 +356,8 @@ import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 
 const { permisos, usuario } = usePermisos();
 
@@ -422,6 +407,8 @@ const autorComp = ref("");
 const listAutores = ref([]);
 const tabInicial = ref("taxon");
 
+const habGuardar = ref(true);
+
 const opcSnib = ref([{
   id: 'si',
   label: 'Si'
@@ -430,7 +417,7 @@ const opcSnib = ref([{
   label: 'No'
 }, {
   id: '',
-  label: 'Vacío'
+  label: ''
 }
 ]);
 
@@ -482,6 +469,7 @@ const notificacionMensaje = ref('');
 const notificacionTipo = ref('info');
 const notificacionDuracion = ref(5000);
 const notificacionVisible = ref(false);
+const numEjemp = ref('');
 
 const emit = defineEmits(['regresaTaxMod', 'cerrar', 
                           'resultadoAlta', 'resultadoBaja']);
@@ -556,6 +544,7 @@ const carga_inicio = () => {
   estSin.value = true;
   estNa.value = true;
   estNd.value = true;
+  habGuardar.value = true;
   
   Object.assign(nombreTax, {
     nombreTaxon : props.taxonAct?.completo?.Nombre || '',
@@ -581,6 +570,7 @@ const carga_inicio = () => {
   habAltEdic.value = true;
   comDet.value = true;
   listAutorTax.value = props.taxonAct?.completo?.rel_nombre_autor;
+  numEjemp.value = 0;
   cargaListGrp();
   cargaValSnib();
   cargaNivRev();
@@ -599,7 +589,7 @@ const carga_inicio = () => {
     actGrupo.value = true;
   }
 
-  if (props.taxonAct?.completo?.IdNivel2 === 1) {
+  if (props?.taxonAct?.completo?.categoria?.IdNivel2 === 1) {
     estDinamico.value = "Valido";
   } else {
     estDinamico.value = "Correcto";
@@ -609,15 +599,6 @@ const carga_inicio = () => {
   habMod.value = false; 
   habElim.value = false;
 
-  if (props.taxonAct?.completo?.rel_nombre_autor?.length === 0 && props.infTaxon != 0) {
-    ElMessage({
-      showClose: true,
-      message: 'Recuerde que se debe actualizar los autores para generar la relación entre nombre y autor',
-      type: 'warning',
-      duration: 3000
-    })
-    
-  }
 };
 
   const cerrarDialogo = () => {
@@ -765,7 +746,8 @@ const cargaComSnib = async () => {
     
     if (response.status === 200) {
       
-      comentariosSnib.value = response.data[0].NumEjemplares;
+      comentariosSnib.value = response.data[0].NumComEjemplares;
+      numEjemp.value = response.data[0].NumEjemplares
     
       if (comentariosSnib.value > 0) {
           comDet.value = false;
@@ -795,7 +777,6 @@ const AltaEstatus = async () =>{
     }
     switch(props.taxonAct.completo.Estatus){
       case 2:
-      console.log("Entre a case 2");
         estCor.value = false;
         estSin.value = false;
         estNa.value = false;
@@ -824,6 +805,8 @@ const AltaEstatus = async () =>{
 const nuevoTax = async() => {
   muestraGrd.value = false;
 
+  accion.value = "crear"; 
+
   if (props.taxonAct.estatus.value === 'NA') {
     await mostrarNotificacion(
           "Aviso",
@@ -849,6 +832,7 @@ const nuevoTax = async() => {
   autorAct.value = false;
   nombreTax.catTax = '';
   valSnib.value = '';
+  habGuardar.value = false;
 
   const resp = await AltaEstatus();
   
@@ -880,6 +864,7 @@ const nuevoTax = async() => {
   estPubS.value = false;
   estPubN.value = false;
   listAutores.value = [];
+  numEjemp.value = 0;
 };
 
 const editarTax = () => {
@@ -906,6 +891,7 @@ const editarTax = () => {
   estSin.value = false;
   estNa.value = false;
   estNd.value = false;
+  habGuardar.value = false;
   CambioEstatus();
 };
 
@@ -958,15 +944,15 @@ const borrarDatos = async () => {
   let rel = props.taxonAct.completo.nombre_rel.length;
   let hijos = props.taxonAct.completo.hijos.length;
   let catRel = props.taxonAct.completo.rel_nombre_cat.length;
-  let numEjemp = parseInt(props.taxonAct.numEjemp);
+  //let numEjemp = parseInt(props.taxonAct.numEjemp);
 
   let mensaje = '<strong>El nombre no puede ser eliminado ya que tiene: </p> <br></strong>';
 
-  if (numEjemp > 0) {
-    if (numEjemp === 1) {
-      mensaje += '<strong>' + numEjemp + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
+  if (numEjemp.value > 0) {
+    if (numEjemp.value === 1) {
+      mensaje += '<strong>' + numEjemp.value + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
     } else {
-      mensaje += '<strong>' + numEjemp + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
+      mensaje += '<strong>' + numEjemp.value + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
     }
   }
 
@@ -1072,7 +1058,8 @@ const resetForm = () => {
 };
 
 const cambioPublico = async (estadoTaxon)=> {
-  if(props.taxonAct.numEjemp > 0 && estadoTaxon != 1)
+
+  if(numEjemp.value > 0 && estadoTaxon != 1)
     {
       await mostrarNotificacion(
         "Aviso",
@@ -1086,7 +1073,6 @@ const cambioPublico = async (estadoTaxon)=> {
 }
 
 const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  console.log("Entre a mostrar la notificación 321");
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
   notificacionTipo.value = tipo;
@@ -1094,13 +1080,19 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
   notificacionVisible.value = true;
 };
 
+const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+};
+
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-const Guardar = async (tipo, accionParam) =>{
-
-  console.log("Esto es lo que tiene tipo: ", tipo);
+const Guardar = async () =>{
   
   if (!formRef.value) return;
   
@@ -1120,7 +1112,6 @@ const Guardar = async (tipo, accionParam) =>{
 
   if(!estadoPub)
   {
-    console.log("Voy a cancelar");
     return;
   }
 
@@ -1221,22 +1212,28 @@ const Guardar = async (tipo, accionParam) =>{
                     }
                 }
               break;
-              case 'editar':   
-              if(Array.isArray(listAutorTax.value) && 
-                                       listAutorTax.value.length === 0){
-                  listAutorTax.value = props.taxonAct.completo.rel_nombre_autor;
-                }else if(Array.isArray(props.taxonAct.completo.rel_nombre_autor) && 
-                                       props.taxonAct.completo.rel_nombre_autor.length === 0 && 
-                                       listAutorTax.value.length === 0)
-                {
-                   await mostrarNotificacion(
-                              "Aviso",
-                              'No es posible continuar ya que no hay valores de lista de autores.',
-                              "Error",
-                              5000
-                            );
+              case 'editar':  
+              
+                const confirmado = await showConfirmMessage({
+                    title: 'Confirmar modificación',
+                    message: '¿Estás seguro de guardar los cambios para el taxón actual?'
+                });
+
+              if (!confirmado) {
                   return;
-                }
+              }
+
+              if(listAutorTax.value.length === 0)
+              {
+                 await mostrarNotificacionError(
+                            "Aviso",
+                            'No es posible continuar ya que no hay valores de lista de autores.',
+                            "Error",
+                            5000
+                          );
+                return;
+              }
+
                 params = {
                   scat:{
                     Grupo: grupoScat,

@@ -506,14 +506,15 @@ const expande = async (draggingNode) => {
 
   mostrarLoading.value = true
 }
-
+/*
 const proceder = () => {
   console.log("Pase el movimeinto");
 }
 
 const cancelar = () => {
   console.log("Evite el movimeinto");
-}
+}*/
+
 //Función para mover un taxón y reasignarlo a otro 
 const mover = async (node) => {
 

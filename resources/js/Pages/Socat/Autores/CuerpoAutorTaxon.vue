@@ -185,6 +185,7 @@ const onPaste = (event, scope) => {
 const cargaListAutor = async (idsAutor) => {
   try {
     autoridadTax.value = '';
+    autoresRel.value = [];
     const response = await axios.get('/busca-autoresRel', {
       params: {
         ids: idsAutor
@@ -462,7 +463,7 @@ const onEliminarInterno = () => {
                 <div style="display: flex; justify-content: space-between; gap: 3px;
                                 margin-bottom: 10px;">
                   <div>
-                    <el-tooltip effect="dark" content="Generar" placement="right-start">
+                    <el-tooltip effect="dark" content="Generar" placement="bottom">
                       <el-button
                         @click="armaAutoridad" circle type="primary"
                         color="#9C2007"
@@ -471,7 +472,7 @@ const onEliminarInterno = () => {
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <el-tooltip effect="dark" content="Traspasar" placement="right-start">
+                    <el-tooltip effect="dark" content="Traspasar" placement="bottom">
                       <el-button
                         @click="traspasaDatos" circle type="primary" color="#8e44ad">
                         <el-icon>
@@ -481,14 +482,14 @@ const onEliminarInterno = () => {
                     </el-tooltip>
                   </div>
                   <div>
-                    <el-tooltip effect="dark" content="Subir" placement="right-start">
+                    <el-tooltip effect="dark" content="Subir" placement="bottom">
                       <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "subirRow()" color="#60A3A3">
                         <el-icon class="icon-bold" color="#FCFFFF">
                           <ArrowUp />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
-                    <el-tooltip effect="dark" content="Bajar" placement="right-start">
+                    <el-tooltip effect="dark" content="Bajar" placement="bottom">
                       <el-button circle type="warning" :disabled="!filaSeleccionada" @click = "bajarRow()" color="#60A3A3">
                         <el-icon class="icon-bold" color="#FCFFFF">
                           <ArrowDown />
@@ -621,6 +622,14 @@ Etiqueta que marca en verde las filas de la tabla*/
   --el-table-tr-bg-color: #ddf6dd !important; 
 }
 /*Leonardo - 22/01/2026*/
+
+
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
 
 /* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row > td {

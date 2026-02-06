@@ -638,6 +638,13 @@ onMounted(() => {
   gap: 10px;
   margin-top: 35px;
 }
+
+
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
 </style>
 
 <style scoped>
@@ -798,5 +805,7 @@ onMounted(() => {
   background-color: #ddf6dd !important;
   color: #000;
 }
+
+
 
 </style>

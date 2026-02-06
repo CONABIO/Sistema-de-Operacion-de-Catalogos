@@ -72,7 +72,7 @@ class NombresArbolController extends Controller
             
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::filtraArbol($categ, $catalog)
@@ -84,7 +84,7 @@ class NombresArbolController extends Controller
             
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion', 'relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdNombre', $valor)
@@ -94,7 +94,7 @@ class NombresArbolController extends Controller
         } else {
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion', 'relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdCategoriaTaxonomica', 1)
@@ -315,11 +315,11 @@ class NombresArbolController extends Controller
     public function  cargaComSnib(Request $request)
     {
 
-        $query = "select count(distinct nt.comentarioscat) as NumEjemplares
-                  from snib.nombre_taxonomia nt 
-                        inner join catalogocentralizado._TransformaTablaNombre_snib t on 
+        $query = "SELECT COUNT(DISTINCT nt.comentarioscat) AS NumComEjemplares, COUNT(nt.llavenombre) AS NumEjemplares
+                  FROM snib.nombre_taxonomia nt 
+                        INNER JOIN catalogocentralizado._TransformaTablaNombre_snib t ON 
                                     nt.idnombre = t.IdNombre
-                  Where t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
+                  WHERE t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
 
         $resultado = DB::connection('snib')->select($query);
 

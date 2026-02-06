@@ -143,6 +143,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 50
     notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
+
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
@@ -393,6 +394,12 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 
 .el-table .fila-seleccionada-verde {
     background-color: #ddf6dd !important;
+}
+
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
 }
 
 
