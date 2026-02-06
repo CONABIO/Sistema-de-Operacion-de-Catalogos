@@ -602,6 +602,7 @@ const guardarDesdeModal = async () => {
     const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
             const nodeId = nodoEnModal.value.IdTipoRelacion;
+            nodeIdToFocus.value = nodeId; 
             router.put(`/tipos-relacion/${nodeId}`, {
                 Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad
@@ -1103,7 +1104,6 @@ const cerrarDialogo = () => {
     color: #155724 !important;
 }
 
-/* 3. Estilos generales del árbol */
 .custom-element-tree {
     font-family: inherit;
     font-size: 14px;
@@ -1132,7 +1132,6 @@ const cerrarDialogo = () => {
     object-fit: contain;
 }
 
-/* --- ESTILOS DEL MESSAGE BOX (ELIMINACIÓN) --- */
 .message-box-diseno-limpio .el-message-box__header {
     border-bottom: none;
 }
