@@ -378,7 +378,7 @@ const cerrarDialogo = () => {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 20px;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {

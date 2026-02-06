@@ -396,6 +396,12 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     background-color: #ddf6dd !important;
 }
 
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
 
 .el-table .fila-seleccionada-verde {
     --el-table-tr-bg-color: #ddf6dd !important;

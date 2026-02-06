@@ -239,7 +239,6 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
-//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -269,8 +268,8 @@ defineExpose({
           </slot>
         </div>
         <div class="left">
-          <div class="form-actions">
-            <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
+          <div class="botonera-biotica">
+             <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
                 Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
             <BotonTraspaso :icono="props.asignaTrasp" 
                             v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
@@ -474,5 +473,24 @@ defineExpose({
   margin-top: 4px;
   margin-right: 35px;
   gap: 4px;
+}
+
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px; 
+  align-items: center; 
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

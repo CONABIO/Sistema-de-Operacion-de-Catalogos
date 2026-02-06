@@ -312,6 +312,12 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
     margin-top: 35px;
 }
 
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
 
 </style>
 

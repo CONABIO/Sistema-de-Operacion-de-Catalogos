@@ -522,71 +522,108 @@ const guardarDesdeModal = async () => {
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
-        const idPadreActual = nodoEnModal.value.IdAscendente;
-        const duplicado = props.flatTreeDataProp.find(nodo =>
-            String(nodo.IdAscendente) === String(idPadreActual) &&
-            nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
-            String(nodo.IdTipoRelacion) !== String(nodoEnModal.value.IdTipoRelacion)
-        );
+        const nodoEditando = nodoEnModal.value;
 
-        if (duplicado) {
-            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
-            cerrarModalOperacion(); 
-            mostrarNotificacion("Aviso", `Ya existe una relación llamada "${nuevaDesc}" en este nivel.`, "warning");
-            return; 
+        let profundidad = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (nodoEditando[`Nivel${i}`] > 0) profundidad = i;
         }
-    } 
-    else if (modalMode.value === "insertar") {
-        const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-        if (!calculoNiveles) return;
+        const duplicado = props.flatTreeDataProp.find(nodo => {
+            if (String(nodo.IdTipoRelacion) === String(nodoEditando.IdTipoRelacion)) return false;
+            if (nodo.Descripcion.trim().toLowerCase() !== nuevaDescLower) return false;
+            let esMismoPadre = true;
+            for (let i = 1; i < profundidad; i++) {
+                if (nodo[`Nivel${i}`] !== nodoEditando[`Nivel${i}`]) {
+                    esMismoPadre = false;
+                    break;
+                }
+            }
 
-        const idPadreDestino = calculoNiveles.idPadre;
-        const duplicado = props.flatTreeDataProp.find(nodo =>
-            String(nodo.IdAscendente) === String(idPadreDestino) &&
-            nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
-        );
+            if (esMismoPadre) {
+                for (let i = profundidad + 1; i <= 5; i++) {
+                    if (nodo[`Nivel${i}`] !== 0) {
+                        esMismoPadre = false;
+                        break;
+                    }
+                }
+                if (nodo[`Nivel${profundidad}`] === 0) esMismoPadre = false;
+            }
+
+            return esMismoPadre;
+        });
 
         if (duplicado) {
-            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion; 
-            cerrarModalOperacion(); 
-            mostrarNotificacion("Aviso", `Ya existe "${nuevaDesc}" en el nivel seleccionado.`, "warning");
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
+            selectAndFocusNode(duplicado.IdTipoRelacion);
+            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
             return;
         }
-        formModal.value._calculoNiveles = calculoNiveles;
+    }
+    else if (modalMode.value === "insertar") {
+        const calculo = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+        if (!calculo) return;
+
+        const nuevosNiv = calculo.niveles;
+        let profundidadActual = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (nuevosNiv[`Nivel${i}`] > 0) profundidadActual = i;
+        }
+
+        const duplicado = props.flatTreeDataProp.find(nodo => {
+            if (nodo.Descripcion.trim().toLowerCase() !== nuevaDescLower) return false;
+            let mismoPadreYNivel = true;
+            for (let i = 1; i < profundidadActual; i++) {
+                if (nodo[`Nivel${i}`] !== nuevosNiv[`Nivel${i}`]) {
+                    mismoPadreYNivel = false;
+                    break;
+                }
+            }
+            if (mismoPadreYNivel) {
+                for (let i = profundidadActual + 1; i <= 5; i++) {
+                    if (nodo[`Nivel${i}`] !== 0) {
+                        mismoPadreYNivel = false;
+                        break;
+                    }
+                }
+            }
+            return mismoPadreYNivel;
+        });
+
+        if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
+            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            return;
+        }
+        formModal.value._calculoNiveles = calculo;
     }
 
     const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
             const nodeId = nodoEnModal.value.IdTipoRelacion;
-            const datosUpdate = {
+            nodeIdToFocus.value = nodeId; 
+            router.put(`/tipos-relacion/${nodeId}`, {
                 Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad
-            };
-
-            router.put(`/tipos-relacion/${nodeId}`, datosUpdate, {
+            }, {
                 preserveState: true,
                 onSuccess: () => {
                     cerrarModalOperacion();
                     mostrarNotificacion("Modificación", "El tipo de relación ha sido modificado correctamente.", "success");
                 },
                 onError: (errors) => {
-                    const firstError = Object.values(errors)[0];
-                    mostrarNotificacion("Aviso", firstError, "error");
-                    if (errors.protected || firstError.includes('protegido')) {
-                        cerrarModalOperacion();
-                    }
+                    mostrarNotificacion("Aviso", Object.values(errors)[0], "error");
                 }
             });
         } else {
             const calculo = formModal.value._calculoNiveles;
-            const datosInsert = {
+            router.post("/tipos-relacion", {
                 Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad,
                 ...calculo.niveles,
                 RutaIcono: ICONO_POR_DEFECTO
-            };
-
-            router.post("/tipos-relacion", datosInsert, {
+            }, {
                 preserveState: true,
                 onSuccess: (page) => {
                     cerrarModalOperacion();
@@ -596,10 +633,6 @@ const guardarDesdeModal = async () => {
                         selectAndFocusNode(finalNewNodeId);
                     }
                     mostrarNotificacion("Ingreso", "El tipo de relación ha sido ingresado correctamente.", "success");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors)[0];
-                    mostrarNotificacion("Error", firstError, "error");
                 }
             });
         }
@@ -824,11 +857,10 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <AppLayout title="Tipos de Relación">
-        <LayoutCuerpo :usar-app-layout="false" titulo-pag="Tipos de Relación"
-            titulo-area="Catálogo de tipos de relaciones taxonómicas">
-
-            <el-card class="box-card tree-card">
+    <LayoutCuerpo :usar-app-layout="true" titulo-pag="Tipos de Relación"
+        titulo-area="Catálogo de tipos de relaciones taxonómicas">
+        <div class="contenedor-marcos-manual">
+            <el-card class="box-card tree-card" shadow="never">
                 <template #header>
                     <div class="header-container">
                         <div class="left-header-content"></div>
@@ -842,7 +874,7 @@ const cerrarDialogo = () => {
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                                <BotonSalir />
+                                <BotonSalir toolPosicion="bottom" />
                             </div>
                         </div>
                     </div>
@@ -868,85 +900,77 @@ const cerrarDialogo = () => {
                         </span>
                     </template>
                 </el-tree>
-                <div v-else class="no-data-message">
-                    No hay datos de tipos de relación para mostrar.
-                </div>
+
+                <div v-else class="no-data-message"> No hay datos de tipos de relación para mostrar. </div>
             </el-card>
+        </div>
+    </LayoutCuerpo>
 
-        </LayoutCuerpo>
 
-        <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalOperacion">
-                <div class="dialog-header">
-                    <h3>{{ modalTitle }}</h3>
-                </div>
-                <div class="content-wrapper-custom">
-                    <div class="form-actions">
-                        <GuardarButton @click="guardarDesdeModal" />
-                        <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+    <Teleport to="body">
+        <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <div class="dialog-header">
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="form-actions">
+                <GuardarButton @click="guardarDesdeModal" />
+                <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+            </div>
+            <div class="dialog-body-container">
+                <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                    @submit.prevent="guardarDesdeModal">
+
+                    <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                        <el-radio-group v-model="opcionNivel">
+                            <el-radio value="mismo">Mismo nivel</el-radio>
+                            <el-radio value="inferior">Nivel inferior</el-radio>
+                        </el-radio-group>
                     </div>
-                    <div class="dialog-body-container">
-                        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                            @submit.prevent="guardarDesdeModal">
 
-                            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                                <el-radio-group v-model="opcionNivel">
-                                    <el-radio value="mismo">Mismo nivel</el-radio>
-                                    <el-radio value="inferior">Nivel inferior</el-radio>
-                                </el-radio-group>
-                            </div>
+                    <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
+                        <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
+                            placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
+                    </el-form-item>
 
-                            <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
-                                <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
-                                    placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
-                            </el-form-item>
+                    <el-form-item prop="Direccionalidad" label="Direccionalidad:">
+                        <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
+                            style="width: 100%;" :disabled="modalMode === 'editar'">
+                            <el-option label="1 - Unidireccional" :value="1" />
+                            <el-option label="2 - Reciproca" :value="2" />
+                            <el-option label="3 - No aplica" :value="3" />
+                        </el-select>
+                    </el-form-item>
 
-                            <el-form-item prop="Direccionalidad" label="Direccionalidad:">
-                                <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
-                                    style="width: 100%;" :disabled="modalMode === 'editar'">
-                                    <el-option label="1 - Unidireccional" :value="1" />
-                                    <el-option label="2 - Reciproca" :value="2" />
-                                    <el-option label="3 - No aplica" :value="3" />
-                                </el-select>
-                            </el-form-item>
+                </el-form>
+            </div>
+        </DialogGeneral>
 
-
-                        </el-form>
+        <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
+            <div class="dialog-header">
+                <h3>Seleccione el ícono para "{{ selectedNode?.Descripcion }}"</h3>
+            </div>
+            <div class="dialog-body-container">
+                <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal', 'flecha')"
+                    @input="onInputBusquedaIcono" clearable />
+                <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la búsqueda' }}</h4>
+                <div v-loading="cargandoIconos" class="icon-grid mt-4">
+                    <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
+                        @click="seleccionarIcono(iconName)">
+                        <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
                     </div>
                 </div>
-            </DialogGeneral>
+                <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
+                    class="text-center text-gray-500 mt-4">
+                    No se encontraron resultados.
+                </p>
+            </div>
+        </DialogGeneral>
 
-            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true"
-                @close="cerrarModalIconos">
-                <div class="dialog-header">
-                    <h3>Seleccionar Ícono para "{{ selectedNode?.Descripcion }}"</h3>
-                </div>
-                <div class="dialog-body-container">
-                    <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal', 'flecha')"
-                        @input="onInputBusquedaIcono" clearable />
-                    <h4 class="icon-section-title">
-                        {{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la Búsqueda' }}
-                    </h4>
-
-                    <div v-loading="cargandoIconos" class="icon-grid mt-4">
-                        <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
-                            @click="seleccionarIcono(iconName)">
-                            <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
-                        </div>
-                    </div>
-                    <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
-                        class="text-center text-gray-500 mt-4">
-                        No se encontraron resultados.
-                    </p>
-                </div>
-            </DialogGeneral>
-
-            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                @close="cerrarNotificacion" />
-        </Teleport>
-    </AppLayout>
+        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+            @close="cerrarNotificacion" />
+    </Teleport>
 </template>
 
 <style>
@@ -1061,6 +1085,91 @@ const cerrarDialogo = () => {
     gap: 8px;
     width: 100%;
 }
+
+.tree-card>.el-card__body {
+    overflow-y: auto !important;
+    flex-grow: 1;
+    padding: 10px !important;
+
+    border: 1px solid #ebeef5 !important;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px !important;
+
+    background-color: #ffffff;
+}
+
+.custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: #d4edda !important;
+    border-left: 5px solid #28a745 !important;
+    color: #155724 !important;
+}
+
+.custom-element-tree {
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.custom-tree-node-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+
+.node-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; 
+    height: 32px;
+    font-size: 23px; 
+}
+
+.static-icon {
+    width: 1.2em;
+    height: 1.2em;
+    object-fit: contain;
+}
+
+.message-box-diseno-limpio .el-message-box__header {
+    border-bottom: none;
+}
+
+.message-box-diseno-limpio .el-message-box__content {
+    padding: 10px 20px 20px 20px;
+}
+
+.custom-message-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.body-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.custom-warning-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #f56c6c;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
 </style>
 
 <style scoped>
@@ -1071,7 +1180,17 @@ const cerrarDialogo = () => {
     max-height: 726px;
     display: flex;
     flex-direction: column;
+}
 
+/* Importante: el padding 0 aquí permite que el margen del estilo global funcione */
+:deep(.el-card__body) {
+    padding: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: transparent;
+    /* Para que se vea el fondo gris de atrás */
 }
 
 :deep(.el-card__header) {
@@ -1149,7 +1268,7 @@ const cerrarDialogo = () => {
     display: flex;
     justify-content: flex-end;
     margin-top: 24px;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {
@@ -1171,12 +1290,7 @@ const cerrarDialogo = () => {
     gap: 4px;
 }
 
-.node-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-}
+
 
 .icon-grid {
     display: grid;
@@ -1220,5 +1334,18 @@ const cerrarDialogo = () => {
     width: 1.2em;
     height: 1.2em;
     object-fit: contain;
+}
+
+
+.contenedor-marcos-manual {
+    background-color: #ffffff;
+    padding: 20px;
+    min-height: 100px;
+    box-sizing: border-box;
+}
+
+.tree-card {
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
 }
 </style>

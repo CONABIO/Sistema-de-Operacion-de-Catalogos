@@ -760,7 +760,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 25px;
+    gap: 30px;
 
 }
 

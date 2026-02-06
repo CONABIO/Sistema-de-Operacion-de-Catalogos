@@ -623,6 +623,14 @@ Etiqueta que marca en verde las filas de la tabla*/
 }
 /*Leonardo - 22/01/2026*/
 
+
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
+
 /* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row > td {
   background-color: #ddf6dd !important;

@@ -827,7 +827,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 24px;
-  gap: 25px;
+  gap: 30px;
 }
 
 :deep(.el-form-item) {
@@ -848,9 +848,11 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .node-icon-wrapper {
-  width: 20px;
-  height: 20px;
-  margin-right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; 
+    height: 28px;
 }
 
 .icon-grid {
