@@ -15,7 +15,7 @@
     const props = defineProps({
         toolPosicion: {
             type: String,
-            default: "top"
+            default: "bottom"
         },
         icono:{
             type: String, 

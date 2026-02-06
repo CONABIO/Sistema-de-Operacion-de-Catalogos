@@ -125,6 +125,7 @@
         };
 
         const response = await axios.get('/carga-AcumuladoSnib', { params } );
+        console.log("Esta es la respuesta de aculado: ", response.data);
 
         if (response.status === 200) {
             comSnib.value = response.data;

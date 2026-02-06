@@ -6,7 +6,7 @@
         <el-tooltip class="item" effect="dark" :content="tooltipContent" placement="bottom">
           
 
-          <el-button :size="size" :type="type" :circle="circle" @click="handleClick">
+          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive"
                 viewBox="0 0 16 16">
@@ -19,7 +19,7 @@
       </div>
       <div v-else>
         <el-tooltip class="item" effect="dark" :content="tooltipContent" placement="bottom">
-          <el-button :size="size" :type="type" :circle="circle" @click="handleClick">
+          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-usb-drive"
                 viewBox="0 0 16 16">
@@ -59,7 +59,11 @@ const props = defineProps({
   circle: {
     type: Boolean,
     default: true,
-  },
+  }, 
+  habilitar: {
+    type: Boolean, 
+    default: false
+  }
 });
 
 const emit = defineEmits(['confirmar']);
