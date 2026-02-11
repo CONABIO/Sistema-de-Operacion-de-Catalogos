@@ -97,54 +97,44 @@ class RegionController extends Controller
     }
 
 
+    
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'NombreRegion' => 'required|string|max:255',
-            'IdTipoRegion' => 'required|integer',
-            'ClaveRegion' => 'nullable|string|max:255',
-            'Abreviado' => 'nullable|string|max:255',
-            'opcionNivel' => 'required|string|in:raiz,mismo,inferior',
-            'idNodoReferencia' => 'nullable|integer',
+{
+    $validatedData = $request->validate([
+        'NombreRegion' => 'required|string|max:255',
+        'IdTipoRegion' => 'required|integer',
+        'ClaveRegion' => 'nullable|string|max:255',
+        'Abreviado' => 'nullable|string|max:255',
+        'opcionNivel' => 'required|string|in:raiz,mismo,inferior',
+        'idNodoReferencia' => 'nullable|integer',
+    ]);
+
+    DB::transaction(function () use ($validatedData) {
+        $idPadreFinal = null;
+        if ($validatedData['opcionNivel'] === 'inferior') {
+            $idPadreFinal = $validatedData['idNodoReferencia'];
+        } elseif ($validatedData['opcionNivel'] === 'mismo') {
+            $nodoReferencia = Region::find($validatedData['idNodoReferencia']);
+            $idPadreFinal = $nodoReferencia ? $nodoReferencia->IdRegionAsc : null;
+        }
+        $nuevaRegion = Region::create([
+            'NombreRegion' => $validatedData['NombreRegion'],
+            'IdTipoRegion' => $validatedData['IdTipoRegion'],
+            'ClaveRegion' => $validatedData['ClaveRegion'],
+            'Abreviado' => $validatedData['Abreviado'],
+            'IdRegionAsc' => $idPadreFinal ?? 1, 
+            'DatoActivo' => 1,
+            'FechaCaptura' => now(),
         ]);
+        if ($validatedData['opcionNivel'] === 'raiz' || empty($idPadreFinal)) {
+            $nuevaRegion->IdRegionAsc = $nuevaRegion->IdRegion;
+            $nuevaRegion->save();
+        }
+    });
 
-        DB::transaction(function () use ($validatedData) {
+    return redirect()->route('regiones.index')->with('success', 'Región creada correctamente.');
+}
 
-            $idPadreInicial = null;
-            $esRaizAutoReferenciada = false;
-
-            if ($validatedData['opcionNivel'] === 'inferior') {
-                $idPadreInicial = $validatedData['idNodoReferencia'];
-            } elseif ($validatedData['opcionNivel'] === 'mismo') {
-                $nodoHermano = Region::find($validatedData['idNodoReferencia']);
-
-                if ($nodoHermano) {
-                    if ($nodoHermano->IdRegion == $nodoHermano->IdRegionAsc) {
-                        $esRaizAutoReferenciada = true;
-                        $idPadreInicial = $nodoHermano->IdRegion;
-                    } else {
-                        $idPadreInicial = $nodoHermano->IdRegionAsc;
-                    }
-                } else {
-                    $idPadreInicial = 1; 
-                }
-            }
-            $nuevaRegion = Region::create([
-                'NombreRegion' => $validatedData['NombreRegion'],
-                'IdTipoRegion' => $validatedData['IdTipoRegion'],
-                'ClaveRegion' => $validatedData['ClaveRegion'],
-                'Abreviado' => $validatedData['Abreviado'],
-                'IdRegionAsc' => $idPadreInicial,
-            ]);
-
-            if ($esRaizAutoReferenciada) {
-                $nuevaRegion->IdRegionAsc = $nuevaRegion->IdRegion;
-                $nuevaRegion->save();
-            }
-        });
-
-        return redirect()->route('regiones.index')->with('success', 'Región creada.');
-    }
 
     public function update(Request $request, Region $region)
     {

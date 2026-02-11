@@ -68,11 +68,32 @@ class TipoRegionController extends Controller
         }
         $levelRules['isModal'] = 'nullable|boolean';
 
+        $niveles = $request->only(['Nivel1', 'Nivel2', 'Nivel3', 'Nivel4', 'Nivel5']);
+        $nivelActivo = 1;
+        for ($i = self::MAX_NIVELES; $i >= 1; $i--) {
+            if ($niveles["Nivel{$i}"] > 0) {
+                $nivelActivo = $i;
+                break;
+            }
+        }
+
         $validatedData = $request->validate(array_merge([
-            'Descripcion' => ['required', 'string', 'max:255', Rule::unique(TipoRegion::class)],
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(TipoRegion::class)->where(function ($query) use ($niveles, $nivelActivo) {
+                    for ($i = 1; $i < $nivelActivo; $i++) {
+                        $query->where("Nivel{$i}", $niveles["Nivel{$i}"]);
+                    }
+                    for ($i = $nivelActivo + 1; $i <= self::MAX_NIVELES; $i++) {
+                        $query->where("Nivel{$i}", 0);
+                    }
+                }),
+            ],
         ], $levelRules), [
             'Descripcion.required' => 'La descripción es obligatoria.',
-            'Descripcion.unique' => 'Esta descripción ya está registrada. Por favor intente con otra.',
+            'Descripcion.unique' => 'Esta descripción ya está registrada en este nivel. Por favor intente con otra.',
         ]);
 
         TipoRegion::create($validatedData);
@@ -85,17 +106,34 @@ class TipoRegionController extends Controller
 
     public function update(Request $request, TipoRegion $tipoRegion)
     {
+        $nivelActivo = 1;
+        for ($i = self::MAX_NIVELES; $i >= 1; $i--) {
+            if ($tipoRegion->{"Nivel{$i}"} > 0) {
+                $nivelActivo = $i;
+                break;
+            }
+        }
+
         $validatedData = $request->validate([
             'Descripcion' => [
                 'required',
                 'string',
-                Rule::unique(TipoRegion::class)->ignore($tipoRegion->IdTipoRegion, 'IdTipoRegion')
+                'max:255',
+                Rule::unique(TipoRegion::class)
+                    ->ignore($tipoRegion->IdTipoRegion, 'IdTipoRegion')
+                    ->where(function ($query) use ($tipoRegion, $nivelActivo) {
+                        for ($i = 1; $i < $nivelActivo; $i++) {
+                            $query->where("Nivel{$i}", $tipoRegion->{"Nivel{$i}"});
+                        }
+                        for ($i = $nivelActivo + 1; $i <= self::MAX_NIVELES; $i++) {
+                            $query->where("Nivel{$i}", 0);
+                        }
+                    })
             ],
             'isModal' => 'nullable|boolean'
         ], [
             'Descripcion.required' => 'La descripción es obligatoria.',
-            'Descripcion.unique' => 'Esta descripción ya está registrada. Por favor intente con otra.',
-            'Descripcion.max' => 'La descripción no puede tener más de 255 caracteres.'
+            'Descripcion.unique' => 'Esta descripción ya está registrada en este nivel.',
         ]);
 
         $tipoRegion->update($validatedData);
