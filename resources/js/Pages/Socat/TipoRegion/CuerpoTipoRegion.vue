@@ -31,7 +31,7 @@ const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
 
-const emit = defineEmits(['seleccionar-tipo', 'cerrar-modal']); 
+const emit = defineEmits(['seleccionar-tipo', 'cerrar-modal']);
 
 const formModal = ref({
     Descripcion: "",
@@ -148,38 +148,104 @@ const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     const isValid = await formModalRef.value.validate();
     if (!isValid) return;
+    const descripcionABuscar = formModal.value.Descripcion.trim();
+    const modoAlGuardar = modalMode.value; 
+
+    const buscarYSeleccionar = (texto) => {
+        const duplicado = props.flatTreeDataProp.find(item => {
+            const mismoTexto = item.Descripcion.trim().toLowerCase() === texto.toLowerCase();
+            if (modoAlGuardar === 'editar' && nodoEnModal.value) {
+                return mismoTexto &&
+                    item.Nivel1 === nodoEnModal.value.Nivel1 &&
+                    item.Nivel2 === nodoEnModal.value.Nivel2 &&
+                    item.Nivel3 === nodoEnModal.value.Nivel3 &&
+                    item.Nivel4 === nodoEnModal.value.Nivel4 &&
+                    item.Nivel5 === nodoEnModal.value.Nivel5;
+            }
+            return mismoTexto;
+        });
+
+        if (duplicado) {
+            const id = duplicado.IdTipoRegion;
+            selectedNode.value = duplicado;
+            nextTick(() => {
+                treeRef.value?.setCurrentKey(id, true);
+                setTimeout(() => {
+                    const nodeElement = document.getElementById(`tree-node-${id}`);
+                    if (nodeElement) {
+                        nodeElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    }
+                }, 250);
+            });
+        }
+    };
 
     const onSuccess = () => {
-        cerrarModalOperacion();
-        mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
-    };
-    const onError = (errors) => {
-        mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
+        const tituloNotif = modoAlGuardar === "editar" ? "Modificación" : "Ingreso";
+        const mensajeNotif = modoAlGuardar === "editar" 
+            ? `El tipo de región "${descripcionABuscar}" fue modificado correctamente.`
+            : `El tipo de región "${descripcionABuscar}" se agregó correctamente.`;
+
+        esModalVisible.value = false;
+        nodoEnModal.value = null;
+
+        setTimeout(() => {
+            mostrarNotificacion(tituloNotif, mensajeNotif, "success");
+            buscarYSeleccionar(descripcionABuscar);
+        }, 400);
     };
 
-    if (modalMode.value === "editar") {
-        const datosUpdate = {
-            Descripcion: formModal.value.Descripcion.trim(),
-            isModal: props.isModal
-        };
+    const onError = (errors) => {
+        if (errors.Descripcion) {
+            esModalVisible.value = false;
+            nodoEnModal.value = null;
+            setTimeout(() => {
+                mostrarNotificacion(
+                    "Aviso",
+                    `El tipo de relación "${descripcionABuscar}" ya existe en este nivel.`,
+                    "warning"
+                );
+                buscarYSeleccionar(descripcionABuscar);
+            }, 200);
+        } else {
+            const mensajeError = Object.values(errors).flat().join("\n");
+            mostrarNotificacion("Error", mensajeError, "error");
+        }
+    };
+
+    const dataPayload = {
+        Descripcion: descripcionABuscar,
+        isModal: props.isModal
+    };
+
+    if (modoAlGuardar === "editar") {
         const nodeId = nodoEnModal.value.IdTipoRegion;
-        router.put(`/tipos-region/${nodeId}`, datosUpdate, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        router.put(`/tipos-region/${nodeId}`, dataPayload, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess,
+            onError
+        });
     } else {
         const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
         if (!calculoNiveles) return;
-        const datosInsert = {
-            Descripcion: formModal.value.Descripcion.trim(),
-            ...calculoNiveles.niveles,
-            isModal: props.isModal
-        };
-        router.post("/tipos-region", datosInsert, { preserveState: true, preserveScroll: true, onSuccess, onError });
+
+        router.post("/tipos-region", {
+            ...dataPayload,
+            ...calculoNiveles.niveles
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess,
+            onError
+        });
     }
 };
 
 const handleEliminar = () => {
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Error", "No se puede eliminar porque tiene regiones dependientes.", "error");
+        return mostrarNotificacion("Aviso", "No se puede eliminar porque tiene tipos de regiones dependientes.", "warning");
     }
 
     const nombre = selectedNode.value.Descripcion;
@@ -350,8 +416,8 @@ const handleNodeDoubleClick = (data) => {
                         </div>
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
-                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                maxlength="255" show-word-limit />
+                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
                         </el-form-item>
 
                     </el-form>
@@ -469,6 +535,16 @@ const handleNodeDoubleClick = (data) => {
     display: flex;
     flex-direction: column;
 }
+
+.tree-card> :deep(.el-card__body) {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px;
+}
+
 
 .modal-content-wrapper {
     padding: 1rem;

@@ -26,7 +26,6 @@ const props = defineProps({
 
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
-    if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
     if (filterText.value && filterText.value.trim() !== '') {
         const textoBusqueda = filterText.value.toLowerCase();
         const existeCoincidencia = (nodes) => {
@@ -95,24 +94,6 @@ const botonEliminarDeshabilitado = computed(() => {
     return false;
 });
 
-/* const botonNuevoDeshabilitado = computed(() => {
-
-    if (filterText.value && filterText.value.trim() !== '') {
-        const textoBusqueda = filterText.value.toLowerCase();
-        const existeCoincidencia = (nodes) => {
-            return nodes.some(node => {
-                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) return true;
-                if (node.children && node.children.length > 0) return existeCoincidencia(node.children);
-                return false;
-            });
-        };
-        if (!existeCoincidencia(filteredRegionsTree.value)) {
-            return true;
-        }
-    }
-
-    return false; 
-}); */
 
 
 const intentarAbrirModalInsertar = () => {
@@ -120,14 +101,6 @@ const intentarAbrirModalInsertar = () => {
         mostrarNotificacion(
             "Aviso",
             "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
-            "warning"
-        );
-        return;
-    }
-    if (!selectedNode.value) {
-        mostrarNotificacion(
-            "Acción no permitida",
-            "Para agregar una nueva región, debe seleccionar una región existente del panel derecho.",
             "warning"
         );
         return;
@@ -193,7 +166,13 @@ const nombreRegionInputRef = ref(null);
 const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
-const formModal = ref({ NombreRegion: "", IdTipoRegion: null, ClaveRegion: "", Abreviado: "" });
+const formModal = ref({
+    NombreRegion: "",
+    IdTipoRegion: null,
+    ClaveRegion: "",
+    Abreviado: "",
+    IdRegionAsc: 0 
+});
 const esModalTipoRegionVisible = ref(false);
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -365,11 +344,19 @@ const modalRules = {
 
 const abrirModalParaInsertar = () => {
     modalMode.value = "insertar";
-    formModal.value = { NombreRegion: "", IdTipoRegion: null, ClaveRegion: "", Abreviado: "" };
-    opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
-    if (opcionNivel.value === 'mismo' && selectedNode.value) {
-        formModal.value.IdTipoRegion = selectedNode.value.IdTipoRegion;
+    formModal.value = {
+        NombreRegion: "",
+        IdTipoRegion: selectedTipoRegionNode.value.IdTipoRegion,
+        ClaveRegion: "",
+        Abreviado: "",
+        IdRegionAsc: 0 
+    };
+    if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) {
+        opcionNivel.value = "raiz";
+    } else {
+        opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
     }
+
     esModalVisible.value = true;
 };
 
@@ -394,69 +381,90 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
     notificacionVisible.value = true;
 };
 
+
+
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     await formModalRef.value.validate();
+    const nombreABuscar = formModal.value.NombreRegion;
+    const modoActual = modalMode.value;
+    let idPadreFinal = 0; 
+    if (modoActual === "insertar") {
+        if (opcionNivel.value === "mismo" && selectedNode.value) {
+            idPadreFinal = getAscendantId(selectedNode.value.IdRegion, localTreeData.value) || 0;
+        } else if (opcionNivel.value === "inferior" && selectedNode.value) {
+            idPadreFinal = selectedNode.value.IdRegion;
+        }
+    }
+
     const isNameTakenBySibling = (parentId, regionName, currentRegionId = null) => {
         let siblings = [];
-        if (parentId === null) {
-            siblings = localTreeData.value.filter(node =>
-                node.IdRegionAsc === null || node.IdRegionAsc === undefined
-            );
+        if (!parentId || parentId === 0) {
+            siblings = localTreeData.value.filter(n => !n.IdRegionAsc || n.IdRegionAsc === 0);
         } else {
             const parentNode = findNodeById(localTreeData.value, parentId);
-            if (parentNode && parentNode.children) {
-                siblings = parentNode.children;
-            }
+            if (parentNode && parentNode.children) siblings = parentNode.children;
         }
-        return siblings.some(node =>
-            node.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
-            (currentRegionId === null || node.IdRegion !== currentRegionId)
+
+        return siblings.some(n =>
+            n.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
+            n.IdRegion !== currentRegionId &&
+            n.IdTipoRegion === formModal.value.IdTipoRegion 
         );
     };
 
-    let parentIdForValidation = null;
-
-    if (modalMode.value === "insertar") {
-        if (opcionNivel.value === 'mismo' && selectedNode.value) {
-            parentIdForValidation = getAscendantId(selectedNode.value.IdRegion, localTreeData.value);
-        } else if (opcionNivel.value === 'inferior' && selectedNode.value) {
-            parentIdForValidation = selectedNode.value.IdRegion;
-        } else {
-            parentIdForValidation = null;
-        }
-    } else if (modalMode.value === "editar" && nodoEnModal.value) {
-        parentIdForValidation = getAscendantId(nodoEnModal.value.IdRegion, localTreeData.value);
-    }
-
-    if (isNameTakenBySibling(parentIdForValidation, formModal.value.NombreRegion, modalMode.value === 'editar' ? nodoEnModal.value.IdRegion : null)) {
+    if (isNameTakenBySibling(idPadreFinal, nombreABuscar, modoActual === 'editar' ? nodoEnModal.value.IdRegion : null)) {
         mostrarNotificacion("Error de Validación", "Ya existe una región con el mismo nombre en este nivel.", "error");
         return;
     }
 
     const onSuccess = () => {
         cerrarModalOperacion();
-        mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
-
+        mostrarNotificacion(modoActual === 'editar' ? "Modificación" : "Ingreso", "Operación exitosa", "success");
+        router.reload({
+            only: ['treeDataProp'],
+            onSuccess: () => {
+                setTimeout(() => {
+                    const buscarNodoRecursivo = (nodos) => {
+                        for (const nodo of nodos) {
+                            if (nodo.NombreRegion === nombreABuscar) return nodo;
+                            if (nodo.children) {
+                                const enc = buscarNodoRecursivo(nodo.children);
+                                if (enc) return enc;
+                            }
+                        }
+                        return null;
+                    };
+                    const nuevoNodo = buscarNodoRecursivo(filteredRegionsTree.value);
+                    if (nuevoNodo) {
+                        selectedNode.value = nuevoNodo;
+                        treeRef.value?.setCurrentKey(nuevoNodo.IdRegion, true);
+                        setTimeout(() => {
+                            const el = document.getElementById('region-node-' + nuevoNodo.IdRegion);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 200);
+                    }
+                }, 500);
+            }
+        });
     };
 
     const onError = (errors) => {
         mostrarNotificacion("Error del Servidor", Object.values(errors).flat().join("\n"), "error");
     };
 
-    if (modalMode.value === "editar") {
+    if (modoActual === "editar") {
         router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess,
-            onError
+            preserveState: true, preserveScroll: true, onSuccess, onError
         });
     } else {
         const payload = {
             ...formModal.value,
+            IdRegionAsc: idPadreFinal, 
             opcionNivel: opcionNivel.value,
             idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
         };
+
         router.post("/regiones", payload, {
             preserveState: true,
             preserveScroll: true,
@@ -466,10 +474,12 @@ const guardarDesdeModal = async () => {
     }
 };
 
+
+
 const handleEliminar = () => {
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione una región para eliminar.");
     if (selectedNode.value.children?.length > 0) {
-        return mostrarNotificacion("Acción no permitida", "No se puede borrar la región por qué tiene regiones asociadas.", "error");
+        return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.", "warning");
     }
 
     const nombre = selectedNode.value.NombreRegion;
@@ -539,44 +549,44 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <div class="right-header-content">
                             <div class="action-group">
                                 <el-tooltip class="item" effect="dark" content="Ingresar">
-                                <el-button type="primary" circle @click="intentarAbrirModalInsertar"
-                                    :disabled="botonNuevoDeshabilitado" title="Nuevo">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1h-2z" />
-                                        <path fill-rule="evenodd"
-                                            d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
-                                    </svg>
-                                </el-button>
+                                    <el-button type="primary" circle @click="intentarAbrirModalInsertar"
+                                        :disabled="botonNuevoDeshabilitado" title="Nuevo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd"
+                                                d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1h-2z" />
+                                            <path fill-rule="evenodd"
+                                                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
+                                        </svg>
+                                    </el-button>
                                 </el-tooltip>
 
                                 <el-tooltip class="item" effect="dark" content="Modificar">
-                                <el-button type="success" circle @click="intentarAbrirModalEditar"
-                                    :disabled="botonEditarDeshabilitado" title="Nuevo">
-                                    <el-icon>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                                            <path fill="currentColor"
-                                                d="m199.04 672.64 193.984 112 224-387.968-193.92-112-224 388.032zm-23.872 60.16 32.896 148.288 144.896-45.696zM455.04 229.248l193.92 112 56.704-98.112-193.984-112-56.64 98.112zM104.32 708.8l384-665.024 304.768 175.936L409.152 884.8h.064l-248.448 78.336zm384 254.272v-64h448v64h-448z">
-                                            </path>
-                                        </svg>
-                                    </el-icon>
-                                </el-button>
-                                </el-tooltip>
-
-                                <el-tooltip class="item" effect="dark" content="Eliminar">
-                                <el-button type="danger" circle @click="intentarAbrirModalEliminar"
-                                    :disabled="botonEliminarDeshabilitado" title="Nuevo">
-                                    <el-icon>
+                                    <el-button type="success" circle @click="intentarAbrirModalEditar"
+                                        :disabled="botonEditarDeshabilitado" title="Nuevo">
                                         <el-icon>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                                                 <path fill="currentColor"
-                                                    d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
+                                                    d="m199.04 672.64 193.984 112 224-387.968-193.92-112-224 388.032zm-23.872 60.16 32.896 148.288 144.896-45.696zM455.04 229.248l193.92 112 56.704-98.112-193.984-112-56.64 98.112zM104.32 708.8l384-665.024 304.768 175.936L409.152 884.8h.064l-248.448 78.336zm384 254.272v-64h448v64h-448z">
                                                 </path>
                                             </svg>
                                         </el-icon>
-                                    </el-icon>
-                                </el-button>
+                                    </el-button>
+                                </el-tooltip>
+
+                                <el-tooltip class="item" effect="dark" content="Eliminar">
+                                    <el-button type="danger" circle @click="intentarAbrirModalEliminar"
+                                        :disabled="botonEliminarDeshabilitado" title="Nuevo">
+                                        <el-icon>
+                                            <el-icon>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                                                    <path fill="currentColor"
+                                                        d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
+                                                    </path>
+                                                </svg>
+                                            </el-icon>
+                                        </el-icon>
+                                    </el-button>
                                 </el-tooltip>
 
                                 <BotonSalir />
@@ -589,6 +599,13 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
                     @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree">
+                    <!-- AGREGA ESTO: -->
+                    <template #default="{ node, data }">
+                        <!-- El ID tiene que estar AQUÍ -->
+                        <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
+                            {{ node.label }}
+                        </span>
+                    </template>
                 </el-tree>
                 <div v-else class="no-data-message">
                     <span v-if="!selectedTipoRegionNode">Seleccione un tipo de región de la izquierda para
@@ -648,10 +665,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
         <DialogGeneral v-model="esModalTipoRegionVisible" :bot-cerrar="true" :press-esc="true" width="90%"
             @close="cerrarModalTipoRegion">
 
-            <div class="dialog-body-container" style="padding: 10px; height: 800px; overflow: hidden;">
+            <div class="dialog-body-container" style="padding: 10px; max-height: 80vh; overflow-y: auto;">
                 <CuerpoTipoRegion :treeDataProp="tiposDeRegionTreeProp" :flatTreeDataProp="tiposDeRegionProp"
-                    :isModal="true"
-                    @cerrar-modal="esModalTipoRegionVisible = false" />
+                    :isModal="true" @cerrar-modal="esModalTipoRegionVisible = false" />
             </div>
         </DialogGeneral>
 
