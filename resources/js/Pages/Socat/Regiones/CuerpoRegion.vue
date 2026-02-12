@@ -171,7 +171,7 @@ const formModal = ref({
     IdTipoRegion: null,
     ClaveRegion: "",
     Abreviado: "",
-    IdRegionAsc: 0 
+    IdRegionAsc: 0
 });
 const esModalTipoRegionVisible = ref(false);
 const notificacionVisible = ref(false);
@@ -349,7 +349,7 @@ const abrirModalParaInsertar = () => {
         IdTipoRegion: selectedTipoRegionNode.value.IdTipoRegion,
         ClaveRegion: "",
         Abreviado: "",
-        IdRegionAsc: 0 
+        IdRegionAsc: 0
     };
     if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) {
         opcionNivel.value = "raiz";
@@ -388,7 +388,7 @@ const guardarDesdeModal = async () => {
     await formModalRef.value.validate();
     const nombreABuscar = formModal.value.NombreRegion;
     const modoActual = modalMode.value;
-    let idPadreFinal = 0; 
+    let idPadreFinal = 0;
     if (modoActual === "insertar") {
         if (opcionNivel.value === "mismo" && selectedNode.value) {
             idPadreFinal = getAscendantId(selectedNode.value.IdRegion, localTreeData.value) || 0;
@@ -409,7 +409,7 @@ const guardarDesdeModal = async () => {
         return siblings.some(n =>
             n.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
             n.IdRegion !== currentRegionId &&
-            n.IdTipoRegion === formModal.value.IdTipoRegion 
+            n.IdTipoRegion === formModal.value.IdTipoRegion
         );
     };
 
@@ -420,7 +420,12 @@ const guardarDesdeModal = async () => {
 
     const onSuccess = () => {
         cerrarModalOperacion();
-        mostrarNotificacion(modoActual === 'editar' ? "Modificación" : "Ingreso", "Operación exitosa", "success");
+        const tituloNotif = modoActual === 'editar' ? "Modificación" : "Ingreso";
+        const mensajeNotif = modoActual === 'editar'
+            ? `La región "${nombreABuscar}" fue modificada correctamente.`
+            : `La región "${nombreABuscar}" se ingresó correctamente.`;
+
+        mostrarNotificacion(tituloNotif, mensajeNotif, "success");
         router.reload({
             only: ['treeDataProp'],
             onSuccess: () => {
@@ -460,7 +465,7 @@ const guardarDesdeModal = async () => {
     } else {
         const payload = {
             ...formModal.value,
-            IdRegionAsc: idPadreFinal, 
+            IdRegionAsc: idPadreFinal,
             opcionNivel: opcionNivel.value,
             idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
         };
@@ -599,9 +604,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
                     @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree">
-                    <!-- AGREGA ESTO: -->
                     <template #default="{ node, data }">
-                        <!-- El ID tiene que estar AQUÍ -->
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
                             {{ node.label }}
                         </span>

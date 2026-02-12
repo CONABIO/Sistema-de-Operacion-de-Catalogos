@@ -148,6 +148,9 @@ class TipoRegionController extends Controller
     public function destroy(Request $request, TipoRegion $tipoRegion)
     {
         $query = TipoRegion::query();
+
+        $query->where('IdTipoRegion', '!=', $tipoRegion->IdTipoRegion);
+
         $profundidad = 0;
         for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
             if ($tipoRegion->{"Nivel{$i}"} > 0) {
@@ -160,6 +163,7 @@ class TipoRegionController extends Controller
         if ($profundidad < self::MAX_NIVELES) {
             $query->where("Nivel" . ($profundidad + 1), '>', 0);
         }
+
         if ($query->exists()) {
             throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene sub-tipos dependientes.']);
         }

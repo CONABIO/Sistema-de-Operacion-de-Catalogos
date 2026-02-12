@@ -274,9 +274,20 @@ const proceedWithDeletion = (nodeId, nombre) => {
         preserveScroll: true,
         onSuccess: () => {
             mostrarNotificacion("Eliminación exitosa", `El tipo de region "${nombre}" ha sido eliminado correctamente.`, "success");
-            selectedNode.value = null;
+            nextTick(() => {
+                if (localTreeData.value && localTreeData.value.length > 0) {
+                    const primerNodo = localTreeData.value[0];
+                    selectedNode.value = primerNodo;
+                    treeRef.value?.setCurrentKey(primerNodo.IdTipoRegion);
+                } else {
+                    selectedNode.value = null;
+                }
+            });
         },
-        onError: (error) => mostrarNotificacion("Error", error.message || "Ocurrió un error.", "error"),
+        onError: (error) => {
+            const mensajeError = error.message || "Ocurrió un error al intentar eliminar.";
+            mostrarNotificacion("Error", mensajeError, "error");
+        },
     });
 };
 
@@ -400,8 +411,7 @@ const handleNodeDoubleClick = (data) => {
                     <h3>{{ modalTitle }}</h3>
                 </div>
                 <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
+                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top">
                         <div class="form-actions">
                             <GuardarButton @click="guardarDesdeModal" />
                             <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
@@ -417,7 +427,7 @@ const handleNodeDoubleClick = (data) => {
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
                             <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
-                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit  @keydown.enter.prevent />
                         </el-form-item>
 
                     </el-form>
