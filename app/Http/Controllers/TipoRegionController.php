@@ -148,7 +148,6 @@ class TipoRegionController extends Controller
     public function destroy(Request $request, TipoRegion $tipoRegion)
     {
         $query = TipoRegion::query();
-
         $query->where('IdTipoRegion', '!=', $tipoRegion->IdTipoRegion);
 
         $profundidad = 0;
@@ -165,14 +164,14 @@ class TipoRegionController extends Controller
         }
 
         if ($query->exists()) {
-            throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene sub-tipos dependientes.']);
+            throw ValidationException::withMessages(['message' => 'No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.']);
         }
 
         $regionesUsandoEsteTipo = Region::where('IdTipoRegion', $tipoRegion->IdTipoRegion)->exists();
 
         if ($regionesUsandoEsteTipo) {
             throw ValidationException::withMessages([
-                'message' => 'No se puede eliminar este tipo de región porque tiene regiones asociadas'
+                'message' => 'No es posible eliminar el tipo de region seleccionado por tener regiones que dependen de ella.'
             ]);
         }
 

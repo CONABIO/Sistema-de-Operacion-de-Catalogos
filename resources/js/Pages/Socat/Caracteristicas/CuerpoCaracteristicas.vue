@@ -464,8 +464,14 @@ const proceedWithDeletion = async () => {
   ElMessageBox.close();
   if (!nodeDataForDeleteConfirmation.value) return;
   const { IdCatNombre, Descripcion } = nodeDataForDeleteConfirmation.value;
+  const nodeInTree = treeRef.value?.getNode(IdCatNombre);
+  const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0 
+    ? nodeInTree.parent.data.IdCatNombre 
+    : null;
+
   const targetUrl = `/caracteristicas-taxon/${IdCatNombre}`;
   const nombreCaracteristica = Descripcion || IdCatNombre;
+
   try {
     await axios.delete(targetUrl);
     router.reload({
@@ -477,7 +483,16 @@ const proceedWithDeletion = async () => {
           `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
           "success"
         );
+        
         nextTick(() => {
+          if (parentId) {
+            const padreActualizado = findNodeInTree(localTreeData.value, parentId);
+            if (padreActualizado) {
+              selectedNode.value = padreActualizado;
+              treeRef.value?.setCurrentKey(parentId);
+              return;
+            }
+          }
           if (localTreeData.value && localTreeData.value.length > 0) {
             const firstNodeId = localTreeData.value[0].IdCatNombre;
             selectAndFocusNode(firstNodeId);
@@ -489,13 +504,6 @@ const proceedWithDeletion = async () => {
       },
     });
   } catch (error) {
-    const status = error.response?.status;
-    const errorMsg = error.response?.data?.error || "Ocurrió un error al eliminar la característica.";
-    if (status === 409 || status === 422) {
-      mostrarNotificacion("Aviso", errorMsg, "warning");
-    } else {
-      mostrarNotificacion("Error al Eliminar", errorMsg, "error");
-    }
   } finally {
     nodeDataForDeleteConfirmation.value = null;
   }

@@ -24,6 +24,17 @@ const props = defineProps({
 });
 
 
+const expandedRegionIds = ref(new Set());
+
+const handleRegionExpand = (data) => {
+    expandedRegionIds.value.add(data.IdRegion);
+};
+
+const handleRegionCollapse = (data) => {
+    expandedRegionIds.value.delete(data.IdRegion);
+};SOCAT-16
+
+
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
     if (filterText.value && filterText.value.trim() !== '') {
@@ -603,7 +614,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
                 <el-tree v-if="filteredRegionsTree.length" ref="treeRef" :data="filteredRegionsTree"
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
-                    @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree">
+                    @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree"
+                    :default-expanded-keys="Array.from(expandedRegionIds)" @node-expand="handleRegionExpand"
+                    @node-collapse="handleRegionCollapse">
                     <template #default="{ node, data }">
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
                             {{ node.label }}
