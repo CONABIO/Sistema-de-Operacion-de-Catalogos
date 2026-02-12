@@ -133,6 +133,12 @@ const emit = defineEmits([
   'cerrar'
 ]);
 
+const onExpandChange = (row) => {
+  selectedRow.value = row
+  tableRefInterna.value?.setCurrentRow(row)
+  emit('row-click', row)
+}
+
 const accionModal = computed(() => {
   return props.botCerrar ? "cerrar" : "salida"}
 );
@@ -286,9 +292,19 @@ defineExpose({
       </div>
     </template>
     <div class="table-responsive ">
-      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow"
-        :data="props.datos" :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
-        @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
+      <!--Juan carlos 09/02/2026
+          Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
+      <el-table :key="tableKey" 
+                ref="tableRefInterna" 
+                :highlight-current-row="props.highlightCurrentRow"
+                :data="props.datos" 
+                :row-key="props.idKey" 
+                :row-class-name="props.rowClassName || rowClassNameInterno"
+                @row-click="handleRowClickInterno" 
+                @expand-change ="onExpandChange"
+                :border="true" 
+                height="550" 
+                @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
         <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
