@@ -275,6 +275,15 @@ const abrirModalIconos = () => {
     if (!selectedNode.value) {
         return ElMessage.warning('Por favor, seleccione un nodo para asignarle un ícono.');
     }
+
+    if (esNodoProtegido.value) {
+        return mostrarNotificacion(
+            "Aviso",
+            "No es posible modificar el ícono de la relación seleccionada porque es parte de la información protegida del sistema.",
+            "warning"
+        );
+    }
+
     terminoBusquedaIcono.value = '';
     listaIconosEncontrados.value = iconosSugeridos;
     esModalIconosVisible.value = true;
@@ -512,6 +521,10 @@ const cerrarModalOperacion = () => {
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación" : "Ingresar un nuevo tipo de relación");
 
+const esNodoProtegido = computed(() => {
+    return selectedNode.value && selectedNode.value.IdTipoRelacion <= 8;
+});
+
 
 
 const guardarDesdeModal = async () => {
@@ -602,7 +615,7 @@ const guardarDesdeModal = async () => {
     const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
             const nodeId = nodoEnModal.value.IdTipoRelacion;
-            nodeIdToFocus.value = nodeId; 
+            nodeIdToFocus.value = nodeId;
             router.put(`/tipos-relacion/${nodeId}`, {
                 Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad
@@ -873,7 +886,7 @@ const cerrarDialogo = () => {
                                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
-                                    :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                    :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" />
                                 <BotonSalir toolPosicion="bottom" />
                             </div>
                         </div>
@@ -1121,9 +1134,9 @@ const cerrarDialogo = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px; 
+    width: 32px;
     height: 32px;
-    font-size: 23px; 
+    font-size: 23px;
 }
 
 .static-icon {
