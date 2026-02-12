@@ -312,6 +312,12 @@ class TipoRelacionController extends Controller
 
     public function updateIcon(Request $request, Tipo_Relacion $tipoRelacion)
     {
+        if ($tipoRelacion->IdTipoRelacion <= 8) {
+            return Redirect::back()->withErrors([
+                'message' => 'No es posible modificar el ícono porque el tipo de relación taxonómica es parte de la información del sistema..'
+            ]);
+        }
+
         $request->validate([
             'RutaIcono' => 'nullable|string',
         ]);
