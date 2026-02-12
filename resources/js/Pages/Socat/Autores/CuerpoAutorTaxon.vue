@@ -77,6 +77,8 @@ const traspasaDatos = () => {
     ElMessageBox.alert('Se debe de armar la autoridad taxonomica para continuar.', 'Error', { type: 'error' });
   } else {
     emit('traspasoAutores', autoresRel, autoridadTax);
+    autoridadTax.value = '';
+    autoresRel.value = [];
   }
 }
 
@@ -634,6 +636,8 @@ Etiqueta que marca en verde las filas de la tabla*/
 /* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row > td {
   background-color: #ddf6dd !important;
+  color: #007bff !important; 
+  font-weight: bold; 
 }
 
 .tabla-autores-personalizada .el-table__body tr.current-row > td.el-table__cell {

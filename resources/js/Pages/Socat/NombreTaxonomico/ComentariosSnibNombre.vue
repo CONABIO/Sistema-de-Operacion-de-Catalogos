@@ -18,22 +18,25 @@
                         :mostrarNuevo="false"
                         :mostrarEditar="false"
                         :mostrarBorrar="false"
-                        @cerrar="cerrarDialogo">
+                        @cerrar="cerrarDialogo" 
+                        highlight-current-row>
                         <template #expand-column>
                             <el-table-column type="expand">
                                 <template #default="{ row }">
                                 <div class="expand-content-detail">                                  
                                     <el-table :data="row.Detalle"
-                                    size="small"
-                                    :border="false"
-                                    :show-header="true"
-                                    class="compact-table">
+                                        size="small"
+                                        :border="false"
+                                        :show-header="true"
+                                        class="compact-table"
+                                        highlight-current-row>
                                         <el-table-column label="Llave nombre" prop="llavenombre" header-align="left" align="left"/>
                                         <el-table-column label="Comentario SNIB" prop="comentarioscat" header-align="left" align="left"/>
                                     </el-table>
                                 </div>
                                 </template>
                             </el-table-column>
+                            
                         </template>
                     </TablaFiltrable>
                 </el-main>
@@ -81,7 +84,7 @@
         },
         {
             prop: 'llavenombre', label: 'Llave Nombre', minWidth: '80',
-            align: 'left', tipo: 'Texto', filtrable: false
+            align: 'left', tipo: 'Texto', filtrable: true
         }
     ]);
 
@@ -176,28 +179,20 @@
         text-align: center;
     }
 
+    
+    :deep(.el-table__body tr.current-row > td) {
+        background-color: #ddf6dd !important;
+        color: #0d6efd !important;
+        font-weight: bold;
+    }
+
+
+
     .contenido {
         max-width: 100%;
         padding: 0.5rem; /* Reducir el padding en móviles */
         margin-top: 1rem; /* Añadir margen superior para separar del título */
     }
-
-    /*-----------------------------
-    .expand-content-detail .el-table__row > td.el-table__cell {
-        padding-top: 4px;
-        padding-bottom: 4px;
-        border-bottom: none;
-    }
-
-    .expand-content-detail .el-table th.el-table__cell {
-        border-bottom: none;
-        text-align: left;
-    }
-
-    .expand-content-detail .el-table::before {
-        display: none;
-    }*/
-
 
     /* Responsividad */
     @media (min-width: 768px) {

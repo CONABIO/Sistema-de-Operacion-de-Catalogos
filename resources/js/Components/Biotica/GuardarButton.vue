@@ -1,11 +1,7 @@
 <template>
-  <div class="d-flex flex-row-reverse">
-    <el-row :gutter="10">
-
+  <div>
       <div v-if="accion === 'editar'">
-        <el-tooltip class="item" effect="dark" :content="tooltipContent" placement="bottom">
-          
-
+        <el-tooltip effect="dark" :content="tooltipContent" placement="bottom">
           <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive"
@@ -18,7 +14,7 @@
         </el-tooltip>
       </div>
       <div v-else>
-        <el-tooltip class="item" effect="dark" :content="tooltipContent" placement="bottom">
+        <el-tooltip effect="dark" :content="tooltipContent" placement="bottom">
           <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-usb-drive"
@@ -30,7 +26,6 @@
           </el-button>
         </el-tooltip>
       </div>
-    </el-row>
   </div>
 </template>
 
@@ -72,5 +67,3 @@ function handleClick() {
   emit('confirmar');
 }
 </script>
-
-<style scoped></style>

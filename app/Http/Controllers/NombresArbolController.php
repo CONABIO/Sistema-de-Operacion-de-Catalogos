@@ -323,7 +323,15 @@ class NombresArbolController extends Controller
 
         $resultado = DB::connection('snib')->select($query);
 
-        return $resultado;
+        
+        $nombre = Nombre::with('RelNombreCat')
+                        ->find($request->idNombre);
+
+        $numRelCat = $nombre->RelNombreCat->count();
+
+        return response()->json(['snib' => $resultado,
+                                  'relNombreCat' => $numRelCat
+        ]);
     }
 
     //carga comentarios del snib 
