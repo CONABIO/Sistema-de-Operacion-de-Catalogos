@@ -727,21 +727,36 @@ const proceedWithDeletion = async () => {
         ElMessageBox.close();
         if (!nodeDataForDeleteConfirmation.value) return;
         const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
-        const parentNode = findNodeInTree(localTreeData.value, nodeDataForDeleteConfirmation.value.IdAscendente);
+        const nodeInTree = treeRef.value?.getNode(IdTipoRelacion);
+        const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0 
+            ? nodeInTree.parent.data.IdTipoRelacion 
+            : null;
+
         router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
             preserveScroll: true,
             onSuccess: () => {
                 mostrarNotificacion("Eliminación", `El tipo de relación "${Descripcion}" ha sido eliminado.`, "success");
 
-                if (parentNode) {
-                    nodeIdToFocus.value = parentNode.IdTipoRelacion;
-                } else {
-                    selectedNode.value = null;
-                    nodeIdToFocus.value = 'FIRST';
-                }
+                nextTick(() => {
+                    if (parentId) {
+                        const padreActualizado = findNodeInTree(localTreeData.value, parentId);
+                        if (padreActualizado) {
+                            selectedNode.value = padreActualizado;
+                            treeRef.value?.setCurrentKey(parentId);
+                            return;
+                        }
+                    }     
+                    if (localTreeData.value.length > 0) {
+                        const firstId = localTreeData.value[0].IdTipoRelacion;
+                        selectAndFocusNode(firstId);
+                    } else {
+                        selectedNode.value = null;
+                        nodeIdToFocus.value = 'FIRST';
+                    }
+                });
             },
             onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relacion ${Descripcion} no se puede eliminar...`, 'error');
+                mostrarNotificacionError('Aviso', `El tipo de relación ${Descripcion} no se puede eliminar...`, 'error');
             },
             onFinish: () => {
                 nodeDataForDeleteConfirmation.value = null;
@@ -895,9 +910,9 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="expandedKeysArray"
+                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="Array.from(expandedNodeIds)" 
                     :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
-                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" 
                     @node-click="handleNodeSelected">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
