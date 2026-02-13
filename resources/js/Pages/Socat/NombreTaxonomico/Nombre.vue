@@ -23,6 +23,7 @@ import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
 import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+import salir from '@/Components/Biotica/SalirButton.vue';
 
 const { permisos } = usePermisos();
 
@@ -458,6 +459,11 @@ const expande = async (draggingNode) => {
   mostrar.value = true;
   taxonAct.value = draggingNode;
 
+  if(draggingNode.children.length > 0)
+  {
+    numHijos.value = draggingNode.children.length;
+  }
+
   if(mostrarLoading.value)
   {
     loadingInstance = ElLoading.service({
@@ -491,7 +497,7 @@ const expande = async (draggingNode) => {
               };  
               
   const responseNom = await axios.get('/carga-RelacionesTax', { params });
-
+              
   tablaNomenclatura.value = responseNom.data;
 
   if(mostrarLoading.value)
@@ -501,7 +507,7 @@ const expande = async (draggingNode) => {
   
   totalRegNom.value = tablaNomenclatura.value.length;
   tablaReferencias.value = draggingNode.referencias;
-  totalRegRef.value = draggingNode.referencias.length;
+  totalRegRef.value = draggingNode?.referencias?.length;
   selectedNodeKey.value = draggingNode.id;
 
   mostrarLoading.value = true
@@ -1119,6 +1125,9 @@ const showAscendants = async () => {
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
     <el-container >
+      <div style =" display: flex; justify-content: flex-end;">
+        <salir/>
+      </div> 
       <el-header class="main-header-override">
         <div>
           <el-row :gutter="16">
@@ -1327,11 +1336,10 @@ const showAscendants = async () => {
               </el-pagination>
             </div>
             <div  class="pagination-right">
-              <span v-show="numHijos > 0" style="margin-left: auto;">
-                Num. Hijos: {{ numHijos }}
+              <span style="margin-left: auto;">
+                Taxa desc. : {{ numHijos }}
               </span>
-            </div>
-            
+            </div>            
           </div>
         </el-footer>
       </el-header>
@@ -1346,7 +1354,8 @@ const showAscendants = async () => {
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
-                  :catalogos="idsGrupos.value"
+                  :catalogos="idsGrupos.value" :regNomclatura= "totalRegNom.value"
+                  :numHijos = "numHijos.value"
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
         @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
@@ -1447,6 +1456,7 @@ const showAscendants = async () => {
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: rgb(203, 233, 200);
   color: #0d6efd !important;
+  font-weight: bold;
 }
 
 :deep(.highlight-node) {
@@ -1464,14 +1474,18 @@ const showAscendants = async () => {
 .pagination-footer {
   display: flex;
   align-items: center;
-  width: 38%;
+  justify-content: space-between;
+  gap: 20px;
+  /*flex-wrap: wrap;*/
+  width: 45%;
   padding-top: 5px;
   flex-shrink: 0;
 }
 
 .pagination-right {
-  margin-left: auto; /* empuja el texto al extremo derecho */
+  margin-left: auto;  /*empuja el texto al extremo derecho*/
   font-weight: 500;
+  /*white-space: nowrap;*/
 }
 
 .main-header-override {
