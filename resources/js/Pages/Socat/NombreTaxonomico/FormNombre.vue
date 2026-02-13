@@ -10,25 +10,30 @@
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <el-col :span="20">
+              <el-col :span="16">
                 <span class="subtitulo" style="color: red;">
                   Taxón seleccionado: {{ taxonAct?.label }}
                 </span>
               </el-col>
 
-              <el-col :span="2" style="display: flex;">
-                <el-space>
-                  <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
-                              @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"/>
-                  <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
-                              @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
-                  <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
-                              @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                   <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-                      Se cambia el boton de guardar por el componente del boton guardar-->  
-                  <GuardarButton :habilitar = "habGuardar" @click="Guardar"/>
-                  <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-                </el-space>
+              <el-col :span="8" >
+                  <div class="botonera-biotica">
+                    <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
+                                @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"
+                                style="flex-shrink: 0;"/>
+                    <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
+                                @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' 
+                                style="flex-shrink: 0;"/>
+                    <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
+                                @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' 
+                                style="flex-shrink: 0;"/>
+                    <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                        Se cambia el boton de guardar por el componente del boton guardar-->  
+                    <GuardarButton :habilitar = "habGuardar" @click="Guardar"
+                                    style="flex-shrink: 0; min-width: max-content;"/>
+                    <BotonSalir accion="cerrar" @salir="cerrarDialogo"
+                                style="flex-shrink: 0; min-width: max-content;"/>
+                  </div>
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
@@ -385,6 +390,14 @@ const props = defineProps({
   paginaActual: Number,
   categoria: [],
   catalogos: [], 
+  regNomenclatura: {
+    type: Number,
+    default: 0
+  },
+  numHijos: {
+    type: Number,
+    default: 0
+  }
 });
 
 const habNuevo = ref(false);
@@ -406,6 +419,8 @@ const listAutorTax = ref([]);
 const autorComp = ref("");
 const listAutores = ref([]);
 const tabInicial = ref("taxon");
+
+const relnomcat = ref(0);
 
 const habGuardar = ref(true);
 
@@ -745,9 +760,10 @@ const cargaComSnib = async () => {
     const response = await axios.get('/cargar-comSnib', {params});
     
     if (response.status === 200) {
-      
-      comentariosSnib.value = response.data[0].NumComEjemplares;
-      numEjemp.value = response.data[0].NumEjemplares
+
+      comentariosSnib.value = response.data.snib[0].NumComEjemplares;
+      numEjemp.value = response.data.snib[0].NumEjemplares
+      relnomcat.value = response.data.relNombreCat
     
       if (comentariosSnib.value > 0) {
           comDet.value = false;
@@ -939,12 +955,18 @@ const CambioEstatus = () => {
 };
 
 const borrarDatos = async () => {
-  console.log("Esto llega al presionar Borrar: ", props.taxonAct.completo);
+  
+  const confirmado = await showConfirmMessage({
+                    title: 'Confirmar eliminación',
+                    message: '¿Estás seguro de eliminar el taxón actual?'
+                });
 
-  let rel = props.taxonAct.completo.nombre_rel.length;
-  let hijos = props.taxonAct.completo.hijos.length;
-  let catRel = props.taxonAct.completo.rel_nombre_cat.length;
-  //let numEjemp = parseInt(props.taxonAct.numEjemp);
+  if (!confirmado) {
+      return;
+  }
+
+  let rel = props.regNomenclatura;
+  let hijos = props.numHijos;
 
   let mensaje = '<strong>El nombre no puede ser eliminado ya que tiene: </p> <br></strong>';
 
@@ -972,11 +994,11 @@ const borrarDatos = async () => {
     }
   }
 
-  if (catRel > 0) {
-    if (catRel === 1) {
-      mensaje += '<strong>' + catRel + ' caracteristica relacionada </p> <br></strong>';
+  if (relnomcat.value > 0) {
+    if (relnomcat.value === 1) {
+      mensaje += '<strong>' + relnomcat.value + ' caracteristica relacionada </p> <br></strong>';
     } else {
-      mensaje += '<strong>' + catRel + ' caracteristicas relacionadas </p> <br></strong>';
+      mensaje += '<strong>' + relnomcat.value + ' caracteristicas relacionadas </p> <br></strong>';
     }
   }
 
@@ -989,7 +1011,7 @@ const borrarDatos = async () => {
     }
   }
 
-  if (rel > 0 || hijos > 0 || catRel > 0 || comentariosSnib.value > 0) {
+  if (rel > 0 || hijos > 0 || relnomcat.value > 0 || comentariosSnib.value > 0) {
     await mostrarNotificacion(
         "Aviso",
         mensaje,
@@ -1006,6 +1028,14 @@ const borrarDatos = async () => {
                    
       emit('cerrar', false);
       emit('resultadoBaja', response.data);
+
+       await mostrarNotificacion(
+        "Aviso",
+        "El taxón fue eliminado exitosamente",
+        "success",
+        5000
+      );
+
     }
     catch(error){
        console.log("este es el error: ", error);
@@ -1219,20 +1249,20 @@ const Guardar = async () =>{
                     message: '¿Estás seguro de guardar los cambios para el taxón actual?'
                 });
 
-              if (!confirmado) {
-                  return;
-              }
+                if (!confirmado) {
+                    return;
+                }
 
-              if(listAutorTax.value.length === 0)
-              {
-                 await mostrarNotificacionError(
-                            "Aviso",
-                            'No es posible continuar ya que no hay valores de lista de autores.',
-                            "Error",
-                            5000
-                          );
-                return;
-              }
+                if(listAutorTax.value.length === 0)
+                {
+                  await mostrarNotificacionError(
+                              "Aviso",
+                              'No es posible continuar ya que no hay valores de lista de autores.',
+                              "Error",
+                              5000
+                            );
+                  return;
+                }
 
                 params = {
                   scat:{
@@ -1434,6 +1464,21 @@ onMounted(() => {
     vertical-align: middle;
   }
 
+  .botonera-biotica {
+      display: flex;
+      gap: 12px !important;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .botonera-biotica * {
+      margin: 0 !important;
+      padding: 0 !important;
+      flex-shrink: 0;
+    }
+    
   .el-icon {
     font-size: 16px;
     margin-right: 2px;
