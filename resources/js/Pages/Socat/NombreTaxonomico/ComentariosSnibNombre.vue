@@ -65,11 +65,11 @@
     const columnasDefinidas = ref([
         {
             prop: 'idnombre', label: 'IdNombre', minWidth: '80',
-            align: 'left', tipo: 'Texto', filtrable: false
+            align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'comentarioscat', label: 'Comentarios SCAT', minWidth: '80',
-            align: 'left', tipo: 'Texto', filtrable: false
+            align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'Conteo', label: 'Conteo', minWidth: '55', align: 'left',
@@ -128,12 +128,10 @@
         };
 
         const response = await axios.get('/carga-AcumuladoSnib', { params } );
-        console.log("Esta es la respuesta de aculado: ", response.data);
 
         if (response.status === 200) {
             comSnib.value = response.data;
             totalComSnib.value = comSnib.value.length;
-            console.log("Este es el resultado de la consulta: ", comSnib.value);
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");

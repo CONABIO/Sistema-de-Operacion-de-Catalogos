@@ -552,8 +552,6 @@ const recibeAutores = (autores, autoridadTax) =>{
 }
 
 const carga_inicio = () => {  
-  console.log("Carga de inicio: ", props.taxonAct
-  .completo);
   muestraGrd.value = true;
   estCor.value = true;
   estSin.value = true;
@@ -779,7 +777,6 @@ const cargaComSnib = async () => {
 };
 
 const AltaEstatus = async () =>{
-  console.log("Entre a alta de estatus");
   if(props.taxonAct.completo.categoria.IdNivel1 < 5)
     {
       console.log("Entre a alta estatus");
@@ -1219,8 +1216,6 @@ const Guardar = async () =>{
                 };
                 
                 try{
-
-                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
 
                     const response = await axios.post(`/nombres-store`, params);
                     

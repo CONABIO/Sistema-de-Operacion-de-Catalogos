@@ -11,16 +11,17 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
 const inputsFiltro = ref({});
+const datosTabla = ref([]);
 
 /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
   Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
   columnas: { type: Array, required: true },
-  datos: { type: Array, required: true },
+  datos: { type: Array, required: true, default:[]},
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 100 },
-  endpoint: { type: String, required: true },
-  idKey: { type: String, required: true },
+  endpoint: { type: String, required: false, default: ""},
+  idKey: { type: String, required: false },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
   mostrarNuevo: { type: Boolean, default: true },
@@ -143,6 +144,12 @@ const accionModal = computed(() => {
   return props.botCerrar ? "cerrar" : "salida"}
 );
 
+const paginatedDatos = computed(() => {
+  const start = (currentPage.value - 1) * props.itemsPerPage;
+  const end = start + props.itemsPerPage;
+  return datosTabla.value.slice(start, end);
+});
+
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
@@ -165,12 +172,29 @@ watch(tipoDeBusqueda, () => {
   onFiltroInput();
 });
 
+watch(
+  () => props.datos,
+  (newVal) => {
+    if (newVal && newVal.length > 0) {
+      datosTabla.value = props.datos;
+    }
+    else{
+      fetchData();
+    }
+  },
+)
 
 const tableKey = ref(0);
 
 
 const fetchData = async () => {
   try {
+
+    if(props.endpoint === "")
+    {
+      return;
+    }
+
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
     const response = await axios.get(props.endpoint, {
@@ -213,7 +237,49 @@ const fetchData = async () => {
   }
 };
 
+/*Juan carlos 13022026 
+Estos watch se colocaron para que sirmpre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
+*/
+// Watch para cuando cambian los datos (desde el padre o desde fetch)
+watch(() => props.datos, (newDatos) => {
+  if (newDatos && newDatos.length > 0) {
+    datosTabla.value = newDatos;
+    
+    // Seleccionar la primera fila después de actualizar
+    nextTick(() => {
+      selectedRow.value = newDatos[0];
+      if (tableRefInterna.value) {
+        tableRefInterna.value.setCurrentRow(newDatos[0]);
+      }
+      emit('row-click', newDatos[0]);
+    });
+  } else {
+    fetchData();
+  }
+}, { immediate: true, deep: true });
 
+// Watch para cuando cambian los datos paginados (después de fetch interno)
+watch(paginatedDatos, (newPaginated) => {
+  if (newPaginated && newPaginated.length > 0) {
+    // Verificar si la fila seleccionada actual ya no está en los datos paginados
+    const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+    const existsInPaginated = newPaginated.some(row => 
+      String(row[props.idKey]) === String(currentSelectedId)
+    );
+    
+    // Si no existe o no hay selección, seleccionar la primera
+    if (!existsInPaginated || !selectedRow.value) {
+      nextTick(() => {
+        selectedRow.value = newPaginated[0];
+        if (tableRefInterna.value) {
+          tableRefInterna.value.setCurrentRow(newPaginated[0]);
+        }
+        emit('row-click', newPaginated[0]);
+      });
+    }
+  }
+}, { immediate: true });
+/* hasta aqui se agrego juan carlos 13/02/2026*/
 
 let debounceTimer;
 
@@ -297,7 +363,7 @@ defineExpose({
       <el-table :key="tableKey" 
                 ref="tableRefInterna" 
                 :highlight-current-row="props.highlightCurrentRow"
-                :data="props.datos" 
+                :data="paginatedDatos" 
                 :row-key="props.idKey" 
                 :row-class-name="props.rowClassName || rowClassNameInterno"
                 @row-click="handleRowClickInterno" 
@@ -307,8 +373,13 @@ defineExpose({
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
-        <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
-          :min-width="col.minWidth || '150'" :sortable="col.sortable ? 'custom' : false" :align="col.align || 'left'">
+        <el-table-column 
+                v-for="col in props.columnas" 
+                :key="col.prop" 
+                :prop="col.prop"
+                :min-width="col.minWidth || '150'" 
+                :sortable="col.sortable ? 'custom' : false" 
+                :align="col.align || 'left'">
           <template #header>
             <div class="custom-header">
               <span>{{ col.label }}</span>
@@ -335,6 +406,37 @@ defineExpose({
               </el-dropdown>
             </div>
           </template>
+
+          <template #default="{ row }">
+            <template v-if="col.tipo === 'imagenTexto'">
+              <div style="display: flex; align-items: center; gap: 6px;">                
+                <span v-if="row[col.prop]?.svg" v-html="row[col.prop].svg" style="height: 25px; width: 25px;"></span>
+                <img
+                          v-else-if="row[col.prop]?.url"
+                          :src="row[col.prop].url"
+                          alt="icono"
+                          style="height: 25px; width: 25px;"
+                      />
+                <span>{{ row[col.prop]?.texto }}</span>
+              </div>
+            </template>
+
+            <template v-else-if="col.tipo === 'textarea'">
+              <el-input
+                      v-model="row[col.prop]"
+                      style="width: 100%;"
+                      :rows="2"
+                      type="textarea"
+                      readonly
+                    />
+            </template>
+
+            <template v-else>
+              <span>{{ row[col.prop] }}</span>
+            </template>
+
+          </template>
+
         </el-table-column>
       </el-table>
     </div>
@@ -431,12 +533,9 @@ defineExpose({
   border-bottom: 1px solid #ebeef5 !important;
 }
 
-
-
 :deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
   background-color: #ddf6dd !important;
 }
-
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
@@ -490,7 +589,6 @@ defineExpose({
   margin-right: 35px;
   gap: 4px;
 }
-
 
 .botonera-biotica {
   display: flex;

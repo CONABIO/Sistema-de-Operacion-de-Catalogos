@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, triggerRef, h, computed, onUnmounted } from 'vue';
+import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
@@ -21,7 +21,8 @@ import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { showConfirmMessage } from '@/Composables/mensajeConfirm';
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+//import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import { processIcon, getSafeIconPath } from '@/Composables/iconos';
 import salir from '@/Components/Biotica/SalirButton.vue';
 
@@ -194,7 +195,6 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const openDialog = (nodeData) => {
-  console.log("Este es el valor de nodeData: ", nodeData);
   taxonAct.value = nodeData;
   //mostrarLoading.value = false;
 
@@ -301,7 +301,17 @@ const recibeTaxNuevo = async (res) => {
     if (!data.value[index].children) {
       data.value[index].children = [];
     }
+
     data.value[index].children.push(res);
+
+    // 👇 esperar a que el DOM y el tree se actualicen
+    await nextTick();
+
+    // 👇 expandir el padre (opcional pero recomendado)
+    tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
+
+    // 👇 seleccionar el nuevo nodo
+    selectedNodeKey.value = res.id;
   }
 };
 
@@ -512,14 +522,6 @@ const expande = async (draggingNode) => {
 
   mostrarLoading.value = true
 }
-/*
-const proceder = () => {
-  console.log("Pase el movimeinto");
-}
-
-const cancelar = () => {
-  console.log("Evite el movimeinto");
-}*/
 
 //Función para mover un taxón y reasignarlo a otro 
 const mover = async (node) => {
@@ -1288,11 +1290,15 @@ const showAscendants = async () => {
                         :datos="tablaNomenclatura"
                         :opciones-filtro="opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
-                        :itemsPerPage="2"
+                        :itemsPerPage= 2
                         :mostrarBiblio="true"
                         :mostrarAcci="true"
                         @eliminar-item="manejarEliminarRel"
                         @abrir-Biblio="abrirBiblio"
+                        :highlight-current-row="true"
+                        :mostrarNuevo="false"
+                        :mostrarEditar="false"
+                        :mostrarBorrar="false"
                       />
                     </div>
                     </el-collapse-item>
@@ -1312,11 +1318,15 @@ const showAscendants = async () => {
                           v-model:total-items="totalRegRef" 
                           :opciones-filtro="opcionesFiltroRef" 
                           :totalItems = "totalRegRef"
-                          :itemsPerPage="2"
+                          :itemsPerPage = 2
                           :mostrarBiblio="true"
                           :mostrarAcci="true"
                           @abrir-Biblio="abrirBiblioNombre"
                           @eliminar-item="manejarEliminarRef"
+                          :highlight-current-row="true"
+                          :mostrarNuevo="false"
+                          :mostrarEditar="false"
+                          :mostrarBorrar="false"
                         />
                       </div>
                     </el-collapse-item>
@@ -1600,7 +1610,13 @@ const showAscendants = async () => {
     flex: 1;
     overflow: auto;
     min-height: 0;
-    max-height: 300px;
+    max-height: 300px !important;
+  }
+
+  .table-wrapper :deep(.el-table__body tr.current-row > td) {
+    background-color: #ddf6dd !important;
+    color: #0d6efd !important;
+    font-weight: bold;
   }
 
   /* Para que las tablas internas ocupen todo el espacio */
@@ -1922,4 +1938,5 @@ const showAscendants = async () => {
     max-height: 65vh;
     overflow-y: auto;
 }
+
 </style>
