@@ -267,20 +267,20 @@ const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
-
   const proceedWithSave = () => {
     const nuevaDesc = formModal.value.Descripcion.trim();
     const nuevaDescLower = nuevaDesc.toLowerCase();
-
     if (modalMode.value === "editar") {
       const idPadreActual = nodoEnModal.value.IdAscendente;
-      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+      const nodoDuplicado = props.flatTreeDataProp.find(nodo =>
         String(nodo.IdAscendente) === String(idPadreActual) &&
         nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
         String(nodo.IdCatNombre) !== String(nodoEnModal.value.IdCatNombre)
       );
 
-      if (esDuplicado) {
+      if (nodoDuplicado) {
+        cerrarModalOperacion();
+        nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
           `Ya existe una característica llamada "${nuevaDesc}" en este nivel.`,
@@ -297,19 +297,9 @@ const guardarDesdeModal = async () => {
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-          mostrarNotificacion(
-            "Modificación",
-            "La información ha sido modificada correctamente.",
-            "success"
-          );
+          mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
           nextTick(() => {
-            const nodeToSelect = findNodeInTree(localTreeData.value, nodeId);
-            if (nodeToSelect) {
-              selectedNode.value = nodeToSelect;
-              treeRef.value?.setCurrentKey(nodeId);
-              expandAncestors(nodeId);
-              scrollToNode(nodeId);
-            }
+            selectAndFocusNode(nodeId);
           });
         },
         onError: (errors) => {
@@ -322,19 +312,18 @@ const guardarDesdeModal = async () => {
       if (opcionNivel.value !== "raiz" && !selectedNode.value) {
         return mostrarNotificacion("Error", "Se requiere un nodo de referencia.", "error");
       }
-      const calculoNiveles = calcularNivelesParaNuevoNodo(
-        selectedNode.value,
-        opcionNivel.value,
-        props.flatTreeDataProp
-      );
+      
+      const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
       if (!calculoNiveles) return;
       const idPadreDestino = calculoNiveles.idPadre;
-      const esDuplicado = props.flatTreeDataProp.some(nodo =>
+      const nodoDuplicado = props.flatTreeDataProp.find(nodo =>
         String(nodo.IdAscendente) === String(idPadreDestino) &&
         nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
       );
 
-      if (esDuplicado) {
+      if (nodoDuplicado) {
+        cerrarModalOperacion();
+        nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
           `No se puede crear la característica "${nuevaDesc}" porque ya existe en el nivel seleccionado.`,
@@ -358,11 +347,7 @@ const guardarDesdeModal = async () => {
           if (finalNewNodeId) {
             nodeIdToSelectAfterInsert.value = finalNewNodeId;
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
-            mostrarNotificacion(
-              "Ingreso",
-              "La característica ha sido ingresada correctamente.",
-              "success"
-            );
+            mostrarNotificacion("Ingreso", "La característica ha sido ingresada correctamente.", "success");
           }
         },
         onError: (errors) => {
@@ -399,7 +384,6 @@ const guardarDesdeModal = async () => {
     }).catch(() => { });
   }
 };
-
 
 
 
@@ -463,10 +447,11 @@ const handleEliminar = () => {
 const proceedWithDeletion = async () => {
   ElMessageBox.close();
   if (!nodeDataForDeleteConfirmation.value) return;
+
   const { IdCatNombre, Descripcion } = nodeDataForDeleteConfirmation.value;
   const nodeInTree = treeRef.value?.getNode(IdCatNombre);
-  const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0 
-    ? nodeInTree.parent.data.IdCatNombre 
+  const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
+    ? nodeInTree.parent.data.IdCatNombre
     : null;
 
   const targetUrl = `/caracteristicas-taxon/${IdCatNombre}`;
@@ -483,7 +468,7 @@ const proceedWithDeletion = async () => {
           `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
           "success"
         );
-        
+
         nextTick(() => {
           if (parentId) {
             const padreActualizado = findNodeInTree(localTreeData.value, parentId);
@@ -504,6 +489,13 @@ const proceedWithDeletion = async () => {
       },
     });
   } catch (error) {
+    console.error("Error al eliminar:", error);
+    const mensajeError = error.response?.data?.message || "No se puede eliminar esta característica porque tiene taxones relacionados.";
+    mostrarNotificacion(
+      "Aviso",
+      mensajeError,
+      "warning"
+    );
   } finally {
     nodeDataForDeleteConfirmation.value = null;
   }
@@ -696,7 +688,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
               {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
             </template>
             <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
-              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
+              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent />
           </el-form-item>
 
         </el-form>
@@ -906,8 +898,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 
 .botonera-biotica {
   display: flex;
-  gap: 12px; 
-  align-items: center; 
+  gap: 12px;
+  align-items: center;
 }
 
 .right-header-content {
@@ -917,8 +909,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 
 .form-actions {
   display: flex;
-  gap: 30px; 
+  gap: 30px;
   justify-content: flex-end;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
 }
 </style>

@@ -24,16 +24,6 @@ const props = defineProps({
 });
 
 
-const expandedRegionIds = ref(new Set());
-
-const handleRegionExpand = (data) => {
-    expandedRegionIds.value.add(data.IdRegion);
-};
-
-const handleRegionCollapse = (data) => {
-    expandedRegionIds.value.delete(data.IdRegion);
-};SOCAT-16
-
 
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
