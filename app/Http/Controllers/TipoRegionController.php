@@ -62,12 +62,6 @@ class TipoRegionController extends Controller
 
     public function store(Request $request)
     {
-        $levelRules = [];
-        for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
-            $levelRules["Nivel{$i}"] = 'required|integer';
-        }
-        $levelRules['isModal'] = 'nullable|boolean';
-
         $niveles = $request->only(['Nivel1', 'Nivel2', 'Nivel3', 'Nivel4', 'Nivel5']);
         $nivelActivo = 1;
         for ($i = self::MAX_NIVELES; $i >= 1; $i--) {
@@ -77,7 +71,13 @@ class TipoRegionController extends Controller
             }
         }
 
-        $validatedData = $request->validate(array_merge([
+        $validatedData = $request->validate([
+            'Nivel1' => 'required|integer',
+            'Nivel2' => 'required|integer',
+            'Nivel3' => 'required|integer',
+            'Nivel4' => 'required|integer',
+            'Nivel5' => 'required|integer',
+            'isModal' => 'nullable|boolean',
             'Descripcion' => [
                 'required',
                 'string',
@@ -86,22 +86,19 @@ class TipoRegionController extends Controller
                     for ($i = 1; $i < $nivelActivo; $i++) {
                         $query->where("Nivel{$i}", $niveles["Nivel{$i}"]);
                     }
+                    $query->where("Nivel{$nivelActivo}", '>', 0);
                     for ($i = $nivelActivo + 1; $i <= self::MAX_NIVELES; $i++) {
                         $query->where("Nivel{$i}", 0);
                     }
                 }),
             ],
-        ], $levelRules), [
-            'Descripcion.required' => 'La descripción es obligatoria.',
-            'Descripcion.unique' => 'Esta descripción ya está registrada en este nivel. Por favor intente con otra.',
+        ], [
+            'Descripcion.unique' => 'Esta descripción ya está registrada en este nivel.',
         ]);
 
         TipoRegion::create($validatedData);
 
-        if ($request->boolean('isModal')) {
-            return back()->with('success', 'Tipo de Región creado.');
-        }
-        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región creado.');
+        return $request->boolean('isModal') ? back() : redirect()->route('tipos-region.index');
     }
 
     public function update(Request $request, TipoRegion $tipoRegion)
@@ -125,30 +122,23 @@ class TipoRegionController extends Controller
                         for ($i = 1; $i < $nivelActivo; $i++) {
                             $query->where("Nivel{$i}", $tipoRegion->{"Nivel{$i}"});
                         }
+                        $query->where("Nivel{$nivelActivo}", '>', 0);
+
                         for ($i = $nivelActivo + 1; $i <= self::MAX_NIVELES; $i++) {
                             $query->where("Nivel{$i}", 0);
                         }
                     })
             ],
             'isModal' => 'nullable|boolean'
-        ], [
-            'Descripcion.required' => 'La descripción es obligatoria.',
-            'Descripcion.unique' => 'Esta descripción ya está registrada en este nivel.',
         ]);
 
         $tipoRegion->update($validatedData);
-
-        if ($request->boolean('isModal')) {
-            return back()->with('success', 'Tipo de Región actualizado.');
-        }
-
-        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región actualizado.');
+        return $request->boolean('isModal') ? back() : redirect()->route('tipos-region.index');
     }
 
     public function destroy(Request $request, TipoRegion $tipoRegion)
     {
         $query = TipoRegion::query();
-
         $query->where('IdTipoRegion', '!=', $tipoRegion->IdTipoRegion);
 
         $profundidad = 0;
@@ -165,14 +155,14 @@ class TipoRegionController extends Controller
         }
 
         if ($query->exists()) {
-            throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene sub-tipos dependientes.']);
+            throw ValidationException::withMessages(['message' => 'No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.']);
         }
 
         $regionesUsandoEsteTipo = Region::where('IdTipoRegion', $tipoRegion->IdTipoRegion)->exists();
 
         if ($regionesUsandoEsteTipo) {
             throw ValidationException::withMessages([
-                'message' => 'No se puede eliminar este tipo de región porque tiene regiones asociadas'
+                'message' => 'No es posible eliminar el tipo de region seleccionado por tener regiones que dependen de ella.'
             ]);
         }
 
