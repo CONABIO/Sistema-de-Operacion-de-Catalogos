@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, computed, nextTick } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
-import { Search, CircleClose } from '@element-plus/icons-vue';
+import { Search, CircleClose, Management } from '@element-plus/icons-vue';
 import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
@@ -28,6 +28,8 @@ const props = defineProps({
   mostrarEditar: { type: Boolean, default: true },
   mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
+  mostrarBiblio: { type:Boolean, default: false }, 
+
   highlightCurrentRow: {
     type: Boolean,
     default: false
@@ -44,6 +46,7 @@ const props = defineProps({
   }
 });
 
+const onBiblio = () => emit('abrir-Biblio'); 
 
 const handleVisibleChange = (visible, prop) => {
   if (visible) {
@@ -83,8 +86,11 @@ const onEditarInterno = () => {
 };
 
 const onEliminarInterno = () => {
-  if (selectedRow.value) {
+  if (selectedRow.value[props.idKey]) {
+    console.log("Entre a la funcion de eliminar de emit: ", selectedRow.value[props.idKey]);
     emit('eliminar-item', selectedRow.value[props.idKey]);
+  }else{
+     emit('eliminar-item', selectedRow.value);
   }
 };
 
@@ -131,7 +137,8 @@ const emit = defineEmits([
   'row-click',
   'traspasaBiblio',
   'traspasaSeleccionado',
-  'cerrar'
+  'cerrar',
+  'abrir-Biblio'
 ]);
 
 const onExpandChange = (row) => {
@@ -352,7 +359,21 @@ defineExpose({
                             v-if="props.mostrarBorrar" />
             <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               Se agrego la propiedad accion -->
-            <BotonSalir v-if="mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
+            <BotonSalir v-if="props.mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
+            <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              se agrega el boton de acceso a bibliografia para la tabla filtrable-->
+            
+            
+            <!--NuevoButton @crear="onNuevo" /-->
+            <div v-if = "props.mostrarBiblio">
+              <el-tooltip class="item" effect="dark" content="Bibliografia">
+                <el-button @click="onBiblio" circle style="flex-shrink: 0; 
+                            background-color: #509165; color: white;">
+                    <el-icon><Management /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+            
           </div>
         </div>
       </div>

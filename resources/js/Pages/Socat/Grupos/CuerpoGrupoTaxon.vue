@@ -193,7 +193,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
 
             if (!esEdicion) {
                 const response = await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion("Ingreso", "Grupo ingresado correctamente.", "success");
+                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
                 const nuevoId = response.data.grupo?.IdGrupoSCAT;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {

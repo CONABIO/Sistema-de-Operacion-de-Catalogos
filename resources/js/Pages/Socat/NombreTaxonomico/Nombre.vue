@@ -394,6 +394,20 @@ const handleChange = async (value) => {
         console.log("Se presentó un error en la recuperación de los datos");
       }
       loading.close();
+
+      await nextTick();
+
+      if(data.value.length > 0)
+      {
+        selectedNodeKey.value= data.value[0].id;
+        tree.value.setCurrentKey(data.value[0].id);
+        
+        let node = tree.value.getNode(data.value[0].id);
+
+        console.log("Este es el valor de node: ", node);
+        
+        expande(node.data, node);
+      }
     }
   }else
   {
@@ -760,7 +774,7 @@ const mover = async (node) => {
   }
 }
 
-const manejarEliminarRel = (item) => {
+const manejarEliminarRel = (item) => {  
   
   const procederConEliminacion = async () => {
 
@@ -1153,7 +1167,6 @@ const showAscendants = async () => {
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
-
               </el-cascader>
             </el-col>
 
@@ -1183,7 +1196,7 @@ const showAscendants = async () => {
                 <el-col :xs="24" :sm="2">
                   <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
                     <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
-                      <el-button @click="filtro_Catalogos()" type="primary" circle>
+                      <el-button @click="filtro_Catalogos()" circle style="flex-shrink: 0; background-color: #a08223;">
                         <el-icon>
                           <filtroGrupos />
                         </el-icon>
@@ -1286,19 +1299,20 @@ const showAscendants = async () => {
                       </template>                    
                     <div class="table-wrapper">
                       <TablaFiltrable 
-                        :columnas="columnasDefinidas" 
-                        :datos="tablaNomenclatura"
-                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        :columnas = "columnasDefinidas" 
+                        :datos = "tablaNomenclatura"
+                        :opciones-filtro = "opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
-                        :itemsPerPage= 2
-                        :mostrarBiblio="true"
-                        :mostrarAcci="true"
-                        @eliminar-item="manejarEliminarRel"
-                        @abrir-Biblio="abrirBiblio"
-                        :highlight-current-row="true"
-                        :mostrarNuevo="false"
-                        :mostrarEditar="false"
-                        :mostrarBorrar="false"
+                        :itemsPerPage = 2
+                        :mostrarBiblio = "true"
+                        :mostrarAcci = "true"
+                        @eliminar-item = "manejarEliminarRel"
+                        @abrir-Biblio = "abrirBiblio"
+                        :highlight-current-row = "true"
+                        :mostrarNuevo = "false"
+                        :mostrarEditar = "false"
+                        :mostrarBorrar = "true"
+                        :mostrarSalir = "false" 
                       />
                     </div>
                     </el-collapse-item>
@@ -1313,20 +1327,21 @@ const showAscendants = async () => {
                       </template>
                       <div class="table-wrapper">
                         <TablaFiltrable 
-                          :columnas="columnasDefRef" 
-                          v-model:datos="tablaReferencias"
-                          v-model:total-items="totalRegRef" 
-                          :opciones-filtro="opcionesFiltroRef" 
+                          :columnas = "columnasDefRef" 
+                          v-model:datos = "tablaReferencias"
+                          v-model:total-items = "totalRegRef" 
+                          :opciones-filtro = "opcionesFiltroRef" 
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
-                          :mostrarBiblio="true"
-                          :mostrarAcci="true"
-                          @abrir-Biblio="abrirBiblioNombre"
-                          @eliminar-item="manejarEliminarRef"
-                          :highlight-current-row="true"
-                          :mostrarNuevo="false"
-                          :mostrarEditar="false"
-                          :mostrarBorrar="false"
+                          :mostrarBiblio = "true"
+                          :mostrarAcci = "true"
+                          @abrir-Biblio = "abrirBiblioNombre"
+                          @eliminar-item = "manejarEliminarRef"
+                          :highlight-current-row = "true"
+                          :mostrarNuevo = "false"
+                          :mostrarEditar = "false"
+                          :mostrarBorrar = "true"
+                          :mostrarSalir = "false"
                         />
                       </div>
                     </el-collapse-item>

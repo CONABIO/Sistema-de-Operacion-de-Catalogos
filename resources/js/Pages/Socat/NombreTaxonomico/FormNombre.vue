@@ -37,7 +37,8 @@
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
-            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
+            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" 
+                        :disabled = nivelAct>
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -45,7 +46,7 @@
                       :value="item.id">
               </el-option>
             </el-select>
-          </el-form-item>     
+          </el-form-item>   
           <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
@@ -149,7 +150,10 @@
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
-                                          :disabled="actGrupo" style="width: 100%;">
+                                          :disabled="actGrupo" 
+                                          style="width: 100%;"
+                                          filterable
+                                          clearable>
                                 <el-option 
                                   v-for="item in listGrp" 
                                   :key="item.id" 
@@ -158,6 +162,7 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            
                           </div>
                           <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
                             placement="bottom">
