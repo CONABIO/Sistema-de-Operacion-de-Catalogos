@@ -37,8 +37,10 @@
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
-            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" 
-                        :disabled = nivelAct>
+            <el-select v-model="nombreTax.catTax"  
+                       placeholder = "Nivel taxonómico" 
+                       popper-class="select-verde-dropdown"
+                       :disabled = nivelAct>
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -136,8 +138,8 @@
                               <th style="border: 1px solid black;">IDCat</th>
                             </tr>
                             <tr>
-                              <td style="border: 1px solid black;">{{ idNombre }}</td>
-                              <td style="border: 1px solid black;">{{ idCat }}</td>
+                              <td style="border: 1px solid black; background-color: #F5F527;">{{ idNombre }}</td>
+                              <td style="border: 1px solid black; background-color: #F57327;">{{ idCat }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -151,6 +153,7 @@
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
                                           :disabled="actGrupo" 
+                                          popper-class="select-verde-dropdown"
                                           style="width: 100%;"
                                           filterable
                                           clearable>
@@ -185,7 +188,7 @@
                               v-model="valSnib" 
                               placeholder="" 
                               :disabled="autorAct" 
-                              popper-class="custom-select-dropdown"
+                              popper-class="select-verde-dropdown"
                               style="width: 100%">
                             <el-option v-for="item in opcSnib" 
                                       :key="item.id" 
@@ -202,7 +205,7 @@
                                 v-model="nombreTax.nivelRev" 
                                 placeholder="Nivel de revisión" 
                                 :disabled="autorAct" 
-                                popper-class="custom-select-dropdown"
+                                popper-class="select-verde-dropdown"
                                 style="width: 100%">
                             <el-option v-for="item in opcNivRev" 
                                         :key="item.id" 
@@ -261,7 +264,7 @@
                     <br>
                     <el-row :gutter='25'>
                       <el-col :span="24">
-                        <p></p>
+                        <!--p></p>
                         <el-row>
                           Homonimia SNIB
                         </el-row>
@@ -269,9 +272,20 @@
                           <el-input type="input" 
                                     placeholder="Homonimia SNIB" 
                                     v-model="homonimiaSnib"
+                                    show-word-limit 
                                     @keydown="onPressSistC" 
-                                    :disabled="autorAct" />
-                        </el-row>
+                                    :disabled="autorAct" 
+                                    maxlength="255" />
+                        </el-row-->
+                        <el-form-item label = "Homonimia SNIB" prop = "homonimiaSnib">
+                          <el-input type="text" 
+                                          placeholder="Homonimia SNIB" 
+                                          v-model="homonimiaSnib"
+                                          show-word-limit 
+                                          @keydown="onPressSistC"
+                                          :disabled="autorAct"
+                                          maxlength="255"  />
+                        </el-form-item>
                       </el-col>
                     </el-row>
                     <br>
@@ -291,8 +305,10 @@
                         <el-row>
                           <el-input placeholder="IdCOL" 
                                     v-model="idCol" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct" />
+                                    :disabled="autorAct"
+                                    maxlength="255" />
                         </el-row>
                       </el-col>
                       <el-col :span='8'>
@@ -300,8 +316,11 @@
                         <el-row>
                           <el-input placeholder="IdCITES" 
                                     v-model="idCites" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct"/>
+                                    :disabled="autorAct"
+                                    maxlength="255"
+                                    />
                         </el-row>
                       </el-col>
                     </el-row>
@@ -544,6 +563,9 @@ const rules = ref({
   ],
   nivelRev: [
     { required: true, message: 'Se debe seleccionar nivel de revisión', trigger: 'change' }
+  ],
+  homonimiaSnib: [
+    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
   ]
 });
 
@@ -1338,7 +1360,7 @@ onMounted(() => {
 </script>
 
 
-<style scoped>
+<style>
   .form-nombre-container {
     padding: 1px;
   }
@@ -1581,4 +1603,20 @@ onMounted(() => {
       max-width: none;
     }
   }
+
+/* ===== SELECT VERDE ===== */
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected.is-hovering {
+  background-color: rgb(203, 233, 200) !important;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-hovering:not(.is-selected) {
+  background-color: rgb(240, 245, 239)  !important;
+}
 </style>

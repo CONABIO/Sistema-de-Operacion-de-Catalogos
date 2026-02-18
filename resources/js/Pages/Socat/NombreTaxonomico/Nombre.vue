@@ -1159,7 +1159,7 @@ const showAscendants = async () => {
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
               <el-cascader :options="categoriasTax" clearable filterable v-model="categ" placeholder="Nivel taxonómico"
-                @change="handleChange" popper-class="z-index-fix">
+                @change="handleChange" popper-class="z-index-fix" >
 
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
@@ -1954,4 +1954,17 @@ const showAscendants = async () => {
     overflow-y: auto;
 }
 
+
+/* ===== CASCADER VERDE ===== */
+
+.cascader-verde-dropdown .el-cascader-node.is-active,
+.cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.cascader-verde-dropdown .el-cascader-node:hover {
+  background-color: rgb(240, 245, 239) !important;
+}
 </style>

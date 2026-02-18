@@ -196,7 +196,7 @@ const tableKey = ref(0);
 
 const fetchData = async () => {
   try {
-
+    
     if(props.endpoint === "")
     {
       return;
@@ -239,6 +239,7 @@ const fetchData = async () => {
       selectedRow.value = null;
       emit('row-click', null);
     }
+    console.log("pase por todas las validaciones.");
   } catch (error) {
     console.error(`Error en fetchData:`, error);
   }
@@ -312,6 +313,7 @@ const handleSortChange = ({ prop, order }) => {
 
 const handlePageChange = (page) => {
   currentPage.value = page;
+  console.log("Este es el valor de page: ", page);
   fetchData();
 };
 
