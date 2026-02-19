@@ -41,6 +41,8 @@ const notificacionDuracion = ref(5000);
 let debounceTimer = null;
 
 
+const pendingId = ref(null);
+
 const props = defineProps({
   treeDataProp: { type: Array, required: true },
   flatTreeDataProp: { type: Array, required: true },
@@ -48,11 +50,20 @@ const props = defineProps({
 
 const handleNodeExpand = (data) => {
   expandedNodeIds.value.add(data.IdCategoriaTaxonomica);
+  seleccionarNodoAlInteractuar(data);
 };
 
 const handleNodeCollapse = (data) => {
   expandedNodeIds.value.delete(data.IdCategoriaTaxonomica);
+  seleccionarNodoAlInteractuar(data);
 };
+
+const seleccionarNodoAlInteractuar = (data) => {
+  if (esModalVisible.value) return; 
+  selectedNode.value = data;
+  treeRef.value?.setCurrentKey(data.IdCategoriaTaxonomica);
+};
+
 
 const handleNodeSelected = (data) => {
   if (esModalVisible.value) {
@@ -81,39 +92,51 @@ const findNodeInTree = (nodes, nodeId) => {
   return null;
 };
 
-watch(() => props.treeDataProp, (newVal) => {
+
+
+watch(() => props.treeDataProp, async (newVal) => {
   localTreeData.value = newVal;
-  nextTick(() => {
-    if (!treeRef.value) return;
-    expandedNodeIds.value.forEach(id => {
-      const node = treeRef.value.getNode(id);
-      if (node && !node.expanded) {
-        node.expand();
+  await nextTick();
+  if (!pendingId.value) {
+    if (!selectedNode.value && newVal.length > 0) {
+      const first = newVal[0];
+      selectedNode.value = first;
+      treeRef.value?.setCurrentKey(first.IdCategoriaTaxonomica);
+    }
+    return;
+  }
+  let targetId = null;
+  if (pendingId.value === "SELECT_FIRST_ROOT") {
+    targetId = newVal.length > 0 ? newVal[0].IdCategoriaTaxonomica : null;
+  } else {
+    targetId = Number(pendingId.value);
+  }
+
+  if (targetId) {
+    const nodeData = props.flatTreeDataProp.find(n => Number(n.IdCategoriaTaxonomica) === targetId);
+    if (nodeData) {
+      if (nodeData.IdAscendente) {
+        expandedNodeIds.value.add(nodeData.IdAscendente);
       }
-    });
-  });
+      await nextTick();
+      treeRef.value?.setCurrentKey(targetId);
+      selectedNode.value = nodeData;
+      scrollToNode(targetId);
+    }
+  }
+  pendingId.value = null;
 }, { immediate: true, deep: true });
 
-const page = usePage();
-watch(() => page.props.flash?.newNodeId, (newNodeId) => {
-  if (newNodeId) {
-    nextTick(() => {
-      const newNodeData = props.flatTreeDataProp.find(n => n.IdCategoriaTaxonomica === newNodeId);
-      if (newNodeData && newNodeData.IdAscendente) {
-        expandedNodeIds.value.add(newNodeData.IdAscendente);
-        const parentNode = treeRef.value.getNode(newNodeData.IdAscendente);
-        if (parentNode) {
-          parentNode.expand();
-        }
-      }
-      treeRef.value?.setCurrentKey(newNodeId);
-      selectedNode.value = newNodeData;
-      scrollToNode(newNodeId);
-    });
-    router.page.props.flash.newNodeId = null;
-  }
-}, { deep: true });
 
+
+const page = usePage();
+
+watch(() => page.props.flash?.newNodeId, (newId) => {
+  if (newId) {
+    pendingId.value = newId;
+    console.log("ID detectado para seleccionar:", newId);
+  }
+}, { immediate: true });
 onMounted(() => {
   if (props.treeDataProp.length > 0 && !page.props.flash?.newNodeId) {
     const firstNode = props.treeDataProp[0];
@@ -143,7 +166,7 @@ const abrirModalParaInsertar = () => {
 const abrirModalParaEditar = () => {
   if (!selectedNode.value) return ElMessage.warning("Seleccione un nodo para editar.");
   if (isEditarDeshabilitado.value) {
-    return mostrarNotificacion("Error", "Esta categoría no puede ser modificada.", "error");
+    return mostrarNotificacion("Aviso", "Esta categoría no puede ser modificada  porque es parte de la información del sistema.", "warning");
   } else {
     modalMode.value = "editar";
     nodoEnModal.value = { ...selectedNode.value };
@@ -174,29 +197,63 @@ const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
-
   const nombreNormalizado = formModal.value.NombreCategoriaTaxonomica.trim().toLowerCase();
   const esEdicion = modalMode.value === 'editar';
-
+  let idPadreObjetivo = null;
+  if (esEdicion) {
+    idPadreObjetivo = nodoEnModal.value.IdAscendente;
+  } else {
+    if (opcionNivel.value === 'mismo') {
+      idPadreObjetivo = selectedNode.value ? selectedNode.value.IdAscendente : null;
+    } else if (opcionNivel.value === 'inferior') {
+      idPadreObjetivo = selectedNode.value ? selectedNode.value.IdCategoriaTaxonomica : null;
+    } else {
+      idPadreObjetivo = null;
+    }
+  }
   const registroExistente = props.flatTreeDataProp.find(item => {
     const mismoNombre = item.NombreCategoriaTaxonomica.trim().toLowerCase() === nombreNormalizado;
-    return esEdicion ? (mismoNombre && item.IdCategoriaTaxonomica !== nodoEnModal.value.IdCategoriaTaxonomica) : mismoNombre;
-  });
+    const mismoPadre = item.IdAscendente === idPadreObjetivo;
 
+    if (esEdicion) {
+      return mismoNombre && mismoPadre && item.IdCategoriaTaxonomica !== nodoEnModal.value.IdCategoriaTaxonomica;
+    } else {
+      return mismoNombre && mismoPadre;
+    }
+  });
   if (registroExistente) {
+    const idExistente = registroExistente.IdCategoriaTaxonomica;
+    cerrarModalOperacion();
     mostrarNotificacionError(
       "Aviso",
-      `Ya existe una categoría taxonómica con el nombre '${formModal.value.NombreCategoriaTaxonomica} en el mismo nivel'`,
-      "error",
-      0 
+      `Ya existe una categoría taxonómica con ese nombre en este nivel.`,
+      "warning",
     );
+
+    nextTick(async () => {
+      if (registroExistente.IdAscendente) {
+        expandedNodeIds.value.add(registroExistente.IdAscendente);
+        await nextTick();
+        treeRef.value?.getNode(registroExistente.IdAscendente)?.expand();
+      }
+      await nextTick();
+      treeRef.value?.setCurrentKey(idExistente);
+      selectedNode.value = registroExistente;
+      scrollToNode(idExistente);
+    });
+
     return;
   }
-
   const onSuccess = () => {
     cerrarModalOperacion();
-    mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+    const tituloNotificacion = esEdicion ? "Modificación" : "Ingreso";
+    const mensajeNotificacion = esEdicion
+      ? "La categoria taxonómica ha sido modificada correctamente."
+      : "La categoria taxonómica ha sido ingresada correctamente.";
+
+    mostrarNotificacion(tituloNotificacion, mensajeNotificacion, "success");
   };
+
   const onError = (e) => mostrarNotificacion("Error", Object.values(e).flat().join("\n"), "error");
 
   if (modalMode.value === "insertar") {
@@ -212,10 +269,10 @@ const guardarDesdeModal = async () => {
     if (!nodoParaCalcular && opcionNivel.value !== 'raiz') {
       return ElMessage.error("No se pudo determinar un nodo de referencia para la inserción.");
     }
-    
+
     const resultado = calcularNiveles_ADAPTADO_AL_CAOS(nodoParaCalcular, opcionNivel.value, props.flatTreeDataProp);
     if (!resultado) return;
-    
+
     const datos = {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim(),
       ...resultado.niveles,
@@ -236,6 +293,7 @@ const guardarDesdeModal = async () => {
       NombreCategoriaTaxonomica: formModal.value.NombreCategoriaTaxonomica.trim()
     };
     const url = `/categorias-taxonomicas/${nodoEnModal.value.IdCategoriaTaxonomica}`;
+
     router.put(url, datos, {
       preserveScroll: true,
       onSuccess,
@@ -247,96 +305,107 @@ const guardarDesdeModal = async () => {
 const MAX_NIVELES = 12;
 
 const calcularNiveles_ADAPTADO_AL_CAOS = (nodoReferencia, opcion, todosLosNodos) => {
-    const nuevosNiveles = {};
-    for (let i = 1; i <= MAX_NIVELES; i++) {
-        nuevosNiveles[`IdNivel${i}`] = 0;
+  const nuevosNiveles = {};
+  for (let i = 1; i <= MAX_NIVELES; i++) {
+    nuevosNiveles[`IdNivel${i}`] = 0;
+  }
+
+  if (opcion === "raiz" || !nodoReferencia) {
+    let maxRaiz = 0;
+    todosLosNodos.filter(n => !n.IdAscendente || n.IdAscendente === 0)
+      .forEach(n => { maxRaiz = Math.max(maxRaiz, n.IdNivel1 || 0); });
+    nuevosNiveles.IdNivel1 = maxRaiz + 1;
+    return { niveles: nuevosNiveles, nuevoIdAscendente: null };
+  }
+
+  if (opcion === 'inferior') {
+    const padre = nodoReferencia;
+    const nuevoIdAscendente = padre.IdCategoriaTaxonomica;
+
+    let profundidadPadre = 0;
+    let ancestroActual = padre;
+    const ancestroMap = new Map(todosLosNodos.map(n => [n.IdCategoriaTaxonomica, n]));
+    while (ancestroActual) {
+      profundidadPadre++;
+      ancestroActual = ancestroMap.get(ancestroActual.IdAscendente);
+    }
+    const nivelDelNuevoHijo = profundidadPadre + 1;
+
+    if (nivelDelNuevoHijo > MAX_NIVELES) {
+      mostrarNotificacion("Error", "Profundidad máxima excedida.", "error");
+      return null;
     }
 
-    if (opcion === "raiz" || !nodoReferencia) {
-        let maxRaiz = 0;
-        todosLosNodos.filter(n => !n.IdAscendente || n.IdAscendente === 0)
-                     .forEach(n => { maxRaiz = Math.max(maxRaiz, n.IdNivel1 || 0); });
-        nuevosNiveles.IdNivel1 = maxRaiz + 1;
-        return { niveles: nuevosNiveles, nuevoIdAscendente: null };
+    for (let i = 1; i <= profundidadPadre; i++) {
+      nuevosNiveles[`IdNivel${i}`] = padre[`IdNivel${i}`];
     }
 
-    if (opcion === 'inferior') {
-        const padre = nodoReferencia;
-        const nuevoIdAscendente = padre.IdCategoriaTaxonomica;
-        
-        let profundidadPadre = 0;
-        let ancestroActual = padre;
-        const ancestroMap = new Map(todosLosNodos.map(n => [n.IdCategoriaTaxonomica, n]));
-        while(ancestroActual) {
-            profundidadPadre++;
-            ancestroActual = ancestroMap.get(ancestroActual.IdAscendente);
-        }
-        const nivelDelNuevoHijo = profundidadPadre + 1;
+    const hermanos = todosLosNodos.filter(n => n.IdAscendente === nuevoIdAscendente);
+    let maxNivelHijo = 0;
+    hermanos.forEach(h => {
+      maxNivelHijo = Math.max(maxNivelHijo, h[`IdNivel${nivelDelNuevoHijo}`] || 0);
+    });
 
-        if (nivelDelNuevoHijo > MAX_NIVELES) {
-             mostrarNotificacion("Error", "Profundidad máxima excedida.", "error");
-             return null;
-        }
+    nuevosNiveles[`IdNivel${nivelDelNuevoHijo}`] = maxNivelHijo + 1;
+    return { niveles: nuevosNiveles, nuevoIdAscendente: nuevoIdAscendente };
+  }
 
-        for (let i = 1; i <= profundidadPadre; i++) {
-            nuevosNiveles[`IdNivel${i}`] = padre[`IdNivel${i}`];
-        }
-        
-        const hermanos = todosLosNodos.filter(n => n.IdAscendente === nuevoIdAscendente);
-        let maxNivelHijo = 0;
-        hermanos.forEach(h => {
-            maxNivelHijo = Math.max(maxNivelHijo, h[`IdNivel${nivelDelNuevoHijo}`] || 0);
-        });
-        
-        nuevosNiveles[`IdNivel${nivelDelNuevoHijo}`] = maxNivelHijo + 1;
-        return { niveles: nuevosNiveles, nuevoIdAscendente: nuevoIdAscendente };
+  if (opcion === 'mismo') {
+    const nuevoIdAscendente = nodoReferencia.IdAscendente;
+    if (!nuevoIdAscendente) {
+      return calcularNiveles_ADAPTADO_AL_CAOS(null, 'raiz', todosLosNodos);
     }
 
-    if (opcion === 'mismo') {
-        const nuevoIdAscendente = nodoReferencia.IdAscendente;
-        if (!nuevoIdAscendente) {
-            return calcularNiveles_ADAPTADO_AL_CAOS(null, 'raiz', todosLosNodos);
-        }
-        
-        const padre = todosLosNodos.find(n => n.IdCategoriaTaxonomica === nuevoIdAscendente);
-        if (!padre) {
-            mostrarNotificacion("Error", "No se pudo encontrar el nodo padre para crear un hermano.", "error");
-            return null;
-        }
-        
-        return calcularNiveles_ADAPTADO_AL_CAOS(padre, 'inferior', todosLosNodos);
+    const padre = todosLosNodos.find(n => n.IdCategoriaTaxonomica === nuevoIdAscendente);
+    if (!padre) {
+      mostrarNotificacion("Error", "No se pudo encontrar el nodo padre para crear un hermano.", "error");
+      return null;
     }
-    return null;
+
+    return calcularNiveles_ADAPTADO_AL_CAOS(padre, 'inferior', todosLosNodos);
+  }
+  return null;
 };
+
+
 
 const handleEliminar = () => {
   if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
   if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-    return mostrarNotificacion("Error", "No es posible eliminar categorías taxonómicas precargadas por omisión en Biótica.", "error");
+    return mostrarNotificacion("Aviso", "No es posible eliminar esta categoria taxonómica porque tiene sub-categorias que dependen de ella.", "warning");
   }
   const nombre = selectedNode.value.NombreCategoriaTaxonomica;
-  const mensaje = `¿Está seguro de eliminar la categoría "${nombre}"? Esta acción no se puede revertir.`;
+  const idPadre = selectedNode.value.IdAscendente;
+  const mensaje = `¿Está seguro de eliminar la categoría seleccionada? Esta acción no se puede revertir.`;
   const proceedWithDeletion = () => {
+    if (idPadre) {
+      pendingId.value = idPadre;
+    } else {
+      pendingId.value = "SELECT_FIRST_ROOT";
+    }
     router.delete(`/categorias-taxonomicas/${selectedNode.value.IdCategoriaTaxonomica}`, {
       preserveScroll: true,
       onSuccess: () => {
-        mostrarNotificacion("Eliminación exitosa", `La categoria taxonómica "${nombre}" ha sido eliminado correctamente.`, "success");
-        const parent = findNodeInTree(localTreeData.value, selectedNode.value.IdAscendente);
-        selectedNode.value = parent || (localTreeData.value.length > 0 ? localTreeData.value[0] : null);
-        if (selectedNode.value) treeRef.value?.setCurrentKey(selectedNode.value.IdCategoriaTaxonomica);
+        mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminado correctamente.`, "success");
       },
-      onError: (e) => mostrarNotificacion("Error al Eliminar", e.message || "Ocurrió un error.", "error"),
+      onError: (e) => {
+        pendingId.value = null;
+        mostrarNotificacion("Aviso", e.message || "Ocurrió un error.", "warning");
+      },
     });
     ElMessageBox.close();
   };
-
   ElMessageBox({
     title: "Confirmar eliminación",
-    showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
+    showConfirmButton: false, 
+    showCancelButton: false, 
+    customClass: "message-box-diseno-limpio",
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
         h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        h('div', { class: 'text-container' }, [
+            h('p', null, mensaje) 
+        ])
       ]),
       h('div', { class: 'footer-buttons' }, [
         h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -345,6 +414,7 @@ const handleEliminar = () => {
     ]),
   }).catch(() => { });
 };
+
 
 const iconosSugeridos = [
   'mdi:leaf', 'mdi:tree', 'mdi:flower', 'mdi:forest', 'mdi:pine-tree', 'mdi:sprout', 'mdi:seed', 'mdi:grass',
@@ -478,7 +548,7 @@ const seleccionarIcono = async (iconName) => {
     router.put(`/categorias-taxonomicas/${nodeId}/update-icon`, { RutaIcono: svgContent }, {
       preserveScroll: true,
       onSuccess: () => {
-        mostrarNotificacion("Éxito", "Ícono actualizado.", "success");
+        mostrarNotificacion("Modificación", "El ícono se ha actualizado correctamente.", "success");
         cerrarModalIconos();
       },
       onError: (e) => mostrarNotificacion("Error", Object.values(e).flat().join("\n"), "error"),
@@ -510,11 +580,11 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => { notificacionTitulo.valu
 
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-    notificacionTitulo.value = titulo;
-    notificacionMensaje.value = mensaje;
-    notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
-    notificacionVisible.value = true;
+  notificacionTitulo.value = titulo;
+  notificacionMensaje.value = mensaje;
+  notificacionTipo.value = tipo;
+  notificacionDuracion.value = 5000;
+  notificacionVisible.value = true;
 };
 
 const isAccionDependienteDeNodoDeshabilitada = computed(() => !selectedNode.value || esModalVisible.value);
@@ -532,19 +602,17 @@ const isEditarDeshabilitado = computed(() => {
   return false;
 });
 
+
 const isCambiarIconoDeshabilitado = computed(() => {
   if (!selectedNode.value || esModalVisible.value) {
     return true;
   }
-
   if (selectedNode.value.IdCategoriaTaxonomica < 132 && selectedNode.value.RutaIcono === ICONO_POR_DEFECTO) {
     return false;
   }
-
   if (selectedNode.value.RutaIcono !== ICONO_POR_DEFECTO) {
     return true;
   }
-
   return false;
 });
 </script>
@@ -552,112 +620,113 @@ const isCambiarIconoDeshabilitado = computed(() => {
 
 
 <template>
-    <LayoutCuerpo :usar-app-layout="false" titulo-pag="Categorías Taxonómicas"
-      titulo-area="Catálogo de categorías taxonómicas">
-      <el-card class="box-card tree-card" shadow="never">
-        <template #header>
-          <div class="header-container">
-            <div class="left-header-content"></div>
-            <div class="right-header-content">
-              <div class="action-group">
-                <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
-                <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
-                  :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                <BotonSalir toolPosicion="bottom" />
-              </div>
+  <LayoutCuerpo :usar-app-layout="false" titulo-pag="Categorías Taxonómicas"
+    titulo-area="Catálogo de categorías taxonómicas">
+    <el-card class="box-card tree-card" shadow="never">
+      <template #header>
+        <div class="header-container">
+          <div class="left-header-content"></div>
+          <div class="right-header-content">
+            <div class="action-group">
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+              <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
+                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+              <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
+                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+              <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
+                :disabled="isCambiarIconoDeshabilitado" />
+              <BotonSalir toolPosicion="bottom" />
             </div>
           </div>
+        </div>
+      </template>
+
+      <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
+        :default-expanded-keys="Array.from(expandedNodeIds)"
+        :props="{ children: 'children', label: 'NombreCategoriaTaxonomica' }" node-key="IdCategoriaTaxonomica"
+        :current-node-key="selectedNode?.IdCategoriaTaxonomica" highlight-current :expand-on-click-node="true"
+        @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
+        class="custom-element-tree">
+        <template #default="{ data }">
+          <span :id="`tree-node-${data.IdCategoriaTaxonomica}`" class="custom-tree-node-content">
+
+            <img v-if="!data.RutaIcono" src="/storage/images/REvyORsYggrsOFexbUteuMmMhVzDTfKaZzDkAffD.png"
+              class="node-icon-wrapper" />
+
+            <template v-else>
+              <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono" class="node-icon-wrapper">
+              </span>
+              <img v-else :src="data.RutaIcono" class="node-icon-wrapper" />
+            </template>
+
+            <span>{{ data.NombreCategoriaTaxonomica }}</span>
+
+          </span>
         </template>
+      </el-tree>
 
-        <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
-          :props="{ children: 'children', label: 'NombreCategoriaTaxonomica' }" node-key="IdCategoriaTaxonomica"
-          :current-node-key="selectedNode?.IdCategoria" highlight-current :expand-on-click-node="true"
-          @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
-          class="custom-element-tree">
-          <template #default="{ data }">
-            <span :id="`tree-node-${data.IdCategoriaTaxonomica}`" class="custom-tree-node-content">
+      <div v-else class="no-data-message"> No hay datos de categorías taxonómicas para mostrar.
+      </div>
+    </el-card>
+  </LayoutCuerpo>
 
-              <img v-if="!data.RutaIcono" src="/storage/images/REvyORsYggrsOFexbUteuMmMhVzDTfKaZzDkAffD.png"
-                class="node-icon-wrapper" />
+  <Teleport to="body">
+    <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+      <div class="dialog-header">
+        <h3>{{ modalTitle }}</h3>
+      </div>
+      <div class="form-actions">
+        <GuardarButton @click="guardarDesdeModal" />
+        <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+      </div>
+      <div class="dialog-body-container">
+        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+          @submit.prevent="guardarDesdeModal">
 
-              <template v-else>
-                <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono" class="node-icon-wrapper">
-                </span>
-                <img v-else :src="data.RutaIcono" class="node-icon-wrapper" />
-              </template>
-
-              <span>{{ data.NombreCategoriaTaxonomica }}</span>
-
-            </span>
-          </template>
-        </el-tree>
-
-        <div v-else class="no-data-message"> No hay datos de categorías taxonómicas para mostrar.
-</div>
-      </el-card>
-    </LayoutCuerpo>
-
-    <Teleport to="body">
-      <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
-        <div class="dialog-header">
-          <h3>{{ modalTitle }}</h3>
-        </div>
-        <div class="form-actions">
-          <GuardarButton @click="guardarDesdeModal" />
-          <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
-        </div>
-        <div class="dialog-body-container">
-          <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-            @submit.prevent="guardarDesdeModal">
-
-            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-              <el-radio-group v-model="opcionNivel">
-                <el-radio value="mismo">Mismo nivel</el-radio>
-                <el-radio value="inferior">Nivel inferior</el-radio>
-              </el-radio-group>
-            </div>
-
-            <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
-              <el-input ref="nombreCategoriaInputRef" v-model="formModal.NombreCategoriaTaxonomica" placeholder="Ingrese el nombre" clearable
-                maxlength="255" show-word-limit />
-            </el-form-item>
-
-
-          </el-form>
-
-        </div>
-      </DialogGeneral>
-
-      <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
-        <div class="dialog-header">
-          <h3>Seleccione el ícono para la categoría "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
-        </div>
-        <div class="dialog-body-container">
-          <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal')"
-            @input="onInputBusquedaIcono" clearable />
-          <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la  búsqueda' }}</h4>
-          <div v-loading="cargandoIconos" class="icon-grid mt-4">
-            <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
-              @click="seleccionarIcono(iconName)">
-              <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
-            </div>
+          <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+            <el-radio-group v-model="opcionNivel">
+              <el-radio value="mismo">Mismo nivel</el-radio>
+              <el-radio value="inferior">Nivel inferior</el-radio>
+            </el-radio-group>
           </div>
-          <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
-            class="text-center text-gray-500 mt-4">
-            No se encontraron resultados.
-          </p>
-        </div>
-      </DialogGeneral>
 
-      <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-        :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-        @close="notificacionVisible = false" />
-    </Teleport>
+          <el-form-item prop="NombreCategoriaTaxonomica" label="Nombre de la Categoría:">
+            <el-input ref="nombreCategoriaInputRef" v-model="formModal.NombreCategoriaTaxonomica"
+              placeholder="Ingrese el nombre" clearable maxlength="15" show-word-limit />
+          </el-form-item>
+
+
+        </el-form>
+
+      </div>
+    </DialogGeneral>
+
+    <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
+      <div class="dialog-header">
+        <h3>Seleccione el ícono para la categoría "{{ selectedNode?.NombreCategoriaTaxonomica }}"</h3>
+      </div>
+      <div class="dialog-body-container">
+        <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal')"
+          @input="onInputBusquedaIcono" clearable />
+        <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la búsqueda' }}</h4>
+        <div v-loading="cargandoIconos" class="icon-grid mt-4">
+          <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
+            @click="seleccionarIcono(iconName)">
+            <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
+          </div>
+        </div>
+        <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
+          class="text-center text-gray-500 mt-4">
+          No se encontraron resultados.
+        </p>
+      </div>
+    </DialogGeneral>
+
+    <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+      :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+      @close="notificacionVisible = false" />
+  </Teleport>
 </template>
 
 <style>
@@ -848,11 +917,11 @@ const isCambiarIconoDeshabilitado = computed(() => {
 }
 
 .node-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px; 
-    height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
 .icon-grid {
