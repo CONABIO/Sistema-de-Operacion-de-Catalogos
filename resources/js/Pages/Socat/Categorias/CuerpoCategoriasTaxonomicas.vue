@@ -41,6 +41,8 @@ const notificacionDuracion = ref(5000);
 let debounceTimer = null;
 
 
+const pendingId = ref(null);
+
 const props = defineProps({
   treeDataProp: { type: Array, required: true },
   flatTreeDataProp: { type: Array, required: true },
@@ -81,38 +83,47 @@ const findNodeInTree = (nodes, nodeId) => {
   return null;
 };
 
-watch(() => props.treeDataProp, (newVal) => {
+watch(() => props.treeDataProp, async (newVal) => {
   localTreeData.value = newVal;
-  nextTick(() => {
-    if (!treeRef.value) return;
-    expandedNodeIds.value.forEach(id => {
-      const node = treeRef.value.getNode(id);
-      if (node && !node.expanded) {
-        node.expand();
+  await nextTick();
+  if (pendingId.value) {
+    const idParaSeleccionar = pendingId.value;
+    const newNodeData = props.flatTreeDataProp.find(
+      n => Number(n.IdCategoriaTaxonomica) === Number(idParaSeleccionar)
+    );
+    if (newNodeData) {
+      if (newNodeData.IdAscendente) {
+        expandedNodeIds.value.add(newNodeData.IdAscendente);
       }
+      await nextTick();
+      expandedNodeIds.value.forEach(id => {
+        const node = treeRef.value?.getNode(id);
+        if (node && !node.expanded) node.expand();
+      });
+      treeRef.value?.setCurrentKey(idParaSeleccionar);
+      selectedNode.value = newNodeData;
+      scrollToNode(idParaSeleccionar);
+    }
+    
+    pendingId.value = null;
+    if (page.props.flash) page.props.flash.newNodeId = null;
+
+  } else {
+    await nextTick();
+    expandedNodeIds.value.forEach(id => {
+      const node = treeRef.value?.getNode(id);
+      if (node && !node.expanded) node.expand();
     });
-  });
+  }
 }, { immediate: true, deep: true });
 
 const page = usePage();
-watch(() => page.props.flash?.newNodeId, (newNodeId) => {
-  if (newNodeId) {
-    nextTick(() => {
-      const newNodeData = props.flatTreeDataProp.find(n => n.IdCategoriaTaxonomica === newNodeId);
-      if (newNodeData && newNodeData.IdAscendente) {
-        expandedNodeIds.value.add(newNodeData.IdAscendente);
-        const parentNode = treeRef.value.getNode(newNodeData.IdAscendente);
-        if (parentNode) {
-          parentNode.expand();
-        }
-      }
-      treeRef.value?.setCurrentKey(newNodeId);
-      selectedNode.value = newNodeData;
-      scrollToNode(newNodeId);
-    });
-    router.page.props.flash.newNodeId = null;
+
+watch(() => page.props.flash?.newNodeId, (newId) => {
+  if (newId) {
+    pendingId.value = newId;
   }
-}, { deep: true });
+}, { immediate: true });
 
 onMounted(() => {
   if (props.treeDataProp.length > 0 && !page.props.flash?.newNodeId) {
@@ -574,7 +585,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
         </template>
 
         <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
-          :props="{ children: 'children', label: 'NombreCategoriaTaxonomica' }" node-key="IdCategoriaTaxonomica"
+          :props="{ children: 'children', label: 'NombreCategoriaTaxonomica' }" node-key="IdCategoriaTaxonomica" 
           :current-node-key="selectedNode?.IdCategoria" highlight-current :expand-on-click-node="true"
           @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
           class="custom-element-tree">

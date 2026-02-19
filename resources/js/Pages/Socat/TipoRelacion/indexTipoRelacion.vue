@@ -55,6 +55,24 @@ const props = defineProps({
 });
 
 
+const activePathIds = ref([]);
+
+const findPathInTree = (nodes, targetId, path = []) => {
+    for (const node of nodes) {
+        const currentPath = [...path, node.IdTipoRelacion];
+        if (node.IdTipoRelacion === targetId) return currentPath;
+        if (node.children && node.children.length > 0) {
+            const found = findPathInTree(node.children, targetId, currentPath);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+const getTipoRelacionNodeClass = (data) => {
+    return activePathIds.value.includes(data.IdTipoRelacion) ? 'is-active-path-row' : '';
+};
+
 
 
 const iconosSugeridos = [
@@ -442,15 +460,15 @@ onMounted(() => {
 });
 
 
-const handleNodeSelected = (data, node) => {
+const handleNodeSelected = (data) => {
     if (esModalVisible.value) {
         ElMessage.info("Hay una operación en curso. Por favor, guarde o cancele.");
         treeRef.value?.setCurrentKey(selectedNode.value?.IdTipoRelacion);
         return;
     }
     selectedNode.value = data;
+    activePathIds.value = findPathInTree(localTreeData.value, data.IdTipoRelacion) || [];
 };
-
 const modalRules = {
     Descripcion: [{ required: true, message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "blur" }],
     Direccionalidad: [{ required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }],
@@ -728,8 +746,8 @@ const proceedWithDeletion = async () => {
         if (!nodeDataForDeleteConfirmation.value) return;
         const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
         const nodeInTree = treeRef.value?.getNode(IdTipoRelacion);
-        const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0 
-            ? nodeInTree.parent.data.IdTipoRelacion 
+        const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
+            ? nodeInTree.parent.data.IdTipoRelacion
             : null;
 
         router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
@@ -745,7 +763,7 @@ const proceedWithDeletion = async () => {
                             treeRef.value?.setCurrentKey(parentId);
                             return;
                         }
-                    }     
+                    }
                     if (localTreeData.value.length > 0) {
                         const firstId = localTreeData.value[0].IdTipoRelacion;
                         selectAndFocusNode(firstId);
@@ -910,10 +928,14 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :current-node-key="selectedNode?.IdTipoRelacion" :default-expanded-keys="Array.from(expandedNodeIds)" 
-                    :highlight-current="true" :expand-on-click-node="true" class="custom-element-tree"
-                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" 
-                    @node-click="handleNodeSelected">
+                    :current-node-key="selectedNode?.IdTipoRelacion"
+                    :default-expanded-keys="Array.from(expandedNodeIds)" :highlight-current="true"
+                    :expand-on-click-node="false" @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
+                    @node-collapse="handleNodeSelected" 
+
+                    :node-class="getTipoRelacionNodeClass"
+                    class="custom-element-tree"
+                    >
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
                             <img v-if="!data.RutaIcono"
