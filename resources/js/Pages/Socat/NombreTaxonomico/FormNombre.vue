@@ -723,8 +723,8 @@ const cargaCategorias = async () => {
     
     const response = await axios.get('carga-categ', { params });
     if (response.status === 200) {
-      categorias.value = response.data;
-      categorias.value.push({
+        categorias.value = response.data;
+        categorias.value.unshift({
         id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
         label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
       });
@@ -804,9 +804,8 @@ const cargaComSnib = async () => {
 };
 
 const AltaEstatus = async () =>{
-  if(props.taxonAct.completo.categoria.IdNivel1 < 5)
+  if(props.taxonAct.completo.categoria.IdNivel1 < 4)
     {
-      console.log("Entre a alta estatus");
       nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
       estCor.value = true;
       estSin.value = true;

@@ -407,7 +407,7 @@ class NombresArbolController extends Controller
 
             array_push($lista, $newReg);
         }
-
+        
         return $lista;
     }
 
