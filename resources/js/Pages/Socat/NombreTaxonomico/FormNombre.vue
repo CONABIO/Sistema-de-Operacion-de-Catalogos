@@ -37,7 +37,10 @@
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
-            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
+            <el-select v-model="nombreTax.catTax"  
+                       placeholder = "Nivel taxonómico" 
+                       popper-class="select-verde-dropdown"
+                       :disabled = nivelAct>
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -45,7 +48,7 @@
                       :value="item.id">
               </el-option>
             </el-select>
-          </el-form-item>     
+          </el-form-item>   
           <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
@@ -135,8 +138,8 @@
                               <th style="border: 1px solid black;">IDCat</th>
                             </tr>
                             <tr>
-                              <td style="border: 1px solid black;">{{ idNombre }}</td>
-                              <td style="border: 1px solid black;">{{ idCat }}</td>
+                              <td style="border: 1px solid black; background-color: #F5F527;">{{ idNombre }}</td>
+                              <td style="border: 1px solid black; background-color: #F57327;">{{ idCat }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -149,7 +152,11 @@
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
                                           placeholder="Select" 
-                                          :disabled="actGrupo" style="width: 100%;">
+                                          :disabled="actGrupo" 
+                                          popper-class="select-verde-dropdown"
+                                          style="width: 100%;"
+                                          filterable
+                                          clearable>
                                 <el-option 
                                   v-for="item in listGrp" 
                                   :key="item.id" 
@@ -158,6 +165,7 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            
                           </div>
                           <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
                             placement="bottom">
@@ -180,7 +188,7 @@
                               v-model="valSnib" 
                               placeholder="" 
                               :disabled="autorAct" 
-                              popper-class="custom-select-dropdown"
+                              popper-class="select-verde-dropdown"
                               style="width: 100%">
                             <el-option v-for="item in opcSnib" 
                                       :key="item.id" 
@@ -197,7 +205,7 @@
                                 v-model="nombreTax.nivelRev" 
                                 placeholder="Nivel de revisión" 
                                 :disabled="autorAct" 
-                                popper-class="custom-select-dropdown"
+                                popper-class="select-verde-dropdown"
                                 style="width: 100%">
                             <el-option v-for="item in opcNivRev" 
                                         :key="item.id" 
@@ -256,7 +264,7 @@
                     <br>
                     <el-row :gutter='25'>
                       <el-col :span="24">
-                        <p></p>
+                        <!--p></p>
                         <el-row>
                           Homonimia SNIB
                         </el-row>
@@ -264,9 +272,20 @@
                           <el-input type="input" 
                                     placeholder="Homonimia SNIB" 
                                     v-model="homonimiaSnib"
+                                    show-word-limit 
                                     @keydown="onPressSistC" 
-                                    :disabled="autorAct" />
-                        </el-row>
+                                    :disabled="autorAct" 
+                                    maxlength="255" />
+                        </el-row-->
+                        <el-form-item label = "Homonimia SNIB" prop = "homonimiaSnib">
+                          <el-input type="text" 
+                                          placeholder="Homonimia SNIB" 
+                                          v-model="homonimiaSnib"
+                                          show-word-limit 
+                                          @keydown="onPressSistC"
+                                          :disabled="autorAct"
+                                          maxlength="255"  />
+                        </el-form-item>
                       </el-col>
                     </el-row>
                     <br>
@@ -286,8 +305,10 @@
                         <el-row>
                           <el-input placeholder="IdCOL" 
                                     v-model="idCol" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct" />
+                                    :disabled="autorAct"
+                                    maxlength="255" />
                         </el-row>
                       </el-col>
                       <el-col :span='8'>
@@ -295,8 +316,11 @@
                         <el-row>
                           <el-input placeholder="IdCITES" 
                                     v-model="idCites" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct"/>
+                                    :disabled="autorAct"
+                                    maxlength="255"
+                                    />
                         </el-row>
                       </el-col>
                     </el-row>
@@ -539,6 +563,9 @@ const rules = ref({
   ],
   nivelRev: [
     { required: true, message: 'Se debe seleccionar nivel de revisión', trigger: 'change' }
+  ],
+  homonimiaSnib: [
+    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
   ]
 });
 
@@ -552,8 +579,6 @@ const recibeAutores = (autores, autoridadTax) =>{
 }
 
 const carga_inicio = () => {  
-  console.log("Carga de inicio: ", props.taxonAct
-  .completo);
   muestraGrd.value = true;
   estCor.value = true;
   estSin.value = true;
@@ -698,8 +723,8 @@ const cargaCategorias = async () => {
     
     const response = await axios.get('carga-categ', { params });
     if (response.status === 200) {
-      categorias.value = response.data;
-      categorias.value.push({
+        categorias.value = response.data;
+        categorias.value.unshift({
         id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
         label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
       });
@@ -779,10 +804,8 @@ const cargaComSnib = async () => {
 };
 
 const AltaEstatus = async () =>{
-  console.log("Entre a alta de estatus");
-  if(props.taxonAct.completo.categoria.IdNivel1 < 5)
+  if(props.taxonAct.completo.categoria.IdNivel1 < 4)
     {
-      console.log("Entre a alta estatus");
       nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
       estCor.value = true;
       estSin.value = true;
@@ -1220,8 +1243,6 @@ const Guardar = async () =>{
                 
                 try{
 
-                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
-
                     const response = await axios.post(`/nombres-store`, params);
                     
                     emit('cerrar', false);
@@ -1338,7 +1359,7 @@ onMounted(() => {
 </script>
 
 
-<style scoped>
+<style>
   .form-nombre-container {
     padding: 1px;
   }
@@ -1581,4 +1602,20 @@ onMounted(() => {
       max-width: none;
     }
   }
+
+/* ===== SELECT VERDE ===== */
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected.is-hovering {
+  background-color: rgb(203, 233, 200) !important;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-hovering:not(.is-selected) {
+  background-color: rgb(240, 245, 239)  !important;
+}
 </style>
