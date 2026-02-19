@@ -383,9 +383,6 @@ const handleChange = async (value) => {
       const response = await axios.get('/cargar-nomArb', { params });
 
       if (response.status === 200) {
-        
-        console.log("Este es el valor de response: ", response.data);
-
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
         paginas.value = response.data[1].last_page;
@@ -403,8 +400,6 @@ const handleChange = async (value) => {
         tree.value.setCurrentKey(data.value[0].id);
         
         let node = tree.value.getNode(data.value[0].id);
-
-        console.log("Este es el valor de node: ", node);
         
         expande(node.data, node);
       }

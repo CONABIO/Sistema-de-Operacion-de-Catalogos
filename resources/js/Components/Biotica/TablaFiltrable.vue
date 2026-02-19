@@ -87,7 +87,6 @@ const onEditarInterno = () => {
 
 const onEliminarInterno = () => {
   if (selectedRow.value[props.idKey]) {
-    console.log("Entre a la funcion de eliminar de emit: ", selectedRow.value[props.idKey]);
     emit('eliminar-item', selectedRow.value[props.idKey]);
   }else{
      emit('eliminar-item', selectedRow.value);
@@ -152,9 +151,16 @@ const accionModal = computed(() => {
 );
 
 const paginatedDatos = computed(() => {
-  const start = (currentPage.value - 1) * props.itemsPerPage;
-  const end = start + props.itemsPerPage;
-  return datosTabla.value.slice(start, end);
+  if(props.endpoint === "")
+  {
+    const start = (currentPage.value - 1) * props.itemsPerPage;
+    const end = start + props.itemsPerPage;
+      return datosTabla.value.slice(start, end);
+  }else
+  {
+    return props.datos;
+  }
+  
 });
 
 const currentPage = ref(1);
@@ -196,7 +202,7 @@ const tableKey = ref(0);
 
 const fetchData = async () => {
   try {
-    
+
     if(props.endpoint === "")
     {
       return;
@@ -239,16 +245,16 @@ const fetchData = async () => {
       selectedRow.value = null;
       emit('row-click', null);
     }
-    console.log("pase por todas las validaciones.");
   } catch (error) {
     console.error(`Error en fetchData:`, error);
   }
 };
 
 /*Juan carlos 13022026 
-Estos watch se colocaron para que sirmpre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
+Estos watch se colocaron para que siempre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
 */
 // Watch para cuando cambian los datos (desde el padre o desde fetch)
+
 watch(() => props.datos, (newDatos) => {
   if (newDatos && newDatos.length > 0) {
     datosTabla.value = newDatos;
@@ -313,7 +319,6 @@ const handleSortChange = ({ prop, order }) => {
 
 const handlePageChange = (page) => {
   currentPage.value = page;
-  console.log("Este es el valor de page: ", page);
   fetchData();
 };
 
