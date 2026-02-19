@@ -48,10 +48,21 @@ const props = defineProps({
 
 const handleNodeExpand = (data) => {
     expandedNodeIds.value.add(data.IdTipoRegion);
+    seleccionarNodoProgramaticamente(data);
 };
 
 const handleNodeCollapse = (data) => {
     expandedNodeIds.value.delete(data.IdTipoRegion);
+    seleccionarNodoProgramaticamente(data);
+};
+
+const seleccionarNodoProgramaticamente = (data) => {
+    if (esModalVisible.value) {
+        treeRef.value?.setCurrentKey(selectedNode.value?.IdTipoRegion);
+        return;
+    }
+    selectedNode.value = data;
+    treeRef.value?.setCurrentKey(data.IdTipoRegion);
 };
 
 const findNodeInTree = (nodes, nodeIdToFind) => {

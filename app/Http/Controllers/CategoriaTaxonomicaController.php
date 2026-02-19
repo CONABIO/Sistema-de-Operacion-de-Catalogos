@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CategoriasTaxonomicas;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 use Illuminate\Validation\Rule;
@@ -147,7 +148,7 @@ class CategoriaTaxonomicaController extends Controller
         $categoria = CategoriasTaxonomicas::create($validatedData);
 
         return redirect()->route('categorias-taxonomicas.index')
-            ->with('flash', ['newNodeId' => $categoria->IdCategoriaTaxonomica]);
+            ->with('newNodeId', $categoria->IdCategoriaTaxonomica);
     }
 
     public function update(Request $request, CategoriasTaxonomicas $categoria_taxonomica)
@@ -157,15 +158,14 @@ class CategoriaTaxonomicaController extends Controller
                 'required',
                 'string',
                 'max:255',
-
             ],
         ]);
 
         $categoria_taxonomica->update($validatedData);
 
         return redirect()->route('categorias-taxonomicas.index')
-            ->with('success', 'Categoría actualizada correctamente.')
-            ->with('flash', ['newNodeId' => $categoria_taxonomica->IdCategoria]);
+            ->with('newNodeId', $categoria_taxonomica->IdCategoriaTaxonomica)
+            ->with('success', 'Categoría modificada con éxito.');
     }
 
 
@@ -177,9 +177,17 @@ class CategoriaTaxonomicaController extends Controller
                 'message' => 'No se puede eliminar porque tiene categorías dependientes (sub-niveles).'
             ]);
         }
-        $categoria_taxonomica->delete();
-
-        return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
+        try {
+            $categoria_taxonomica->delete();
+            return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
+        } catch (QueryException $e) {
+            if ($e->getCode() === "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1451)) {
+                throw ValidationException::withMessages([
+                    'message' => 'No es posible eliminar esta categoria taonómica porque es parte de la información del sistema.'
+                ]);
+            }
+            throw $e;
+        }
     }
 
 
