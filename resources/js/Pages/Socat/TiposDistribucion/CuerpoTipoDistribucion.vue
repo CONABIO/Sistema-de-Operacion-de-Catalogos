@@ -138,12 +138,12 @@ const handleFormSubmited = (datosDelFormulario) => {
             
             if (datosDelFormulario.accionOriginal === 'crear') {
                 const response = await axios.post('/tipos-distribucion', payload);
-                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El tipo de distribución ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdTipoDistribucion;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
+                mostrarNotificacion("Modificación", "El tipo de distribución ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();
@@ -163,7 +163,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para "${datosDelFormulario.Descripcion}"?`;
+        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para el tipo de distribución seleccionado?`;
         
         ElMessageBox({
             title: 'Confirmar modificación',
@@ -203,15 +203,15 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación", `El tipo de distribución ${nombreItem} fue eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El tipo de distribución  fue eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El tipo de distribución ${nombreItem} no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
+            mostrarNotificacionError('Aviso', `El tipo de distribución seleccionado no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
 
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };
     const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
-    const mensaje = `¿Está seguro de eliminar el tipo de distribución "${itemAEliminar?.Descripcion || 'seleccionado'}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de distribución seleccionado? Esta acción no se puede revertir.`;
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [

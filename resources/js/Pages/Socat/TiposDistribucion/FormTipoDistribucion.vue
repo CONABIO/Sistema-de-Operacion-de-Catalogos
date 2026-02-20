@@ -26,7 +26,7 @@ const descripcionInputRef = ref(null);
 const rules = {
     Descripcion: [
         { required: true, message: 'La descripción es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { min: 1, max: 100, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
 };
 
@@ -102,7 +102,7 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Descripción" prop="Descripcion">
-                        <el-input  ref="descripcionInputRef" type="text" v-model="form.Descripcion" maxlength="255" show-word-limit />
+                        <el-input  ref="descripcionInputRef" type="text" v-model="form.Descripcion" maxlength="100" show-word-limit />
                     </el-form-item>
                 </el-form>
 

@@ -39,7 +39,7 @@ const rules = {
         { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
     GrupoSNIB: [
         { required: true, message: 'El nombre del grupo SNIB es obligatorio', trigger: 'blur' },
-        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
+        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
 };
 
 watch(() => props.visible, (newVal) => {
@@ -119,7 +119,7 @@ const cerrarDialogo = () => {
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
-                        <el-input v-model="form.GrupoSNIB" maxlength="100" show-word-limit />
+                        <el-input v-model="form.GrupoSNIB" maxlength="255" show-word-limit />
                     </el-form-item>
                 </el-form>
 
