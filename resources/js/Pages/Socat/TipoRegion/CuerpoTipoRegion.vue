@@ -191,7 +191,7 @@ const guardarDesdeModal = async () => {
 
             if (modoAlGuardar === 'insertar') {
                 if (opcionSeleccionada === 'raiz') {
-                    return profItem === 1; 
+                    return profItem === 1;
                 }
 
                 if (opcionSeleccionada === 'inferior') {
@@ -243,8 +243,8 @@ const guardarDesdeModal = async () => {
     const onSuccess = () => {
         const tituloNotif = modoAlGuardar === "editar" ? "Modificación" : "Ingreso";
         const mensajeNotif = modoAlGuardar === "editar"
-            ? `El tipo de región "${descripcionABuscar}" fue modificado correctamente.`
-            : `El tipo de región "${descripcionABuscar}" se agregó correctamente.`;
+            ? `El tipo de región fue modificado correctamente.`
+            : `El tipo de región fue ingresado correctamente.`;
 
         esModalVisible.value = false;
         nodoEnModal.value = null;
@@ -289,7 +289,7 @@ const guardarDesdeModal = async () => {
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, `¿Está seguro de que desea guardar los cambios realizados al tipo de región "${nodoEnModal.value.Descripcion}"?`)])
+                    h('div', { class: 'text-container' }, [h('p', null, `¿Está seguro de que desea guardar los cambios realizados al tipo de región seleccionado?`)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -312,7 +312,7 @@ const handleEliminar = () => {
     }
 
     const nombre = selectedNode.value.Descripcion;
-    const mensaje = `¿Está seguro de eliminar el tipo de región "${nombre}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de región selecciondo? Esta acción no se puede revertir.`;
 
     ElMessageBox({
         title: "Confirmar eliminación",
@@ -341,7 +341,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         data: { isModal: props.isModal },
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("Eliminación", `El tipo de region "${nombre}" ha sido eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El tipo de region ha sido eliminado correctamente.`, "success");
             nextTick(() => {
                 if (parentId) {
                     const padreActualizado = findNodeInTree(localTreeData.value, parentId);
@@ -470,8 +470,9 @@ const handleNodeDoubleClick = (data) => {
                 @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
                 @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
                 <template #default="{ node, data }">
+                    <!-- Quitamos el tooltip y dejamos solo el span -->
                     <span :id="`tree-node-${data.IdTipoRegion}`" class="custom-tree-node-content">
-                        <span>{{ node.label }}</span>
+                        {{ node.label }}
                     </span>
                 </template>
             </el-tree>
@@ -573,9 +574,8 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .custom-element-tree {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 20px;
+    display: inline-block; /* Importante para que el ancho crezca con el contenido */
+    min-width: 100%;       /* Para que el color de selección cubra al menos todo el ancho visible */
 }
 
 .custom-element-tree .el-tree-node__content {
@@ -616,6 +616,16 @@ const handleNodeDoubleClick = (data) => {
 </style>
 
 <style scoped>
+.tree-card :deep(.el-card__body) {
+    overflow: auto !important; /* Permite scroll horizontal y vertical */
+    flex-grow: 1;
+    display: block; /* Cambiamos de flex a block para que el scroll horizontal funcione mejor */
+    padding: 10px;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px;
+}
+
 .tree-card {
     width: 100%;
     height: v-bind("isModal ? 'auto' : '726px'");
@@ -730,9 +740,5 @@ const handleNodeDoubleClick = (data) => {
     color: #606266;
 }
 
-.custom-tree-node-content {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
+
 </style>

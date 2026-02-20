@@ -539,9 +539,10 @@ const cerrarModalIconos = () => { esModalIconosVisible.value = false; };
 
 const seleccionarIcono = async (iconName) => {
   try {
-    const response = await fetch(`https://api.iconify.design/${iconName}.svg`);
+    // Pedimos el SVG con color=currentColor para que sea estilizable por CSS
+    const response = await fetch(`https://api.iconify.design/${iconName}.svg?color=currentColor`);
     if (!response.ok) throw new Error('No se pudo obtener el SVG del ícono.');
-    const svgContent = await response.text();
+    let svgContent = await response.text();
 
     const nodeId = selectedNode.value.IdCategoriaTaxonomica;
 
@@ -607,13 +608,16 @@ const isCambiarIconoDeshabilitado = computed(() => {
   if (!selectedNode.value || esModalVisible.value) {
     return true;
   }
-  if (selectedNode.value.IdCategoriaTaxonomica < 132 && selectedNode.value.RutaIcono === ICONO_POR_DEFECTO) {
-    return false;
+  const nodo = selectedNode.value;
+  const esNuevo = nodo.IdCategoriaTaxonomica >= 132; 
+  const tieneIconoPorDefecto = nodo.RutaIcono === ICONO_POR_DEFECTO;
+  if (esNuevo) {
+    return false; 
   }
-  if (selectedNode.value.RutaIcono !== ICONO_POR_DEFECTO) {
-    return true;
+  if (!esNuevo && tieneIconoPorDefecto) {
+    return false; 
   }
-  return false;
+  return true;
 });
 </script>
 
@@ -920,8 +924,21 @@ const isCambiarIconoDeshabilitado = computed(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  width: 28px;  /* Tamaño del contenedor */
   height: 28px;
+  flex-shrink: 0; /* Evita que el icono se aplaste si el texto es largo */
+}
+
+.node-icon-wrapper :deep(svg) {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.node-icon-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Mantiene la proporción de las imágenes originales */
 }
 
 .icon-grid {

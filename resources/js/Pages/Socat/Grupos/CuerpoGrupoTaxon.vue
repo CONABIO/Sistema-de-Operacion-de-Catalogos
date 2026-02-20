@@ -164,7 +164,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = grupoEditado.value !== null;
     const mensajeDuplicado = esEdicion 
-        ? "El grupo taxonómico que desea modificar ya existe, las modificaciones no se realizaron." 
+        ? "El grupo taxonómico que desea modificar ya existe." 
         : "El grupo taxonómico que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
@@ -192,12 +192,12 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
 
             if (!esEdicion) {
                 const response = await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion("Ingreso", "Grupo ingresado correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El grupo taxonómico ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.grupo?.IdGrupoSCAT;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/grupos-taxonomicos/${grupoEditado.value.IdGrupoSCAT}`, payload);
-                mostrarNotificacion("Modificación", "Grupo modificado correctamente.", "success");
+                mostrarNotificacion("Modificación", "El grupo taxonómico ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();
@@ -221,7 +221,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     if (!esEdicion) {
         procederConGuardado();
     } else {
-        const mensajeConsignacion = `¿Estás seguro de guardar los cambios para "${datosDelFormulario.GrupoSCAT}"?`;
+        const mensajeConsignacion = `¿Estás seguro de guardar los cambios para el grupo seleccionado?`;
         ElMessageBox({
             title: 'Confirmar modificación', 
             showConfirmButton: false, 
@@ -257,15 +257,15 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El grupo taxonómico ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
+            mostrarNotificacionError('Aviso', `El grupo seleccionado no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
         }
     };
 
     const cancelarEliminacion = () => { ElMessageBox.close(); };
 
-    const mensaje = `¿Está seguro de eliminar el grupo ${nombreGrupoEliminado}? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el grupo seleccionado? Esta acción no se puede revertir.`;
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
@@ -447,6 +447,11 @@ el-table .fila-seleccionada-verde {
 .tabla-grupos {
     --el-table-current-row-bg-color: #ddf6dd !important;
     --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+.el-table .cell {
+  word-break: break-word !important; /* Corta palabras largas de forma natural */
+  line-height: 1.4 !important;
 }
 
 </style>
