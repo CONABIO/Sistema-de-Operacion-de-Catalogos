@@ -47,10 +47,13 @@ class NombresArbolController extends Controller
         $valor = $request->categ ?? $request->idNombre ?? '';
         
         // Determinar relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat'];
-        
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig'];
+
         if ($request->has('taxon')) {
+            log::info("Entre al primer if 1");
             if (!empty($request->categ)) {
+                log::info("Entre al primer if 2");
                 $categ = explode(',', $request->categ);
                 $catalog = explode(',', $request->catalog);
                 $taxon = $request->taxon;
@@ -60,6 +63,7 @@ class NombresArbolController extends Controller
                     ->paginate(150); // Reducir paginación
                     
             } else {
+                log::info("Entre al primer if 3");
                 $taxon = $request->taxon;
                 $nombres = Nombre::filtraArbolTax($taxon)
                     ->with($relacionesBase)
@@ -67,6 +71,7 @@ class NombresArbolController extends Controller
             }
             
         } elseif ($request->has('catalog')) {
+            log::info("Entre al primer if 4");
             $categ = explode(',', $request->categ);
             $catalog = explode(',', $request->catalog);
             
@@ -80,6 +85,7 @@ class NombresArbolController extends Controller
                 ->paginate(150);
                 
         } elseif ($request->has('idNombre')) {
+            log::info("Entre al primer if 5");
             $valor = $request->idNombre;
             
             $relacionesExtendidas = array_merge($relacionesBase, [
@@ -92,6 +98,7 @@ class NombresArbolController extends Controller
                 ->get();
                 
         } else {
+            log::info("Entre al primer if 6");
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
                 'relNombreRegion', 'relNombreAutor'
@@ -102,6 +109,9 @@ class NombresArbolController extends Controller
                 ->limit(100)
                 ->get();
         }
+        
+        log::info("Este es el valor de nombre:");
+        log::info($nombres);
         
         // Procesar datos en batch (método del Trait)
         $data = $this->procesarNombresBatch($nombres);

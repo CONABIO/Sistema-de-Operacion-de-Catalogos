@@ -2,16 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/*Juan Carlos 17/02/2026
-Esta funcion se agrega para evitar el conflicto de tailwind con element-plus
-si se retira la parte filtrable del select no funciona */
-.el-select__input {
-  background-color: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-}
-
 [x-cloak] {
     display: none;
 }

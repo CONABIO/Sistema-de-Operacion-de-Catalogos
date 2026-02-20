@@ -151,6 +151,7 @@
                                           label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
+
                                           placeholder="Select" 
                                           :disabled="actGrupo" 
                                           popper-class="select-verde-dropdown"
@@ -1359,7 +1360,18 @@ onMounted(() => {
 </script>
 
 
-<style>
+<style scoped>
+
+  /*Juan Carlos 17/02/2026
+  Esta funcion se agrega para evitar el conflicto de tailwind con element-plus
+  si se retira la parte filtrable del select no funciona */
+  :deep(.el-select__input) {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
   .form-nombre-container {
     padding: 1px;
   }
@@ -1579,10 +1591,8 @@ onMounted(() => {
       justify-content: flex-start;
     }
 }
-</style>
 
-<style>
-  .el-dialog {
+  :deep(.el-dialog) {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 90%;
