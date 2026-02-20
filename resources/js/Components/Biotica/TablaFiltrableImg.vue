@@ -10,12 +10,12 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 
 const props = defineProps({
-  columnas: { type: Array, required: true },
-  datos: { type: Array, required: true, default: [] },
-  totalItems: { type: Number, required: true, default: 0 },
-  itemsPerPage: { type: Number, default: 4 },
-  idKey: { type: String, required: false },
-  origen: { type: Boolean, default: false },
+  columnas: { type: Array, required: true }, //*
+  datos: { type: Array, required: true, default: [] }, //*
+  totalItems: { type: Number, required: true, default: 0 }, //*
+  itemsPerPage: { type: Number, default: 4 }, //*
+  idKey: { type: String, required: false }, //*
+  origen: { type: Boolean, default: false },                                                                     
   mostrarBiblio: { type: Boolean, default: false },
   mostrarAcci: { type: Boolean, default: false },
   mostrarNuevo: { type: Boolean, default:false },

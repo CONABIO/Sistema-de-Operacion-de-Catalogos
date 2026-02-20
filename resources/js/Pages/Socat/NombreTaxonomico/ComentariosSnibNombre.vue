@@ -65,11 +65,11 @@
     const columnasDefinidas = ref([
         {
             prop: 'idnombre', label: 'IdNombre', minWidth: '80',
-            align: 'left', tipo: 'Texto', filtrable: false
+            align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'comentarioscat', label: 'Comentarios SCAT', minWidth: '80',
-            align: 'left', tipo: 'Texto', filtrable: false
+            align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'Conteo', label: 'Conteo', minWidth: '55', align: 'left',
@@ -128,12 +128,10 @@
         };
 
         const response = await axios.get('/carga-AcumuladoSnib', { params } );
-        console.log("Esta es la respuesta de aculado: ", response.data);
 
         if (response.status === 200) {
             comSnib.value = response.data;
             totalComSnib.value = comSnib.value.length;
-            console.log("Este es el resultado de la consulta: ", comSnib.value);
         }
         else {
             console.log("Se presentó un error en la recuperación de los datos");
@@ -151,20 +149,20 @@
     }
 
     .header {
-          background-color: #d9e1eb;
-          padding: 15px;
-          border-bottom: 1px solid #e0e0e0;
-          height: auto !important;
-          min-height: auto !important;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          border-radius: 8px;
-          color: white;
+        background-color: #d9e1eb;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        height: auto !important;
+        min-height: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        color: white;
     }
 
-  .header-content {
+    .header-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -197,7 +195,7 @@
     /* Responsividad */
     @media (min-width: 768px) {
         .titulo {
-            font-size: 2rem;
+            font-size: 1.25rem;
         }
     }
 

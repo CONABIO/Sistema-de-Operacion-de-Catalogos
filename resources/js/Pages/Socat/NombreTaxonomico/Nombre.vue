@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, triggerRef, h, computed, onUnmounted } from 'vue';
+import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
 import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
@@ -21,7 +21,8 @@ import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import { showConfirmMessage } from '@/Composables/mensajeConfirm';
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+//import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import { processIcon, getSafeIconPath } from '@/Composables/iconos';
 import salir from '@/Components/Biotica/SalirButton.vue';
 
@@ -194,7 +195,6 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const openDialog = (nodeData) => {
-  console.log("Este es el valor de nodeData: ", nodeData);
   taxonAct.value = nodeData;
   //mostrarLoading.value = false;
 
@@ -301,7 +301,17 @@ const recibeTaxNuevo = async (res) => {
     if (!data.value[index].children) {
       data.value[index].children = [];
     }
+
     data.value[index].children.push(res);
+
+    // 👇 esperar a que el DOM y el tree se actualicen
+    await nextTick();
+
+    // 👇 expandir el padre (opcional pero recomendado)
+    tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
+
+    // 👇 seleccionar el nuevo nodo
+    selectedNodeKey.value = res.id;
   }
 };
 
@@ -373,9 +383,6 @@ const handleChange = async (value) => {
       const response = await axios.get('/cargar-nomArb', { params });
 
       if (response.status === 200) {
-        
-        console.log("Este es el valor de response: ", response.data);
-
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
         paginas.value = response.data[1].last_page;
@@ -384,6 +391,18 @@ const handleChange = async (value) => {
         console.log("Se presentó un error en la recuperación de los datos");
       }
       loading.close();
+
+      await nextTick();
+
+      if(data.value.length > 0)
+      {
+        selectedNodeKey.value= data.value[0].id;
+        tree.value.setCurrentKey(data.value[0].id);
+        
+        let node = tree.value.getNode(data.value[0].id);
+        
+        expande(node.data, node);
+      }
     }
   }else
   {
@@ -512,14 +531,6 @@ const expande = async (draggingNode) => {
 
   mostrarLoading.value = true
 }
-/*
-const proceder = () => {
-  console.log("Pase el movimeinto");
-}
-
-const cancelar = () => {
-  console.log("Evite el movimeinto");
-}*/
 
 //Función para mover un taxón y reasignarlo a otro 
 const mover = async (node) => {
@@ -758,7 +769,7 @@ const mover = async (node) => {
   }
 }
 
-const manejarEliminarRel = (item) => {
+const manejarEliminarRel = (item) => {  
   
   const procederConEliminacion = async () => {
 
@@ -840,7 +851,11 @@ const manejarEliminarRef = (item)=>{
 }
 
 const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
-
+  console.log("Entre a mover el taxon");
+  console.log("Estos son los parametros recibidos taxMover: ", taxMover,
+              " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+              " nodoRecb: ", nodoRecb);
+              
   if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
     await mostrarNotificacion(
       "Error",
@@ -1143,7 +1158,7 @@ const showAscendants = async () => {
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
               <el-cascader :options="categoriasTax" clearable filterable v-model="categ" placeholder="Nivel taxonómico"
-                @change="handleChange" popper-class="z-index-fix">
+                @change="handleChange" popper-class="z-index-fix" >
 
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
@@ -1151,7 +1166,6 @@ const showAscendants = async () => {
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
-
               </el-cascader>
             </el-col>
 
@@ -1181,7 +1195,7 @@ const showAscendants = async () => {
                 <el-col :xs="24" :sm="2">
                   <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
                     <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
-                      <el-button @click="filtro_Catalogos()" type="primary" circle>
+                      <el-button @click="filtro_Catalogos()" circle style="flex-shrink: 0; background-color: #a08223;">
                         <el-icon>
                           <filtroGrupos />
                         </el-icon>
@@ -1284,15 +1298,20 @@ const showAscendants = async () => {
                       </template>                    
                     <div class="table-wrapper">
                       <TablaFiltrable 
-                        :columnas="columnasDefinidas" 
-                        :datos="tablaNomenclatura"
-                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        :columnas = "columnasDefinidas" 
+                        :datos = "tablaNomenclatura"
+                        :opciones-filtro = "opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
-                        :itemsPerPage="2"
-                        :mostrarBiblio="true"
-                        :mostrarAcci="true"
-                        @eliminar-item="manejarEliminarRel"
-                        @abrir-Biblio="abrirBiblio"
+                        :itemsPerPage = 2
+                        :mostrarBiblio = "true"
+                        :mostrarAcci = "true"
+                        @eliminar-item = "manejarEliminarRel"
+                        @abrir-Biblio = "abrirBiblio"
+                        :highlight-current-row = "true"
+                        :mostrarNuevo = "false"
+                        :mostrarEditar = "false"
+                        :mostrarBorrar = "true"
+                        :mostrarSalir = "false" 
                       />
                     </div>
                     </el-collapse-item>
@@ -1307,16 +1326,21 @@ const showAscendants = async () => {
                       </template>
                       <div class="table-wrapper">
                         <TablaFiltrable 
-                          :columnas="columnasDefRef" 
-                          v-model:datos="tablaReferencias"
-                          v-model:total-items="totalRegRef" 
-                          :opciones-filtro="opcionesFiltroRef" 
+                          :columnas = "columnasDefRef" 
+                          v-model:datos = "tablaReferencias"
+                          v-model:total-items = "totalRegRef" 
+                          :opciones-filtro = "opcionesFiltroRef" 
                           :totalItems = "totalRegRef"
-                          :itemsPerPage="2"
-                          :mostrarBiblio="true"
-                          :mostrarAcci="true"
-                          @abrir-Biblio="abrirBiblioNombre"
-                          @eliminar-item="manejarEliminarRef"
+                          :itemsPerPage = 2
+                          :mostrarBiblio = "true"
+                          :mostrarAcci = "true"
+                          @abrir-Biblio = "abrirBiblioNombre"
+                          @eliminar-item = "manejarEliminarRef"
+                          :highlight-current-row = "true"
+                          :mostrarNuevo = "false"
+                          :mostrarEditar = "false"
+                          :mostrarBorrar = "true"
+                          :mostrarSalir = "false"
                         />
                       </div>
                     </el-collapse-item>
@@ -1600,7 +1624,13 @@ const showAscendants = async () => {
     flex: 1;
     overflow: auto;
     min-height: 0;
-    max-height: 300px;
+    max-height: 300px !important;
+  }
+
+  .table-wrapper :deep(.el-table__body tr.current-row > td) {
+    background-color: #ddf6dd !important;
+    color: #0d6efd !important;
+    font-weight: bold;
   }
 
   /* Para que las tablas internas ocupen todo el espacio */
@@ -1921,5 +1951,19 @@ const showAscendants = async () => {
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
     max-height: 65vh;
     overflow-y: auto;
+}
+
+
+/* ===== CASCADER VERDE ===== */
+
+.cascader-verde-dropdown .el-cascader-node.is-active,
+.cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.cascader-verde-dropdown .el-cascader-node:hover {
+  background-color: rgb(240, 245, 239) !important;
 }
 </style>
