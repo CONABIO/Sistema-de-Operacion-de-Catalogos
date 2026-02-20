@@ -297,7 +297,7 @@ const guardarDesdeModal = async () => {
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-          mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
+          mostrarNotificacion("Modificación", "La característica ha sido modificada correctamente.", "success");
           nextTick(() => {
             selectAndFocusNode(nodeId);
           });
@@ -373,7 +373,7 @@ const guardarDesdeModal = async () => {
             h("div", { class: "custom-warning-circle", style: "background-color: #e6a23c;" }, "!")
           ]),
           h("div", { class: "text-container" }, [
-            h("p", null, `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`)
+            h("p", null, `¿Estás seguro de que deseas guardar los cambios para la caracteristica seleccionada?`)
           ]),
         ]),
         h("div", { class: "footer-buttons" }, [
@@ -418,7 +418,7 @@ const handleEliminar = () => {
   nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
 
   const nombreCaracteristica = nodeDataForDeleteConfirmation.value.Descripcion;
-  const mensaje = `¿Está seguro de eliminar la característica "${nombreCaracteristica}"? Esta acción no se puede revertir.`;
+  const mensaje = `¿Está seguro de eliminar la característica seleccionada? Esta acción no se puede revertir.`;
 
   ElMessageBox({
     title: "Confirmar eliminación",
@@ -465,7 +465,7 @@ const proceedWithDeletion = async () => {
       onSuccess: () => {
         mostrarNotificacion(
           "Eliminación",
-          `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
+          `La característica ha sido eliminada correctamente.`,
           "success"
         );
 
@@ -760,12 +760,16 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .custom-element-tree .el-tree-node__content {
-  padding: 0px 4px;
-  border-bottom: none;
-  height: auto;
-  margin-bottom: 0;
-  border-radius: 4px;
+  min-height: 26px;
+  width: 1893px;
+  display: flex;
+  align-items: flex-start; 
+  padding: 4px 0;    
 }
+
+
+
+
 
 .custom-element-tree .el-tree-node__content:hover {
   background-color: #f4f6f8;

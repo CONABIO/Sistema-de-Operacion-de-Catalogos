@@ -851,7 +851,11 @@ const manejarEliminarRef = (item)=>{
 }
 
 const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
-
+  console.log("Entre a mover el taxon");
+  console.log("Estos son los parametros recibidos taxMover: ", taxMover,
+              " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+              " nodoRecb: ", nodoRecb);
+              
   if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
     await mostrarNotificacion(
       "Error",

@@ -683,7 +683,7 @@ const guardarDesdeModal = async () => {
                         h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
                     ]),
                     h('div', { class: 'text-container' }, [
-                        h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nuevaDesc}"?`)
+                        h('p', null, `¿Estás seguro de que deseas guardar los cambios para el tipo de relación seleccionado?`)
                     ]),
                 ]),
                 h('div', { class: 'footer-buttons' }, [
@@ -720,7 +720,7 @@ const handleEliminar = () => {
 
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
     const nombreTipoRelacion = nodeDataForDeleteConfirmation.value.Descripcion;
-    const mensaje = `¿Está seguro de eliminar el tipo de relación "${nombreTipoRelacion}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de relación seleccionado? Esta acción no se puede revertir.`;
 
     ElMessageBox({
         title: "Confirmar eliminación",
@@ -753,7 +753,7 @@ const proceedWithDeletion = async () => {
         router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
             preserveScroll: true,
             onSuccess: () => {
-                mostrarNotificacion("Eliminación", `El tipo de relación "${Descripcion}" ha sido eliminado.`, "success");
+                mostrarNotificacion("Eliminación", `El tipo de relación  ha sido eliminado correctamente.`, "success");
 
                 nextTick(() => {
                     if (parentId) {
@@ -980,7 +980,7 @@ const cerrarDialogo = () => {
 
                     <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
                         <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
-                            placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit />
+                            placeholder="Ingrese la descripción" clearable maxlength="55" show-word-limit />
                     </el-form-item>
 
                     <el-form-item prop="Direccionalidad" label="Direccionalidad:">

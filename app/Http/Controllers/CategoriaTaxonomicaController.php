@@ -183,7 +183,7 @@ class CategoriaTaxonomicaController extends Controller
         } catch (QueryException $e) {
             if ($e->getCode() === "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1451)) {
                 throw ValidationException::withMessages([
-                    'message' => 'No es posible eliminar esta categoria taonómica porque es parte de la información del sistema.'
+                    'message' => 'No es posible eliminar esta categoria taxonómica porque es parte de la información del sistema.'
                 ]);
             }
             throw $e;
