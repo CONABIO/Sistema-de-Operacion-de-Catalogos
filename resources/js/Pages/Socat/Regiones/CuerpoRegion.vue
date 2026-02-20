@@ -515,7 +515,7 @@ const cerrarModalTipoRegion = () => {
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar región" : "Ingresar nueva región");
 const modalRules = {
-    NombreRegion: [{ required: true, message: "El nombre es obligatorio.", trigger: "blur" }],
+    NombreRegion: [{ max: 100, required: true, message: "El nombre de la region es obligatorio.", trigger: "blur" }],
     IdTipoRegion: [{ required: true, message: "El tipo de región es obligatorio.", trigger: "change" }],
     Abreviado: [{ max: 10, message: "Máximo 10 caracteres.", trigger: "blur" }],
 };
@@ -612,8 +612,8 @@ const guardarDesdeModal = async () => {
         cerrarModalOperacion();
         const tituloNotif = modoActual === 'editar' ? "Modificación" : "Ingreso";
         const mensajeNotif = modoActual === 'editar'
-            ? `La región "${nombreABuscar}" fue modificada correctamente.`
-            : `La región "${nombreABuscar}" se ingresó correctamente.`;
+            ? `La región ha sigo modificada correctamente.`
+            : `La región ha sido ingresada correctamente.`;
 
         mostrarNotificacion(tituloNotif, mensajeNotif, "success");
         router.reload({
@@ -684,7 +684,7 @@ const handleEliminar = () => {
     }
 
     const nombre = selectedNode.value.NombreRegion;
-    const mensaje = `¿Está seguro de eliminar la región "${nombre}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar la región seleccionada? Esta acción no se puede revertir.`;
 
     ElMessageBox({
         title: "Confirmar eliminación",
@@ -708,7 +708,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
     router.delete(`/regiones/${nodeId}`, {
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("Eliminación", `La región "${nombre}" ha sido eliminada correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `La región ha sido eliminada correctamente.`, "success");
             router.reload({
                 only: ['treeDataProp'],
                 onSuccess: () => {
@@ -882,14 +882,14 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     </el-form-item>
 
                     <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
-                            v-model="formModal.NombreRegion" clearable /></el-form-item>
+                            v-model="formModal.NombreRegion" clearable maxlength="100"/></el-form-item>
 
 
                     <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado" clearable
                             maxlength="10" /></el-form-item>
 
                     <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
-                            clearable /></el-form-item>
+                            clearable maxlength="35"/></el-form-item>
                 </el-form>
             </div>
         </DialogGeneral>

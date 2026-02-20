@@ -28,14 +28,14 @@ const nomComunInputRef = ref(null);
 const rules = {
     NomComun: [
         { required: true, message: 'El nombre común es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { min: 1, max: 60, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
     Observaciones: [
-        { max: 500, message: 'La longitud debe ser menor o igual a 500', trigger: 'blur' }
+        { max: 255, message: 'La longitud debe ser menor o igual a 500', trigger: 'blur' }
     ],
     Lengua: [
         { required: true, message: 'La lengua es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { max: 50, message: 'La longitud debe ser menor o igual a 50', trigger: 'blur' }
+        { max: 100, message: 'La longitud debe ser menor o igual a 50', trigger: 'blur' }
     ],
 };
 
@@ -112,15 +112,15 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Nombre común" prop="NomComun">
-                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="255" show-word-limit />
+                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="60" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Lengua" prop="Lengua">
-                        <el-input type="text" v-model="form.Lengua" maxlength="50" show-word-limit />
+                        <el-input type="text" v-model="form.Lengua" maxlength="100" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Observaciones" prop="Observaciones">
-                        <el-input type="textarea" v-model="form.Observaciones" maxlength="500" show-word-limit />
+                        <el-input type="textarea" v-model="form.Observaciones" maxlength="255" show-word-limit />
                     </el-form-item>
 
                 </el-form>

@@ -313,11 +313,11 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       if (datosDelFormulario.accionOriginal === 'crear') {
         const response = await axios.post("/autores", payload);
         const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon;
-        mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+        mostrarNotificacion("Ingreso", "La autoridad taxonómica ha sido ingresada correctamente.", "success");
         if (nuevoId) await irAlRegistroEspecifico(nuevoId);
       } else {
         await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
-        mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
+        mostrarNotificacion("Modificación", "La autoridad taxonómica ha sido modificada correctamente.", "success");
         if (tablaRef.value) await tablaRef.value.fetchData();
         await nextTick();
         if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
@@ -341,7 +341,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
   if (datosDelFormulario.accionOriginal === 'crear') {
     await procederConGuardado();
   } else {
-    const mensajeConfirmacion = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de que deseas guardar los cambios para la autoridad taxonómica seleccionada?`;
     
     ElMessageBox({
       title: 'Confirmar modificación',
@@ -382,7 +382,7 @@ const manejarEliminarItem = (itemId) => {
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion('Eliminación', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
     }
@@ -392,7 +392,7 @@ const manejarEliminarItem = (itemId) => {
   };
   const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
   const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
-  const mensaje = `¿Está seguro de eliminar el autor ${nombreAutorEliminado}? Esta acción no se puede revertir.`;
+  const mensaje = `¿Está seguro de eliminar el autor seleccionado? Esta acción no se puede revertir.`;
   ElMessageBox({
     title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
     message: h('div', { class: 'custom-message-content' }, [
@@ -664,4 +664,11 @@ Etiqueta que marca en verde las filas de la tabla*/
 .icon-bold svg path{
   stroke-width: 1.5 !important;   /* por defecto es ~2 */
 }
+
+.el-table .cell {
+  word-break: break-word !important; /* Corta palabras largas de forma natural */
+  line-height: 1.4 !important;
+}
+
+
 </style>

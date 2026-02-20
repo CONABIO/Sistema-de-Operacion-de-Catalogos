@@ -166,7 +166,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para "${datosDelFormulario.NomComun}"?`;
+        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para el nombre común seleccionado?`;
         ElMessageBox({
             title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
@@ -193,15 +193,15 @@ const eliminarNombreComun = (idNomComun) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación", `El nombre común ${nombreItem} fue eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El nombre común ${nombreItem} no se puede eliminar. Este nombre común esta asociado.`, 'success');
+            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común esta asociado.`, 'success');
 
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };
     const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
-    const mensaje = `¿Está seguro de eliminar el nombre común "${itemAEliminar?.NomComun || 'seleccionado'}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el nombre común seleccionado? Esta acción no se puede revertir.`;
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
