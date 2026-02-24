@@ -1171,14 +1171,14 @@ const cerrarDialogo = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    font-size: 23px;
+    width: 35px;
+    height: 35px;
+    font-size: 30px;
 }
 
 .static-icon {
-    width: 1.2em;
-    height: 1.2em;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
 }
 
@@ -1380,11 +1380,6 @@ const cerrarDialogo = () => {
     text-align: left;
 }
 
-.static-icon {
-    width: 1.2em;
-    height: 1.2em;
-    object-fit: contain;
-}
 
 
 .contenedor-marcos-manual {

@@ -1405,6 +1405,16 @@ onMounted(() => {
         text-align: center;
     }
 
+    .titulo {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+        text-align: center;
+    }
+
+
+
   .form-header {
     padding: 20px;
     min-width: 190px;
@@ -1591,6 +1601,8 @@ onMounted(() => {
       justify-content: flex-start;
     }
 }
+
+</style>
 
   :deep(.el-dialog) {
     border-radius: 10px;
