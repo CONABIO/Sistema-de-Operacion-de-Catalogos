@@ -171,19 +171,26 @@ class CategoriaTaxonomicaController extends Controller
 
     public function destroy(CategoriasTaxonomicas $categoria_taxonomica)
     {
+        if ($categoria_taxonomica->IdCategoriaTaxonomica < 132) {
+            throw ValidationException::withMessages([
+                'message' => 'No es posible eliminar esta categoria taxonómica porque es parte de la información del sistema.'
+            ]);
+        }
+
         $tieneHijos = CategoriasTaxonomicas::where('IdAscendente', $categoria_taxonomica->IdCategoriaTaxonomica)->exists();
         if ($tieneHijos) {
             throw ValidationException::withMessages([
                 'message' => 'No se puede eliminar porque tiene categorías dependientes (sub-niveles).'
             ]);
         }
+
         try {
             $categoria_taxonomica->delete();
             return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
         } catch (QueryException $e) {
             if ($e->getCode() === "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1451)) {
                 throw ValidationException::withMessages([
-                    'message' => 'No es posible eliminar esta categoria taxonómica porque es parte de la información del sistema.'
+                    'message' => 'No es posible eliminar esta categoría porque tiene nombres asociados'
                 ]);
             }
             throw $e;

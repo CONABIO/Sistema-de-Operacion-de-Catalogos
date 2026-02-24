@@ -761,10 +761,22 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 
 .custom-element-tree .el-tree-node__content {
   min-height: 26px;
-  width: 1893px;
+  height: auto; 
+  width: 100%;  
   display: flex;
   align-items: flex-start; 
-  padding: 4px 0;    
+  padding: 8px 0; 
+  white-space: normal; 
+}
+
+
+.custom-tree-node-content {
+  flex: 1;
+  min-width: 0; /* Truco de flexbox para que respete el contenedor */
+  word-break: break-all; /* Rompe palabras muy largas (como tus 'aaaaa...') */
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  padding-right: 10px;
 }
 
 
