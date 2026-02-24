@@ -1604,6 +1604,7 @@ onMounted(() => {
 
 </style>
 
+<style>
   :deep(.el-dialog) {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1625,7 +1626,7 @@ onMounted(() => {
     }
   }
 
-/* ===== SELECT VERDE ===== */
+
 
 .select-verde-dropdown .el-select-dropdown__item.is-selected {
   background-color: rgb(203, 233, 200) !important;
