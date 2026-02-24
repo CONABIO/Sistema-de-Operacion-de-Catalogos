@@ -61,7 +61,6 @@ watch(() => props.visible, (newVal) => {
         nextTick(() => { 
             requestAnimationFrame(() => { 
                 animateBar.value = true; 
-                console.log("NotificacionModal: Animación de barra iniciada con clase. Duración:", localDuration.value);
             });
         });
 

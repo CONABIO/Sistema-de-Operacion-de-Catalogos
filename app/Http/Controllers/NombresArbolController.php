@@ -47,10 +47,13 @@ class NombresArbolController extends Controller
         $valor = $request->categ ?? $request->idNombre ?? '';
         
         // Determinar relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat'];
-        
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig'];
+
         if ($request->has('taxon')) {
+            log::info("Entre al primer if 1");
             if (!empty($request->categ)) {
+                log::info("Entre al primer if 2");
                 $categ = explode(',', $request->categ);
                 $catalog = explode(',', $request->catalog);
                 $taxon = $request->taxon;
@@ -60,6 +63,7 @@ class NombresArbolController extends Controller
                     ->paginate(150); // Reducir paginación
                     
             } else {
+                log::info("Entre al primer if 3");
                 $taxon = $request->taxon;
                 $nombres = Nombre::filtraArbolTax($taxon)
                     ->with($relacionesBase)
@@ -67,12 +71,13 @@ class NombresArbolController extends Controller
             }
             
         } elseif ($request->has('catalog')) {
+            log::info("Entre al primer if 4");
             $categ = explode(',', $request->categ);
             $catalog = explode(',', $request->catalog);
             
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::filtraArbol($categ, $catalog)
@@ -80,11 +85,12 @@ class NombresArbolController extends Controller
                 ->paginate(150);
                 
         } elseif ($request->has('idNombre')) {
+            log::info("Entre al primer if 5");
             $valor = $request->idNombre;
             
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion', 'relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdNombre', $valor)
@@ -92,9 +98,10 @@ class NombresArbolController extends Controller
                 ->get();
                 
         } else {
+            log::info("Entre al primer if 6");
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'relNombreRegion', 'relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdCategoriaTaxonomica', 1)
@@ -102,6 +109,9 @@ class NombresArbolController extends Controller
                 ->limit(100)
                 ->get();
         }
+        
+        log::info("Este es el valor de nombre:");
+        log::info($nombres);
         
         // Procesar datos en batch (método del Trait)
         $data = $this->procesarNombresBatch($nombres);
@@ -315,15 +325,23 @@ class NombresArbolController extends Controller
     public function  cargaComSnib(Request $request)
     {
 
-        $query = "select count(distinct nt.comentarioscat) as NumEjemplares
-                  from snib.nombre_taxonomia nt 
-                        inner join catalogocentralizado._TransformaTablaNombre_snib t on 
+        $query = "SELECT COUNT(DISTINCT nt.comentarioscat) AS NumComEjemplares, COUNT(nt.llavenombre) AS NumEjemplares
+                  FROM snib.nombre_taxonomia nt 
+                        INNER JOIN catalogocentralizado._TransformaTablaNombre_snib t ON 
                                     nt.idnombre = t.IdNombre
-                  Where t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
+                  WHERE t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
 
         $resultado = DB::connection('snib')->select($query);
 
-        return $resultado;
+        
+        $nombre = Nombre::with('RelNombreCat')
+                        ->find($request->idNombre);
+
+        $numRelCat = $nombre->RelNombreCat->count();
+
+        return response()->json(['snib' => $resultado,
+                                  'relNombreCat' => $numRelCat
+        ]);
     }
 
     //carga comentarios del snib 
@@ -399,7 +417,7 @@ class NombresArbolController extends Controller
 
             array_push($lista, $newReg);
         }
-
+        
         return $lista;
     }
 
