@@ -371,30 +371,44 @@ const calcularNiveles_ADAPTADO_AL_CAOS = (nodoReferencia, opcion, todosLosNodos)
 
 const handleEliminar = () => {
   if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
+  
   if (selectedNode.value.children && selectedNode.value.children.length > 0) {
     return mostrarNotificacion("Aviso", "No es posible eliminar esta categoria taxonómica porque tiene sub-categorias que dependen de ella.", "warning");
   }
-  const nombre = selectedNode.value.NombreCategoriaTaxonomica;
+
+  const idABorrar = selectedNode.value.IdCategoriaTaxonomica; 
   const idPadre = selectedNode.value.IdAscendente;
   const mensaje = `¿Está seguro de eliminar la categoría seleccionada? Esta acción no se puede revertir.`;
+
   const proceedWithDeletion = () => {
-    if (idPadre) {
-      pendingId.value = idPadre;
-    } else {
-      pendingId.value = "SELECT_FIRST_ROOT";
-    }
-    router.delete(`/categorias-taxonomicas/${selectedNode.value.IdCategoriaTaxonomica}`, {
+    router.delete(`/categorias-taxonomicas/${idABorrar}`, {
       preserveScroll: true,
+      preserveState: true, 
       onSuccess: () => {
+        if (idPadre) {
+          pendingId.value = idPadre;
+        } else {
+          pendingId.value = "SELECT_FIRST_ROOT";
+        }
         mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminado correctamente.`, "success");
       },
       onError: (e) => {
         pendingId.value = null;
-        mostrarNotificacion("Aviso", e.message || "Ocurrió un error.", "warning");
+        nextTick(() => {
+          if (treeRef.value) {
+            treeRef.value.setCurrentKey(idABorrar);
+            const nodoQueFallo = findNodeInTree(localTreeData.value, idABorrar);
+            if (nodoQueFallo) {
+              selectedNode.value = nodoQueFallo;
+            }
+          }
+        });
+        mostrarNotificacionError("Aviso", "No se puede eliminar la categoría taxonómica porque tiene nombres asociados", "warning");
       },
     });
     ElMessageBox.close();
   };
+
   ElMessageBox({
     title: "Confirmar eliminación",
     showConfirmButton: false, 

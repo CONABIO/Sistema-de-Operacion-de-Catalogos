@@ -312,7 +312,7 @@ const guardarDesdeModal = async () => {
       if (opcionNivel.value !== "raiz" && !selectedNode.value) {
         return mostrarNotificacion("Error", "Se requiere un nodo de referencia.", "error");
       }
-      
+
       const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
       if (!calculoNiveles) return;
       const idPadreDestino = calculoNiveles.idPadre;
@@ -760,23 +760,22 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .custom-element-tree .el-tree-node__content {
-  min-height: 26px;
-  height: auto; 
-  width: 100%;  
+  height: auto !important;
+  min-height: 10px !important;
   display: flex;
-  align-items: flex-start; 
-  padding: 8px 0; 
-  white-space: normal; 
+  align-items: center;
+  padding: 2px 0;
+  white-space: normal;
 }
 
 
 .custom-tree-node-content {
   flex: 1;
-  min-width: 0; /* Truco de flexbox para que respete el contenedor */
-  word-break: break-all; /* Rompe palabras muy largas (como tus 'aaaaa...') */
-  overflow-wrap: break-word;
+  min-width: 0;
   line-height: 1.4;
-  padding-right: 10px;
+  padding-right: 15px;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 
