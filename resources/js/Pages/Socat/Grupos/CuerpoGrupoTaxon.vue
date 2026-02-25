@@ -143,6 +143,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 50
     notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
+
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
@@ -192,7 +193,9 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
 
             if (!esEdicion) {
                 const response = await axios.post("/grupos-taxonomicos", payload);
+                
                 mostrarNotificacion("Ingreso", "El grupo taxonómico ha sido ingresado correctamente.", "success");
+
                 const nuevoId = response.data.grupo?.IdGrupoSCAT;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
@@ -325,7 +328,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
                 @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" @cerrar="cerrarVentana"
-                :highlight-current-row="true">
+                :highlight-current-row="false">
             </TablaFiltrable>
         </div>
     </div>
@@ -407,7 +410,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 }
 
 .el-table .fila-seleccionada-verde:hover>td.el-table__cell {
-    background-color: #a3e4d7 !important;
+    background-color: #ddf6dd !important;
 }
 </style>
 
@@ -435,14 +438,13 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     border-bottom: 1px solid #e2e8f0;
 }
 
-el-table .fila-seleccionada-verde {
+.el-table .fila-seleccionada-verde {
     --el-table-tr-bg-color: #ddf6dd !important;
 }
 
 .el-table .fila-seleccionada-verde:hover>td.el-table__cell {
     background-color: #cce8cc !important;
 }
-
 
 .tabla-grupos {
     --el-table-current-row-bg-color: #ddf6dd !important;

@@ -10,46 +10,37 @@
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <el-col :span="20">
+              <el-col :span="16">
                 <span class="subtitulo" style="color: red;">
-                  Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
+                  Taxón seleccionado: {{ taxonAct?.label }}
                 </span>
               </el-col>
 
-              <el-col :span="2" style="display: flex;">
-                <el-space>
-                  <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
-                              @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"/>
-                  <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
-                              @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
-                  <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
-                              @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                    <el-popconfirm 
-                                    confirm-button-text="Si" 
-                                    cancel-button-text="No" 
-                                    :icon="InfoFilled" 
-                                    icon-color="#E6A23C"
-                                    title="¿Realmente desea guardar los cambios?" 
-                                    @confirm="Guardar('nombreTax', accion)">
-                      <template #reference>
-                        <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
-                          <span style="display: inline-flex">
-                            <el-button circle type="warning" :disabled = "muestraGrd" @click.stop>
-                              <!--:disabled = autorAct-->
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                  <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                              </svg>
-                            </el-button>
-                          </span>
-                        </el-tooltip>
-                      </template>
-                    </el-popconfirm>
-                  <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-                </el-space>
+              <el-col :span="8" >
+                  <div class="botonera-biotica">
+                    <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
+                                @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"
+                                style="flex-shrink: 0;"/>
+                    <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
+                                @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' 
+                                style="flex-shrink: 0;"/>
+                    <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
+                                @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' 
+                                style="flex-shrink: 0;"/>
+                    <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                        Se cambia el boton de guardar por el componente del boton guardar-->  
+                    <GuardarButton :habilitar = "habGuardar" @click="Guardar"
+                                    style="flex-shrink: 0; min-width: max-content;"/>
+                    <BotonSalir accion="cerrar" @salir="cerrarDialogo"
+                                style="flex-shrink: 0; min-width: max-content;"/>
+                  </div>
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
-            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
+            <el-select v-model="nombreTax.catTax"  
+                       placeholder = "Nivel taxonómico" 
+                       popper-class="select-verde-dropdown"
+                       :disabled = nivelAct>
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -57,7 +48,7 @@
                       :value="item.id">
               </el-option>
             </el-select>
-          </el-form-item>     
+          </el-form-item>   
           <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
@@ -147,8 +138,8 @@
                               <th style="border: 1px solid black;">IDCat</th>
                             </tr>
                             <tr>
-                              <td style="border: 1px solid black;">{{ idNombre }}</td>
-                              <td style="border: 1px solid black;">{{ idCat }}</td>
+                              <td style="border: 1px solid black; background-color: #F5F527;">{{ idNombre }}</td>
+                              <td style="border: 1px solid black; background-color: #F57327;">{{ idCat }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -160,8 +151,13 @@
                                           label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
+
                                           placeholder="Select" 
-                                          :disabled="actGrupo" style="width: 100%;">
+                                          :disabled="actGrupo" 
+                                          popper-class="select-verde-dropdown"
+                                          style="width: 100%;"
+                                          filterable
+                                          clearable>
                                 <el-option 
                                   v-for="item in listGrp" 
                                   :key="item.id" 
@@ -170,6 +166,7 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            
                           </div>
                           <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
                             placement="bottom">
@@ -192,7 +189,7 @@
                               v-model="valSnib" 
                               placeholder="" 
                               :disabled="autorAct" 
-                              popper-class="custom-select-dropdown"
+                              popper-class="select-verde-dropdown"
                               style="width: 100%">
                             <el-option v-for="item in opcSnib" 
                                       :key="item.id" 
@@ -209,7 +206,7 @@
                                 v-model="nombreTax.nivelRev" 
                                 placeholder="Nivel de revisión" 
                                 :disabled="autorAct" 
-                                popper-class="custom-select-dropdown"
+                                popper-class="select-verde-dropdown"
                                 style="width: 100%">
                             <el-option v-for="item in opcNivRev" 
                                         :key="item.id" 
@@ -268,7 +265,7 @@
                     <br>
                     <el-row :gutter='25'>
                       <el-col :span="24">
-                        <p></p>
+                        <!--p></p>
                         <el-row>
                           Homonimia SNIB
                         </el-row>
@@ -276,9 +273,20 @@
                           <el-input type="input" 
                                     placeholder="Homonimia SNIB" 
                                     v-model="homonimiaSnib"
+                                    show-word-limit 
                                     @keydown="onPressSistC" 
-                                    :disabled="autorAct" />
-                        </el-row>
+                                    :disabled="autorAct" 
+                                    maxlength="255" />
+                        </el-row-->
+                        <el-form-item label = "Homonimia SNIB" prop = "homonimiaSnib">
+                          <el-input type="text" 
+                                          placeholder="Homonimia SNIB" 
+                                          v-model="homonimiaSnib"
+                                          show-word-limit 
+                                          @keydown="onPressSistC"
+                                          :disabled="autorAct"
+                                          maxlength="255"  />
+                        </el-form-item>
                       </el-col>
                     </el-row>
                     <br>
@@ -298,8 +306,10 @@
                         <el-row>
                           <el-input placeholder="IdCOL" 
                                     v-model="idCol" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct" />
+                                    :disabled="autorAct"
+                                    maxlength="255" />
                         </el-row>
                       </el-col>
                       <el-col :span='8'>
@@ -307,8 +317,11 @@
                         <el-row>
                           <el-input placeholder="IdCITES" 
                                     v-model="idCites" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct"/>
+                                    :disabled="autorAct"
+                                    maxlength="255"
+                                    />
                         </el-row>
                       </el-col>
                     </el-row>
@@ -331,7 +344,7 @@
     <div>
       <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
         Se agregaron las propiedades para determinar si es modal y se muestra el
-        boton de traspaso-->>
+        boton de traspaso-->
       <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
         <CurpGruposTax :isModal = "true"  @cerrar="cerrar_Grupos" :traspaso ="false" />
       </DialogGrp>
@@ -355,7 +368,7 @@
 import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
 import { usePage } from '@inertiajs/inertia-vue3';
 import { nextTick } from 'vue';
-import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
+import { ElMessage, ElInput, ElPopconfirm, ElMessageBox} from 'element-plus';
 import axios from 'axios';
 import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
 import CurpAutorTax from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
@@ -373,6 +386,8 @@ import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 
 const { permisos, usuario } = usePermisos();
 
@@ -400,6 +415,14 @@ const props = defineProps({
   paginaActual: Number,
   categoria: [],
   catalogos: [], 
+  regNomenclatura: {
+    type: Number,
+    default: 0
+  },
+  numHijos: {
+    type: Number,
+    default: 0
+  }
 });
 
 const habNuevo = ref(false);
@@ -422,6 +445,10 @@ const autorComp = ref("");
 const listAutores = ref([]);
 const tabInicial = ref("taxon");
 
+const relnomcat = ref(0);
+
+const habGuardar = ref(true);
+
 const opcSnib = ref([{
   id: 'si',
   label: 'Si'
@@ -430,7 +457,7 @@ const opcSnib = ref([{
   label: 'No'
 }, {
   id: '',
-  label: 'Vacío'
+  label: ''
 }
 ]);
 
@@ -482,6 +509,7 @@ const notificacionMensaje = ref('');
 const notificacionTipo = ref('info');
 const notificacionDuracion = ref(5000);
 const notificacionVisible = ref(false);
+const numEjemp = ref('');
 
 const emit = defineEmits(['regresaTaxMod', 'cerrar', 
                           'resultadoAlta', 'resultadoBaja']);
@@ -536,6 +564,9 @@ const rules = ref({
   ],
   nivelRev: [
     { required: true, message: 'Se debe seleccionar nivel de revisión', trigger: 'change' }
+  ],
+  homonimiaSnib: [
+    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
   ]
 });
 
@@ -549,13 +580,12 @@ const recibeAutores = (autores, autoridadTax) =>{
 }
 
 const carga_inicio = () => {  
-  console.log("Carga de inicio: ", props.taxonAct
-  .completo);
   muestraGrd.value = true;
   estCor.value = true;
   estSin.value = true;
   estNa.value = true;
   estNd.value = true;
+  habGuardar.value = true;
   
   Object.assign(nombreTax, {
     nombreTaxon : props.taxonAct?.completo?.Nombre || '',
@@ -581,6 +611,7 @@ const carga_inicio = () => {
   habAltEdic.value = true;
   comDet.value = true;
   listAutorTax.value = props.taxonAct?.completo?.rel_nombre_autor;
+  numEjemp.value = 0;
   cargaListGrp();
   cargaValSnib();
   cargaNivRev();
@@ -599,7 +630,7 @@ const carga_inicio = () => {
     actGrupo.value = true;
   }
 
-  if (props.taxonAct?.completo?.IdNivel2 === 1) {
+  if (props?.taxonAct?.completo?.categoria?.IdNivel2 === 1) {
     estDinamico.value = "Valido";
   } else {
     estDinamico.value = "Correcto";
@@ -609,15 +640,6 @@ const carga_inicio = () => {
   habMod.value = false; 
   habElim.value = false;
 
-  if (props.taxonAct?.completo?.rel_nombre_autor?.length === 0 && props.infTaxon != 0) {
-    ElMessage({
-      showClose: true,
-      message: 'Recuerde que se debe actualizar los autores para generar la relación entre nombre y autor',
-      type: 'warning',
-      duration: 3000
-    })
-    
-  }
 };
 
   const cerrarDialogo = () => {
@@ -702,8 +724,8 @@ const cargaCategorias = async () => {
     
     const response = await axios.get('carga-categ', { params });
     if (response.status === 200) {
-      categorias.value = response.data;
-      categorias.value.push({
+        categorias.value = response.data;
+        categorias.value.unshift({
         id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
         label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
       });
@@ -764,8 +786,10 @@ const cargaComSnib = async () => {
     const response = await axios.get('/cargar-comSnib', {params});
     
     if (response.status === 200) {
-      
-      comentariosSnib.value = response.data[0].NumEjemplares;
+
+      comentariosSnib.value = response.data.snib[0].NumComEjemplares;
+      numEjemp.value = response.data.snib[0].NumEjemplares
+      relnomcat.value = response.data.relNombreCat
     
       if (comentariosSnib.value > 0) {
           comDet.value = false;
@@ -781,10 +805,8 @@ const cargaComSnib = async () => {
 };
 
 const AltaEstatus = async () =>{
-  console.log("Entre a alta de estatus");
-  if(props.taxonAct.completo.categoria.IdNivel1 < 5)
+  if(props.taxonAct.completo.categoria.IdNivel1 < 4)
     {
-      console.log("Entre a alta estatus");
       nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
       estCor.value = true;
       estSin.value = true;
@@ -795,7 +817,6 @@ const AltaEstatus = async () =>{
     }
     switch(props.taxonAct.completo.Estatus){
       case 2:
-      console.log("Entre a case 2");
         estCor.value = false;
         estSin.value = false;
         estNa.value = false;
@@ -824,6 +845,8 @@ const AltaEstatus = async () =>{
 const nuevoTax = async() => {
   muestraGrd.value = false;
 
+  accion.value = "crear"; 
+
   if (props.taxonAct.estatus.value === 'NA') {
     await mostrarNotificacion(
           "Aviso",
@@ -849,6 +872,7 @@ const nuevoTax = async() => {
   autorAct.value = false;
   nombreTax.catTax = '';
   valSnib.value = '';
+  habGuardar.value = false;
 
   const resp = await AltaEstatus();
   
@@ -880,6 +904,7 @@ const nuevoTax = async() => {
   estPubS.value = false;
   estPubN.value = false;
   listAutores.value = [];
+  numEjemp.value = 0;
 };
 
 const editarTax = () => {
@@ -906,6 +931,7 @@ const editarTax = () => {
   estSin.value = false;
   estNa.value = false;
   estNd.value = false;
+  habGuardar.value = false;
   CambioEstatus();
 };
 
@@ -953,20 +979,26 @@ const CambioEstatus = () => {
 };
 
 const borrarDatos = async () => {
-  console.log("Esto llega al presionar Borrar: ", props.taxonAct.completo);
+  
+  const confirmado = await showConfirmMessage({
+                    title: 'Confirmar eliminación',
+                    message: '¿Estás seguro de eliminar el taxón actual?'
+                });
 
-  let rel = props.taxonAct.completo.nombre_rel.length;
-  let hijos = props.taxonAct.completo.hijos.length;
-  let catRel = props.taxonAct.completo.rel_nombre_cat.length;
-  let numEjemp = parseInt(props.taxonAct.numEjemp);
+  if (!confirmado) {
+      return;
+  }
+
+  let rel = props.regNomenclatura;
+  let hijos = props.numHijos;
 
   let mensaje = '<strong>El nombre no puede ser eliminado ya que tiene: </p> <br></strong>';
 
-  if (numEjemp > 0) {
-    if (numEjemp === 1) {
-      mensaje += '<strong>' + numEjemp + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
+  if (numEjemp.value > 0) {
+    if (numEjemp.value === 1) {
+      mensaje += '<strong>' + numEjemp.value + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
     } else {
-      mensaje += '<strong>' + numEjemp + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
+      mensaje += '<strong>' + numEjemp.value + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
     }
   }
 
@@ -986,11 +1018,11 @@ const borrarDatos = async () => {
     }
   }
 
-  if (catRel > 0) {
-    if (catRel === 1) {
-      mensaje += '<strong>' + catRel + ' caracteristica relacionada </p> <br></strong>';
+  if (relnomcat.value > 0) {
+    if (relnomcat.value === 1) {
+      mensaje += '<strong>' + relnomcat.value + ' caracteristica relacionada </p> <br></strong>';
     } else {
-      mensaje += '<strong>' + catRel + ' caracteristicas relacionadas </p> <br></strong>';
+      mensaje += '<strong>' + relnomcat.value + ' caracteristicas relacionadas </p> <br></strong>';
     }
   }
 
@@ -1003,7 +1035,7 @@ const borrarDatos = async () => {
     }
   }
 
-  if (rel > 0 || hijos > 0 || catRel > 0 || comentariosSnib.value > 0) {
+  if (rel > 0 || hijos > 0 || relnomcat.value > 0 || comentariosSnib.value > 0) {
     await mostrarNotificacion(
         "Aviso",
         mensaje,
@@ -1020,6 +1052,14 @@ const borrarDatos = async () => {
                    
       emit('cerrar', false);
       emit('resultadoBaja', response.data);
+
+       await mostrarNotificacion(
+        "Aviso",
+        "El taxón fue eliminado exitosamente",
+        "success",
+        5000
+      );
+
     }
     catch(error){
        console.log("este es el error: ", error);
@@ -1072,7 +1112,8 @@ const resetForm = () => {
 };
 
 const cambioPublico = async (estadoTaxon)=> {
-  if(props.taxonAct.numEjemp > 0 && estadoTaxon != 1)
+
+  if(numEjemp.value > 0 && estadoTaxon != 1)
     {
       await mostrarNotificacion(
         "Aviso",
@@ -1086,7 +1127,6 @@ const cambioPublico = async (estadoTaxon)=> {
 }
 
 const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  console.log("Entre a mostrar la notificación 321");
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
   notificacionTipo.value = tipo;
@@ -1094,13 +1134,19 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) =>
   notificacionVisible.value = true;
 };
 
+const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+};
+
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
 
-const Guardar = async (tipo, accionParam) =>{
-
-  console.log("Esto es lo que tiene tipo: ", tipo);
+const Guardar = async () =>{
   
   if (!formRef.value) return;
   
@@ -1120,7 +1166,6 @@ const Guardar = async (tipo, accionParam) =>{
 
   if(!estadoPub)
   {
-    console.log("Voy a cancelar");
     return;
   }
 
@@ -1199,8 +1244,6 @@ const Guardar = async (tipo, accionParam) =>{
                 
                 try{
 
-                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
-
                     const response = await axios.post(`/nombres-store`, params);
                     
                     emit('cerrar', false);
@@ -1221,15 +1264,20 @@ const Guardar = async (tipo, accionParam) =>{
                     }
                 }
               break;
-              case 'editar':   
-              if(Array.isArray(listAutorTax.value) && 
-                                       listAutorTax.value.length === 0){
-                  listAutorTax.value = props.taxonAct.completo.rel_nombre_autor;
-                }else if(Array.isArray(props.taxonAct.completo.rel_nombre_autor) && 
-                                       props.taxonAct.completo.rel_nombre_autor.length === 0 && 
-                                       listAutorTax.value.length === 0)
+              case 'editar':  
+              
+                const confirmado = await showConfirmMessage({
+                    title: 'Confirmar modificación',
+                    message: '¿Estás seguro de guardar los cambios para el taxón actual?'
+                });
+
+                if (!confirmado) {
+                    return;
+                }
+
+                if(listAutorTax.value.length === 0)
                 {
-                   await mostrarNotificacion(
+                  await mostrarNotificacionError(
                               "Aviso",
                               'No es posible continuar ya que no hay valores de lista de autores.',
                               "Error",
@@ -1237,6 +1285,7 @@ const Guardar = async (tipo, accionParam) =>{
                             );
                   return;
                 }
+
                 params = {
                   scat:{
                     Grupo: grupoScat,
@@ -1312,6 +1361,17 @@ onMounted(() => {
 
 
 <style scoped>
+
+  /*Juan Carlos 17/02/2026
+  Esta funcion se agrega para evitar el conflicto de tailwind con element-plus
+  si se retira la parte filtrable del select no funciona */
+  :deep(.el-select__input) {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
   .form-nombre-container {
     padding: 1px;
   }
@@ -1447,6 +1507,21 @@ onMounted(() => {
     vertical-align: middle;
   }
 
+  .botonera-biotica {
+      display: flex;
+      gap: 12px !important;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .botonera-biotica * {
+      margin: 0 !important;
+      padding: 0 !important;
+      flex-shrink: 0;
+    }
+    
   .el-icon {
     font-size: 16px;
     margin-right: 2px;
@@ -1527,11 +1602,9 @@ onMounted(() => {
     }
 }
 
-
 </style>
 
-<style>
-  .el-dialog {
+  :deep(.el-dialog) {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 90%;
@@ -1551,4 +1624,20 @@ onMounted(() => {
       max-width: none;
     }
   }
+
+/* ===== SELECT VERDE ===== */
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected.is-hovering {
+  background-color: rgb(203, 233, 200) !important;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-hovering:not(.is-selected) {
+  background-color: rgb(240, 245, 239)  !important;
+}
 </style>
