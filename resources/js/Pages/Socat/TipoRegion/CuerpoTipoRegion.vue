@@ -81,6 +81,16 @@ const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
 watch(() => props.treeDataProp, (newVal) => {
     localTreeData.value = deepCopy(newVal);
+    if (selectedNode.value) {
+        const idActual = selectedNode.value.IdTipoRegion;
+        const nodoActualizado = findNodeInTree(localTreeData.value, idActual);
+        if (nodoActualizado) {
+            selectedNode.value = nodoActualizado;
+            nextTick(() => {
+                treeRef.value?.setCurrentKey(idActual);
+            });
+        }
+    }
 }, { immediate: true, deep: true });
 
 onMounted(() => {
@@ -124,24 +134,31 @@ const abrirModalParaEditar = () => {
     if (!selectedNode.value) {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
-    modalMode.value = "editar";
-    nodoEnModal.value = { ...selectedNode.value };
-    formModal.value = { Descripcion: selectedNode.value.Descripcion };
-    esModalVisible.value = true;
-    nextTick(() => {
-        formModalRef.value?.clearValidate();
-        setTimeout(() => {
-            if (descripcionInputRef.value) {
-                descripcionInputRef.value.focus();
-                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
-                if (nativeInput) {
-                    const len = nativeInput.value.length;
-                    nativeInput.setSelectionRange(len, len);
+    const nodoFresco = findNodeInTree(localTreeData.value, selectedNode.value.IdTipoRegion);
+    if (nodoFresco) {
+        selectedNode.value = nodoFresco; 
+        modalMode.value = "editar";
+        nodoEnModal.value = { ...nodoFresco };
+        formModal.value = { Descripcion: nodoFresco.Descripcion };
+        esModalVisible.value = true;
+        
+        nextTick(() => {
+            formModalRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
                 }
-            }
-        }, 100);
-    });
+            }, 100);
+        });
+    }
 };
+
+
 const cerrarModalOperacion = () => {
     esModalVisible.value = false;
     nodoEnModal.value = null;

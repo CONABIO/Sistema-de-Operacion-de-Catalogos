@@ -644,7 +644,7 @@ const guardarDesdeModal = async () => {
                     mostrarNotificacion("Modificación", "El tipo de relación ha sido modificado correctamente.", "success");
                 },
                 onError: (errors) => {
-                    mostrarNotificacion("Aviso", Object.values(errors)[0], "error");
+                    mostrarNotificacion("Aviso", Object.values(errors)[0], "warning");
                 }
             });
         } else {
@@ -715,7 +715,7 @@ const handleEliminar = () => {
     }
 
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.", "warning");
+        return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otros tipos de relaciones que dependen de ella.", "warning");
     }
 
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
@@ -744,16 +744,20 @@ const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
         if (!nodeDataForDeleteConfirmation.value) return;
-        const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
-        const nodeInTree = treeRef.value?.getNode(IdTipoRelacion);
+        
+        // Guardamos el ID antes de intentar borrar
+        const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion; 
+        
+        const nodeInTree = treeRef.value?.getNode(idQueFallo);
         const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
             ? nodeInTree.parent.data.IdTipoRelacion
             : null;
 
-        router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
+        router.delete(`/tipos-relacion/${idQueFallo}`, {
             preserveScroll: true,
+            preserveState: true, // Importante para no perder el estado actual
             onSuccess: () => {
-                mostrarNotificacion("Eliminación", `El tipo de relación  ha sido eliminado correctamente.`, "success");
+                mostrarNotificacion("Eliminación", `El tipo de relación ha sido eliminado correctamente.`, "success");
 
                 nextTick(() => {
                     if (parentId) {
@@ -774,7 +778,16 @@ const proceedWithDeletion = async () => {
                 });
             },
             onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relación ${Descripcion} no se puede eliminar...`, 'error');
+                mostrarNotificacionError('Aviso', `El tipo de relación no se puede eliminar porque tiene nombres asociados`, 'warning');          
+                nextTick(() => {
+                    const nodoOriginal = findNodeInTree(localTreeData.value, idQueFallo);
+                    if (nodoOriginal) {
+                        selectedNode.value = nodoOriginal;
+                        treeRef.value?.setCurrentKey(idQueFallo);
+                        selectAndFocusNode(idQueFallo);
+                    } 
+                    nodeIdToScrollToAfterNotification.value = idQueFallo;
+                });
             },
             onFinish: () => {
                 nodeDataForDeleteConfirmation.value = null;
@@ -930,7 +943,7 @@ const cerrarDialogo = () => {
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
                     :current-node-key="selectedNode?.IdTipoRelacion"
                     :default-expanded-keys="Array.from(expandedNodeIds)" :highlight-current="true"
-                    :expand-on-click-node="false" @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
+                    :expand-on-click-node="true" @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
                     @node-collapse="handleNodeSelected" 
 
                     :node-class="getTipoRelacionNodeClass"
