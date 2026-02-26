@@ -32,14 +32,19 @@ const dialogTitle = computed(() => {
 const rules = {
     GrupoSCAT: [
         { required: true, message: 'El nombre del grupo SCAT es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'El nombre no puede contener solo espacios en blanco', trigger: 'blur' }, 
         { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
     GrupoAbreviado: [
         { required: true, message: 'El nombre del grupo abreviado es obligatorio', trigger: 'blur' },
-        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
+        { whitespace: true, message: 'La abreviatura no puede contener solo espacios en blanco', trigger: 'blur' }, 
+        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }
+    ],
     GrupoSNIB: [
         { required: true, message: 'El nombre del grupo SNIB es obligatorio', trigger: 'blur' },
-        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
+        { whitespace: true, message: 'El grupo SNIB no puede contener solo espacios en blanco', trigger: 'blur' }, 
+        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
+    ],
 };
 
 watch(() => props.visible, (newVal) => {
@@ -78,7 +83,9 @@ const intentarGuardar = async () => {
         const isValid = await formRef.value.validate();
         if (isValid) {
             const datosParaEnviar = {
-                ...form.value,
+                GrupoSCAT: form.value.GrupoSCAT.trim(),
+                GrupoAbreviado: form.value.GrupoAbreviado.trim(),
+                GrupoSNIB: form.value.GrupoSNIB.trim(),
                 idParaEditar: props.accion === 'editar' ? props.gpoTaxEdit?.IdGrupoSCAT : null,
                 accionOriginal: props.accion,
             };
@@ -87,7 +94,7 @@ const intentarGuardar = async () => {
             ElMessage.error('Por favor, corrija los errores en el formulario.');
         }
     } catch (error) {
-        console.log('Validación fallida, no se emite evento.');
+        console.log('Validación fallida');
     }
 };
 

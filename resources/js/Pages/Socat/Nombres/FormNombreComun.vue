@@ -28,14 +28,16 @@ const nomComunInputRef = ref(null);
 const rules = {
     NomComun: [
         { required: true, message: 'El nombre común es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { min: 1, max: 60, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { whitespace: true, message: 'El nombre común no puede contener solo espacios en blanco', trigger: 'blur' },
+        { min: 1, max: 60, message: 'La longitud máxima es de 60 caracteres', trigger: 'blur' }
     ],
     Observaciones: [
-        { max: 255, message: 'La longitud debe ser menor o igual a 500', trigger: 'blur' }
+        { max: 255, message: 'La longitud debe ser menor o igual a 255', trigger: 'blur' }
     ],
     Lengua: [
         { required: true, message: 'La lengua es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { max: 100, message: 'La longitud debe ser menor o igual a 50', trigger: 'blur' }
+        { whitespace: true, message: 'La lengua no puede contener solo espacios en blanco', trigger: 'blur' },
+        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
     ],
 };
 
@@ -79,19 +81,19 @@ watch(dialogVisible, (newVal) => {
 
 const intentarGuardar = async () => {
     if (!formRef.value) return;
-
-    const isValid = await formRef.value.validate();
+    const isValid = await formRef.value.validate().catch(() => false);
     if (isValid) {
         const datosParaEnviar = {
-            ...form.value,
+            NomComun: form.value.NomComun.trim(),
+            Lengua: form.value.Lengua.trim(),
+            Observaciones: form.value.Observaciones ? form.value.Observaciones.trim() : '',
+            
             idParaEditar: props.accion === 'editar' ? props.nomComEdit?.IdNomComun : null,
             accionOriginal: props.accion,
         };
         emit('formSubmited', datosParaEnviar);
-    } else {
-        ElMessage.error('Por favor, corrija los errores en el formulario.');
-    }
-};
+    } 
+}
 
 const cerrarDialogo = () => {
     emit('cerrar');

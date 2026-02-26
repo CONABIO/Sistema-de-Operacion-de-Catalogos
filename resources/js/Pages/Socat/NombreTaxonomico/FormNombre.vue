@@ -1603,6 +1603,7 @@ onMounted(() => {
 }
 
 </style>
+<style scoped>
 
 <style>
   :deep(.el-dialog) {
