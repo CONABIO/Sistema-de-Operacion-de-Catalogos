@@ -470,8 +470,21 @@ const handleNodeSelected = (data) => {
     activePathIds.value = findPathInTree(localTreeData.value, data.IdTipoRelacion) || [];
 };
 const modalRules = {
-    Descripcion: [{ required: true, message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "blur" }],
-    Direccionalidad: [{ required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }],
+    Descripcion: [
+        { 
+            required: true, 
+            message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", 
+            trigger: "blur" 
+        },
+        { 
+            whitespace: true, 
+            message: "La descripción no puede contener solo espacios.", 
+            trigger: "blur" 
+        }
+    ],
+    Direccionalidad: [
+        { required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }
+    ],
 };
 
 const abrirModalParaInsertar = () => {
@@ -551,6 +564,7 @@ const guardarDesdeModal = async () => {
     if (!isValid) return;
 
     const nuevaDesc = formModal.value.Descripcion.trim();
+     if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
         const nodoEditando = nodoEnModal.value;

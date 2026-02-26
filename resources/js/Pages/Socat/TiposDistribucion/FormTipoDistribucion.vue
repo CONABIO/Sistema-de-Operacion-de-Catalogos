@@ -26,7 +26,8 @@ const descripcionInputRef = ref(null);
 const rules = {
     Descripcion: [
         { required: true, message: 'La descripción es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { min: 1, max: 100, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { whitespace: true, message: 'La descripción no puede contener solo espacios en blanco', trigger: 'blur' },
+        { min: 1, max: 100, message: 'La longitud debe estar entre 1 y 100', trigger: 'blur' }
     ],
 };
 
@@ -68,17 +69,17 @@ watch(dialogVisible, (newVal) => {
 
 const intentarGuardar = async () => {
     if (!formRef.value) return;
-    const isValid = await formRef.value.validate();
+    const isValid = await formRef.value.validate().catch(() => false);
     if (isValid) {
+        const descripcionLimpia = form.value.Descripcion.trim();
+        if (descripcionLimpia.length === 0) return;
         const datosParaEnviar = {
-            ...form.value,
+            Descripcion: descripcionLimpia, // Enviamos el valor ya trimmed
             idParaEditar: props.accion === 'editar' ? props.tipoDistEdit?.IdTipoDistribucion : null,
             accionOriginal: props.accion,
         };
         emit('formSubmited', datosParaEnviar);
-    } else {
-        ElMessage.error('Por favor, corrija los errores en el formulario.');
-    }
+    } 
 };
 
 

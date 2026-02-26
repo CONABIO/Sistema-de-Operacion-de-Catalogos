@@ -155,7 +155,7 @@ class TipoRegionController extends Controller
         }
 
         if ($query->exists()) {
-            throw ValidationException::withMessages(['message' => 'No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.']);
+            throw ValidationException::withMessages(['message' => 'No es posible eliminar el tipo de región seleccionado por tener regiones asociadas.']);
         }
 
         $regionesUsandoEsteTipo = Region::where('IdTipoRegion', $tipoRegion->IdTipoRegion)->exists();

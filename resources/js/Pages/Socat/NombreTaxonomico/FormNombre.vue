@@ -1603,6 +1603,7 @@ onMounted(() => {
 }
 
 </style>
+<style scoped>
 
   :deep(.el-dialog) {
     border-radius: 10px;

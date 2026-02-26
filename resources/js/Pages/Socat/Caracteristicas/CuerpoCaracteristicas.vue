@@ -202,8 +202,12 @@ const modalRules = {
   Descripcion: [
     {
       required: true,
-      message:
-        "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      message: "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      trigger: "blur",
+    },
+    {
+      whitespace: true,
+      message: "La descripción no puede contener solo espacios en blanco.",
       trigger: "blur",
     },
     {
@@ -269,6 +273,7 @@ const guardarDesdeModal = async () => {
   if (!isValid) return;
   const proceedWithSave = () => {
     const nuevaDesc = formModal.value.Descripcion.trim();
+    if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
       const idPadreActual = nodoEnModal.value.IdAscendente;
