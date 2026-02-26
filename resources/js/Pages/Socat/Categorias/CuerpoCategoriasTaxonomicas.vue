@@ -59,7 +59,7 @@ const handleNodeCollapse = (data) => {
 };
 
 const seleccionarNodoAlInteractuar = (data) => {
-  if (esModalVisible.value) return; 
+  if (esModalVisible.value) return;
   selectedNode.value = data;
   treeRef.value?.setCurrentKey(data.IdCategoriaTaxonomica);
 };
@@ -146,7 +146,17 @@ onMounted(() => {
 });
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar la categoría taxonómica " : "Ingresar una nueva categoría taxonómica");
-const modalRules = { NombreCategoriaTaxonomica: [{ required: true, message: "El nombre es obligatorio.", trigger: "blur" }] };
+
+const modalRules = {
+  NombreCategoriaTaxonomica: [
+    { required: true, message: "El nombre es obligatorio.", trigger: "blur" },
+    {
+      whitespace: true,
+      message: "El nombre no puede contener solo espacios.",
+      trigger: "blur"
+    }
+  ]
+};
 
 const abrirModalParaInsertar = () => {
   modalMode.value = "insertar";
@@ -195,9 +205,10 @@ const cerrarModalOperacion = () => {
 
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
-  const isValid = await formModalRef.value.validate();
+  const isValid = await formModalRef.value.validate().catch(() => false);
   if (!isValid) return;
   const nombreNormalizado = formModal.value.NombreCategoriaTaxonomica.trim().toLowerCase();
+  if (nombreNormalizado.length === 0) return;
   const esEdicion = modalMode.value === 'editar';
   let idPadreObjetivo = null;
   if (esEdicion) {
@@ -371,19 +382,19 @@ const calcularNiveles_ADAPTADO_AL_CAOS = (nodoReferencia, opcion, todosLosNodos)
 
 const handleEliminar = () => {
   if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
-  
+
   if (selectedNode.value.children && selectedNode.value.children.length > 0) {
     return mostrarNotificacion("Aviso", "No es posible eliminar esta categoria taxonómica porque tiene sub-categorias que dependen de ella.", "warning");
   }
 
-  const idABorrar = selectedNode.value.IdCategoriaTaxonomica; 
+  const idABorrar = selectedNode.value.IdCategoriaTaxonomica;
   const idPadre = selectedNode.value.IdAscendente;
   const mensaje = `¿Está seguro de eliminar la categoría seleccionada? Esta acción no se puede revertir.`;
 
   const proceedWithDeletion = () => {
     router.delete(`/categorias-taxonomicas/${idABorrar}`, {
       preserveScroll: true,
-      preserveState: true, 
+      preserveState: true,
       onSuccess: () => {
         if (idPadre) {
           pendingId.value = idPadre;
@@ -411,14 +422,14 @@ const handleEliminar = () => {
 
   ElMessageBox({
     title: "Confirmar eliminación",
-    showConfirmButton: false, 
-    showCancelButton: false, 
+    showConfirmButton: false,
+    showCancelButton: false,
     customClass: "message-box-diseno-limpio",
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
         h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
         h('div', { class: 'text-container' }, [
-            h('p', null, mensaje) 
+          h('p', null, mensaje)
         ])
       ]),
       h('div', { class: 'footer-buttons' }, [
@@ -623,13 +634,13 @@ const isCambiarIconoDeshabilitado = computed(() => {
     return true;
   }
   const nodo = selectedNode.value;
-  const esNuevo = nodo.IdCategoriaTaxonomica >= 132; 
+  const esNuevo = nodo.IdCategoriaTaxonomica >= 132;
   const tieneIconoPorDefecto = nodo.RutaIcono === ICONO_POR_DEFECTO;
   if (esNuevo) {
-    return false; 
+    return false;
   }
   if (!esNuevo && tieneIconoPorDefecto) {
-    return false; 
+    return false;
   }
   return true;
 });
@@ -938,9 +949,11 @@ const isCambiarIconoDeshabilitado = computed(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;  /* Tamaño del contenedor */
+  width: 28px;
+  /* Tamaño del contenedor */
   height: 28px;
-  flex-shrink: 0; /* Evita que el icono se aplaste si el texto es largo */
+  flex-shrink: 0;
+  /* Evita que el icono se aplaste si el texto es largo */
 }
 
 .node-icon-wrapper :deep(svg) {
@@ -952,7 +965,8 @@ const isCambiarIconoDeshabilitado = computed(() => {
 .node-icon-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Mantiene la proporción de las imágenes originales */
+  object-fit: contain;
+  /* Mantiene la proporción de las imágenes originales */
 }
 
 .icon-grid {
