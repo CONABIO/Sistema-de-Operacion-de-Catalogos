@@ -81,6 +81,16 @@ const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
 watch(() => props.treeDataProp, (newVal) => {
     localTreeData.value = deepCopy(newVal);
+    if (selectedNode.value) {
+        const idActual = selectedNode.value.IdTipoRegion;
+        const nodoActualizado = findNodeInTree(localTreeData.value, idActual);
+        if (nodoActualizado) {
+            selectedNode.value = nodoActualizado;
+            nextTick(() => {
+                treeRef.value?.setCurrentKey(idActual);
+            });
+        }
+    }
 }, { immediate: true, deep: true });
 
 onMounted(() => {
@@ -102,7 +112,10 @@ const handleNodeSelected = (data) => {
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región" : "Ingresar un nuevo tipo de región");
 
 const modalRules = {
-    Descripcion: [{ required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" }],
+    Descripcion: [
+        { required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" },
+        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" }
+    ],
 };
 
 const abrirModalParaInsertar = () => {
@@ -124,24 +137,31 @@ const abrirModalParaEditar = () => {
     if (!selectedNode.value) {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
-    modalMode.value = "editar";
-    nodoEnModal.value = { ...selectedNode.value };
-    formModal.value = { Descripcion: selectedNode.value.Descripcion };
-    esModalVisible.value = true;
-    nextTick(() => {
-        formModalRef.value?.clearValidate();
-        setTimeout(() => {
-            if (descripcionInputRef.value) {
-                descripcionInputRef.value.focus();
-                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
-                if (nativeInput) {
-                    const len = nativeInput.value.length;
-                    nativeInput.setSelectionRange(len, len);
+    const nodoFresco = findNodeInTree(localTreeData.value, selectedNode.value.IdTipoRegion);
+    if (nodoFresco) {
+        selectedNode.value = nodoFresco;
+        modalMode.value = "editar";
+        nodoEnModal.value = { ...nodoFresco };
+        formModal.value = { Descripcion: nodoFresco.Descripcion };
+        esModalVisible.value = true;
+
+        nextTick(() => {
+            formModalRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
                 }
-            }
-        }, 100);
-    });
+            }, 100);
+        });
+    }
 };
+
+
 const cerrarModalOperacion = () => {
     esModalVisible.value = false;
     nodoEnModal.value = null;
@@ -162,6 +182,9 @@ const guardarDesdeModal = async () => {
     if (!isValid) return;
 
     const descripcionABuscar = formModal.value.Descripcion.trim();
+    if (descripcionABuscar.length === 0) {
+        return; 
+    }
     const modoAlGuardar = modalMode.value;
     const opcionSeleccionada = opcionNivel.value;
     const nodoReferencia = { ...selectedNode.value };
@@ -260,7 +283,7 @@ const guardarDesdeModal = async () => {
             esModalVisible.value = false;
             nodoEnModal.value = null;
             setTimeout(() => {
-                mostrarNotificacion("Aviso", `El tipo de relación "${descripcionABuscar}" ya existe en este nivel.`, "warning");
+                mostrarNotificacion("Aviso", `El tipo de relación ingresado ya existe en este nivel.`, "warning");
                 buscarYSeleccionar(descripcionABuscar);
             }, 200);
         } else {
@@ -574,8 +597,10 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .custom-element-tree {
-    display: inline-block; /* Importante para que el ancho crezca con el contenido */
-    min-width: 100%;       /* Para que el color de selección cubra al menos todo el ancho visible */
+    display: inline-block;
+    /* Importante para que el ancho crezca con el contenido */
+    min-width: 100%;
+    /* Para que el color de selección cubra al menos todo el ancho visible */
 }
 
 .custom-element-tree .el-tree-node__content {
@@ -617,9 +642,11 @@ const handleNodeDoubleClick = (data) => {
 
 <style scoped>
 .tree-card :deep(.el-card__body) {
-    overflow: auto !important; /* Permite scroll horizontal y vertical */
+    overflow: auto !important;
+    /* Permite scroll horizontal y vertical */
     flex-grow: 1;
-    display: block; /* Cambiamos de flex a block para que el scroll horizontal funcione mejor */
+    display: block;
+    /* Cambiamos de flex a block para que el scroll horizontal funcione mejor */
     padding: 10px;
     border: 1px solid #ebeef5;
     border-radius: 4px;
@@ -739,6 +766,4 @@ const handleNodeDoubleClick = (data) => {
     font-size: 0.9em;
     color: #606266;
 }
-
-
 </style>

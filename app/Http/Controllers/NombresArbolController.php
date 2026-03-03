@@ -51,9 +51,7 @@ class NombresArbolController extends Controller
                            'hijos', 'ascendOblig'];
 
         if ($request->has('taxon')) {
-            log::info("Entre al primer if 1");
             if (!empty($request->categ)) {
-                log::info("Entre al primer if 2");
                 $categ = explode(',', $request->categ);
                 $catalog = explode(',', $request->catalog);
                 $taxon = $request->taxon;
@@ -63,7 +61,6 @@ class NombresArbolController extends Controller
                     ->paginate(150); // Reducir paginación
                     
             } else {
-                log::info("Entre al primer if 3");
                 $taxon = $request->taxon;
                 $nombres = Nombre::filtraArbolTax($taxon)
                     ->with($relacionesBase)
@@ -71,26 +68,23 @@ class NombresArbolController extends Controller
             }
             
         } elseif ($request->has('catalog')) {
-            log::info("Entre al primer if 4");
             $categ = explode(',', $request->categ);
             $catalog = explode(',', $request->catalog);
             
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion','relNombreAutor'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
-            
-            $nombres = Nombre::filtraArbol($categ, $catalog)
-                ->with($relacionesExtendidas)
-                ->paginate(150);
+
+            $query = Nombre::filtraArbol($categ, $catalog)
+            ->with($relacionesExtendidas);
+
+            $nombres = $query->paginate(150);
                 
         } elseif ($request->has('idNombre')) {
-            log::info("Entre al primer if 5");
             $valor = $request->idNombre;
             
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion', 'relNombreAutor'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdNombre', $valor)
@@ -98,10 +92,8 @@ class NombresArbolController extends Controller
                 ->get();
                 
         } else {
-            log::info("Entre al primer if 6");
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion', 'relNombreAutor'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdCategoriaTaxonomica', 1)
@@ -109,20 +101,22 @@ class NombresArbolController extends Controller
                 ->limit(100)
                 ->get();
         }
-        
-        log::info("Este es el valor de nombre:");
-        log::info($nombres);
-        
+
         // Procesar datos en batch (método del Trait)
         $data = $this->procesarNombresBatch($nombres);
-        
-        return response()->json([$data, $nombres, $valor]);
+
+        $categorias = explode(',', $request->categ);
+        $categComp = CategoriasTaxonomicas::wherein('IdCategoriaTaxonomica', $categorias)->get();
+
+        return response()->json([$data, $nombres, $valor, $categComp]);
     }
 
     public function fetchHijos($id)
     {
         // Relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat'];
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor'];
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
@@ -424,8 +418,8 @@ class NombresArbolController extends Controller
     //Funcion para dar de alta un taxon 
     public function store(Request $request)
     {
-        Log::info($request);
-        
+        $nodoRaiz = $request->raiz;
+
         // Validar por separado usando los FormRequest
         $datosNombre = Validator::make(
             $request->all(), 
@@ -441,11 +435,15 @@ class NombresArbolController extends Controller
             $request->all(),
             (new RequestRelNomAutor)->rules()
         )->validate();
-
+                
         try {
 
             //Log::info($request);
-            DB::transaction(function () use ($datosNombre, $datosScat, $datosRelNomAutor, &$nombres) {
+            DB::transaction(function () use ($datosNombre, 
+                                             $datosScat, 
+                                             $datosRelNomAutor, 
+                                             $nodoRaiz,
+                                             &$nombres) {
 
                 $nomAscendente = Nombre::find($datosNombre['nombreTaxon']['IdAscendente']);
                 
@@ -468,6 +466,13 @@ class NombresArbolController extends Controller
                     'FechaModificacion' => now()->toDateTimeString()
                 ]);
                 
+                if($nodoRaiz){
+                    $nombre->update([
+                        'IdNombreAscendente' => $nombre->IdNombre, 
+                        'IdAscendObligatorio' =>  $nombre->IdNombre
+                    ]);
+                }
+
                 $ascen = Helpers::listaAscen($nombre);
                 $ascenOblig = Helpers::listaAscenOblig($nombre);
                 $nomComp = Helpers::nombreCompleto($nombre);

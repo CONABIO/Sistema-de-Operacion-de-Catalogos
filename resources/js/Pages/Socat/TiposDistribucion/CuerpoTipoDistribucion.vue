@@ -112,6 +112,7 @@ const cerrarModal = () => {
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+    const nombreNuevoTrim = datosDelFormulario.Descripcion.trim().toLowerCase();
     const mensajeDuplicado = esEdicion 
         ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron." 
         : "El tipo de distribución que desea ingresar ya existe.";
