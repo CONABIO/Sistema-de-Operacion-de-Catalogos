@@ -261,9 +261,7 @@ trait OptimizaConsultasNombre
                 'children' => [],
                 'texto' => $nomCat,
                 'estatus' => $status,
-                //'numEjemp' => $conteo,
                 'referencias' => $referencias,
-                //'relaciones' => $this->relacionNombreBatch($relaciones),
                 'completo' => $nombre
             ];
         }

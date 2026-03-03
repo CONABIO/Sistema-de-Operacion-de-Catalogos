@@ -254,23 +254,26 @@ const fetchData = async () => {
 Estos watch se colocaron para que siempre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
 */
 // Watch para cuando cambian los datos (desde el padre o desde fetch)
+  watch(
+    () => props.datos,
+    (newDatos) => {
+      if (!newDatos || newDatos.length === 0) return;
 
-watch(() => props.datos, (newDatos) => {
-  if (newDatos && newDatos.length > 0) {
-    datosTabla.value = newDatos;
-    
-    // Seleccionar la primera fila después de actualizar
-    nextTick(() => {
-      selectedRow.value = newDatos[0];
-      if (tableRefInterna.value) {
-        tableRefInterna.value.setCurrentRow(newDatos[0]);
-      }
-      emit('row-click', newDatos[0]);
-    });
-  } else {
-    fetchData();
-  }
-}, { immediate: true, deep: true });
+      datosTabla.value = newDatos;
+
+      nextTick(() => {
+        const firstRow = newDatos[0];
+
+        // Solo si no hay fila seleccionada aún
+        if (!selectedRow.value) {
+          selectedRow.value = firstRow;
+          tableRefInterna.value?.setCurrentRow(firstRow);
+          emit('row-click', firstRow);
+        }
+      });
+    },
+    { immediate: true }
+  );
 
 // Watch para cuando cambian los datos paginados (después de fetch interno)
 watch(paginatedDatos, (newPaginated) => {
