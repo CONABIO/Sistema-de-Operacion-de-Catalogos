@@ -28,14 +28,16 @@ const nomComunInputRef = ref(null);
 const rules = {
     NomComun: [
         { required: true, message: 'El nombre común es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { whitespace: true, message: 'El nombre común no puede contener solo espacios en blanco', trigger: 'blur' },
+        { min: 1, max: 60, message: 'La longitud máxima es de 60 caracteres', trigger: 'blur' }
     ],
     Observaciones: [
-        { max: 500, message: 'La longitud debe ser menor o igual a 500', trigger: 'blur' }
+        { max: 255, message: 'La longitud debe ser menor o igual a 255', trigger: 'blur' }
     ],
     Lengua: [
         { required: true, message: 'La lengua es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
-        { max: 50, message: 'La longitud debe ser menor o igual a 50', trigger: 'blur' }
+        { whitespace: true, message: 'La lengua no puede contener solo espacios en blanco', trigger: 'blur' },
+        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
     ],
 };
 
@@ -79,19 +81,19 @@ watch(dialogVisible, (newVal) => {
 
 const intentarGuardar = async () => {
     if (!formRef.value) return;
-
-    const isValid = await formRef.value.validate();
+    const isValid = await formRef.value.validate().catch(() => false);
     if (isValid) {
         const datosParaEnviar = {
-            ...form.value,
+            NomComun: form.value.NomComun.trim(),
+            Lengua: form.value.Lengua.trim(),
+            Observaciones: form.value.Observaciones ? form.value.Observaciones.trim() : '',
+            
             idParaEditar: props.accion === 'editar' ? props.nomComEdit?.IdNomComun : null,
             accionOriginal: props.accion,
         };
         emit('formSubmited', datosParaEnviar);
-    } else {
-        ElMessage.error('Por favor, corrija los errores en el formulario.');
-    }
-};
+    } 
+}
 
 const cerrarDialogo = () => {
     emit('cerrar');
@@ -112,15 +114,15 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Nombre común" prop="NomComun">
-                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="255" show-word-limit />
+                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="60" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Lengua" prop="Lengua">
-                        <el-input type="text" v-model="form.Lengua" maxlength="50" show-word-limit />
+                        <el-input type="text" v-model="form.Lengua" maxlength="100" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Observaciones" prop="Observaciones">
-                        <el-input type="textarea" v-model="form.Observaciones" maxlength="500" show-word-limit />
+                        <el-input type="textarea" v-model="form.Observaciones" maxlength="255" show-word-limit />
                     </el-form-item>
 
                 </el-form>
@@ -175,7 +177,7 @@ const cerrarDialogo = () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
-    gap: 25px;
+    gap: 30px;
 }
 
 

@@ -1,359 +1,940 @@
 <script setup>
-import { ref, onMounted, triggerRef, h, computed, onUnmounted } from 'vue';
-import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
-import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
-import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
-import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
-import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
-//import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
-import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
-import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import { ElMessageBox } from 'element-plus';
-import { ElLoading } from 'element-plus';
-import AutorTaxon from '../Autores/AutorTaxon.vue';
-import Logo from '@/Components/Biotica/LogoCategoria.vue';
-import { usePage } from '@inertiajs/vue3';
-import usePermisos from '@/composables/usePermisos';
-import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
-import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
-import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-import { showConfirmMessage } from '@/Composables/mensajeConfirm';
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
-import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+  import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
+  import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
+  import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+  import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
+  import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
+  import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+  //import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
+  import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
+  import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
+  import EditarButton from '@/Components/Biotica/EditarButton.vue';
+  import { ElMessageBox } from 'element-plus';
+  import { ElLoading } from 'element-plus';
+  import AutorTaxon from '../Autores/AutorTaxon.vue';
+  import Logo from '@/Components/Biotica/LogoCategoria.vue';
+  import { usePage } from '@inertiajs/vue3';
+  import usePermisos from '@/composables/usePermisos';
+  import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+  import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
+  import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+  import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+  import { showConfirmMessage } from '@/Composables/mensajeConfirm';
+  //import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+  import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+  import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+  import salir from '@/Components/Biotica/SalirButton.vue';
+  import nuevoTax from '@/Components/Biotica/NuevoButton.vue';
 
-const { permisos } = usePermisos();
+  const { permisos } = usePermisos();
 
-const page = usePage();
-const authUser = page.props.auth.user || [];
+  const page = usePage();
+  const authUser = page.props.auth.user || [];
 
 
-//Definición de variables a utilizar
-const props = defineProps({
-  gruposTax: {
-    type: Object,
-    required: true,
-  },
-  categoriasTax: {
-    type: Object,
-    required: true,
+  //Definición de variables a utilizar
+  const props = defineProps({
+    gruposTax: {
+      type: Object,
+      required: true,
+    },
+    categoriasTax: {
+      type: Object,
+      required: true,
+    }
+  });
+
+  const totalRegNom = ref(0);
+  const numHijos = ref(0);
+
+  const activeNames = ref(['1']);
+
+  const columnasDefinidas = ref([
+    {
+      prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
+      align: 'left', tipo: 'imagenTexto', filtrable: true
+    },
+    {
+      prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
+      align: 'left', tipo: 'imagenTexto', filtrable: true
+    },
+    {
+      prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+      tipo: 'imagenTexto', filtrable: false
+    }
+  ]);
+
+  const opcionesFiltroNomenclatura = ref([
+    { label: 'TipoRelación', value: 'TipoRelacion' },
+    { label: 'NombreCompleto', value: 'Nombrecompleto' }
+  ]);
+
+  const opcionesPaginadoTabla = ref({ 'page-sizes': [2, 5, 10], 'page-size': 2 });
+
+  const totalRegRef = ref(0);
+
+  const columnasDefRef = ref([
+    {
+      prop: 'Cita', label: 'Cita completa', minWidth: '250',
+      align: 'left', tipo: 'textarea', filtrable: true
+    },
+  ]);
+
+  const opcionesFiltroRef = ref([
+    { label: 'Cita', value: 'Cita' }
+  ]);
+
+  //variables del paginado
+  const totalItems = ref(0);
+  const currentPage = ref(1);
+  const itemsPerPage = ref(150);
+
+  const tree = ref(null);
+  const selectedNode = ref([]);
+  const menuPosition = ref({ x: 0, y: 0 });
+  const isMenuVisible = ref(false);
+
+  const notificacionVisible = ref(false);
+  const notificacionTitulo = ref("");
+  const notificacionMensaje = ref("");
+  const notificacionTipo = ref("info");
+  const notificacionDuracion = ref(5000);
+
+  const dialogFormVisibleAlta = ref(false);
+  const taxonAct = ref([]);
+  const data = ref([]);
+  const categ = ref(null);
+  const catalogos = ref('');
+  const grupos = ref('');
+  const idsGrupos = ref('');
+  const mostrar = ref(false);
+  const dialogFormVisibleCat = ref(false);
+  const dialogFormVisibleRel = ref(false);
+  const dialogFormVisibleRelTax = ref(false);
+  const totalReg = ref(0);
+  const paginas = ref('');
+  const taxAct = ref([]);
+  const taxMov = ref([]);
+  const defaultProps = {
+    children: 'children',
+    label: 'label'
+  };
+
+  const selectedNodeKey = ref(null);
+  const filterText = ref('');
+  const catego = ref('');
+  const tablaNomenclatura = ref([]);
+  const tablaReferencias = ref([]);
+
+  const currentPageNomenclatura = ref(1);
+  const pageSizeNomenclatura = ref(2);
+
+  const taxActBiblio = ref([]);
+  const dialogFormVisibleBiblio = ref(false);
+  const dialogFormVisibleBiblioNom = ref(false);
+
+  const scrollbarHeight = ref('550px');
+  const dialogWidth = ref('35%');
+
+  const treeDataAscendentes = ref([]);
+  const dialogFormVisibleAscendentes = ref(false);
+
+  const mostrarLoading = ref(true);
+
+  const categoriaNuevoTax = ref({});
+
+  const mostrarNuevoTax = ref(false);
+
+  const updateLayout = () => {
+    if (window.innerHeight < 820) {
+      scrollbarHeight.value = '300px';
+    } else {
+      scrollbarHeight.value = '350px';
+    }
+
+    if (window.innerWidth <= 1440) {
+      dialogWidth.value = '55%';
+    } else {
+      dialogWidth.value = '35%';
+    }
+  };
+
+  onMounted(() => {
+    dialogFormVisibleCat.value = true;
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+  });
+
+  onUnmounted(() => {
+
+    window.removeEventListener('resize', updateLayout);
+  });
+
+
+  const datosPaginadosNomenclatura = computed(() => {
+    if (!tablaNomenclatura.value || tablaNomenclatura.value.length === 0) {
+      return [];
+    }
+
+    const inicio = (currentPageNomenclatura.value - 1) * pageSizeNomenclatura.value;
+    const fin = inicio + pageSizeNomenclatura.value;
+
+    return tablaNomenclatura.value.slice(inicio, fin);
+  });
+
+
+  const opcionesPaginadoTablas = { 'page-size': 2, 'page-sizes': [2, 5, 10, 20] };
+
+
+  const filtro_Catalogos = () => {
+    dialogFormVisibleCat.value = true;
+  };
+
+  const hasPermisos = (etiqueta, modulo) => {
+
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+  };
+
+  const openDialog = (nodeData) => {
+    taxonAct.value = nodeData;
+
+    emit('reset-form');
+    dialogFormVisibleAlta.value = true;
+  };
+
+  const emit = defineEmits(['reset-form']);
+  const resetFormNombre = () => {
+    emit('reset-form');
   }
-});
 
-const totalRegNom = ref(0);
-const numHijos = ref(0);
+  /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    Se agrega la reasignacion de referencia para que cuando cierra 
+      la ventana se actualice como si se ingresara de inicio*/
+  const closeDialog = () => {
+    taxonAct.value = { ...taxonAct.value };
+    dialogFormVisibleAlta.value = false;
+  };
 
-const activeNames = ref(['1']);
+  const closeDialogRel = async() => {
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
 
-const columnasDefinidas = ref([
-  {
-    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
-    align: 'left', tipo: 'imagenTexto', filtrable: true
-  },
-  {
-    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
-    align: 'left', tipo: 'imagenTexto', filtrable: true
-  },
-  {
-    prop: 'Biblio', label: '', minWidth: '55', align: 'left',
-    tipo: 'imagenTexto', filtrable: false
+    const params= {
+                    taxAct: taxonAct.value.id
+                  };
+
+    const response = await axios.get('/carga-RelacionesTax', { params });
+
+    tablaNomenclatura.value = response.data;
+
+    dialogFormVisibleRel.value = false;
+
+    loading.close();
+
+  };
+
+  const cerrarDialog = (valor) => {
+    dialogFormVisibleCat.value = valor;
+  };
+
+  const recibeGrupos = async (data) => {
+    catalogos.value = data['catalogos'];
+    grupos.value = data['grupos'];
+    idsGrupos.value = data['ids'];
+
+    tablaNomenclatura.value= [];
+    tablaReferencias.value = [];
+    totalRegNom.value = 0;
+    totalRegRef.value = 0;
+
+    if (catego.value === '') {
+      //open("Se debe seleccionar una categoría taxonómica.");
+      mostrarNotificacion(
+        "Aviso",
+        "Se debe seleccionar una categoría taxonómica",
+        "success",
+        7000
+    );
+    } else {
+      let categ = [];
+      categ.push(catego.value)
+      handleChange(categ);
+    }
+  };
+
+  //Funcion para los cambios recibidos
+  const recibeTaxMod = async (res) => {
+
+    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+
+    for (const node of data.value) {
+      if (node.id === res.id) {
+        Object.assign(node, res);
+        return true;  
+      }
+
+      if (node.children && node.children.length > 0) {
+        const found = await updateChildNode(node.children, res);
+        if (found) break;
+      }
+    }
+  };
+
+  const updateChildNode = async (children, res) => {
+    for (const child of children) {
+      if (child.id === res.id) {
+        Object.assign(child, res);
+        return true; 
+      }
+      if (child.children && child.children.length > 0) {
+        const found = await updateChildNode(child.children, res);
+        if (found) return true;
+      }
+    }
+    return false; 
+  };
+
+  //Función para recibir los nuevos taxones 
+  const recibeTaxNuevo = async (res) => {
+    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+
+    if (index !== -1) {
+      if (!data.value[index].children) {
+        data.value[index].children = [];
+      }
+
+      data.value[index].children.push(res);
+
+      // 👇 esperar a que el DOM y el tree se actualicen
+      await nextTick();
+
+      // 👇 expandir el padre (opcional pero recomendado)
+      tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
+
+      // 👇 seleccionar el nuevo nodo
+      selectedNodeKey.value = res.id;
+    }else{
+      data.value.push(res);
+
+      // 👇 esperar a que el DOM y el tree se actualicen
+      await nextTick();
+
+      // 👇 seleccionar el nuevo nodo
+      selectedNodeKey.value = res.id;
+
+      mostrarNuevoTax.value = false;
+    }
+  };
+
+  //Función para recibir los taxones que dan de baja
+  const recibeTaxBaja = (res) => {
+
+    // 1️⃣ Buscar si es nodo raíz
+    const rootIndex = data.value.findIndex(
+      node => String(node.id) === String(res.Id)
+    );
+
+    if (rootIndex !== -1) {
+      console.log("Es nodo raíz");
+      data.value.splice(rootIndex, 1);
+      taxonAct.value = [];
+      return true;
+    }
+
+    // 2️⃣ Si no es raíz, buscar en hijos (recursivo)
+    for (let i = 0; i < data.value.length; i++) {
+      if (data.value[i].children?.length) {
+        const found = deleteChildNode(data.value[i].children, res);
+        if (found) {
+          taxonAct.value = [];
+          return true;
+        }
+      }
+    }
+
+    // 3️⃣ Si no se encontró en ningún lado
+    return false;
+  };
+
+  const deleteChildNode = (children, res) => {
+
+    for (let i = 0; i < children.length; i++) {
+
+      // 🔹 Si lo encuentra en este nivel
+      if (String(children[i].id) === String(res.Id)) {
+        children.splice(i, 1);
+        return true;
+      }
+
+      // 🔹 Si tiene hijos, buscar más profundo
+      if (children[i].children?.length) {
+        const found = deleteChildNode(children[i].children, res);
+        if (found) return true;
+      }
+    }
+
+    return false;
+  };
+
+  //Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
+  onMounted(() => {
+    dialogFormVisibleCat.value = true;
+    console.log(authUser);
+  });
+
+  //Funcion para el envio de mensajes en pantalla
+  const open = (mensaje) => {
+    ElMessageBox.alert(mensaje, 'Nombres taxonómicos', {
+      confirmButtonText: 'OK',
+    });
   }
-]);
 
-const opcionesFiltroNomenclatura = ref([
-  { label: 'TipoRelación', value: 'TipoRelacion' },
-  { label: 'NombreCompleto', value: 'Nombrecompleto' }
-]);
+  //Esta funcion se dispara una vez que se selecciona una categia taxonomica
+  const handleChange = async (value) => {
+    if (value != undefined) {
+      filterText.value = "";
+      mostrar.value = false;
+      catego.value = value[0];
 
-const opcionesPaginadoTabla = ref({ 'page-sizes': [2, 5, 10], 'page-size': 2 });
+      if (idsGrupos.value != '') {
+        const params = {
+          categ: value[0],
+          catalog: idsGrupos.value
+        };
 
-const totalRegRef = ref(0);
+        const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+        
+        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
+        const response = await axios.get('/cargar-nomArb', { params });
+        if (response.status === 200) {
+          data.value = response.data[0];
+          totalItems.value = response.data[1].total;
+          paginas.value = response.data[1].last_page;
 
-const columnasDefRef = ref([
-  {
-    prop: 'Cita', label: 'Cita completa', minWidth: '250',
-    align: 'left', tipo: 'textarea', filtrable: true
-  },
-]);
+          if(response.data[3].length === 1 &&(response.data[0].length === 0 && 
+                                              (response.data[3][0].IdAscendente === 0 || 
+                                                response.data[3][0].IdAscendente === null))){
+            
+            categoriaNuevoTax.value = response.data[3][0];
+            mostrarNuevoTax.value = true;
+          }else{
+            mostrarNuevoTax.value = false;
+          }
+        }
+        else {
+          console.log("Se presentó un error en la recuperación de los datos");
+        }
+        loading.close();
 
-const opcionesFiltroRef = ref([
-  { label: 'Cita', value: 'Cita' }
-]);
+        await nextTick();
 
-//variables del paginado
-const totalItems = ref(0);
-const currentPage = ref(1);
-const itemsPerPage = ref(150);
-
-const tree = ref(null);
-const selectedNode = ref([]);
-const menuPosition = ref({ x: 0, y: 0 });
-const isMenuVisible = ref(false);
-
-const notificacionVisible = ref(false);
-const notificacionTitulo = ref("");
-const notificacionMensaje = ref("");
-const notificacionTipo = ref("info");
-const notificacionDuracion = ref(5000);
-
-const dialogFormVisibleAlta = ref(false);
-const taxonAct = ref([]);
-const data = ref([]);
-const categ = ref(null);
-const catalogos = ref('');
-const grupos = ref('');
-const idsGrupos = ref('');
-const mostrar = ref(false);
-const dialogFormVisibleCat = ref(false);
-const dialogFormVisibleRel = ref(false);
-const dialogFormVisibleRelTax = ref(false);
-const totalReg = ref(0);
-const paginas = ref('');
-const taxAct = ref([]);
-const taxMov = ref([]);
-const defaultProps = {
-  children: 'children',
-  label: 'label'
-};
-
-const selectedNodeKey = ref(null);
-const filterText = ref('');
-const catego = ref('');
-const tablaNomenclatura = ref([]);
-const tablaReferencias = ref([]);
-
-const currentPageNomenclatura = ref(1);
-const pageSizeNomenclatura = ref(2);
-
-const taxActBiblio = ref([]);
-const dialogFormVisibleBiblio = ref(false);
-const dialogFormVisibleBiblioNom = ref(false);
-
-const scrollbarHeight = ref('550px');
-const dialogWidth = ref('35%');
-
-const treeDataAscendentes = ref([]);
-const dialogFormVisibleAscendentes = ref(false);
-
-const mostrarLoading = ref(true);
-
-const updateLayout = () => {
-  if (window.innerHeight < 820) {
-    scrollbarHeight.value = '300px';
-  } else {
-    scrollbarHeight.value = '350px';
+        if(data.value.length > 0)
+        {
+          selectedNodeKey.value= data.value[0].id;
+          tree.value.setCurrentKey(data.value[0].id);
+          
+          let node = tree.value.getNode(data.value[0].id);
+          
+          expande(node.data, node);
+        }
+      }
+    }else
+    {
+      catego.value = ''; 
+      tablaNomenclatura.value = [];
+      tablaReferencias.value = [];
+      totalRegNom.value = 0;
+      totalRegRef.value = 0;
+      data.value = [];
+      numHijos.value = 0;
+      taxonAct.value = [];
+    }
   }
 
-  if (window.innerWidth <= 1440) {
-    dialogWidth.value = '55%';
-  } else {
-    dialogWidth.value = '35%';
+  //Función para hacer la busqueda de los valores colocados en el input de busqueda
+  const filterNode = async (value) => {
+    mostrar.value = false;
+
+    const loading = ElLoading.service({
+      lock: true,
+      text: "Loading",
+      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+      backgroud: 'rgba(255,255,255,0.85)',
+    });
+
+    if (value != '' && idsGrupos.value != '' && categ.value != null) {
+      const params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: value
+      };
+
+      const response = await axios.get('/cargar-nomArb',
+        { params });
+      
+      if (response.status === 200) {
+        data.value = response.data[0];
+        totalItems.value = response.data[1].total;
+        paginas.value = response.data[1].last_page;
+        loading.close();
+      }
+    }else if (idsGrupos.value != '' && categ.value != null){
+      handleChange(categ.value);
+    }
+
+    loading.close();
   }
-};
 
-onMounted(() => {
-  dialogFormVisibleCat.value = true;
+  const mostrarNotificacion = (
+    titulo,
+    mensaje,
+    tipo = "warning",
+    duracion = 5000,
+    dangerouslyUseHTML = false
+  ) => {
+    console.log("Entre a mostrar la notificación");
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+  };
 
-  updateLayout();
-  window.addEventListener('resize', updateLayout);
-});
+  const cerrarNotificacion = () => {
+    notificacionVisible.value = false;
+  };
 
-onUnmounted(() => {
+  //Funcion que se ejecuta para la expancion de un nodo
+  //const expande = async (draggingNode, nodeData, nodeComponent) => {
+  const expande = async (draggingNode) => {
 
-  window.removeEventListener('resize', updateLayout);
-});
+    let loadingInstance = null;
 
+    isMenuVisible.value = false;
+    mostrar.value = true;
+    taxonAct.value = draggingNode;
 
-const datosPaginadosNomenclatura = computed(() => {
-  if (!tablaNomenclatura.value || tablaNomenclatura.value.length === 0) {
-    return [];
+    if(draggingNode.children.length > 0)
+    {
+      numHijos.value = draggingNode.children.length;
+    }
+
+    if(mostrarLoading.value)
+    {
+      loadingInstance = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+    }
+
+    if (draggingNode.children.length === 0) {
+      
+      const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
+
+      if (response.status === 200) {
+        if (draggingNode.children.length === 0) {
+          for (let i = 0; i < response.data[0].length; i++) {
+            draggingNode.children.push(response.data[0][i]);
+          }
+        }
+
+        const node = tree.value.getNode(draggingNode);
+        numHijos.value = draggingNode.children.length;
+        node.expanded = true;
+
+      }
+    }
+    const params= {
+                    taxAct: draggingNode.id
+                };  
+                
+    const responseNom = await axios.get('/carga-RelacionesTax', { params });
+
+    if(mostrarLoading.value)
+    {
+      loadingInstance.close();
+    }
+    
+    if(responseNom.data.length >0 )
+    {
+      tablaNomenclatura.value = responseNom.data;
+
+      totalRegNom.value = tablaNomenclatura.value.length;
+      tablaReferencias.value = draggingNode.referencias;
+      totalRegRef.value = draggingNode?.referencias?.length;
+      selectedNodeKey.value = draggingNode.id;
+    }
+
+    mostrarLoading.value = true
   }
 
-  const inicio = (currentPageNomenclatura.value - 1) * pageSizeNomenclatura.value;
-  const fin = inicio + pageSizeNomenclatura.value;
+  //Función para mover un taxón y reasignarlo a otro 
+  const mover = async (node) => {
+    if (taxMov.value.length === 0) {
+      try {
 
-  return tablaNomenclatura.value.slice(inicio, fin);
-});
+        const result = await showConfirmMessage({
+          title: 'Atención',
+          message: '¿Está seguro de mover este taxón?',
+          icon: '!'
+        });
+
+        if (!result) {
+          return;
+        }
+
+        node.data.customClass = 'highlight-node';
+        taxMov.value = node;
+
+        triggerRef(data);
+
+        await mostrarNotificacion(
+          "Aviso",
+          "El taxón será reasignado.",
+          "info",
+          5000
+        );
+
+      } catch (error) {
+        await ElMessageBox.alert("Acción cancelada", {
+          confirmButtonText: "OK",
+          type: 'info'
+        });
+      }
+    } else {
+      if (taxMov.value.data.completo.scat === undefined) {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
+          "error",
+          5000
+        );
+        return;
+      } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0) {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
+          "error",
+          5000
+        );
+        return;
+      }
+      if (taxMov.value.data.id === node.data.id) {
+        taxMov.value = [];
+        await mostrarNotificacion(
+          "Aviso",
+          "Se cancelará el movimiento del taxón",
+          "info",
+          5000
+        );
+        delete node.data.customClass;
+        return;
+      }
+      if (taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT) {
+        if (node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 - 1)) {
+          const params = {
+            estatusInicio: taxMov.value.data.completo.Estatus,
+            nomAct: taxMov.value.data.id
+          };
+
+          try {
+            const response = await axios.get('/valCamEstatus', params);
+
+            //Lógica para validación de estatus
+            switch (taxMov.value.data.completo.Estatus) {
+              case 1:
+                switch (node.data.completo.Estatus) {
+                  case 1:
+                    await moverTaxon(
+                      taxMov.value.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node
+                    );
+                    break;
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxonMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node
+                      );
+                    }
+                    break;
+                  default:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                    break;
+                }
+                break;
+              case 2:
+                switch (node.data.completo.Estatus) {
+                  case 2:
+                    await moverTaxon(
+                      taxMov.value.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node
+                    );
+                    break;
+                  case 1:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov,
+                        node
+                      );
+                    }
+                    break;
+                  default:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                }
+                break;
+              case 6:
+                switch (node.data.completo.Estatus) {
+                  case 6:
+                  case -9:
+                    await moverTaxon(
+                      taxMov.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node);
+                    break;
+                  case 1:
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node);
+                    }
+                }
+                break;
+              case -9:
+                switch (node.data.completo.Estatus) {
+                  case 6:
+                    await moverTaxon(
+                      taxMov.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node);
+                    break;
+                  case -9:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                    break;
+                  case 1:
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node
+                      );
+                    }
+                    break;
+                }
+                break;
+            }
+          } catch (error) {
+            console.error('Error al validar estatus:', error);
+            ElMessageBox.error('Error al validar el estatus del taxón');
+          }
+        } else {
+          await mostrarNotificacion(
+            "Error",
+            `Está intentando mover el taxón a una categoria no permitida.`,
+            "error",
+            5000
+          );
+        }
+      } else {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,
+          "error",
+          5000
+        );
+      }
+    }
+  }
+
+  const manejarEliminarRel = (item) => {  
+    
+    const procederConEliminacion = async () => {
+
+      try {
+        ElMessageBox.close();
+
+        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+                                                                                taxAct: props.taxonAct.id}});
+        
+        tablaNomenclatura.value = response.data;
+
+        mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+      }
+    };
+    const cancelarEliminacion = () => {
+      ElMessageBox.close();
+    };
+
+    const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
+
+    const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+    
+    ElMessageBox({
+      title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarEliminacion }),
+          h(BotonAceptar, { onClick: procederConEliminacion }),
+        ])
+      ])
+    }).catch(() => { });
+  };
+
+  const manejarEliminarRef = (item)=>{
+    
+    const procederConEliminacion = async () => {
+
+      try {
+        ElMessageBox.close();
+
+        const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
+                                                                                  taxAct: taxonAct.value.id}});     
+          
+          tablaReferencias.value = response.data;
+
+          totalRegRef.value = response.data.length;
+
+        mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
+      }
+    };
+    const cancelarEliminacion = () => {
+      ElMessageBox.close();
+    };
 
 
-const opcionesPaginadoTablas = { 'page-size': 2, 'page-sizes': [2, 5, 10, 20] };
+    const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+    
+    ElMessageBox({
+      title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarEliminacion }),
+          h(BotonAceptar, { onClick: procederConEliminacion }),
+        ])
+      ])
+    }).catch(() => { });
+  }
 
+  const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
+    console.log("Entre a mover el taxon");
+    console.log("Estos son los parametros recibidos taxMover: ", taxMover,
+                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+                " nodoRecb: ", nodoRecb);
+                
+    if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
+      await mostrarNotificacion(
+        "Error",
+        'El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',
+        "error",
+        5000
+      );
+      return;
+    }
 
-const filtro_Catalogos = () => {
-  dialogFormVisibleCat.value = true;
-};
-
-const hasPermisos = (etiqueta, modulo) => {
-
-  const permiso = permisos.find(item => item.NombreModulo === etiqueta);
-
-  return permiso[modulo];
-};
-
-const openDialog = (nodeData) => {
-
-  //mostrarLoading.value = false;
-
-  emit('reset-form');
-  dialogFormVisibleAlta.value = true;
-};
-
-const emit = defineEmits(['reset-form']);
-const resetFormNombre = () => {
-  emit('reset-form');
-}
-
-const closeDialog = () => {
-  dialogFormVisibleAlta.value = false;
-};
-
-const closeDialogRel = async() => {
-  const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
+    try {
+      const result = await showConfirmMessage({
+        title: 'Atención',
+        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
+                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
+                    ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
+        icon: '!'
       });
 
-  const params= {
-                  taxAct: taxonAct.value.id
-                };
+      if (!result) {
+        return;
+      }
 
-  const response = await axios.get('/carga-RelacionesTax', { params });
-
-  tablaNomenclatura.value = response.data;
-
-  dialogFormVisibleRel.value = false;
-
-  loading.close();
-
-};
-
-const cerrarDialog = (valor) => {
-  dialogFormVisibleCat.value = valor;
-};
-
-const recibeGrupos = async (data) => {
-  catalogos.value = data['catalogos'];
-  grupos.value = data['grupos'];
-  idsGrupos.value = data['ids'];
-
-  tablaNomenclatura.value= [];
-  tablaReferencias.value = [];
-  totalRegNom.value = 0;
-  totalRegRef.value = 0;
-
-  if (categ.value === '') {
-    open("Se debe seleccionar una categoría taxonómica.");
-  } else {
-    let categ = [];
-    categ.push(catego.value)
-    handleChange(categ);
-  }
-};
-
-//Funcion para los cambios recibidos
-const recibeTaxMod = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  for (const node of data.value) {
-    if (node.id === res.id) {
-      Object.assign(node, res);
-      return true;  
-    }
-
-    if (node.children && node.children.length > 0) {
-      const found = await updateChildNode(node.children, res);
-      if (found) break;
-    }
-  }
-};
-
-const updateChildNode = async (children, res) => {
-  for (const child of children) {
-    if (child.id === res.id) {
-      Object.assign(child, res);
-      return true; 
-    }
-    if (child.children && child.children.length > 0) {
-      const found = await updateChildNode(child.children, res);
-      if (found) return true;
-    }
-  }
-  return false; 
-};
-
-//Función para recibir los nuevos taxones 
-const recibeTaxNuevo = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  if (index !== -1) {
-    if (!data.value[index].children) {
-      data.value[index].children = [];
-    }
-    data.value[index].children.push(res);
-  }
-};
-
-//Función para recibir los taxones que dan de baja
-const recibeTaxBaja = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  let found = false;
-
-  for (let i = 0; i < data.value.length; i++) {
-    if (String(data.value[i].id) === String(res.Id)) {
-      children.splice(i, 1);
-      return true;
-    }
-
-    if (data.value[i].children && data.value[i].children.length > 0) {
-
-      found = deleteChildNode(data.value[i].children, res);
-      if (found) break;
-    }
-  }
-}
-
-const deleteChildNode = async (children, res) => {
-  for (let i = 0; i < children.length; i++) {
-    if (String(children[i].id) === String(res.Id)) {
-      children.splice(i, 1);
-      return true;
-    }
-  }
-  return false;
-};
-
-//Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
-onMounted(() => {
-  dialogFormVisibleCat.value = true;
-  console.log(authUser);
-});
-
-//Funcion para el envio de mensajes en pantalla
-const open = (mensaje) => {
-  ElMessageBox.alert(mensaje, 'Nombres taxonómicos', {
-    confirmButtonText: 'OK',
-  });
-}
-
-//Esta funcion se dispara una vez que se selecciona una categia taxonomica
-const handleChange = async (value) => {
-  if (value != undefined) {
-    filterText.value = "";
-    mostrar.value = false;
-    catego.value = value[0];
-
-    if (idsGrupos.value != '') {
-      const params = {
-        categ: value[0],
-        catalog: idsGrupos.value
+      const requestData = {
+        taxonMover: taxMover,
+        taxonRecibir: taxRecb,
+        categorias: catego.value,
+        grupos: idsGrupos.value,
+        alias: authUser.Alias
       };
 
       const loading = ElLoading.service({
@@ -364,500 +945,178 @@ const handleChange = async (value) => {
       });
 
       //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-      const response = await axios.get('/cargar-nomArb', { params });
+      const response = await axios.put('/mueveTaxones', requestData);
 
       if (response.status === 200) {
+        await mostrarNotificacion(
+          "Aviso",
+          'El taxón sea reasignado exitosamente',
+          "success",
+          5000
+        );
 
-        data.value = response.data[0];
-        totalItems.value = response.data[1].total;
-        paginas.value = response.data[1].last_page;
+        const params = {
+          categ: catego.value,
+          catalog: idsGrupos.value
+        }
+
+        const resp = await axios.get('/cargar-nomArb', { params: params });
+
+        data.value = resp.data[0];
+        totalReg.value = resp.data[1].total;
+        paginas.value = resp.data[1].last_page;
+
       }
       else {
-        console.log("Se presentó un error en la recuperación de los datos");
-      }
-      loading.close();
-    }
-  }else
-  {
-    catego.value = ''; 
-    tablaNomenclatura.value = [];
-    tablaReferencias.value = [];
-    totalRegNom.value = 0;
-    totalRegRef.value = 0;
-    data.value = [];
-  }
-}
-
-//Función para hacer la busqueda de los valores colocados en el input de busqueda
-const filterNode = async (value) => {
-  mostrar.value = false;
-
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  if (value != '' && idsGrupos.value != '' && categ.value != null) {
-    const params = {
-      categ: categ.value[0],
-      catalog: idsGrupos.value,
-      taxon: value
-    };
-
-    const response = await axios.get('/cargar-nomArb',
-      { params });
-    
-    if (response.status === 200) {
-      data.value = response.data[0];
-      totalItems.value = response.data[1].total;
-      paginas.value = response.data[1].last_page;
-      loading.close();
-    }
-  }else if (idsGrupos.value != '' && categ.value != null){
-    handleChange(categ.value);
-  }
-
-  loading.close();
-}
-
-const mostrarNotificacion = (
-  titulo,
-  mensaje,
-  tipo = "warning",
-  duracion = 5000,
-  dangerouslyUseHTML = false
-) => {
-  console.log("Entre a mostrar la notificación");
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
-//Funcion que se ejecuta para la expancion de un nodo
-//const expande = async (draggingNode, nodeData, nodeComponent) => {
-const expande = async (draggingNode) => {
-
-  let loadingInstance = null;
-
-  isMenuVisible.value = false;
-  mostrar.value = true;
-  taxonAct.value = draggingNode;
-
-  if(mostrarLoading.value)
-  {
-    loadingInstance = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-  }
-
-  if (draggingNode.children.length === 0) {
-    
-    const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
-
-    if (response.status === 200) {
-      if (draggingNode.children.length === 0) {
-        for (let i = 0; i < response.data[0].length; i++) {
-          draggingNode.children.push(response.data[0][i]);
-        }
-      }
-
-      const node = tree.value.getNode(draggingNode);
-      numHijos.value = draggingNode.children.length;
-      node.expanded = true;
-
-    }
-  }
-
-  const params= {
-                  taxAct: draggingNode.id
-              };  
-              
-  const responseNom = await axios.get('/carga-RelacionesTax', { params });
-
-  tablaNomenclatura.value = responseNom.data;
-
-  if(mostrarLoading.value)
-  {
-    loadingInstance.close();
-  }
-  
-  totalRegNom.value = tablaNomenclatura.value.length;
-  tablaReferencias.value = draggingNode.referencias;
-  totalRegRef.value = draggingNode.referencias.length;
-  selectedNodeKey.value = draggingNode.id;
-
-  mostrarLoading.value = true
-}
-
-const proceder = () => {
-  console.log("Pase el movimeinto");
-}
-
-const cancelar = () => {
-  console.log("Evite el movimeinto");
-}
-//Función para mover un taxón y reasignarlo a otro 
-const mover = async (node) => {
-
-  if (taxMov.value.length === 0) {
-    try {
-
-      const result = await showConfirmMessage({
-        title: 'Atención',
-        message: '¿Está seguro de mover este taxón?',
-        icon: '!'
-      });
-
-      if (!result) {
-        return;
-      }
-
-      node.data.customClass = 'highlight-node';
-      taxMov.value = node;
-
-      triggerRef(data);
-
-      await mostrarNotificacion(
-        "Aviso",
-        "El taxón será reasignado.",
-        "info",
-        5000
-      );
-
-    } catch (error) {
-      await ElMessageBox.alert("Acción cancelada", {
-        confirmButtonText: "OK",
-        type: 'info'
-      });
-    }
-  } else {
-    if (taxMov.value.data.completo.scat === undefined) {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
-        "error",
-        5000
-      );
-      return;
-    } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0) {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
-        "error",
-        5000
-      );
-      return;
-    }
-    if (taxMov.value.data.id === node.data.id) {
-      taxMov.value = [];
-      await mostrarNotificacion(
-        "Aviso",
-        "Se cancelará el movimiento del taxón",
-        "info",
-        5000
-      );
-      delete node.data.customClass;
-      return;
-    }
-    if (taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT) {
-      if (node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 - 1)) {
-        const params = {
-          estatusInicio: taxMov.value.data.completo.Estatus,
-          nomAct: taxMov.value.data.id
-        };
-
-        try {
-          const response = await axios.get('/valCamEstatus', params);
-
-          //Lógica para validación de estatus
-          switch (taxMov.value.data.completo.Estatus) {
-            case 1:
-              switch (node.data.completo.Estatus) {
-                case 1:
-                  await moverTaxon(
-                    taxMov.value.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node
-                  );
-                  break;
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxonMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node
-                    );
-                  }
-                  break;
-                default:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-                  break;
-              }
-              break;
-            case 2:
-              switch (node.data.completo.Estatus) {
-                case 2:
-                  await moverTaxon(
-                    taxMov.value.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node
-                  );
-                  break;
-                case 1:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov,
-                      node
-                    );
-                  }
-                  break;
-                default:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-              }
-              break;
-            case 6:
-              switch (node.data.completo.Estatus) {
-                case 6:
-                case -9:
-                  await moverTaxon(
-                    taxMov.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node);
-                  break;
-                case 1:
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node);
-                  }
-              }
-              break;
-            case -9:
-              switch (node.data.completo.Estatus) {
-                case 6:
-                  await moverTaxon(
-                    taxMov.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node);
-                  break;
-                case -9:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-                  break;
-                case 1:
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node
-                    );
-                  }
-                  break;
-              }
-              break;
-          }
-        } catch (error) {
-          console.error('Error al validar estatus:', error);
-          ElMessageBox.error('Error al validar el estatus del taxón');
-        }
-      } else {
         await mostrarNotificacion(
+          "Aviso",
+          'El taxón que intenta mover no se pudo reasignar',
           "Error",
-          `Está intentando mover el taxón a una categoria no permitida.`,
-          "error",
           5000
         );
       }
-    } else {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,
-        "error",
-        5000
-      );
+
+      loading.close();
+
+
+    } catch (error) {
+      // El usuario canceló la operación
+      console.log(error);
+      console.log('Operación cancelada por el usuario');
+    }
+
+  }
+
+  const abrirBiblio = async () => {
+
+    if(taxonAct.value.id > 0)
+    {
+      taxActBiblio.value = props.taxonAct;
+
+      totalRegNom.value = tablaNomenclatura.value.length;
+
+      dialogFormVisibleBiblio.value = true;
+
+    }else{
+      mostrarNotificacionError("Bibliografia", 
+                              "Se debe seleccionar un tipo de relación"),
+                              "Error"
     }
   }
-}
 
-const manejarEliminarRel = (item) => {
-  
-  const procederConEliminacion = async () => {
+  const abrirBiblioNombre = async() =>{
+    if(taxonAct.value.id > 0)
+    {
+      dialogFormVisibleBiblioNom.value = true;
+    }else{
+      mostrarNotificacionError("Bibliografia", 
+                              "Se debe seleccionar un taxón"),
+                              "Error"
+    }
+  }
 
-    try {
-      ElMessageBox.close();
+  const cerrarDialogBiblio = async() => {
 
-      const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
-                                                                              taxAct: props.taxonAct.id}});
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+      const params= {
+                    taxAct: taxonAct.value.id
+                  };   
+      
+      const response = await axios.get('/carga-RelacionesTax', { params });
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
-    } catch (apiError) {
-      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+      totalRegNom.value = response.data.length;
+
+      dialogFormVisibleBiblio.value = false;
+
+    loading.close();
+    
+  };
+
+  const cerrarRelNomBiblio = async() => {
+
+    if(taxonAct.value.id > 0){
+      const params= {
+                      taxAct: taxonAct.value.id
+                    };
+
+      const response = await axios.get('/actualizaReferenciasNombre', { params });
+
+      tablaReferencias.value = response.data;
+
+      totalRegRef.value = response.data.length;
     }
-  };
-  const cancelarEliminacion = () => {
-    ElMessageBox.close();
-  };
-
-  const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
-
-  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-  
-  ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }),
-        h(BotonAceptar, { onClick: procederConEliminacion }),
-      ])
-    ])
-  }).catch(() => { });
-};
-
-const manejarEliminarRef = (item)=>{
-  
-  const procederConEliminacion = async () => {
-
-    try {
-      ElMessageBox.close();
-
-       const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
-                                                                                taxAct: taxonAct.value.id}});     
-        
-        tablaReferencias.value = response.data;
-
-        totalRegRef.value = response.data.length;
-
-      mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
-    } catch (apiError) {
-      mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
-    }
-  };
-  const cancelarEliminacion = () => {
-    ElMessageBox.close();
-  };
-
-
-  const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-  
-  ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }),
-        h(BotonAceptar, { onClick: procederConEliminacion }),
-      ])
-    ])
-  }).catch(() => { });
-}
-
-const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
-
-  if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
-    await mostrarNotificacion(
-      "Error",
-      'El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',
-      "error",
-      5000
-    );
-    return;
+    dialogFormVisibleBiblioNom.value = false;
   }
 
-  try {
-    const result = await showConfirmMessage({
-      title: 'Atención',
-      message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
-                  ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
-                  ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
-      icon: '!'
-    });
+  const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
+    notificacionVisible.value = true;
+  };
 
-    if (!result) {
-      return;
-    }
+  const handleNodeRightClick = (event, data, node) => {
 
-    const requestData = {
-      taxonMover: taxMover,
-      taxonRecibir: taxRecb,
-      categorias: catego.value,
-      grupos: idsGrupos.value,
-      alias: authUser.Alias
+    event.preventDefault(); // Prevenir el menú contextual del navegador
+
+    tree.value.setCurrentKey(data.id);
+
+    expande(data, node)
+
+    taxAct.value = data;
+    selectedNode.value = data;
+    menuPosition.value = {
+      x: event.clientX,
+      y: event.clientY
     };
+    isMenuVisible.value = true;
 
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', handleEscKey);
+  };
+
+  // Manejador de acciones del menú
+  const handleMenuClick = (action) => {
+    isMenuVisible.value = false;
+    // Aquí puedes agregar lógica específica para cada acción
+    console.log('Acción seleccionada:', action);
+  };
+
+  // Cerrar menú
+  const closeMenu = () => {
+    isMenuVisible.value = false;
+    document.removeEventListener('click', closeMenu);
+    document.removeEventListener('keydown', handleEscKey);
+  };
+
+  // Manejador de tecla Escape
+  const handleEscKey = (event) => {
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      closeMenu();
+    }
+  };
+
+  const handlePageChange = (page) => {
+    console.log("Este es el valor de page:", page);
+    currentPage.value = page;
+    fetchFilteredData();
+  };
+
+  const fetchFilteredData = async () => {
+    const params = {
+      categ: catego.value,
+      catalog: idsGrupos.value,
+      page: currentPage.value
+    };
     const loading = ElLoading.service({
       lock: true,
       text: "Loading",
@@ -865,254 +1124,92 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
       backgroud: 'rgba(255,255,255,0.85)',
     });
 
-    //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-    const response = await axios.put('/mueveTaxones', requestData);
-
+    const response = await axios.get("/cargar-nomArb", { params });
     if (response.status === 200) {
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón sea reasignado exitosamente',
-        "error",
-        5000
-      );
-
-      const params = {
-        categ: catego.value,
-        catalog: idsGrupos.value
-      }
-
-      const resp = await axios.get('/cargar-nomArb', { params: params });
-
-      console.log('Esta es respuesta despues del get: ', resp);
-
-      data.value = resp.data[0];
-      totalReg.value = resp.data[1].total;
-      paginas.value = resp.data[1].last_page;
-
-    }
-    else {
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón que intenta mover no se pudo reasignar',
-        "Error",
-        5000
-      );
+      data.value = response.data[0];
     }
 
     loading.close();
+    /*currentData.value = response.data.data || [];
+    totalItems.value = response.data.total || response.data.totalItems || 0;*/
+  };
 
-
-  } catch (error) {
-    // El usuario canceló la operación
-    console.log(error);
-    console.log('Operación cancelada por el usuario');
+  const abre_Relaciones = () => {
+    dialogFormVisibleRel.value = true;
   }
 
-}
-
-const abrirBiblio = async () => {
-
-  if(taxonAct.value.id > 0)
-  {
-    taxActBiblio.value = props.taxonAct;
-
-    totalRegNom.value = tablaNomenclatura.value.length;
-
-    dialogFormVisibleBiblio.value = true;
-
-  }else{
-    mostrarNotificacionError("Bibliografia", 
-                             "Se debe seleccionar un tipo de relación"),
-                             "Error"
-  }
-}
-
-const abrirBiblioNombre = async() =>{
-  if(taxonAct.value.id > 0)
-  {
-    dialogFormVisibleBiblioNom.value = true;
-  }else{
-    mostrarNotificacionError("Bibliografia", 
-                             "Se debe seleccionar un taxón"),
-                             "Error"
-  }
-}
-
-const cerrarDialogBiblio = async() => {
-
-  const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-
-    const params= {
-                  taxAct: taxonAct.value.id
-                };   
-    
-    const response = await axios.get('/carga-RelacionesTax', { params });
-    
-    tablaNomenclatura.value = response.data;
-
-    totalRegNom.value = response.data.length;
-
-    dialogFormVisibleBiblio.value = false;
-
-  loading.close();
+  const showAscendants = async () => {
+    if (!taxonAct.value?.completo?.Ascendentes) {
+      ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
+      return;
+    }
+    const ascendantsString = taxonAct.value.completo.Ascendentes;
+    const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+    if (ascendantIds.length === 0) {
+      ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
+      return;
+    }
   
-};
-
-const cerrarRelNomBiblio = async() => {
-
-  if(taxonAct.value.id > 0){
-    const params= {
-                    taxAct: taxonAct.value.id
-                  };
-
-    const response = await axios.get('/actualizaReferenciasNombre', { params });
-
-    tablaReferencias.value = response.data;
-
-    totalRegRef.value = response.data.length;
-  }
-  dialogFormVisibleBiblioNom.value = false;
-}
-
-const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = 0;
-  notificacionVisible.value = true;
-};
-
-const handleNodeRightClick = (event, data, node) => {
-
-  event.preventDefault(); // Prevenir el menú contextual del navegador
-
-  tree.value.setCurrentKey(data.id);
-
-  expande(data, node)
-
-  taxAct.value = data;
-  selectedNode.value = data;
-  menuPosition.value = {
-    x: event.clientX,
-    y: event.clientY
-  };
-  isMenuVisible.value = true;
-
-  document.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', handleEscKey);
-};
-
-// Manejador de acciones del menú
-const handleMenuClick = (action) => {
-  isMenuVisible.value = false;
-  // Aquí puedes agregar lógica específica para cada acción
-  console.log('Acción seleccionada:', action);
-};
-
-// Cerrar menú
-const closeMenu = () => {
-  isMenuVisible.value = false;
-  document.removeEventListener('click', closeMenu);
-  document.removeEventListener('keydown', handleEscKey);
-};
-
-// Manejador de tecla Escape
-const handleEscKey = (event) => {
-  if (event.key === 'Escape' || event.key === 'Esc') {
-    closeMenu();
-  }
-};
-
-const handlePageChange = (page) => {
-  console.log("Este es el valor de page:", page);
-  currentPage.value = page;
-  fetchFilteredData();
-};
-
-const fetchFilteredData = async () => {
-  const params = {
-    categ: catego.value,
-    catalog: idsGrupos.value,
-    page: currentPage.value
-  };
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  const response = await axios.get("/cargar-nomArb", { params });
-  if (response.status === 200) {
-    data.value = response.data[0];
-  }
-
-  loading.close();
-  /*currentData.value = response.data.data || [];
-  totalItems.value = response.data.total || response.data.totalItems || 0;*/
-};
-
-const abre_Relaciones = () => {
-  dialogFormVisibleRel.value = true;
-}
-
-const showAscendants = async () => {
-  if (!taxonAct.value?.completo?.Ascendentes) {
-    ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
-    return;
-  }
-  const ascendantsString = taxonAct.value.completo.Ascendentes;
-  const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
-  if (ascendantIds.length === 0) {
-    ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
-    return;
-  }
- 
-  const loading = ElLoading.service({
-    lock: true,
-    text: 'Cargando ascendentes...',
-    background: 'rgba(0, 0, 0, 0.7)',
-  });
- 
-  try {
-    const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
-    if (response.status === 200 && Array.isArray(response.data)) {
-      const ascendantTaxa = response.data;
-      let nestedTree = [];
-      if (ascendantTaxa.length > 0) {
-        nestedTree.push(ascendantTaxa[0]);
-        let currentNode = nestedTree[0];
-        for (let i = 1; i < ascendantTaxa.length; i++) {
-          const nextNode = ascendantTaxa[i];
-          currentNode.children = [nextNode];
-          currentNode = nextNode;
+    const loading = ElLoading.service({
+      lock: true,
+      text: 'Cargando ascendentes...',
+      background: 'rgba(0, 0, 0, 0.7)',
+    });
+  
+    try {
+      const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
+      if (response.status === 200 && Array.isArray(response.data)) {
+        const ascendantTaxa = response.data;
+        let nestedTree = [];
+        if (ascendantTaxa.length > 0) {
+          nestedTree.push(ascendantTaxa[0]);
+          let currentNode = nestedTree[0];
+          for (let i = 1; i < ascendantTaxa.length; i++) {
+            const nextNode = ascendantTaxa[i];
+            currentNode.children = [nextNode];
+            currentNode = nextNode;
+          }
         }
+  
+        treeDataAscendentes.value = nestedTree;
+        dialogFormVisibleAscendentes.value = true;
+      } else {
+        ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
       }
- 
-      treeDataAscendentes.value = nestedTree;
-      dialogFormVisibleAscendentes.value = true;
-    } else {
-      ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
+    } catch (error) {
+      console.error("Error al cargar los ascendentes:", error);
+      ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
+    } finally {
+      loading.close();
     }
-  } catch (error) {
-    console.error("Error al cargar los ascendentes:", error);
-    ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
-  } finally {
-    loading.close();
-  }
-};
+  };
 </script>
 
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
     <el-container >
+      <div style="display: flex; justify-content: flex-end; gap: 50px;"> <!--background: blue"-->
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <el-tooltip effect="dark"
+            content="Selección Catálogo de Grupos taxonómicos"
+            placement="bottom"
+          >
+            <el-button
+              @click="filtro_Catalogos()"
+              circle
+              style="background-color: #a08223;"
+            >
+              <el-icon>
+                <filtroGrupos />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+        <salir />
+      </div>
+
       <el-header class="main-header-override">
-        <div>
+        <div> <!--style="background: red"-->
           <el-row :gutter="16">
             <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
@@ -1125,17 +1222,30 @@ const showAscendants = async () => {
             <!-- Segunda columna -->
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
-              <el-cascader :options="categoriasTax" clearable filterable v-model="categ" placeholder="Nivel taxonómico"
-                @change="handleChange" popper-class="z-index-fix">
-
+              <el-cascader
+                :options="categoriasTax"
+                clearable
+                filterable
+                v-model="categ"
+                placeholder="Nivel taxonómico"
+                @change="handleChange"
+                popper-class="z-index-fix"
+              >
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="processIcon(data.RutaIcono)" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                    <img :src="processIcon(data.RutaIcono)" 
+                        style="width:16px; height:16px; margin-right:6px;" />
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
-
               </el-cascader>
+
+              <!-- Botón debajo -->
+              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;" 
+                    v-if="mostrarNuevoTax">
+                <nuevoTax  @crear="openDialog"/>
+              </div>
+
             </el-col>
 
             <el-col :xs="24" :md="12" class="form-item-col">
@@ -1157,19 +1267,6 @@ const showAscendants = async () => {
                       Grupo SCAT
                     </span>
                     <el-input type="textarea" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
-                  </div>
-                </el-col>
-
-                <!-- Botón -->
-                <el-col :xs="24" :sm="2">
-                  <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                    <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
-                      <el-button @click="filtro_Catalogos()" type="primary" circle>
-                        <el-icon>
-                          <filtroGrupos />
-                        </el-icon>
-                      </el-button>
-                    </el-tooltip>
                   </div>
                 </el-col>
               </el-row>
@@ -1244,8 +1341,9 @@ const showAscendants = async () => {
             <el-container class="details-container">
               <el-header class="details-header">
                 <div class="details-title">
-                  <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                    class="details-title-icon">
+                  <!--img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
+                    class="details-title-icon"-->
+                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" />
                   <span class="details-title-text">
                     {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
                   </span>
@@ -1267,15 +1365,20 @@ const showAscendants = async () => {
                       </template>                    
                     <div class="table-wrapper">
                       <TablaFiltrable 
-                        :columnas="columnasDefinidas" 
-                        :datos="tablaNomenclatura"
-                        :opciones-filtro="opcionesFiltroNomenclatura"
+                        :columnas = "columnasDefinidas" 
+                        :datos = "tablaNomenclatura"
+                        :opciones-filtro = "opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
-                        :itemsPerPage="2"
-                        :mostrarBiblio="true"
-                        :mostrarAcci="true"
-                        @eliminar-item="manejarEliminarRel"
-                        @abrir-Biblio="abrirBiblio"
+                        :itemsPerPage = 2
+                        :mostrarBiblio = "true"
+                        :mostrarAcci = "true"
+                        @eliminar-item = "manejarEliminarRel"
+                        @abrir-Biblio = "abrirBiblio"
+                        :highlight-current-row = "true"
+                        :mostrarNuevo = "false"
+                        :mostrarEditar = "false"
+                        :mostrarBorrar = "true"
+                        :mostrarSalir = "false" 
                       />
                     </div>
                     </el-collapse-item>
@@ -1290,16 +1393,21 @@ const showAscendants = async () => {
                       </template>
                       <div class="table-wrapper">
                         <TablaFiltrable 
-                          :columnas="columnasDefRef" 
-                          v-model:datos="tablaReferencias"
-                          v-model:total-items="totalRegRef" 
-                          :opciones-filtro="opcionesFiltroRef" 
+                          :columnas = "columnasDefRef" 
+                          v-model:datos = "tablaReferencias"
+                          v-model:total-items = "totalRegRef" 
+                          :opciones-filtro = "opcionesFiltroRef" 
                           :totalItems = "totalRegRef"
-                          :itemsPerPage="2"
-                          :mostrarBiblio="true"
-                          :mostrarAcci="true"
-                          @abrir-Biblio="abrirBiblioNombre"
-                          @eliminar-item="manejarEliminarRef"
+                          :itemsPerPage = 2
+                          :mostrarBiblio = "true"
+                          :mostrarAcci = "true"
+                          @abrir-Biblio = "abrirBiblioNombre"
+                          @eliminar-item = "manejarEliminarRef"
+                          :highlight-current-row = "true"
+                          :mostrarNuevo = "false"
+                          :mostrarEditar = "false"
+                          :mostrarBorrar = "true"
+                          :mostrarSalir = "false"
                         />
                       </div>
                     </el-collapse-item>
@@ -1319,12 +1427,11 @@ const showAscendants = async () => {
               </el-pagination>
             </div>
             <div  class="pagination-right">
-              <span v-show="numHijos > 0" style="margin-left: auto;">
-                Num. Hijos: {{ numHijos }}
+              <span style="margin-left: auto;">
+                Taxa desc. : {{ numHijos }}
               </span>
-            </div>
-            
-          </div>
+            </div>            
+          </div>          
         </el-footer>
       </el-header>
     </el-container>
@@ -1337,8 +1444,10 @@ const showAscendants = async () => {
     <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
-      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
-                  :catalogos="idsGrupos.value"
+      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego" 
+                  :catalogos="idsGrupos.value" :regNomenclatura= "totalRegNom"
+                  :numHijos = "numHijos" :nuevoTax="mostrarNuevoTax" :catNuevoTax="categoriaNuevoTax"
+                  :categoriasTax="categoriasTax"
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
         @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
@@ -1439,6 +1548,7 @@ const showAscendants = async () => {
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: rgb(203, 233, 200);
   color: #0d6efd !important;
+  font-weight: bold;
 }
 
 :deep(.highlight-node) {
@@ -1456,14 +1566,18 @@ const showAscendants = async () => {
 .pagination-footer {
   display: flex;
   align-items: center;
-  width: 38%;
-  padding-top: 5px;
+  justify-content: space-between;
+  gap: 20px;
+  /*flex-wrap: wrap;*/
+  width: 45%;
+  padding-top: 15px;
   flex-shrink: 0;
 }
 
 .pagination-right {
-  margin-left: auto; /* empuja el texto al extremo derecho */
+  margin-left: auto;  /*empuja el texto al extremo derecho*/
   font-weight: 500;
+  /*white-space: nowrap;*/
 }
 
 .main-header-override {
@@ -1471,6 +1585,8 @@ const showAscendants = async () => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 .main-layout-container-fixed {
@@ -1504,7 +1620,7 @@ const showAscendants = async () => {
   .aside-tree {
     width: 600px !important;
     background-color: rgb(238, 241, 246);
-    height: 470px;
+    height: 500px;
     overflow: auto;
     display: flex;
     flex-direction: column;
@@ -1578,7 +1694,13 @@ const showAscendants = async () => {
     flex: 1;
     overflow: auto;
     min-height: 0;
-    max-height: 300px;
+    max-height: 300px !important;
+  }
+
+  .table-wrapper :deep(.el-table__body tr.current-row > td) {
+    background-color: #ddf6dd !important;
+    color: #0d6efd !important;
+    font-weight: bold;
   }
 
   /* Para que las tablas internas ocupen todo el espacio */
@@ -1899,5 +2021,19 @@ const showAscendants = async () => {
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
     max-height: 65vh;
     overflow-y: auto;
+}
+
+
+/* ===== CASCADER VERDE ===== */
+
+.cascader-verde-dropdown .el-cascader-node.is-active,
+.cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.cascader-verde-dropdown .el-cascader-node:hover {
+  background-color: rgb(240, 245, 239) !important;
 }
 </style>

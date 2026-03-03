@@ -10,9 +10,21 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
 const props = defineProps({
-    isModal: Boolean,
-    datosGrupo: Object
+    /*Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6 
+        Se modifica la variable isModal, y traspaso
+        para determinar si se cierra el modal o si sale a la pantalla principal */
+    isModal: { type: Boolean,
+               required: false, 
+               default: false }, 
+    datosGrupo: Object, 
+    traspaso: {type: Boolean,
+               required:false, 
+               default: true
+    }
 });
+/*Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    Se define la variable emit para pasar funciones o datos al componente padre*/
+const emit = defineEmits(['cerrar']);
 
 const tableRowClassName = ({ row }) => {
     const idFila = row.IdGrupoSCAT;
@@ -77,6 +89,7 @@ const asociarSeleccionado = () => {
 };
 
 const cerrarVentana = () => {
+    emit('cerrar');
     window.parent.postMessage({
         type: 'cerrarModal'
     }, '*');
@@ -90,8 +103,8 @@ const grupoEditado = ref(null);
 const guardandoDatosServer = ref(false);
 
 const columnasDefinidas = ref([
-    { prop: 'GrupoSCAT', label: 'Grupo SCAT', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
-    { prop: 'GrupoAbreviado', label: 'Grupo abreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoSCAT', label: 'Nombre del grupo', minWidth: '120', sortable: true, filtrable: true, align: 'left' },
+    { prop: 'GrupoAbreviado', label: 'Abreviado', minWidth: '150', sortable: true, filtrable: true, align: 'left' },
     { prop: 'GrupoSNIB', label: 'Grupo SNIB', minWidth: '150', sortable: true, filtrable: true, align: 'left' }
 ]);
 
@@ -130,6 +143,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 50
     notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
+
 const cerrarNotificacion = () => {
     notificacionVisible.value = false;
 };
@@ -150,6 +164,9 @@ const cerrarModal = () => {
 const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = grupoEditado.value !== null;
+    const mensajeDuplicado = esEdicion 
+        ? "El grupo taxonómico que desea modificar ya existe." 
+        : "El grupo taxonómico que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
         return esEdicion
@@ -161,7 +178,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
         selectedRowId.value = registroExistenteLocal.IdGrupoSCAT;
         tablaRef.value.selectedRow = registroExistenteLocal;
         tablaRef.value.forzarFocoFilaVerde();
-        mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         return;
     }
 
@@ -176,19 +193,21 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
 
             if (!esEdicion) {
                 const response = await axios.post("/grupos-taxonomicos", payload);
-                mostrarNotificacion("Ingreso", "Grupo ingresado correctamente.", "success");
+                
+                mostrarNotificacion("Ingreso", "El grupo taxonómico ha sido ingresado correctamente.", "success");
+
                 const nuevoId = response.data.grupo?.IdGrupoSCAT;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/grupos-taxonomicos/${grupoEditado.value.IdGrupoSCAT}`, payload);
-                mostrarNotificacion("Modificación", "Grupo modificado correctamente.", "success");
+                mostrarNotificacion("Modificación", "El grupo taxonómico ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
             if (error.response?.status === 400 && error.response.data.idExistente) {
-                mostrarNotificacion("Aviso", "El grupo taxonómico que ingresó ya existe, por favor ingrese otro", "warning");
+                mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
                 await irAlRegistroEspecifico(error.response.data.idExistente);
             } else if (error.response?.status === 422) {
                 const errors = error.response.data.errors;
@@ -205,13 +224,16 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     if (!esEdicion) {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de guardar los cambios para "${datosDelFormulario.GrupoSCAT}"?`;
+        const mensajeConsignacion = `¿Estás seguro de guardar los cambios para el grupo seleccionado?`;
         ElMessageBox({
-            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            title: 'Confirmar modificación', 
+            showConfirmButton: false, 
+            showCancelButton: false, 
+            customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                    h('div', { class: 'text-container' }, [h('p', null, mensajeConsignacion)])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -238,15 +260,15 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación exitosa", `El grupo taxonómico  ${nombreGrupoEliminado} ha sido eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El grupo taxonómico ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El grupo ${nombreGrupoEliminado} no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
+            mostrarNotificacionError('Aviso', `El grupo seleccionado no se puede eliminar. Es posible que esté asociado a un taxón o a una referencia bibliográfica.`, 'error');
         }
     };
 
     const cancelarEliminacion = () => { ElMessageBox.close(); };
 
-    const mensaje = `¿Está seguro de eliminar el grupo ${nombreGrupoEliminado}? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el grupo seleccionado? Esta acción no se puede revertir.`;
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
@@ -299,15 +321,14 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <h2 style="margin-top: 14px; margin-left: 20px;">Catálogo de grupos taxonómicos</h2>
         </div>
         <div class="h-full flex flex-col flex-grow">
-
+            <!-- Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              Se agrega variable para indicar si es modal :botCerrar -->
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
                 class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
-                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="true"
-                @traspasaBiblio="asociarSeleccionado" :botCerrar="true" @cerrar="cerrarVentana"
-                :highlight-current-row="true">
-
-
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
+                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" @cerrar="cerrarVentana"
+                :highlight-current-row="false">
             </TablaFiltrable>
         </div>
     </div>
@@ -377,13 +398,19 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     background-color: #ddf6dd !important;
 }
 
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
 
 .el-table .fila-seleccionada-verde {
     --el-table-tr-bg-color: #ddf6dd !important;
 }
 
 .el-table .fila-seleccionada-verde:hover>td.el-table__cell {
-    background-color: #a3e4d7 !important;
+    background-color: #ddf6dd !important;
 }
 </style>
 
@@ -411,7 +438,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     border-bottom: 1px solid #e2e8f0;
 }
 
-el-table .fila-seleccionada-verde {
+.el-table .fila-seleccionada-verde {
     --el-table-tr-bg-color: #ddf6dd !important;
 }
 
@@ -419,10 +446,14 @@ el-table .fila-seleccionada-verde {
     background-color: #cce8cc !important;
 }
 
-
 .tabla-grupos {
     --el-table-current-row-bg-color: #ddf6dd !important;
     --el-table-row-hover-bg-color: #cbf0cb !important;
+}
+
+.el-table .cell {
+  word-break: break-word !important; /* Corta palabras largas de forma natural */
+  line-height: 1.4 !important;
 }
 
 </style>

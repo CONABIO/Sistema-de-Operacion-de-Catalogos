@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CategoriasTaxonomicas;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 use Illuminate\Validation\Rule;
@@ -147,7 +148,7 @@ class CategoriaTaxonomicaController extends Controller
         $categoria = CategoriasTaxonomicas::create($validatedData);
 
         return redirect()->route('categorias-taxonomicas.index')
-            ->with('flash', ['newNodeId' => $categoria->IdCategoriaTaxonomica]);
+            ->with('newNodeId', $categoria->IdCategoriaTaxonomica);
     }
 
     public function update(Request $request, CategoriasTaxonomicas $categoria_taxonomica)
@@ -157,46 +158,43 @@ class CategoriaTaxonomicaController extends Controller
                 'required',
                 'string',
                 'max:255',
-
             ],
         ]);
 
         $categoria_taxonomica->update($validatedData);
 
         return redirect()->route('categorias-taxonomicas.index')
-            ->with('success', 'Categoría actualizada correctamente.')
-            ->with('flash', ['newNodeId' => $categoria_taxonomica->IdCategoria]);
+            ->with('newNodeId', $categoria_taxonomica->IdCategoriaTaxonomica)
+            ->with('success', 'Categoría modificada con éxito.');
     }
 
 
     public function destroy(CategoriasTaxonomicas $categoria_taxonomica)
     {
-        $query = CategoriasTaxonomicas::query();
-        $profundidad = 0;
-        for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
-            if ($categoria_taxonomica->{"IdNivel{$i}"} > 0) {
-                $query->where("IdNivel{$i}", $categoria_taxonomica->{"IdNivel{$i}"});
-                $profundidad = $i;
-            } else {
-                break;
-            }
-        }
-
-        if ($profundidad < self::MAX_NIVELES) {
-            $query->where("IdNivel" . ($profundidad + 1), '>', 0);
-        }
-
-        $tieneHijos = $profundidad < self::MAX_NIVELES && $query->exists();
-
-        if ($tieneHijos) {
+        if ($categoria_taxonomica->IdCategoriaTaxonomica < 132) {
             throw ValidationException::withMessages([
-                'message' => 'No se puede eliminar porque tiene categorías dependientes.'
+                'message' => 'No es posible eliminar esta categoria taxonómica porque es parte de la información del sistema.'
             ]);
         }
 
-        $categoria_taxonomica->delete();
+        $tieneHijos = CategoriasTaxonomicas::where('IdAscendente', $categoria_taxonomica->IdCategoriaTaxonomica)->exists();
+        if ($tieneHijos) {
+            throw ValidationException::withMessages([
+                'message' => 'No se puede eliminar porque tiene categorías dependientes (sub-niveles).'
+            ]);
+        }
 
-        return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
+        try {
+            $categoria_taxonomica->delete();
+            return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
+        } catch (QueryException $e) {
+            if ($e->getCode() === "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1451)) {
+                throw ValidationException::withMessages([
+                    'message' => 'No es posible eliminar esta categoría porque tiene nombres asociados'
+                ]);
+            }
+            throw $e;
+        }
     }
 
 
@@ -207,7 +205,6 @@ class CategoriaTaxonomicaController extends Controller
             'RutaIcono' => 'nullable|string',
         ]);
 
-        // Usamos la variable con el nuevo nombre
         $categoriaTaxonomica->update([
             'RutaIcono' => $request->RutaIcono,
         ]);

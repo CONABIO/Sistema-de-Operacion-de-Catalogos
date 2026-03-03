@@ -55,6 +55,24 @@ const props = defineProps({
 });
 
 
+const activePathIds = ref([]);
+
+const findPathInTree = (nodes, targetId, path = []) => {
+    for (const node of nodes) {
+        const currentPath = [...path, node.IdTipoRelacion];
+        if (node.IdTipoRelacion === targetId) return currentPath;
+        if (node.children && node.children.length > 0) {
+            const found = findPathInTree(node.children, targetId, currentPath);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+const getTipoRelacionNodeClass = (data) => {
+    return activePathIds.value.includes(data.IdTipoRelacion) ? 'is-active-path-row' : '';
+};
+
 
 
 const iconosSugeridos = [
@@ -213,7 +231,7 @@ const seleccionarIcono = async (iconName) => {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                mostrarNotificacion("¡Éxito!", "Ícono actualizado correctamente.", "success");
+                mostrarNotificacion("Modificación", "El ícono ha sido modificado correctamente.", "success");
                 cerrarModalIconos();
             },
             onError: (errors) => {
@@ -232,14 +250,10 @@ const seleccionarIcono = async (iconName) => {
 
 const buscarIconos = async () => {
     let terminoDeBusqueda = terminoBusquedaIcono.value.toLowerCase().trim();
-
-    // Si el campo de búsqueda está vacío, mostramos los sugeridos y terminamos.
     if (terminoDeBusqueda === '') {
         listaIconosEncontrados.value = iconosSugeridos;
         return;
     }
-
-    // Si escribe menos de 3 letras, no hacemos nada (para no saturar)
     if (terminoDeBusqueda.length < 3) {
         return;
     }
@@ -248,7 +262,6 @@ const buscarIconos = async () => {
     if (traduccion) {
         terminoDeBusqueda = traduccion;
     }
-
     cargandoIconos.value = true;
     try {
         const response = await fetch(`https://api.iconify.design/search?query=${terminoDeBusqueda}&limit=48`);
@@ -280,6 +293,15 @@ const abrirModalIconos = () => {
     if (!selectedNode.value) {
         return ElMessage.warning('Por favor, seleccione un nodo para asignarle un ícono.');
     }
+
+    if (esNodoProtegido.value) {
+        return mostrarNotificacion(
+            "Aviso",
+            "No es posible modificar el ícono de la relación seleccionada porque es parte de la información protegida del sistema.",
+            "warning"
+        );
+    }
+
     terminoBusquedaIcono.value = '';
     listaIconosEncontrados.value = iconosSugeridos;
     esModalIconosVisible.value = true;
@@ -293,14 +315,12 @@ const page = usePage();
 
 const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 
-const handleNodeExpand = (data, node) => {
+const handleNodeExpand = (data) => {
     expandedNodeIds.value.add(data.IdTipoRelacion);
-    handleNodeSelected(data, node);
 };
 
-const handleNodeCollapse = (data, node) => {
+const handleNodeCollapse = (data) => {
     expandedNodeIds.value.delete(data.IdTipoRelacion);
-    handleNodeSelected(data, node);
 };
 
 const scrollToNode = (nodeId) => {
@@ -350,7 +370,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "error",) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = 5000;
     notificacionVisible.value = true;
 };
 
@@ -369,41 +389,68 @@ const sortNodesAlphabetically = (nodes) => {
     nodes.forEach((node) => { if (node.children && node.children.length) sortNodesAlphabetically(node.children); });
 };
 
+
 const selectAndFocusNode = (nodeId, retries = 0) => {
-    const MAX_RETRIES = 10;
-    const RETRY_DELAY = 100;
+    const MAX_RETRIES = 15;
+    const RETRY_DELAY = 150;
+    if (!nodeId) return;
+
     nextTick(() => {
         if (!treeRef.value) return;
-        const node = treeRef.value.getNode(nodeId);
+        const targetId = String(nodeId);
+        const node = treeRef.value.getNode(targetId);
+
         if (node) {
-            expandAncestors(nodeId);
-            treeRef.value.setCurrentKey(nodeId);
+            let parent = node.parent;
+            while (parent && parent.level > 0) {
+                parent.expanded = true;
+                expandedNodeIds.value.add(parent.data.IdTipoRelacion);
+                parent = parent.parent;
+            }
+            treeRef.value.setCurrentKey(targetId);
             selectedNode.value = node.data;
-            setTimeout(() => scrollToNode(nodeId), 200);
+            setTimeout(() => scrollToNode(targetId), 200);
+
             nodeIdToSelectAfterInsert.value = null;
-            nodeIdToFocus.value = null;
         } else if (retries < MAX_RETRIES) {
-            setTimeout(() => selectAndFocusNode(nodeId, retries + 1), RETRY_DELAY);
+            setTimeout(() => selectAndFocusNode(targetId, retries + 1), RETRY_DELAY);
         }
     });
 };
 
-watch(() => page.props.flash?.newNodeId, (newNodeId) => {
-    if (newNodeId) {
-        nodeIdToSelectAfterInsert.value = newNodeId;
+
+
+watch(() => page.props.flash?.newNodeId, (id) => {
+    if (id) {
+        nodeIdToSelectAfterInsert.value = id;
     }
 }, { immediate: true });
 
-watch(() => props.treeDataProp, (newVal) => {
+
+watch(() => props.treeDataProp, async (newVal) => {
     const copiedData = deepCopy(newVal);
     sortNodesAlphabetically(copiedData);
     localTreeData.value = copiedData;
+    await nextTick();
+    let idToProcess = null;
+    if (nodeIdToSelectAfterInsert.value) {
+        idToProcess = nodeIdToSelectAfterInsert.value;
+    }
+    else if (nodeIdToFocus.value) {
+        idToProcess = nodeIdToFocus.value;
+    }
+    const nodeExists = idToProcess ? findNodeInTree(localTreeData.value, idToProcess) : false;
+    if (!idToProcess || !nodeExists) {
+        if (localTreeData.value.length > 0) {
+            idToProcess = localTreeData.value[0].IdTipoRelacion;
+        }
+    }
 
-    let idToProcess = nodeIdToSelectAfterInsert.value || nodeIdToFocus.value;
     if (idToProcess) {
-        selectAndFocusNode(String(idToProcess));
+        selectAndFocusNode(idToProcess);
     }
 }, { immediate: true, deep: true });
+
 
 onMounted(() => {
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
@@ -412,18 +459,32 @@ onMounted(() => {
     }
 });
 
-const handleNodeSelected = (data, node) => {
+
+const handleNodeSelected = (data) => {
     if (esModalVisible.value) {
         ElMessage.info("Hay una operación en curso. Por favor, guarde o cancele.");
         treeRef.value?.setCurrentKey(selectedNode.value?.IdTipoRelacion);
         return;
     }
     selectedNode.value = data;
+    activePathIds.value = findPathInTree(localTreeData.value, data.IdTipoRelacion) || [];
 };
-
 const modalRules = {
-    Descripcion: [{ required: true, message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "blur" }],
-    Direccionalidad: [{ required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }],
+    Descripcion: [
+        { 
+            required: true, 
+            message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", 
+            trigger: "blur" 
+        },
+        { 
+            whitespace: true, 
+            message: "La descripción no puede contener solo espacios.", 
+            trigger: "blur" 
+        }
+    ],
+    Direccionalidad: [
+        { required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }
+    ],
 };
 
 const abrirModalParaInsertar = () => {
@@ -451,9 +512,9 @@ const abrirModalParaEditar = () => {
 
     if (selectedNode.value.IdTipoRelacion <= 8) {
         return mostrarNotificacion(
-            "Acción no permitida",
-            "La relación seleccionada no puede ser modificada.",
-            "error"
+            "Aviso",
+            "La relación seleccionada no puede ser modificada porque es parte de la información del sistema.",
+            "warning"
         );
     }
 
@@ -491,67 +552,163 @@ const cerrarModalOperacion = () => {
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de relación" : "Ingresar un nuevo tipo de relación");
 
+const esNodoProtegido = computed(() => {
+    return selectedNode.value && selectedNode.value.IdTipoRelacion <= 8;
+});
+
+
+
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    const isValid = await formModalRef.value.validate();
+    const isValid = await formModalRef.value.validate().catch(() => false);
     if (!isValid) return;
 
-    const proceedWithSave = () => {
-        ElMessageBox.close();
-        const onSuccessHandler = (page) => {
-            cerrarModalOperacion();
-            mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-        };
-        const onErrorHandler = (errors) => {
-            mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
-        };
+    const nuevaDesc = formModal.value.Descripcion.trim();
+     if (nuevaDesc.length === 0) return;
+    const nuevaDescLower = nuevaDesc.toLowerCase();
+    if (modalMode.value === "editar") {
+        const nodoEditando = nodoEnModal.value;
 
+        let profundidad = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (nodoEditando[`Nivel${i}`] > 0) profundidad = i;
+        }
+        const duplicado = props.flatTreeDataProp.find(nodo => {
+            if (String(nodo.IdTipoRelacion) === String(nodoEditando.IdTipoRelacion)) return false;
+            if (nodo.Descripcion.trim().toLowerCase() !== nuevaDescLower) return false;
+            let esMismoPadre = true;
+            for (let i = 1; i < profundidad; i++) {
+                if (nodo[`Nivel${i}`] !== nodoEditando[`Nivel${i}`]) {
+                    esMismoPadre = false;
+                    break;
+                }
+            }
+
+            if (esMismoPadre) {
+                for (let i = profundidad + 1; i <= 5; i++) {
+                    if (nodo[`Nivel${i}`] !== 0) {
+                        esMismoPadre = false;
+                        break;
+                    }
+                }
+                if (nodo[`Nivel${profundidad}`] === 0) esMismoPadre = false;
+            }
+
+            return esMismoPadre;
+        });
+
+        if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
+            selectAndFocusNode(duplicado.IdTipoRelacion);
+            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            return;
+        }
+    }
+    else if (modalMode.value === "insertar") {
+        const calculo = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+        if (!calculo) return;
+
+        const nuevosNiv = calculo.niveles;
+        let profundidadActual = 0;
+        for (let i = 1; i <= 5; i++) {
+            if (nuevosNiv[`Nivel${i}`] > 0) profundidadActual = i;
+        }
+
+        const duplicado = props.flatTreeDataProp.find(nodo => {
+            if (nodo.Descripcion.trim().toLowerCase() !== nuevaDescLower) return false;
+            let mismoPadreYNivel = true;
+            for (let i = 1; i < profundidadActual; i++) {
+                if (nodo[`Nivel${i}`] !== nuevosNiv[`Nivel${i}`]) {
+                    mismoPadreYNivel = false;
+                    break;
+                }
+            }
+            if (mismoPadreYNivel) {
+                for (let i = profundidadActual + 1; i <= 5; i++) {
+                    if (nodo[`Nivel${i}`] !== 0) {
+                        mismoPadreYNivel = false;
+                        break;
+                    }
+                }
+            }
+            return mismoPadreYNivel;
+        });
+
+        if (duplicado) {
+            nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
+            cerrarModalOperacion();
+            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            return;
+        }
+        formModal.value._calculoNiveles = calculo;
+    }
+
+    const ejecutarEnvio = () => {
         if (modalMode.value === "editar") {
-            const datosUpdate = { Descripcion: formModal.value.Descripcion.trim(), Direccionalidad: formModal.value.Direccionalidad };
             const nodeId = nodoEnModal.value.IdTipoRelacion;
             nodeIdToFocus.value = nodeId;
-            router.put(`/tipos-relacion/${nodeId}`, datosUpdate, {
-                preserveState: true, preserveScroll: true,
-                onSuccess: onSuccessHandler, onError: onErrorHandler,
+            router.put(`/tipos-relacion/${nodeId}`, {
+                Descripcion: nuevaDesc,
+                Direccionalidad: formModal.value.Direccionalidad
+            }, {
+                preserveState: true,
+                onSuccess: () => {
+                    cerrarModalOperacion();
+                    mostrarNotificacion("Modificación", "El tipo de relación ha sido modificado correctamente.", "success");
+                },
+                onError: (errors) => {
+                    mostrarNotificacion("Aviso", Object.values(errors)[0], "warning");
+                }
             });
-        } else if (modalMode.value === "insertar") {
-            const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-            if (!calculoNiveles) return;
-            const datosInsert = {
-                Descripcion: formModal.value.Descripcion.trim(),
+        } else {
+            const calculo = formModal.value._calculoNiveles;
+            router.post("/tipos-relacion", {
+                Descripcion: nuevaDesc,
                 Direccionalidad: formModal.value.Direccionalidad,
-                ...calculoNiveles.niveles,
-                RutaIcono: ICONO_POR_DEFECTO 
-            };
-
-            router.post("/tipos-relacion", datosInsert, {
-                preserveState: true, preserveScroll: true,
+                ...calculo.niveles,
+                RutaIcono: ICONO_POR_DEFECTO
+            }, {
+                preserveState: true,
                 onSuccess: (page) => {
-                    onSuccessHandler(page);
+                    cerrarModalOperacion();
                     const finalNewNodeId = page.props.flash?.newNodeId;
                     if (finalNewNodeId) {
-                        nodeIdToScrollToAfterNotification.value = finalNewNodeId;
+                        nodeIdToSelectAfterInsert.value = finalNewNodeId;
+                        selectAndFocusNode(finalNewNodeId);
                     }
-                },
-                onError: onErrorHandler,
+                    mostrarNotificacion("Ingreso", "El tipo de relación ha sido ingresado correctamente.", "success");
+                }
             });
         }
     };
 
     if (modalMode.value === 'insertar') {
-        proceedWithSave();
+        ejecutarEnvio();
     } else {
-        const nombreTipoRelacion = formModal.value.Descripcion.trim();
         ElMessageBox({
-            title: "Confirmar modificación", showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
+            title: "Confirmar modificación",
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: "message-box-diseno-limpio",
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
-                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, `¿Estás seguro de que deseas guardar los cambios para "${nombreTipoRelacion}"?`)]),
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, `¿Estás seguro de que deseas guardar los cambios para el tipo de relación seleccionado?`)
+                    ]),
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                    h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
+                    h(BotonAceptar, {
+                        texto: "Sí, Guardar",
+                        onClick: () => {
+                            ElMessageBox.close();
+                            ejecutarEnvio();
+                        }
+                    }),
                 ]),
             ]),
         }).catch(() => { });
@@ -565,19 +722,19 @@ const handleEliminar = () => {
 
     if (selectedNode.value.IdTipoRelacion <= 8) {
         return mostrarNotificacion(
-            "Acción no permitida",
-            "La relación seleccionada no puede ser eliminada.",
-            "error"
+            "Aviso",
+            "No es posible eliminar el tipo de relación seleccionado porque es parte de la información del sistema",
+            "warning"
         );
     }
 
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Acción no permitida", "No es posible eliminar la relación seleccionada por tener otras relaciones que dependen de ella.", "error");
+        return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otros tipos de relaciones que dependen de ella.", "warning");
     }
 
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
     const nombreTipoRelacion = nodeDataForDeleteConfirmation.value.Descripcion;
-    const mensaje = `¿Está seguro de eliminar el tipo de relación "${nombreTipoRelacion}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de relación seleccionado? Esta acción no se puede revertir.`;
 
     ElMessageBox({
         title: "Confirmar eliminación",
@@ -601,23 +758,50 @@ const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
         if (!nodeDataForDeleteConfirmation.value) return;
+        
+        // Guardamos el ID antes de intentar borrar
+        const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion; 
+        
+        const nodeInTree = treeRef.value?.getNode(idQueFallo);
+        const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
+            ? nodeInTree.parent.data.IdTipoRelacion
+            : null;
 
-        const { IdTipoRelacion, Descripcion } = nodeDataForDeleteConfirmation.value;
-
-        const parentNode = findNodeInTree(localTreeData.value, nodeDataForDeleteConfirmation.value.IdAscendente);
-
-        router.delete(`/tipos-relacion/${IdTipoRelacion}`, {
+        router.delete(`/tipos-relacion/${idQueFallo}`, {
             preserveScroll: true,
+            preserveState: true, // Importante para no perder el estado actual
             onSuccess: () => {
-                mostrarNotificacion("Eliminación exitosa", `El elemento "${Descripcion}" ha sido eliminado.`, "success");
-                if (parentNode) {
-                    nodeIdToFocus.value = parentNode.IdTipoRelacion;
-                } else {
-                    selectedNode.value = null;
-                }
+                mostrarNotificacion("Eliminación", `El tipo de relación ha sido eliminado correctamente.`, "success");
+
+                nextTick(() => {
+                    if (parentId) {
+                        const padreActualizado = findNodeInTree(localTreeData.value, parentId);
+                        if (padreActualizado) {
+                            selectedNode.value = padreActualizado;
+                            treeRef.value?.setCurrentKey(parentId);
+                            return;
+                        }
+                    }
+                    if (localTreeData.value.length > 0) {
+                        const firstId = localTreeData.value[0].IdTipoRelacion;
+                        selectAndFocusNode(firstId);
+                    } else {
+                        selectedNode.value = null;
+                        nodeIdToFocus.value = 'FIRST';
+                    }
+                });
             },
             onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relacion ${Descripcion} no se puede eliminar. Este tipo de relacion está en uso en otra parte del sistema.`, 'success');
+                mostrarNotificacionError('Aviso', `El tipo de relación no se puede eliminar porque tiene nombres asociados`, 'warning');          
+                nextTick(() => {
+                    const nodoOriginal = findNodeInTree(localTreeData.value, idQueFallo);
+                    if (nodoOriginal) {
+                        selectedNode.value = nodoOriginal;
+                        treeRef.value?.setCurrentKey(idQueFallo);
+                        selectAndFocusNode(idQueFallo);
+                    } 
+                    nodeIdToScrollToAfterNotification.value = idQueFallo;
+                });
             },
             onFinish: () => {
                 nodeDataForDeleteConfirmation.value = null;
@@ -662,7 +846,7 @@ const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => 
         }
         const nivelParaSecuencia = profundidadPadre + 1;
         if (nivelParaSecuencia > MAX_NIVELES) {
-            mostrarNotificacion("Error", "Profundidad máxima de niveles excedida.", "error");
+            mostrarNotificacion("Aviso", "Ya no es posible ingresar un nuevo nivel, el máximo ha sido alcanzado.", "warning");
             return null;
         }
         let maxValorSecuencia = 0;
@@ -746,11 +930,10 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <AppLayout title="Tipos de Relación">
-        <LayoutCuerpo :usar-app-layout="false" titulo-pag="Tipos de Relación"
-            titulo-area="Catálogo de tipos de relaciones taxonómicas">
-
-            <el-card class="box-card tree-card">
+    <LayoutCuerpo :usar-app-layout="true" titulo-pag="Tipos de Relación"
+        titulo-area="Catálogo de tipos de relaciones taxonómicas">
+        <div class="contenedor-marcos-manual">
+            <el-card class="box-card tree-card" shadow="never">
                 <template #header>
                     <div class="header-container">
                         <div class="left-header-content"></div>
@@ -763,8 +946,8 @@ const cerrarDialogo = () => {
                                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
-                                    :disabled="isAccionDependienteDeNodoDeshabilitada" />
-                                <BotonSalir />
+                                    :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" />
+                                <BotonSalir toolPosicion="bottom" />
                             </div>
                         </div>
                     </div>
@@ -772,105 +955,99 @@ const cerrarDialogo = () => {
 
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
-                    :current-node-key="selectedNode?.IdTipoRelacion" :highlight-current="true"
-                    :expand-on-click-node="true" :default-expanded-keys="expandedKeysArray"
-                    @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
-                    class="custom-element-tree">
+                    :current-node-key="selectedNode?.IdTipoRelacion"
+                    :default-expanded-keys="Array.from(expandedNodeIds)" :highlight-current="true"
+                    :expand-on-click-node="true" @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
+                    @node-collapse="handleNodeSelected" 
+
+                    :node-class="getTipoRelacionNodeClass"
+                    class="custom-element-tree"
+                    >
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
-
                             <img v-if="!data.RutaIcono"
                                 src="/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png"
-                                class="node-icon-wrapper static-icon" alt="ícono por defecto" />
-
+                                class="node-icon-wrapper static-icon" />
                             <template v-else>
                                 <span v-if="data.RutaIcono.startsWith('<svg')" v-html="data.RutaIcono"
                                     class="node-icon-wrapper"></span>
-                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon" alt="ícono">
+                                <img v-else :src="data.RutaIcono" class="node-icon-wrapper static-icon">
                             </template>
-
                             <span>{{ node.label }}</span>
                         </span>
                     </template>
                 </el-tree>
-                <div v-else class="no-data-message">
-                    No hay datos de tipos de relación para mostrar.
-                </div>
+
+                <div v-else class="no-data-message"> No hay datos de tipos de relación para mostrar. </div>
             </el-card>
+        </div>
+    </LayoutCuerpo>
 
-        </LayoutCuerpo>
 
-        <Teleport to="body">
-            <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalOperacion">
-                <div class="dialog-header">
-                    <h3>{{ modalTitle }}</h3>
-                </div>
-                <div class="content-wrapper-custom">
-                    <div class="form-actions">
-                        <GuardarButton @click="guardarDesdeModal" />
-                        <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+    <Teleport to="body">
+        <DialogGeneral v-model="esModalVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalOperacion">
+            <div class="dialog-header">
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="form-actions">
+                <GuardarButton @click="guardarDesdeModal" />
+                <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
+            </div>
+            <div class="dialog-body-container">
+                <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
+                    @submit.prevent="guardarDesdeModal">
+
+                    <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
+                        <el-radio-group v-model="opcionNivel">
+                            <el-radio value="mismo">Mismo nivel</el-radio>
+                            <el-radio value="inferior">Nivel inferior</el-radio>
+                        </el-radio-group>
                     </div>
-                    <div class="dialog-body-container">
-                        <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                            @submit.prevent="guardarDesdeModal">
 
-                            <div v-if="modalMode === 'insertar' && selectedNode" class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Posición:</label>
-                                <el-radio-group v-model="opcionNivel">
-                                    <el-radio value="mismo">Mismo nivel</el-radio>
-                                    <el-radio value="inferior">Nivel inferior</el-radio>
-                                </el-radio-group>
-                            </div>
+                    <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
+                        <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
+                            placeholder="Ingrese la descripción" clearable maxlength="55" show-word-limit />
+                    </el-form-item>
 
-                            <el-form-item prop="Descripcion" label="Descripción del tipo de relación:">
-                                <el-input  ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                    maxlength="255" show-word-limit />
-                            </el-form-item>
+                    <el-form-item prop="Direccionalidad" label="Direccionalidad:">
+                        <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
+                            style="width: 100%;" :disabled="modalMode === 'editar'">
+                            <el-option label="1 - Unidireccional" :value="1" />
+                            <el-option label="2 - Reciproca" :value="2" />
+                            <el-option label="3 - No aplica" :value="3" />
+                        </el-select>
+                    </el-form-item>
 
-                            <el-form-item prop="Direccionalidad" label="Direccionalidad:">
-                                <el-select v-model="formModal.Direccionalidad" placeholder="Seleccione una opción"
-                                    style="width: 100%;">
-                                    <el-option label="1 - Unidireccional" :value="1" />
-                                    <el-option label="2 - Reciproca" :value="2" />
-                                    <el-option label="3 - No aplica" :value="3" />
-                                </el-select>
-                            </el-form-item>
+                </el-form>
+            </div>
+        </DialogGeneral>
 
-
-                        </el-form>
+        <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarModalIconos">
+            <div class="dialog-header">
+                <h3>Seleccione el ícono para "{{ selectedNode?.Descripcion }}"</h3>
+            </div>
+            <div class="dialog-body-container">
+                <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal', 'flecha')"
+                    @input="onInputBusquedaIcono" clearable />
+                <h4 class="icon-section-title">{{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la búsqueda' }}</h4>
+                <div v-loading="cargandoIconos" class="icon-grid mt-4">
+                    <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
+                        @click="seleccionarIcono(iconName)">
+                        <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
                     </div>
                 </div>
-            </DialogGeneral>
+                <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
+                    class="text-center text-gray-500 mt-4">
+                    No se encontraron resultados.
+                </p>
+            </div>
+        </DialogGeneral>
 
-            <DialogGeneral v-model="esModalIconosVisible" :bot-cerrar="true" :pressEsc="true" @close="cerrarModalIconos">
-                <div class="dialog-header">
-                    <h3>Seleccionar Ícono para "{{ selectedNode?.Descripcion }}"</h3>
-                </div>
-                <div class="dialog-body-container">
-                    <el-input v-model="terminoBusquedaIcono" placeholder="Buscar ícono (ej. 'hoja', 'animal', 'flecha')"
-                        @input="onInputBusquedaIcono" clearable />
-                    <h4 class="icon-section-title">
-                        {{ terminoBusquedaIcono.trim() === '' ? 'Íconos Sugeridos' : 'Resultados de la Búsqueda' }}
-                    </h4>
-
-                    <div v-loading="cargandoIconos" class="icon-grid mt-4">
-                        <div v-for="iconName in listaIconosEncontrados" :key="iconName" class="icon-item"
-                            @click="seleccionarIcono(iconName)">
-                            <img :src="`https://api.iconify.design/${iconName}.svg?color=currentColor`" />
-                        </div>
-                    </div>
-                    <p v-if="!cargandoIconos && terminoBusquedaIcono.length >= 3 && listaIconosEncontrados.length === 0"
-                        class="text-center text-gray-500 mt-4">
-                        No se encontraron resultados.
-                    </p>
-                </div>
-            </DialogGeneral>
-
-            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                @close="cerrarNotificacion" />
-        </Teleport>
-    </AppLayout>
+        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+            @close="cerrarNotificacion" />
+    </Teleport>
 </template>
 
 <style>
@@ -965,6 +1142,111 @@ const cerrarDialogo = () => {
     border-radius: 4px;
     margin: 0 24px 24px 24px;
 }
+
+
+
+.custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: #d4edda !important;
+    border-left: 5px solid #28a745 !important;
+    color: #155724 !important;
+}
+
+:deep(.newly-added-highlight) {
+    background-color: #c3e6cb !important;
+    transition: background-color 2s ease;
+}
+
+.custom-tree-node-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.tree-card>.el-card__body {
+    overflow-y: auto !important;
+    flex-grow: 1;
+    padding: 10px !important;
+
+    border: 1px solid #ebeef5 !important;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px !important;
+
+    background-color: #ffffff;
+}
+
+.custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: #d4edda !important;
+    border-left: 5px solid #28a745 !important;
+    color: #155724 !important;
+}
+
+.custom-element-tree {
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.custom-tree-node-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+
+.node-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    font-size: 30px;
+}
+
+.static-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.message-box-diseno-limpio .el-message-box__header {
+    border-bottom: none;
+}
+
+.message-box-diseno-limpio .el-message-box__content {
+    padding: 10px 20px 20px 20px;
+}
+
+.custom-message-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.body-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.custom-warning-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #f56c6c;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
 </style>
 
 <style scoped>
@@ -975,7 +1257,17 @@ const cerrarDialogo = () => {
     max-height: 726px;
     display: flex;
     flex-direction: column;
+}
 
+/* Importante: el padding 0 aquí permite que el margen del estilo global funcione */
+:deep(.el-card__body) {
+    padding: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: transparent;
+    /* Para que se vea el fondo gris de atrás */
 }
 
 :deep(.el-card__header) {
@@ -1053,7 +1345,7 @@ const cerrarDialogo = () => {
     display: flex;
     justify-content: flex-end;
     margin-top: 24px;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {
@@ -1075,12 +1367,7 @@ const cerrarDialogo = () => {
     gap: 4px;
 }
 
-.node-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-}
+
 
 .icon-grid {
     display: grid;
@@ -1120,9 +1407,17 @@ const cerrarDialogo = () => {
     text-align: left;
 }
 
-.static-icon {
-    width: 1.2em;
-    height: 1.2em;
-    object-fit: contain;
+
+
+.contenedor-marcos-manual {
+    background-color: #ffffff;
+    padding: 20px;
+    min-height: 100px;
+    box-sizing: border-box;
+}
+
+.tree-card {
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
 }
 </style>

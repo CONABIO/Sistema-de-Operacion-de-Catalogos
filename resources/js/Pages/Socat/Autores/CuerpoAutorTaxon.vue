@@ -15,8 +15,10 @@ import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
-
+const cargandoTabla = ref(false); 
 const selectedRowId = ref(null);
+
+const filaSeleccionada = ref(null);
 
 const manejarClickFila = (row) => {
   selectedRowId.value = row ? row.IdAutorTaxon : null;
@@ -75,14 +77,16 @@ const traspasaDatos = () => {
     ElMessageBox.alert('Se debe de armar la autoridad taxonomica para continuar.', 'Error', { type: 'error' });
   } else {
     emit('traspasoAutores', autoresRel, autoridadTax);
+    autoridadTax.value = '';
+    autoresRel.value = [];
   }
 }
 
 const agregarAutor = async () => {
- 
- let row = tablaRef.value.selectedRow;
 
- autoridadTax.value = "";
+  let row = tablaRef.value.selectedRow;
+
+  autoridadTax.value = "";
   if (props.nombre) {
     const existe = autoresRel.value.some(autor => autor.IdAutorTaxon === row.IdAutorTaxon);
     if (!existe) {
@@ -92,6 +96,9 @@ const agregarAutor = async () => {
         CadInicio: '',
         CadFinal: ''
       });
+    }
+    else {
+      mostrarNotificacion('Aviso', `El autor ya se encuentra listado`, 'success');
     }
   }
 }
@@ -113,22 +120,29 @@ const armaAutoridad = () => {
   autoridadTax.value = autorCompleto;
 }
 
-const subirRow = (index) => {
-  autoridadTax.value = "";
-  if (index > 0) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index - 1, 0, item);
-  }
+const subirRow = () => {
+  console.log("Estoy en la funcion de subirr: ", filaSeleccionada.value);
+  if (!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+
+  if (index <= 0) return;
+
+  autoresRel.value.splice(index - 1, 0, autoresRel.value.splice(index, 1)[0]);
 }
 
-const bajarRow = (index) => {
-  autoridadTax.value = "";
-  if (index < autoresRel.value.length - 1) {
-    const item = autoresRel.value[index];
-    autoresRel.value.splice(index, 1);
-    autoresRel.value.splice(index + 1, 0, item);
-  }
+const bajarRow = () => {
+  if (!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+
+  if (index === -1 || index >= autoresRel.value.length - 1) return;
+
+  autoresRel.value.splice(index + 1, 0, autoresRel.value.splice(index, 1)[0]);
 }
 
 const deleteRow = (index) => {
@@ -173,6 +187,7 @@ const onPaste = (event, scope) => {
 const cargaListAutor = async (idsAutor) => {
   try {
     autoridadTax.value = '';
+    autoresRel.value = [];
     const response = await axios.get('/busca-autoresRel', {
       params: {
         ids: idsAutor
@@ -227,16 +242,21 @@ const cerrarFormModal = () => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
   try {
-    selectedRowId.value = null; 
+    cargandoTabla.value = true; // Iniciamos carga para bloquear parpadeo
+    selectedRowId.value = null;
+    
     if (tablaRef.value) {
-      tablaRef.value.selectedRow = null; 
-      tablaRef.value.limpiarTodosLosFiltros(); 
+      tablaRef.value.selectedRow = null;
+      // IMPORTANTE: Asegúrate que limpiarTodosLosFiltros no ejecute un fetch automático
+      // O si lo hace, espera a que termine antes de pedir la página específica.
+      await tablaRef.value.limpiarTodosLosFiltros(); 
     }
 
     const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
+    
     const resPagina = await axios.post('/autores/obtener-pagina', {
       id: idEncontrado,
-      perPage: 100,
+      perPage: 100, // Ajusta según tu configuración
       sortBy: currentSort.prop || 'NombreAutoridad',
       sortOrder: currentSort.order || 'asc'
     });
@@ -244,31 +264,45 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     const paginaDestino = resPagina.data.page;
 
     if (tablaRef.value) {
+      // irAPagina ya hace el fetch interno
       await tablaRef.value.irAPagina(paginaDestino);
+      
       await nextTick();
-      const filaEncontrada = datosDeAutores.value.find(d => String(d.IdAutorTaxon) === String(idEncontrado));
+      
+      const filaEncontrada = datosDeAutores.value.find(d => 
+        String(d.IdAutorTaxon) === String(idEncontrado)
+      );
+
       if (filaEncontrada) {
-        selectedRowId.value = idEncontrado; 
-        tablaRef.value.selectedRow = filaEncontrada; 
+        selectedRowId.value = idEncontrado;
+        tablaRef.value.selectedRow = filaEncontrada;
         setTimeout(() => {
           tablaRef.value.forzarFocoFilaVerde();
-        }, 250); 
+        }, 300);
       }
     }
   } catch (err) {
     console.error("Error al redirigir al registro:", err);
+  } finally {
+    cargandoTabla.value = false; // Finalizamos carga
   }
 };
 
 
 const handleFormAutorSubmited = async (datosDelFormulario) => {
   cerrarFormModal();
+  const esEdicion = datosDelFormulario.accionOriginal === 'editar';
 
-  const autorLocal = datosDeAutores.value.find(autor =>
-    autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase() &&
-    autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase() &&
-    autor.IdAutorTaxon !== datosDelFormulario.idParaEditar
-  );
+  const mensajeDuplicado = esEdicion
+    ? "La autoridad taxonómica que desea modificar ya existe, las modificaciones no se realizaron."
+    : "La autoridad taxonómica que desea ingresar ya existe.";
+  const autorLocal = datosDeAutores.value.find(autor => {
+    const mismoNombre = autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase();
+    const mismoGrupo = autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase();
+    return esEdicion
+      ? (mismoNombre && mismoGrupo && autor.IdAutorTaxon !== datosDelFormulario.idParaEditar)
+      : (mismoNombre && mismoGrupo);
+  });
 
   if (autorLocal) {
     selectedRowId.value = autorLocal.IdAutorTaxon;
@@ -276,7 +310,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       tablaRef.value.selectedRow = autorLocal;
       tablaRef.value.forzarFocoFilaVerde();
     }
-    mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
+    mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
     return;
   }
 
@@ -291,26 +325,23 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
 
       if (datosDelFormulario.accionOriginal === 'crear') {
         const response = await axios.post("/autores", payload);
-        const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon || response.data.id;
-        mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
-        if (nuevoId) {
-          await irAlRegistroEspecifico(nuevoId);
-        }
+        const nuevoId = response.data.autorTaxon?.IdAutorTaxon || response.data.IdAutorTaxon;
+        mostrarNotificacion("Ingreso", "La autoridad taxonómica ha sido ingresada correctamente.", "success");
+        if (nuevoId) await irAlRegistroEspecifico(nuevoId);
       } else {
-        await axios.put(`/autores/${datosDelFormulario.idParaEditar}`, payload);
-        mostrarNotificacion("Modificación", "La información ha sido modificada correctamente.", "success");
-        if (tablaRef.value) await tablaRef.value.fetchData();
-        await nextTick();
-        if (tablaRef.value) tablaRef.value.forzarFocoFilaVerde();
+        const idEditado = datosDelFormulario.idParaEditar;
+        await axios.put(`/autores/${idEditado}`, payload);
+        mostrarNotificacion("Modificación", "La autoridad taxonómica ha sido modificada correctamente.", "success");
+        await irAlRegistroEspecifico(idEditado);
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response.data.idExistente) {
-        mostrarNotificacion("Aviso", "La autoridad taxonómica que ingresó ya existe", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         await irAlRegistroEspecifico(error.response.data.idExistente);
       } else if (error.response?.status === 422) {
         const errors = error.response.data.errors;
         let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0);
+        mostrarNotificacion("Error", errorMsg, "error", 0, true);
       } else {
         mostrarNotificacionError("Error", "No se pudo procesar la información.");
       }
@@ -322,7 +353,8 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
   if (datosDelFormulario.accionOriginal === 'crear') {
     await procederConGuardado();
   } else {
-    const mensaje = `¿Estás seguro de que deseas guardar los cambios para "${datosDelFormulario.nombreAutoridad}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de que deseas guardar los cambios para la autoridad taxonómica seleccionada?`;
+
     ElMessageBox({
       title: 'Confirmar modificación',
       showConfirmButton: false,
@@ -331,7 +363,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
           h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+          h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
         ]),
         h('div', { class: 'footer-buttons' }, [
           h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
@@ -362,17 +394,17 @@ const manejarEliminarItem = (itemId) => {
       if (tablaRef.value) {
         tablaRef.value.fetchData();
       }
-      mostrarNotificacion('Eliminación', `Autor ${nombreAutorEliminado} eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
     } catch (apiError) {
-      mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'success');
+      mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
     }
   };
   const cancelarEliminacion = () => {
     ElMessageBox.close();
   };
   const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
-  const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreCompleto}"` : 'el registro seleccionado';
-  const mensaje = `¿Está seguro de eliminar el autor ${nombreAutorEliminado}? Esta acción no se puede revertir.`;
+  const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
+  const mensaje = `¿Está seguro de eliminar el autor seleccionado? Esta acción no se puede revertir.`;
   ElMessageBox({
     title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
     message: h('div', { class: 'custom-message-content' }, [
@@ -402,7 +434,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
   notificacionTipo.value = tipo;
-  notificacionDuracion.value = 0;
+  notificacionDuracion.value = 5000;
   notificacionVisible.value = true;
 };
 
@@ -411,6 +443,23 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
 const cerrarNotificacion = () => {
   notificacionVisible.value = false;
 };
+
+const onRowChange = (row) => {
+  filaSeleccionada.value = row
+}
+
+const onEliminarInterno = () => {
+  if (!filaSeleccionada.value) return;
+
+  const index = autoresRel.value.findIndex(
+    r => r === filaSeleccionada.value
+  );
+
+  autoresRel.value.splice(index, 1);
+
+  filaSeleccionada.value = null;
+
+}
 </script>
 
 <template>
@@ -422,55 +471,62 @@ const cerrarNotificacion = () => {
           <el-collapse v-model="activeNames">
             <el-collapse-item title="Autores Relacionados" name="1">
               <el-scrollbar max-height="400px">
-                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea"
-                  placeholder="Autoridad Taxonomica" />
-                <el-table :data="autoresRel" style="width: 100%" max-height="250" :show-header="false">
+                <el-input v-model="autoridadTax" :rows="2" disabled type="textarea" placeholder="Autoridad Taxonomica"
+                  style="margin-bottom: 10px;" />
+
+                <div style="display: flex; justify-content: space-between; gap: 3px;
+                                margin-bottom: 10px;">
+                  <div>
+                    <el-tooltip effect="dark" content="Generar" placement="bottom">
+                      <el-button @click="armaAutoridad" circle type="primary" color="#9C2007"><el-icon>
+                          <Switch />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Traspasar" placement="bottom">
+                      <el-button @click="traspasaDatos" circle type="primary" color="#8e44ad">
+                        <el-icon>
+                          <iconoTraspaso />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                  <div>
+                    <el-tooltip effect="dark" content="Subir" placement="bottom">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click="subirRow()"
+                        color="#60A3A3">
+                        <el-icon class="icon-bold" color="#FCFFFF">
+                          <ArrowUp />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip effect="dark" content="Bajar" placement="bottom">
+                      <el-button circle type="warning" :disabled="!filaSeleccionada" @click="bajarRow()"
+                        color="#60A3A3">
+                        <el-icon class="icon-bold" color="#FCFFFF">
+                          <ArrowDown />
+                        </el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <EliminarButton :disabled="!filaSeleccionada" @eliminar="onEliminarInterno" />
+                  </div>
+                </div>
+                <el-table ref="tablaAutores" :data="autoresRel" class="tabla-autores-personalizada" style="width: 100%"
+                  max-height="250" :show-header="false" highlight-current-row @current-change="onRowChange">
                   <el-table-column prop="IdAutorTaxon" label="Id" width="80" v-if="false" />
                   <el-table-column label="Texto Inicio" width="120">
                     <template #default="scope"><el-input v-model="scope.row.CadInicio" placeholder="Texto"
                         maxlength="15" @input="val => handleInput(val, scope, 'CadInicio')" /></template>
                   </el-table-column>
                   <el-table-column prop="NombreAutoridad" label="Nombre" min-width="180" />
-                  <el-table-column label="Texto Final" width="120">
+                  <el-table-column label="Texto Final" width="300">
                     <template #default="scope"><el-input v-model="scope.row.CadFinal" placeholder="Texto" maxlength="15"
                         @input="val => handleInput(val, scope, 'CadFinal')" @keydown.native.prevent="onKeyDown($event)"
                         @paste.native.prevent="onPaste($event, scope)" /></template>
                   </el-table-column>
-                  <el-table-column label="Mover" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="warning"
-                          size="small" :disabled="scope.$index === 0" @click="subirRow(scope.$index)"><el-icon>
-                            <ArrowUp />
-                          </el-icon></el-button><el-button circle type="warning" size="small"
-                          :disabled="scope.$index === autoresRel.length - 1" @click="bajarRow(scope.$index)"><el-icon>
-                            <ArrowDown />
-                          </el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="Acciones" width="100">
-                    <template #default="scope">
-                      <div style="display: flex; justify-content: space-around;"><el-button circle type="danger"
-                          @click.prevent="deleteRow(scope.$index)"><el-icon><svg xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 1024 1024">
-                              <path fill="currentColor"
-                                d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32zm448-64v-64H416v64zM224 896h576V256H224zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32m192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32">
-                              </path>
-                            </svg></el-icon></el-button></div>
-                    </template>
-                  </el-table-column>
                 </el-table>
               </el-scrollbar>
               <br>
-              <div style="display: flex; justify-content: space-between;">
-                <el-tooltip effect="dark" content="Genera Autoridad Taxonomica" placement="right-start"><el-button
-                    @click="armaAutoridad" circle type="primary"><el-icon>
-                      <Switch />
-                    </el-icon></el-button></el-tooltip>
-                <el-tooltip effect="dark" content="Asociar Autores" placement="right-start"><el-button
-                    @click="traspasaDatos" circle type="primary"><el-icon>
-                      <iconoTraspaso />
-                    </el-icon></el-button></el-tooltip>
-              </div>
             </el-collapse-item>
           </el-collapse>
         </el-card>
@@ -478,10 +534,10 @@ const cerrarNotificacion = () => {
 
       <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'" :columnas="columnasDefinidas"
         v-model:datos="datosDeAutores" v-model:total-items="totalAutores" :opciones-filtro="opcionesFiltroAutores"
-        :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'" 
-        :mostrarSalir = "!props.nombre"        endpoint="/busca-autor" id-key="IdAutorTaxon" 
-        @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem" 
-        @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
+        :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor" :asignaTrasp="'Arriba'"
+        :mostrarSalir="!props.nombre" endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila"
+        :row-class-name="tableRowClassName" @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem"
+        @nuevo-item="manejarNuevoItem">
 
 
         <template #header-actions>
@@ -565,20 +621,60 @@ const cerrarNotificacion = () => {
   margin-top: 35px;
 }
 
+/*Leonardo - 22/01/2026 
+Etiqueta que marca en verde las filas de la tabla*/
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
-  --el-table-tr-bg-color: #ddf6dd !important; 
+  --el-table-tr-bg-color: #ddf6dd !important;
+}
+
+/*Leonardo - 22/01/2026*/
+
+
+.el-table .fila-seleccionada-verde .cell,
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important;
+  font-weight: bold;
 }
 
 
-</style>
+/* Este estilo NO tiene scoped y se aplica globalmente */
+.tabla-autores-personalizada .el-table__body tr.current-row>td {
+  background-color: #ddf6dd !important;
+  color: #007bff !important;
+  font-weight: bold;
+}
 
-<style scoped>
-.main-section {}
+.tabla-autores-personalizada .el-table__body tr.current-row>td.el-table__cell {
+  background-color: #ddf6dd !important;
+  border-color: #ddf6dd !important;
+}
 
-.expand-content-detail {
-  padding: 10px 15px;
-  background-color: #fdfdfd;
-  font-size: 13px;
+
+.tabla-autores-personalizada .el-table--enable-row-hover .el-table__body tr.current-row:hover>td {
+  background-color: #ddf6dd !important;
+}
+
+/* Estilos para la tabla principal (si es necesario) */
+.main-section .el-table__body tr.current-row>td {
+  background-color: #ddf6dd !important;
+}
+
+/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
+.icon-bold {
+  font-size: 12px !important;
+}
+
+/* JC 23/01/2026 jira 06 */
+
+.icon-bold svg path {
+  stroke-width: 1.5 !important;
+  /* por defecto es ~2 */
+}
+
+.el-table .cell {
+  word-break: break-word !important;
+  /* Corta palabras largas de forma natural */
+  line-height: 1.4 !important;
 }
 </style>

@@ -201,7 +201,7 @@ const cerrarDialogo = () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
-    gap: 10px;
+    gap: 30px;
 }
 
 

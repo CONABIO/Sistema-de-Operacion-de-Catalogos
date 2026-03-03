@@ -15,7 +15,7 @@
     const props = defineProps({
         toolPosicion: {
             type: String,
-            default: "top"
+            default: "bottom"
         },
         icono:{
             type: String, 
@@ -28,8 +28,9 @@
         <el-tooltip class="item" effect="dark" content="Asociar catálogo" :placement= "toolPosicion">
         <el-button  @click.prevent="traspasaDatos"
                     circle
-                    icon="el-icon-d-arrow-right"
-                    type="primary">
+                    type="primary"
+                    color="#8e44ad"
+                    style="color: white">
             <el-icon v-if="icono === 'izq'">
                 <traspasoInfo />
             </el-icon>

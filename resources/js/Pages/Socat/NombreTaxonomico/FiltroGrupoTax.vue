@@ -44,7 +44,7 @@ onMounted(() => {
     mostrarNotificacion(
         "Grupos taxonómicos",
         "Se debe seleccionar al menos un grupo taxonómico",
-        "info",
+        "success",
         7000
     );
 });
@@ -76,7 +76,7 @@ const recibeGrupos = (data) => {
     else {
         mostrarNotificacion(
             "Grupos taxonómicos",
-            "Se debe selccionar al menos un grupo taxonómico",
+            "Se debe selccionar al menos un grupo taxonómico--------",
             "error",
             7000
         );

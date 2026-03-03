@@ -111,9 +111,14 @@ const cerrarModal = () => {
 
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
+    const esEdicion = datosDelFormulario.accionOriginal === 'editar';
+    const nombreNuevoTrim = datosDelFormulario.Descripcion.trim().toLowerCase();
+    const mensajeDuplicado = esEdicion 
+        ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron." 
+        : "El tipo de distribución que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(item => {
         const mismaDescripcion = item.Descripcion.trim().toLowerCase() === datosDelFormulario.Descripcion.trim().toLowerCase();
-        return datosDelFormulario.accionOriginal === 'editar' 
+        return esEdicion 
             ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar) 
             : mismaDescripcion;
     });
@@ -124,28 +129,29 @@ const handleFormSubmited = (datosDelFormulario) => {
             tablaRef.value.selectedRow = registroExistenteLocal;
             tablaRef.value.forzarFocoFilaVerde();
         }
-        mostrarNotificacion("Aviso", "El tipo de distribución que ingresó ya existe, por favor ingrese otro", "warning");
+        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
         return; 
     }
 
     const procederConGuardado = async () => {
         try {
             const payload = { Descripcion: datosDelFormulario.Descripcion };
+            
             if (datosDelFormulario.accionOriginal === 'crear') {
                 const response = await axios.post('/tipos-distribucion', payload);
-                mostrarNotificacion("Ingreso", "La información ha sido ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El tipo de distribución ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdTipoDistribucion;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
             } else {
                 await axios.put(`/tipos-distribucion/${datosDelFormulario.idParaEditar}`, payload);
-                mostrarNotificacion("Ingreso", "La información ha sido modificada correctamente.", "success");
+                mostrarNotificacion("Modificación", "El tipo de distribución ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
                 tablaRef.value.forzarFocoFilaVerde();
             }
         } catch (error) {
             if (error.response?.status === 400 && error.response.data.idExistente) {
-                mostrarNotificacion("Aviso", "El tipo de distribución que ingresó ya existe, por favor ingrese otro", "warning");
+                mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
                 await irAlRegistroEspecifico(error.response.data.idExistente);
             } else if (error.response?.status === 422) {
                 let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
@@ -155,21 +161,33 @@ const handleFormSubmited = (datosDelFormulario) => {
             }
         }
     };
-
     if (datosDelFormulario.accionOriginal === 'crear') {
         procederConGuardado();
     } else {
-        const mensaje = `¿Estás seguro de guardar cambios para "${datosDelFormulario.Descripcion}"?`;
+        const mensajeConfirmacion = `¿Estás seguro de guardar cambios para el tipo de distribución seleccionado?`;
+        
         ElMessageBox({
-            title: 'Confirmar modificación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            title: 'Confirmar modificación',
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
-                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                    h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                    h('div', { class: 'custom-warning-icon-container' }, [
+                        h('div', { class: 'custom-warning-circle' }, '!')
+                    ]),
+                    h('div', { class: 'text-container' }, [
+                        h('p', null, mensajeConfirmacion)
+                    ])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
-                    h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
+                    h(BotonAceptar, { 
+                        onClick: () => { 
+                            ElMessageBox.close(); 
+                            procederConGuardado(); 
+                        } 
+                    }),
                 ])
             ])
         }).catch(() => { });
@@ -186,15 +204,15 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
-            mostrarNotificacion("Eliminación exitosa", `El tipo de distribución ${nombreItem} fue eliminado correctamente.`, "success");
+            mostrarNotificacion("Eliminación", `El tipo de distribución  fue eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El tipo de distribución ${nombreItem} no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
+            mostrarNotificacionError('Aviso', `El tipo de distribución seleccionado no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
 
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };
     const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
-    const mensaje = `¿Está seguro de eliminar el tipo de distribución "${itemAEliminar?.Descripcion || 'seleccionado'}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de distribución seleccionado? Esta acción no se puede revertir.`;
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
@@ -217,7 +235,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
-                @nuevo-item="nuevoTipoDistribucion">
+                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila">
                 <template #expand-column>
                     <el-table-column type="expand">
                         <template #default="{ row }">
@@ -294,9 +312,23 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
     gap: 10px;
     margin-top: 35px;
 }
+
+.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde td {
+  color: #007bff !important; 
+  font-weight: bold; 
+}
+
+
 </style>
 
 <style scoped>
+:deep(.fila-seleccionada-verde) {
+  background-color: #ddf6dd !important;
+  --el-table-tr-bg-color: #ddf6dd !important; /* Variable interna de Element Plus */
+}
+
+
 .expand-content-detail {
     padding: 10px 15px;
     background-color: #fdfdfd;

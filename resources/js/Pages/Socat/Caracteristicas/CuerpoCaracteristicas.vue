@@ -126,40 +126,28 @@ const sortNodesAlphabetically = (nodes) => {
 
 const selectAndFocusNode = (nodeId, retries = 0) => {
   const MAX_RETRIES = 10;
-  const RETRY_DELAY = 100;
+  const RETRY_DELAY = 150;
 
   nextTick(() => {
-    if (!treeRef.value) {
-      return;
-    }
-
-    const node = treeRef.value.getNode(nodeId);
-
+    if (!treeRef.value) return;
+    const targetId = String(nodeId);
+    const node = treeRef.value.getNode(targetId);
     if (node) {
-
-      expandAncestors(nodeId);
-
-      let parentNode = node.parent;
-      while (parentNode && parentNode.level > 0) {
-        expandedNodeIds.value.add(parentNode.data.IdCatNombre);
-        parentNode = parentNode.parent;
+      let parent = node.parent;
+      while (parent && parent.level > 0) {
+        parent.expanded = true;
+        expandedNodeIds.value.add(parent.data.IdCatNombre);
+        parent = parent.parent;
       }
-
-      treeRef.value.setCurrentKey(nodeId);
+      treeRef.value.setCurrentKey(targetId);
       selectedNode.value = node.data;
       setTimeout(() => {
-        scrollToNode(nodeId);
-      }, 150);
-
+        scrollToNode(targetId);
+      }, 200);
       nodeIdToSelectAfterInsert.value = null;
       nodeIdToFocus.value = null;
-
     } else if (retries < MAX_RETRIES) {
-      setTimeout(() => selectAndFocusNode(nodeId, retries + 1), RETRY_DELAY);
-    } else {
-      console.error(`selectAndFocusNode: Fallo al encontrar el nodo con ID ${nodeId} después de ${MAX_RETRIES} intentos.`);
-      nodeIdToSelectAfterInsert.value = null;
-      nodeIdToFocus.value = null;
+      setTimeout(() => selectAndFocusNode(targetId, retries + 1), RETRY_DELAY);
     }
   });
 };
@@ -214,8 +202,12 @@ const modalRules = {
   Descripcion: [
     {
       required: true,
-      message:
-        "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      message: "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      trigger: "blur",
+    },
+    {
+      whitespace: true,
+      message: "La descripción no puede contener solo espacios en blanco.",
       trigger: "blur",
     },
     {
@@ -273,80 +265,100 @@ const modalTitle = computed(() => {
   return modalMode.value === "editar" ? "Modificar la característica" : "Ingresar una nueva característica";
 });
 
+
+
 const guardarDesdeModal = async () => {
   if (!formModalRef.value) return;
   const isValid = await formModalRef.value.validate();
-  if (!isValid) {
-    return;
-  }
-
+  if (!isValid) return;
   const proceedWithSave = () => {
-    ElMessageBox.close();
+    const nuevaDesc = formModal.value.Descripcion.trim();
+    if (nuevaDesc.length === 0) return;
+    const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
-      const datosUpdate = { Descripcion: formModal.value.Descripcion.trim() };
+      const idPadreActual = nodoEnModal.value.IdAscendente;
+      const nodoDuplicado = props.flatTreeDataProp.find(nodo =>
+        String(nodo.IdAscendente) === String(idPadreActual) &&
+        nodo.Descripcion.trim().toLowerCase() === nuevaDescLower &&
+        String(nodo.IdCatNombre) !== String(nodoEnModal.value.IdCatNombre)
+      );
+
+      if (nodoDuplicado) {
+        cerrarModalOperacion();
+        nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
+        return mostrarNotificacion(
+          "Aviso",
+          `Ya existe una característica llamada "${nuevaDesc}" en este nivel.`,
+          "warning"
+        );
+      }
+
+      ElMessageBox.close();
+      const datosUpdate = { Descripcion: nuevaDesc };
       const nodeId = nodoEnModal.value.IdCatNombre;
+
       router.put(`/caracteristicas-taxon/${nodeId}`, datosUpdate, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-          mostrarNotificacion(
-            "Ingreso",
-            "La información ha sido modificada correctamente.",
-            "success"
-          );
+          mostrarNotificacion("Modificación", "La característica ha sido modificada correctamente.", "success");
           nextTick(() => {
-            const nodeToSelect = findNodeInTree(localTreeData.value, nodeId);
-            if (nodeToSelect) {
-              selectedNode.value = nodeToSelect;
-              treeRef.value?.setCurrentKey(nodeId);
-              expandAncestors(nodeId);
-              scrollToNode(nodeId);
-            }
+            selectAndFocusNode(nodeId);
           });
         },
         onError: (errors) => {
-          const displayErrorMessage =
-            errors.Descripcion?.[0] || "Ocurrió un error al actualizar.";
-          mostrarNotificacion(
-            "Error del Servidor",
-            displayErrorMessage,
-            "error"
-          );
+          const displayErrorMessage = errors.Descripcion?.[0] || "Ocurrió un error al actualizar.";
+          mostrarNotificacion("Error", displayErrorMessage, "error");
         },
       });
+
     } else if (modalMode.value === "insertar") {
       if (opcionNivel.value !== "raiz" && !selectedNode.value) {
+        return mostrarNotificacion("Error", "Se requiere un nodo de referencia.", "error");
+      }
+
+      const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+      if (!calculoNiveles) return;
+      const idPadreDestino = calculoNiveles.idPadre;
+      const nodoDuplicado = props.flatTreeDataProp.find(nodo =>
+        String(nodo.IdAscendente) === String(idPadreDestino) &&
+        nodo.Descripcion.trim().toLowerCase() === nuevaDescLower
+      );
+
+      if (nodoDuplicado) {
+        cerrarModalOperacion();
+        nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
-          "Error",
-          "Se requiere un nodo de referencia.",
-          "error"
+          "Aviso",
+          `No se puede crear la característica "${nuevaDesc}" porque ya existe en el nivel seleccionado.`,
+          "warning"
         );
       }
-      const calculoNiveles = calcularNivelesParaNuevoNodo(
-        selectedNode.value,
-        opcionNivel.value,
-        props.flatTreeDataProp
-      );
-      if (!calculoNiveles) return;
+
+      ElMessageBox.close();
       const datosInsert = {
-        Descripcion: formModal.value.Descripcion.trim(),
-        IdAscendente: calculoNiveles.idPadre,
+        Descripcion: nuevaDesc,
+        IdAscendente: idPadreDestino,
         ...calculoNiveles.niveles,
       };
+
       router.post("/caracteristicas-taxon", datosInsert, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (page) => {
           cerrarModalOperacion();
-
           const finalNewNodeId = page.props.flash?.newNodeId;
           if (finalNewNodeId) {
+            nodeIdToSelectAfterInsert.value = finalNewNodeId;
             nodeIdToScrollToAfterNotification.value = finalNewNodeId;
+            mostrarNotificacion("Ingreso", "La característica ha sido ingresada correctamente.", "success");
           }
         },
         onError: (errors) => {
-        },
+          const msg = errors.Descripcion?.[0] || "Error al intentar guardar.";
+          mostrarNotificacion("Error", msg, "error");
+        }
       });
     }
   };
@@ -363,21 +375,10 @@ const guardarDesdeModal = async () => {
       message: h("div", { class: "custom-message-content" }, [
         h("div", { class: "body-content" }, [
           h("div", { class: "custom-warning-icon-container" }, [
-            h(
-              "div",
-              {
-                class: "custom-warning-circle",
-                style: "background-color: #e6a23c;",
-              },
-              "!"
-            ),
+            h("div", { class: "custom-warning-circle", style: "background-color: #e6a23c;" }, "!")
           ]),
           h("div", { class: "text-container" }, [
-            h(
-              "p",
-              null,
-              `¿Estás seguro de que deseas guardar los cambios para "${nombreCaracteristica}"?`
-            ),
+            h("p", null, `¿Estás seguro de que deseas guardar los cambios para la caracteristica seleccionada?`)
           ]),
         ]),
         h("div", { class: "footer-buttons" }, [
@@ -385,10 +386,11 @@ const guardarDesdeModal = async () => {
           h(BotonAceptar, { texto: "Sí, Guardar", onClick: proceedWithSave }),
         ]),
       ]),
-    }).catch(() => {
-    });
+    }).catch(() => { });
   }
 };
+
+
 
 const cerrarModalOperacion = () => {
   esModalVisible.value = false;
@@ -396,7 +398,7 @@ const cerrarModalOperacion = () => {
   formModal.value = { Descripcion: "" };
   modalMode.value = "";
   opcionNivel.value = "mismo";
-  
+
   if (formModalRef.value) {
     formModalRef.value.clearValidate();
   }
@@ -413,15 +415,15 @@ const handleEliminar = () => {
     selectedNode.value.children && selectedNode.value.children.length > 0;
   if (tieneHijos)
     return mostrarNotificacion(
-      "Acción no permitida",
+      "Aviso",
       "No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.",
-      "error"
+      "warning"
     );
 
   nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
 
   const nombreCaracteristica = nodeDataForDeleteConfirmation.value.Descripcion;
-  const mensaje = `¿Está seguro de eliminar la característica "${nombreCaracteristica}"? Esta acción no se puede revertir.`;
+  const mensaje = `¿Está seguro de eliminar la característica seleccionada? Esta acción no se puede revertir.`;
 
   ElMessageBox({
     title: "Confirmar eliminación",
@@ -446,50 +448,65 @@ const handleEliminar = () => {
   }).catch();
 };
 
+
 const proceedWithDeletion = async () => {
   ElMessageBox.close();
   if (!nodeDataForDeleteConfirmation.value) return;
 
-  const { IdCatNombre, Descripcion, IdAscendente } =
-    nodeDataForDeleteConfirmation.value;
+  const { IdCatNombre, Descripcion } = nodeDataForDeleteConfirmation.value;
+  const nodeInTree = treeRef.value?.getNode(IdCatNombre);
+  const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
+    ? nodeInTree.parent.data.IdCatNombre
+    : null;
+
   const targetUrl = `/caracteristicas-taxon/${IdCatNombre}`;
   const nombreCaracteristica = Descripcion || IdCatNombre;
 
   try {
     await axios.delete(targetUrl);
-
     router.reload({
       only: ["treeDataProp", "flatTreeDataProp"],
       preserveScroll: true,
       onSuccess: () => {
         mostrarNotificacion(
-          "Eliminación exitosa",
-          `La característica "${nombreCaracteristica}" ha sido eliminada correctamente.`,
+          "Eliminación",
+          `La característica ha sido eliminada correctamente.`,
           "success"
         );
 
-        const parentNodeData = findNodeInTree(
-          localTreeData.value,
-          IdAscendente
-        );
-        if (parentNodeData) {
-          selectedNode.value = parentNodeData;
-          treeRef.value?.setCurrentKey(IdAscendente);
-          scrollToNode(IdAscendente);
-        } else {
-          selectedNode.value = null;
-        }
+        nextTick(() => {
+          if (parentId) {
+            const padreActualizado = findNodeInTree(localTreeData.value, parentId);
+            if (padreActualizado) {
+              selectedNode.value = padreActualizado;
+              treeRef.value?.setCurrentKey(parentId);
+              return;
+            }
+          }
+          if (localTreeData.value && localTreeData.value.length > 0) {
+            const firstNodeId = localTreeData.value[0].IdCatNombre;
+            selectAndFocusNode(firstNodeId);
+          } else {
+            selectedNode.value = null;
+            treeRef.value?.setCurrentKey(null);
+          }
+        });
       },
     });
   } catch (error) {
-    const errorMsg =
-      error.response?.data?.error ||
-      "Ocurrió un error al eliminar la característica.";
-    mostrarNotificacion("Error al Eliminar", errorMsg, "error");
+    console.error("Error al eliminar:", error);
+    const mensajeError = error.response?.data?.message || "No se puede eliminar esta característica porque tiene taxones relacionados.";
+    mostrarNotificacion(
+      "Aviso",
+      mensajeError,
+      "warning"
+    );
   } finally {
     nodeDataForDeleteConfirmation.value = null;
   }
 };
+
+
 
 const MAX_NIVELES = 7;
 const calcularNivelesParaNuevoNodo = (
@@ -548,9 +565,9 @@ const calcularNivelesParaNuevoNodo = (
       nuevosNiveles[columnaNivelSecuencia] = maxValorSecuencia + 1;
     } else {
       mostrarNotificacion(
-        "Error",
-        "Profundidad máxima de niveles excedida para hijo.",
-        "error"
+        "Aviso",
+        "Ya no es posible ingresar un nuevo nivel, el máximo ha sido alcanzado.",
+        "warning"
       );
       return null;
     }
@@ -620,7 +637,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <div class="header-container">
           <div class="left-header-content"></div>
           <div class="right-header-content">
-            <div class="action-group">
+            <div class="botonera-biotica">
               <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
@@ -656,7 +673,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
         <h3>{{ modalTitle }}</h3>
       </div>
       <div class="dialog-body-container">
-        <div class="form-actions">
+        <div class="form-actions botonera-biotica">
           <GuardarButton @click="guardarDesdeModal" />
           <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
         </div>
@@ -675,8 +692,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
             <template #label>
               {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
             </template>
-            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion" placeholder="Ingrese la descripción"
-              clearable maxlength="255" show-word-limit />
+            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
+              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent />
           </el-form-item>
 
         </el-form>
@@ -748,12 +765,27 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .custom-element-tree .el-tree-node__content {
-  padding: 0px 4px;
-  border-bottom: none;
-  height: auto;
-  margin-bottom: 0;
-  border-radius: 4px;
+  height: auto !important;
+  min-height: 10px !important;
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+  white-space: normal;
 }
+
+
+.custom-tree-node-content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+  padding-right: 15px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+
+
+
 
 .custom-element-tree .el-tree-node__content:hover {
   background-color: #f4f6f8;
@@ -880,5 +912,25 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   line-height: normal !important;
   font-size: 0.9em;
   color: #606266;
+}
+
+
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px;
+  justify-content: flex-end;
+  margin-bottom: 15px;
 }
 </style>

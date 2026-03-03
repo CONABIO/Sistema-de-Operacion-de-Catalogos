@@ -40,21 +40,15 @@ class TipoRelacionController extends Controller
             'Nivel4',
             'Nivel5'
         );
-
-        // Filtrar niveles anteriores (modificado)
         foreach ($valoresAnteriores as $nivel => $valor) {
-            $numeroNivel = str_replace('Nivel', '', $nivel); // Extrae solo el número
+            $numeroNivel = str_replace('Nivel', '', $nivel);
             $query->where("Nivel$numeroNivel", $valor);
         }
-
-        // Filtrar el nivel actual
         if ($nivelPadre > 0) {
             $query->where("Nivel$nivelActual", $nivelPadre);
         } else {
             $query->where("Nivel$nivelActual", '>', 0);
         }
-
-        // Filtrar niveles superiores
         for ($i = $nivelActual + 1; $i <= 5; $i++) {
             $query->where("Nivel$i", 0);
         }
@@ -66,7 +60,6 @@ class TipoRelacionController extends Controller
         if ($registros->isNotEmpty() && $nivelActual < 5) {
             foreach ($registros as $registro) {
                 $nuevosValores = $valoresAnteriores;
-                // Modificado para guardar solo el número como clave
                 $nuevosValores[$nivelActual] = $registro->{"Nivel$nivelActual"};
                 $registro->children = $this->construirArbolRelaciones(0, $nivelActual + 1, $nuevosValores);
             }
@@ -167,7 +160,6 @@ class TipoRelacionController extends Controller
         return $data;
     }
 
-    //==============================================================================
     public function index()
     {
         $todosLosNodosPlanos = Tipo_Relacion::orderBy('Nivel1')
@@ -217,7 +209,18 @@ class TipoRelacionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'Descripcion' => ['required', 'string', 'max:255', Rule::unique(Tipo_Relacion::class)],
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(Tipo_Relacion::class, 'Descripcion')->where(function ($query) use ($request) {
+                    return $query->where('Nivel1', $request->Nivel1)
+                        ->where('Nivel2', $request->Nivel2)
+                        ->where('Nivel3', $request->Nivel3)
+                        ->where('Nivel4', $request->Nivel4)
+                        ->where('Nivel5', $request->Nivel5);
+                })
+            ],
             'Direccionalidad' => 'required|integer|in:1,2,3',
             'Nivel1' => 'required|integer',
             'Nivel2' => 'required|integer',
@@ -225,43 +228,49 @@ class TipoRelacionController extends Controller
             'Nivel4' => 'required|integer',
             'Nivel5' => 'required|integer',
         ], [
-            // Agregamos este arreglo con el mensaje personalizado
-            'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
+            'Descripcion.unique' => 'Ya existe una relación con este nombre en el mismo nivel y padre.',
         ]);
 
         $tipoRelacion = Tipo_Relacion::create($validatedData);
 
         return redirect()->route('tipos-relacion.index')
             ->with('success', 'Tipo de Relación creado correctamente.')
-            ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
+            ->with('newNodeId', $tipoRelacion->IdTipoRelacion);
     }
 
     public function update(Request $request, Tipo_Relacion $tipoRelacion)
     {
         if ($tipoRelacion->IdTipoRelacion <= 8) {
             throw ValidationException::withMessages([
-                'protected' => 'La relación seleccionada no puede ser modificada por ser un registro protegido del sistema.'
+                'protected' => 'La relación seleccionada no puede ser modificada.'
             ]);
-        } else {
-            $validatedData = $request->validate([
-                'Descripcion' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique(Tipo_Relacion::class)->ignore($tipoRelacion->IdTipoRelacion, 'IdTipoRelacion')
-                ],
-                'Direccionalidad' => 'required|integer|in:1,2,3',
-            ], [
-                // Agregamos este arreglo con el mensaje personalizado
-                'Descripcion.unique' => 'La descripción ya ha sido registrada anteriormente.',
-            ]);
-
-            $tipoRelacion->update($validatedData);
-
-            return redirect()->route('tipos-relacion.index')
-                ->with('success', 'Tipo de Relación actualizado correctamente.')
-                ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
         }
+
+        $validatedData = $request->validate([
+            'Descripcion' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(Tipo_Relacion::class, 'Descripcion')
+                    ->ignore($tipoRelacion->IdTipoRelacion, 'IdTipoRelacion')
+                    ->where(function ($query) use ($tipoRelacion) {
+                        return $query->where('Nivel1', $tipoRelacion->Nivel1)
+                            ->where('Nivel2', $tipoRelacion->Nivel2)
+                            ->where('Nivel3', $tipoRelacion->Nivel3)
+                            ->where('Nivel4', $tipoRelacion->Nivel4)
+                            ->where('Nivel5', $tipoRelacion->Nivel5);
+                    })
+            ],
+            'Direccionalidad' => 'required|integer|in:1,2,3',
+        ], [
+            'Descripcion.unique' => 'Ya existe una relación con este nombre en este nivel.',
+        ]);
+
+        $tipoRelacion->update($validatedData);
+
+        return redirect()->route('tipos-relacion.index')
+            ->with('success', 'Tipo de Relación actualizado correctamente.')
+            ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
     }
 
     public function destroy(Tipo_Relacion $tipoRelacion)
@@ -303,6 +312,12 @@ class TipoRelacionController extends Controller
 
     public function updateIcon(Request $request, Tipo_Relacion $tipoRelacion)
     {
+        if ($tipoRelacion->IdTipoRelacion <= 8) {
+            return Redirect::back()->withErrors([
+                'message' => 'No es posible modificar el ícono porque el tipo de relación taxonómica es parte de la información del sistema..'
+            ]);
+        }
+
         $request->validate([
             'RutaIcono' => 'nullable|string',
         ]);

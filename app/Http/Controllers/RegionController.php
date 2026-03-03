@@ -97,6 +97,7 @@ class RegionController extends Controller
     }
 
 
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -109,42 +110,40 @@ class RegionController extends Controller
         ]);
 
         DB::transaction(function () use ($validatedData) {
+            $idPadreFinal = null;
+            $nodoReferencia = null;
 
-            $idPadreInicial = null;
-            $esRaizAutoReferenciada = false;
-
-            if ($validatedData['opcionNivel'] === 'inferior') {
-                $idPadreInicial = $validatedData['idNodoReferencia'];
-            } elseif ($validatedData['opcionNivel'] === 'mismo') {
-                $nodoHermano = Region::find($validatedData['idNodoReferencia']);
-
-                if ($nodoHermano) {
-                    if ($nodoHermano->IdRegion == $nodoHermano->IdRegionAsc) {
-                        $esRaizAutoReferenciada = true;
-                        $idPadreInicial = $nodoHermano->IdRegion;
-                    } else {
-                        $idPadreInicial = $nodoHermano->IdRegionAsc;
-                    }
-                } else {
-                    $idPadreInicial = 1; 
-                }
+            if ($validatedData['idNodoReferencia']) {
+                $nodoReferencia = Region::find($validatedData['idNodoReferencia']);
+            }
+            if ($validatedData['opcionNivel'] === 'mismo' && $nodoReferencia) {
+                $idPadreFinal = $nodoReferencia->IdRegionAsc;
+            } elseif ($validatedData['opcionNivel'] === 'inferior' && $nodoReferencia) {
+                $idPadreFinal = $nodoReferencia->IdRegion;
+            } else {
+                $cualquierNodo = Region::first();
+                $idPadreFinal = $cualquierNodo ? $cualquierNodo->IdRegion : null;
             }
             $nuevaRegion = Region::create([
                 'NombreRegion' => $validatedData['NombreRegion'],
                 'IdTipoRegion' => $validatedData['IdTipoRegion'],
                 'ClaveRegion' => $validatedData['ClaveRegion'],
                 'Abreviado' => $validatedData['Abreviado'],
-                'IdRegionAsc' => $idPadreInicial,
+                'IdRegionAsc' => $idPadreFinal ?? 1, 
+                'DatoActivo' => 1,
+                'FechaCaptura' => now(),
             ]);
+            $esHermanoDeRaiz = ($validatedData['opcionNivel'] === 'mismo' && $nodoReferencia && $nodoReferencia->IdRegion == $nodoReferencia->IdRegionAsc);
 
-            if ($esRaizAutoReferenciada) {
+            if ($validatedData['opcionNivel'] === 'raiz' || $esHermanoDeRaiz) {
                 $nuevaRegion->IdRegionAsc = $nuevaRegion->IdRegion;
                 $nuevaRegion->save();
             }
         });
 
-        return redirect()->route('regiones.index')->with('success', 'Región creada.');
+        return redirect()->route('regiones.index')->with('success', 'Región creada correctamente.');
     }
+
 
     public function update(Request $request, Region $region)
     {
@@ -158,12 +157,39 @@ class RegionController extends Controller
         return redirect()->route('regiones.index')->with('success', 'Región actualizada.');
     }
 
+
     public function destroy(Region $region)
     {
-        if (Region::where('IdRegionAsc', $region->IdRegion)->exists()) {
-            throw ValidationException::withMessages(['message' => 'No se puede eliminar porque tiene regiones dependientes.']);
+        $tieneHijosInternos = Region::where('IdRegionAsc', $region->IdRegion)
+            ->where('IdRegion', '!=', $region->IdRegion)
+            ->exists();
+        if ($tieneHijosInternos) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'message' => 'No se puede eliminar porque tiene sub-regiones dependientes.'
+            ]);
         }
-        $region->delete();
-        return redirect()->route('regiones.index')->with('success', 'Región eliminada.');
+        if ($region->IdRegion == $region->IdRegionAsc) {
+            $otroNodo = Region::where('IdRegion', '!=', $region->IdRegion)->first();
+            if ($otroNodo) {
+                $region->IdRegionAsc = $otroNodo->IdRegion;
+                $region->save();
+            } else {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            }
+        }
+        try {
+            $region->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == "23000") {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un nombre común o a alguna característica asociada al taxón.'
+                ]);
+            }
+            throw $e;
+        } finally {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
+
+        return redirect()->route('regiones.index')->with('success', 'Región eliminada correctamente.');
     }
 }

@@ -31,11 +31,20 @@ const dialogTitle = computed(() => {
 
 const rules = {
     GrupoSCAT: [
-        { required: true, message: 'El nombre del grupo es obligatorio', trigger: 'blur' },
+        { required: true, message: 'El nombre del grupo SCAT es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'El nombre no puede contener solo espacios en blanco', trigger: 'blur' }, 
         { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
     ],
-    GrupoAbreviado: [{ max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }],
-    GrupoSNIB: [{ max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }],
+    GrupoAbreviado: [
+        { required: true, message: 'El nombre del grupo abreviado es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'La abreviatura no puede contener solo espacios en blanco', trigger: 'blur' }, 
+        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }
+    ],
+    GrupoSNIB: [
+        { required: true, message: 'El nombre del grupo SNIB es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'El grupo SNIB no puede contener solo espacios en blanco', trigger: 'blur' }, 
+        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
+    ],
 };
 
 watch(() => props.visible, (newVal) => {
@@ -74,7 +83,9 @@ const intentarGuardar = async () => {
         const isValid = await formRef.value.validate();
         if (isValid) {
             const datosParaEnviar = {
-                ...form.value,
+                GrupoSCAT: form.value.GrupoSCAT.trim(),
+                GrupoAbreviado: form.value.GrupoAbreviado.trim(),
+                GrupoSNIB: form.value.GrupoSNIB.trim(),
                 idParaEditar: props.accion === 'editar' ? props.gpoTaxEdit?.IdGrupoSCAT : null,
                 accionOriginal: props.accion,
             };
@@ -83,7 +94,7 @@ const intentarGuardar = async () => {
             ElMessage.error('Por favor, corrija los errores en el formulario.');
         }
     } catch (error) {
-        console.log('Validación fallida, no se emite evento.');
+        console.log('Validación fallida');
     }
 };
 
@@ -108,14 +119,14 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
                     @submit.prevent="intentarGuardar">
-                    <el-form-item label="Grupo SCAT" prop="GrupoSCAT">
+                    <el-form-item label="Nombre del grupo" prop="GrupoSCAT">
                         <el-input ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
                     </el-form-item>
-                    <el-form-item label="Grupo abreviado" prop="GrupoAbreviado">
+                    <el-form-item label="Abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
-                        <el-input v-model="form.GrupoSNIB" maxlength="100" show-word-limit />
+                        <el-input v-model="form.GrupoSNIB" maxlength="255" show-word-limit />
                     </el-form-item>
                 </el-form>
 
@@ -168,8 +179,9 @@ const cerrarDialogo = () => {
     justify-content: flex-end;
     margin-top: 4px;
     margin-right: 35px;
-    gap: 25px;
+    gap: 30px;
 }
+
 
 :deep(.el-form-item) {
     margin-bottom: 22px;

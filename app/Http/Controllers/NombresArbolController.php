@@ -47,8 +47,9 @@ class NombresArbolController extends Controller
         $valor = $request->categ ?? $request->idNombre ?? '';
         
         // Determinar relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat'];
-        
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig'];
+
         if ($request->has('taxon')) {
             if (!empty($request->categ)) {
                 $categ = explode(',', $request->categ);
@@ -71,20 +72,19 @@ class NombresArbolController extends Controller
             $catalog = explode(',', $request->catalog);
             
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
-            
-            $nombres = Nombre::filtraArbol($categ, $catalog)
-                ->with($relacionesExtendidas)
-                ->paginate(150);
+
+            $query = Nombre::filtraArbol($categ, $catalog)
+            ->with($relacionesExtendidas);
+
+            $nombres = $query->paginate(150);
                 
         } elseif ($request->has('idNombre')) {
             $valor = $request->idNombre;
             
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdNombre', $valor)
@@ -93,8 +93,7 @@ class NombresArbolController extends Controller
                 
         } else {
             $relacionesExtendidas = array_merge($relacionesBase, [
-                'padre', 'hijos', 'ascendOblig', 'ascendObligHijos',
-                'relNombreRegion'
+                'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
             
             $nombres = Nombre::where('IdCategoriaTaxonomica', 1)
@@ -102,17 +101,22 @@ class NombresArbolController extends Controller
                 ->limit(100)
                 ->get();
         }
-        
+
         // Procesar datos en batch (método del Trait)
         $data = $this->procesarNombresBatch($nombres);
-        
-        return response()->json([$data, $nombres, $valor]);
+
+        $categorias = explode(',', $request->categ);
+        $categComp = CategoriasTaxonomicas::wherein('IdCategoriaTaxonomica', $categorias)->get();
+
+        return response()->json([$data, $nombres, $valor, $categComp]);
     }
 
     public function fetchHijos($id)
     {
         // Relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat'];
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor'];
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
@@ -315,15 +319,23 @@ class NombresArbolController extends Controller
     public function  cargaComSnib(Request $request)
     {
 
-        $query = "select count(distinct nt.comentarioscat) as NumEjemplares
-                  from snib.nombre_taxonomia nt 
-                        inner join catalogocentralizado._TransformaTablaNombre_snib t on 
+        $query = "SELECT COUNT(DISTINCT nt.comentarioscat) AS NumComEjemplares, COUNT(nt.llavenombre) AS NumEjemplares
+                  FROM snib.nombre_taxonomia nt 
+                        INNER JOIN catalogocentralizado._TransformaTablaNombre_snib t ON 
                                     nt.idnombre = t.IdNombre
-                  Where t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
+                  WHERE t.IdNombreRel = ". $request->idNombre . " Or nt.IdNombre = " . $request->idNombre . ";";
 
         $resultado = DB::connection('snib')->select($query);
 
-        return $resultado;
+        
+        $nombre = Nombre::with('RelNombreCat')
+                        ->find($request->idNombre);
+
+        $numRelCat = $nombre->RelNombreCat->count();
+
+        return response()->json(['snib' => $resultado,
+                                  'relNombreCat' => $numRelCat
+        ]);
     }
 
     //carga comentarios del snib 
@@ -399,15 +411,15 @@ class NombresArbolController extends Controller
 
             array_push($lista, $newReg);
         }
-
+        
         return $lista;
     }
 
     //Funcion para dar de alta un taxon 
     public function store(Request $request)
     {
-        Log::info($request);
-        
+        $nodoRaiz = $request->raiz;
+
         // Validar por separado usando los FormRequest
         $datosNombre = Validator::make(
             $request->all(), 
@@ -423,11 +435,15 @@ class NombresArbolController extends Controller
             $request->all(),
             (new RequestRelNomAutor)->rules()
         )->validate();
-
+                
         try {
 
             //Log::info($request);
-            DB::transaction(function () use ($datosNombre, $datosScat, $datosRelNomAutor, &$nombres) {
+            DB::transaction(function () use ($datosNombre, 
+                                             $datosScat, 
+                                             $datosRelNomAutor, 
+                                             $nodoRaiz,
+                                             &$nombres) {
 
                 $nomAscendente = Nombre::find($datosNombre['nombreTaxon']['IdAscendente']);
                 
@@ -450,6 +466,13 @@ class NombresArbolController extends Controller
                     'FechaModificacion' => now()->toDateTimeString()
                 ]);
                 
+                if($nodoRaiz){
+                    $nombre->update([
+                        'IdNombreAscendente' => $nombre->IdNombre, 
+                        'IdAscendObligatorio' =>  $nombre->IdNombre
+                    ]);
+                }
+
                 $ascen = Helpers::listaAscen($nombre);
                 $ascenOblig = Helpers::listaAscenOblig($nombre);
                 $nomComp = Helpers::nombreCompleto($nombre);

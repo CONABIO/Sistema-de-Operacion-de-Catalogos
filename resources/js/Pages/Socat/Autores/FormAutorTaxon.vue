@@ -27,6 +27,7 @@ const dialogTitle = computed(() => {
 const rules = {
     nombreAutoridad: [
         { required: true, message: 'El nombre de la autoridad es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'El nombre de la autoridad no puede contener solo espacios en blanco', trigger: 'blur' },
         { min: 1, max: 100, message: 'El tamaño debe ser entre 1 y 100', trigger: ['blur', 'change'] }
     ],
     nombreCompleto: [
@@ -34,6 +35,7 @@ const rules = {
     ],
     grupoTaxonomico: [
         { required: true, message: 'El grupo taxonómico es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'El grupo taxonómico no puede contener solo espacios en blanco', trigger: 'blur' },
         { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: ['blur', 'change'] }
     ]
 };
@@ -71,15 +73,20 @@ watch(dialogVisible, (newVal) => {
 
 const intentarGuardar = async () => {
     if (!autorTaxFormRef.value) return;
-
     try {
         const isValid = await autorTaxFormRef.value.validate();
         if (isValid) {
             const datosParaEnviar = {
-                ...autorTax.value,
+                nombreAutoridad: autorTax.value.nombreAutoridad.trim(),
+                nombreCompleto: autorTax.value.nombreCompleto.trim(),
+                grupoTaxonomico: autorTax.value.grupoTaxonomico.trim(),
                 idParaEditar: props.accion === 'editar' ? props.autTaxEdit?.IdAutorTaxon : null,
                 accionOriginal: props.accion
             };
+            if (datosParaEnviar.nombreAutoridad.length === 0 || datosParaEnviar.grupoTaxonomico.length === 0) {
+                return;
+            }
+
             emit('formSubmited', datosParaEnviar);
         } else {
             ElMessage.error('Por favor, corrija los errores en el formulario.');
@@ -169,14 +176,6 @@ const cerrarDialogo = () => {
     padding: 30px;
 }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-    margin-right: 35px;
-    gap: 25px;
-}
-
 
 :deep(.el-form-item) {
     margin-bottom: 22px;
@@ -187,5 +186,12 @@ const cerrarDialogo = () => {
     line-height: normal;
     font-size: 0.9em;
     color: #606266;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

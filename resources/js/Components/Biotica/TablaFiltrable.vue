@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, computed, nextTick } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
-import { Search, CircleClose } from '@element-plus/icons-vue';
+import { Search, CircleClose, Management } from '@element-plus/icons-vue';
 import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
@@ -11,17 +11,25 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
 const inputsFiltro = ref({});
+const datosTabla = ref([]);
 
+/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+  Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
   columnas: { type: Array, required: true },
-  datos: { type: Array, required: true },
+  datos: { type: Array, required: true, default:[]},
   totalItems: { type: Number, required: true },
   itemsPerPage: { type: Number, default: 100 },
-  endpoint: { type: String, required: true },
-  idKey: { type: String, required: true },
+  endpoint: { type: String, required: false, default: ""},
+  idKey: { type: String, required: false },
   botCerrar: { type: Boolean, default: false },
   mostrarTraspaso: { type: Boolean, default: false },
+  mostrarNuevo: { type: Boolean, default: true },
+  mostrarEditar: { type: Boolean, default: true },
+  mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
+  mostrarBiblio: { type:Boolean, default: false }, 
+
   highlightCurrentRow: {
     type: Boolean,
     default: false
@@ -38,6 +46,7 @@ const props = defineProps({
   }
 });
 
+const onBiblio = () => emit('abrir-Biblio'); 
 
 const handleVisibleChange = (visible, prop) => {
   if (visible) {
@@ -77,8 +86,10 @@ const onEditarInterno = () => {
 };
 
 const onEliminarInterno = () => {
-  if (selectedRow.value) {
+  if (selectedRow.value[props.idKey]) {
     emit('eliminar-item', selectedRow.value[props.idKey]);
+  }else{
+     emit('eliminar-item', selectedRow.value);
   }
 };
 
@@ -125,10 +136,33 @@ const emit = defineEmits([
   'row-click',
   'traspasaBiblio',
   'traspasaSeleccionado',
-  'cerrar'
+  'cerrar',
+  'abrir-Biblio'
 ]);
 
-const accionModal = computed(() => props.botCerrar ? "cerrar" : "salir ")
+const onExpandChange = (row) => {
+  selectedRow.value = row
+  tableRefInterna.value?.setCurrentRow(row)
+  emit('row-click', row)
+}
+
+const accionModal = computed(() => {
+  return props.botCerrar ? "cerrar" : "salida"}
+);
+
+const paginatedDatos = computed(() => {
+  if(props.endpoint === "")
+  {
+    const start = (currentPage.value - 1) * props.itemsPerPage;
+    const end = start + props.itemsPerPage;
+      return datosTabla.value.slice(start, end);
+  }else
+  {
+    return props.datos;
+  }
+  
+});
+
 const currentPage = ref(1);
 const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
@@ -151,12 +185,29 @@ watch(tipoDeBusqueda, () => {
   onFiltroInput();
 });
 
+watch(
+  () => props.datos,
+  (newVal) => {
+    if (newVal && newVal.length > 0) {
+      datosTabla.value = props.datos;
+    }
+    else{
+      fetchData();
+    }
+  },
+)
 
 const tableKey = ref(0);
 
 
 const fetchData = async () => {
   try {
+
+    if(props.endpoint === "")
+    {
+      return;
+    }
+
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
     const response = await axios.get(props.endpoint, {
@@ -199,7 +250,49 @@ const fetchData = async () => {
   }
 };
 
+watch(
+    () => props.datos,
+    (newDatos) => {
+      if (!newDatos || newDatos.length === 0) return;
+ 
+      datosTabla.value = newDatos;
+ 
+      nextTick(() => {
+        const firstRow = newDatos[0];
+ 
+        //Solo si no hay fila seleccionada aún
+        if (!selectedRow.value) {
+          selectedRow.value = firstRow;
+          tableRefInterna.value?.setCurrentRow(firstRow);
+          emit('row-click', firstRow);
+        }
+      });
+    },
+    { immediate: true }
+  );
 
+// Watch para cuando cambian los datos paginados (después de fetch interno)
+watch(paginatedDatos, (newPaginated) => {
+  if (newPaginated && newPaginated.length > 0) {
+    // Verificar si la fila seleccionada actual ya no está en los datos paginados
+    const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+    const existsInPaginated = newPaginated.some(row => 
+      String(row[props.idKey]) === String(currentSelectedId)
+    );
+    
+    // Si no existe o no hay selección, seleccionar la primera
+    if (!existsInPaginated || !selectedRow.value) {
+      nextTick(() => {
+        selectedRow.value = newPaginated[0];
+        if (tableRefInterna.value) {
+          tableRefInterna.value.setCurrentRow(newPaginated[0]);
+        }
+        emit('row-click', newPaginated[0]);
+      });
+    }
+  }
+}, { immediate: true });
+/* hasta aqui se agrego juan carlos 13/02/2026*/
 
 let debounceTimer;
 
@@ -231,7 +324,6 @@ const handlePageChange = (page) => {
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
-//const onRecuperaMarcado = () => emit('traspasaSeleccionado');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
 
 const cerrarModal = () => {
@@ -249,6 +341,7 @@ defineExpose({
   sorting,
   selectedRow,
 });
+
 </script>
 
 <template>
@@ -261,25 +354,60 @@ defineExpose({
           </slot>
         </div>
         <div class="left">
-          <div class="form-actions">
-            <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
-            <NuevoButton @crear="onNuevo" />
-            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" />
-            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" />
-            <BotonSalir v-if="mostrarSalir"/>
+          <div class="botonera-biotica">
+             <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
+            <BotonTraspaso :icono="props.asignaTrasp" 
+                            v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
+            <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
+            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" 
+                          v-if="props.mostrarEditar" />
+            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" 
+                            v-if="props.mostrarBorrar" />
+            <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              Se agrego la propiedad accion -->
+            <BotonSalir v-if="props.mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
+            <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+              se agrega el boton de acceso a bibliografia para la tabla filtrable-->
+            
+            
+            <!--NuevoButton @crear="onNuevo" /-->
+            <div v-if = "props.mostrarBiblio">
+              <el-tooltip class="item" effect="dark" content="Bibliografia">
+                <el-button @click="onBiblio" circle style="flex-shrink: 0; 
+                            background-color: #509165; color: white;">
+                    <el-icon><Management /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+            
           </div>
         </div>
       </div>
     </template>
-
     <div class="table-responsive ">
-      <el-table :key="tableKey" ref="tableRefInterna" :highlight-current-row="props.highlightCurrentRow"
-        :data="props.datos" :row-key="props.idKey" :row-class-name="props.rowClassName || rowClassNameInterno"
-        @row-click="handleRowClickInterno" :border="true" height="550" @sort-change="handleSortChange">
+      <!--Juan carlos 09/02/2026
+          Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
+      <el-table :key="tableKey" 
+                ref="tableRefInterna" 
+                :highlight-current-row="props.highlightCurrentRow"
+                :data="paginatedDatos" 
+                :row-key="props.idKey" 
+                :row-class-name="props.rowClassName || rowClassNameInterno"
+                @row-click="handleRowClickInterno" 
+                @expand-change ="onExpandChange"
+                :border="true" 
+                height="550" 
+                @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
-        <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
-          :min-width="col.minWidth || '150'" :sortable="col.sortable ? 'custom' : false" :align="col.align || 'left'">
+        <el-table-column 
+                v-for="col in props.columnas" 
+                :key="col.prop" 
+                :prop="col.prop"
+                :min-width="col.minWidth || '150'" 
+                :sortable="col.sortable ? 'custom' : false" 
+                :align="col.align || 'left'">
           <template #header>
             <div class="custom-header">
               <span>{{ col.label }}</span>
@@ -306,6 +434,37 @@ defineExpose({
               </el-dropdown>
             </div>
           </template>
+
+          <template #default="{ row }">
+            <template v-if="col.tipo === 'imagenTexto'">
+              <div style="display: flex; align-items: center; gap: 6px;">                
+                <span v-if="row[col.prop]?.svg" v-html="row[col.prop].svg" style="height: 25px; width: 25px;"></span>
+                <img
+                          v-else-if="row[col.prop]?.url"
+                          :src="row[col.prop].url"
+                          alt="icono"
+                          style="height: 25px; width: 25px;"
+                      />
+                <span>{{ row[col.prop]?.texto }}</span>
+              </div>
+            </template>
+
+            <template v-else-if="col.tipo === 'textarea'">
+              <el-input
+                      v-model="row[col.prop]"
+                      style="width: 100%;"
+                      :rows="2"
+                      type="textarea"
+                      readonly
+                    />
+            </template>
+
+            <template v-else>
+              <span>{{ row[col.prop] }}</span>
+            </template>
+
+          </template>
+
         </el-table-column>
       </el-table>
     </div>
@@ -402,12 +561,9 @@ defineExpose({
   border-bottom: 1px solid #ebeef5 !important;
 }
 
-
-
 :deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
   background-color: #ddf6dd !important;
 }
-
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
@@ -460,5 +616,23 @@ defineExpose({
   margin-top: 4px;
   margin-right: 35px;
   gap: 4px;
+}
+
+.botonera-biotica {
+  display: flex;
+  gap: 12px; 
+  align-items: center; 
+}
+
+.right-header-content {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions {
+  display: flex;
+  gap: 30px; 
+  justify-content: flex-end;
+  margin-bottom: 15px; 
 }
 </style>

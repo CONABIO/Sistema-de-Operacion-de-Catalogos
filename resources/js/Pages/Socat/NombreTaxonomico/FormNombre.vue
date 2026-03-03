@@ -6,50 +6,41 @@
           <div class="header-content">
             <h1 class="titulo">Información del taxón</h1>
           </div>
-          <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div> 
         </el-header>
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <el-col :span="20">
+              <el-col :span="16">
                 <span class="subtitulo" style="color: red;">
-                  Taxón seleccionado: {{ taxonAct?.completo?.NombreCompleto }}
+                  Taxón seleccionado: {{ taxonAct?.label }}
                 </span>
               </el-col>
 
-              <el-col :span="2" style="display: flex;">
-                <el-space>
-                  <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
-                              @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"/>
-                  <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
-                              @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' />
-                  <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
-                              @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' />
-                  <div v-if="muestraGrd">
-                    <el-popconfirm confirm-button-text="Si" 
-                                    cancel-button-text="No" 
-                                    :icon="InfoFilled" 
-                                    icon-color="#E6A23C"
-                                    title="¿Realmente desea guardar los cambios?" 
-                                    @confirm="Guardar('nombreTax', accion)">
-                      <template #reference>
-                        <el-tooltip class="item" effect="dark" content="Guardar" placement="bottom">
-                          <el-button circle type="warning">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                            </svg>
-                          </el-button>
-                        </el-tooltip>
-                      </template>
-                    </el-popconfirm>
+              <el-col :span="8" >
+                  <div class="botonera-biotica">
+                    <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
+                                @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"
+                                style="flex-shrink: 0;"/>
+                    <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
+                                @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' 
+                                style="flex-shrink: 0;"/>
+                    <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
+                                @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' 
+                                style="flex-shrink: 0;"/>
+                    <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                        Se cambia el boton de guardar por el componente del boton guardar-->  
+                    <GuardarButton :habilitar = "habGuardar" @click="Guardar"
+                                    style="flex-shrink: 0; min-width: max-content;"/>
+                    <BotonSalir accion="cerrar" @salir="cerrarDialogo"
+                                style="flex-shrink: 0; min-width: max-content;"/>
                   </div>
-                </el-space>
               </el-col>
           </el-row>
           <el-form-item label = "Nivel taxonómico" prop="catTax" style="max-width: 400px;">
-            <el-select v-model="nombreTax.catTax"  placeholder = "Nivel taxonómico" :disabled = nivelAct>
+            <el-select v-model="nombreTax.catTax"  
+                       placeholder = "Nivel taxonómico" 
+                       popper-class="select-verde-dropdown"
+                       :disabled = nivelAct>
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -57,7 +48,7 @@
                       :value="item.id">
               </el-option>
             </el-select>
-          </el-form-item>     
+          </el-form-item>   
           <el-form-item label = "Estatus: " prop="estatusTax">
             <div>
               <el-radio-group v-model="nombreTax.estatusTax" @change="CambioEstatus()">
@@ -147,8 +138,8 @@
                               <th style="border: 1px solid black;">IDCat</th>
                             </tr>
                             <tr>
-                              <td style="border: 1px solid black;">{{ idNombre }}</td>
-                              <td style="border: 1px solid black;">{{ idCat }}</td>
+                              <td style="border: 1px solid black; background-color: #F5F527;">{{ idNombre }}</td>
+                              <td style="border: 1px solid black; background-color: #F57327;">{{ idCat }}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -160,8 +151,13 @@
                                           label-width="60px"
                                           style="width: 100%; margin: 0;">
                               <el-select v-model="nombreTax.grpSelec" 
+
                                           placeholder="Select" 
-                                          :disabled="actGrupo" style="width: 100%;">
+                                          :disabled="actGrupo" 
+                                          popper-class="select-verde-dropdown"
+                                          style="width: 100%;"
+                                          filterable
+                                          clearable>
                                 <el-option 
                                   v-for="item in listGrp" 
                                   :key="item.id" 
@@ -170,12 +166,14 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            
                           </div>
                           <el-tooltip class="item" effect="dark" content="Catálogo de Grupos taxonómicos"
                             placement="bottom">
                             <el-button @click="carga_Grupos()" 
                                         circle 
-                                        style="flex-shrink: 0; background-color: #a08223;">
+                                        style="flex-shrink: 0; background-color: #a08223;"
+                                        :disabled="actGrupo">
                               <el-icon>
                                 <filtroGrupos />
                               </el-icon>            
@@ -191,7 +189,7 @@
                               v-model="valSnib" 
                               placeholder="" 
                               :disabled="autorAct" 
-                              popper-class="custom-select-dropdown"
+                              popper-class="select-verde-dropdown"
                               style="width: 100%">
                             <el-option v-for="item in opcSnib" 
                                       :key="item.id" 
@@ -208,7 +206,7 @@
                                 v-model="nombreTax.nivelRev" 
                                 placeholder="Nivel de revisión" 
                                 :disabled="autorAct" 
-                                popper-class="custom-select-dropdown"
+                                popper-class="select-verde-dropdown"
                                 style="width: 100%">
                             <el-option v-for="item in opcNivRev" 
                                         :key="item.id" 
@@ -267,7 +265,7 @@
                     <br>
                     <el-row :gutter='25'>
                       <el-col :span="24">
-                        <p></p>
+                        <!--p></p>
                         <el-row>
                           Homonimia SNIB
                         </el-row>
@@ -275,9 +273,20 @@
                           <el-input type="input" 
                                     placeholder="Homonimia SNIB" 
                                     v-model="homonimiaSnib"
+                                    show-word-limit 
                                     @keydown="onPressSistC" 
-                                    :disabled="autorAct" />
-                        </el-row>
+                                    :disabled="autorAct" 
+                                    maxlength="255" />
+                        </el-row-->
+                        <el-form-item label = "Homonimia SNIB" prop = "homonimiaSnib">
+                          <el-input type="text" 
+                                          placeholder="Homonimia SNIB" 
+                                          v-model="homonimiaSnib"
+                                          show-word-limit 
+                                          @keydown="onPressSistC"
+                                          :disabled="autorAct"
+                                          maxlength="255"  />
+                        </el-form-item>
                       </el-col>
                     </el-row>
                     <br>
@@ -297,8 +306,10 @@
                         <el-row>
                           <el-input placeholder="IdCOL" 
                                     v-model="idCol" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct" />
+                                    :disabled="autorAct"
+                                    maxlength="255" />
                         </el-row>
                       </el-col>
                       <el-col :span='8'>
@@ -306,8 +317,11 @@
                         <el-row>
                           <el-input placeholder="IdCITES" 
                                     v-model="idCites" 
+                                    show-word-limit 
                                     @keydown="onPressSistC"
-                                    :disabled="autorAct"/>
+                                    :disabled="autorAct"
+                                    maxlength="255"
+                                    />
                         </el-row>
                       </el-col>
                     </el-row>
@@ -328,8 +342,11 @@
     </div>
       
     <div>
+      <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+        Se agregaron las propiedades para determinar si es modal y se muestra el
+        boton de traspaso-->
       <DialogGrp v-model="dialogFormVisibleGrupos" :botCerrar="true" :pressEsc="true">
-        <CurpGruposTax />
+        <CurpGruposTax :isModal = "true"  @cerrar="cerrar_Grupos" :traspaso ="false" />
       </DialogGrp>
     </div>
 
@@ -348,932 +365,1077 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
-import { usePage } from '@inertiajs/inertia-vue3';
-import { ElMessage, ElInput, ElPopconfirm} from 'element-plus';
-import axios from 'axios';
-import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
-import CurpAutorTax from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
-import CurpGruposTax from '@/Pages/Socat/Grupos/CuerpoGrupoTaxon.vue';
-import ComenSnibNom from '@/Pages/Socat/NombreTaxonomico/ComentariosSnibNombre.vue';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
-import DialogAutor from '@/Components/Biotica/DialogGeneral.vue';
-import DialogGrp from '@/Components/Biotica/DialogGeneral.vue';
-import DialogComSnib from '@/Components/Biotica/DialogGeneral.vue';
-import usePermisos from '@/composables/usePermisos';
-import autoridades from '@/Components/Biotica/Icons/Autor.vue';
-import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
-import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
-import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+  import { ref, reactive, onMounted, watch, defineExpose} from 'vue';
+  import { usePage } from '@inertiajs/inertia-vue3';
+  import { nextTick } from 'vue';
+  import { ElMessage, ElInput, ElPopconfirm, ElMessageBox} from 'element-plus';
+  import axios from 'axios';
+  import { User, Connection, ChatDotSquare, InfoFilled } from '@element-plus/icons-vue';
+  import CurpAutorTax from '@/Pages/Socat/Autores/CuerpoAutorTaxon.vue';
+  import CurpGruposTax from '@/Pages/Socat/Grupos/CuerpoGrupoTaxon.vue';
+  import ComenSnibNom from '@/Pages/Socat/NombreTaxonomico/ComentariosSnibNombre.vue';
+  import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
+  import EditarButton from '@/Components/Biotica/EditarButton.vue';
+  import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
+  import DialogAutor from '@/Components/Biotica/DialogGeneral.vue';
+  import DialogGrp from '@/Components/Biotica/DialogGeneral.vue';
+  import DialogComSnib from '@/Components/Biotica/DialogGeneral.vue';
+  import usePermisos from '@/composables/usePermisos';
+  import autoridades from '@/Components/Biotica/Icons/Autor.vue';
+  import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
+  import comentarioSnib from '@/Components/Biotica/Icons/Comentarios.vue';
+  import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+  import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+  import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+  import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 
-const { permisos, usuario } = usePermisos();
+  const { permisos, usuario } = usePermisos();
 
-const page = usePage();
+  const page = usePage();
 
-const taxon = ref('');
+  const taxon = ref('');
 
-const hasPermisos = (etiqueta, modulo) => {
-    
-    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+  const hasPermisos = (etiqueta, modulo) => {
+      
+      const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
-    return permiso[modulo];
-};
+      return permiso[modulo];
+  };
 
-const abrirAutorTaxon = () => {
-  dialogFormVisibleAutor.value = true;
-};
+  const abrirAutorTaxon = () => {
+    dialogFormVisibleAutor.value = true;
+  };
 
-const props = defineProps({
-  autTaxEdit: [],
-  taxonAct: {
-    type: Object
-  },
-  paginaActual: Number,
-  categoria: [],
-  catalogos: [], 
-});
-
-const habNuevo = ref(false);
-const habMod = ref(false);
-const habElim = ref(false);
-const muestraGrd = ref(false);
-const currentZIndex = ref(1000);
-const estCor = ref(false);
-const estSin = ref(false);
-const estNa = ref(false);
-const estNd = ref(false);
-const estPubS = ref(false);
-const estPubN = ref(false);
-const actGrupo = ref(true);
-const estDinamico = ref("");
-const categorias = ref([]);
-const listGrp = ref([]);
-const listAutorTax = ref([]);
-const autorComp = ref("");
-const listAutores = ref([]);
-const tabInicial = ref("taxon");
-
-const opcSnib = ref([{
-  id: 'si',
-  label: 'Si'
-}, {
-  id: 'no',
-  label: 'No'
-}, {
-  id: '',
-  label: 'Vacío'
-}
-]);
-
-const opcNivRev = ref([{
-  value: 'A',
-  label: 'A - Publicado por especialista'
-}, {
-  value: 'B',
-  label: 'B - Revisado (no publicado) por especialista'
-}, {
-  value: 'C',
-  label: 'C - Compilación de literatura especializada'
-}, {
-  value: 'D',
-  label: 'D - Bases de datos especializadas'
-}, {
-  value: 'E',
-  label: 'E - Lista tipo checklist'
-}
-]);
-
-const Observaciones = ref('');
-const comentariosSnib = ref('');
-const idInvasora = ref('');
-const idCol = ref('');
-const idCites = ref('');
-const idIUCN = ref('');
-const homonimiaSnib = ref('');
-const comDet = ref(true);
-const accion = ref('');
-const valSnib = ref('');
-const categ = ref('');
-const idNombre = ref('');
-const idNom = ref(0);
-const idCat = ref('');
-const grpSelec= ref('');
-const nivelAct = ref(true);
-const autorAct = ref(true);
-const borrarAct = ref(true);
-const habAltEdic = ref(props.habAltEdic_prop)
-const habActTax = ref(false);
-const habModTax = ref(false);
-const dialogFormVisibleGrupos = ref(false);
-const dialogFormVisibleComentarios = ref(false);
-const dialogFormVisibleAutor = ref(false);
-
-const notificacionTitulo = ref('');
-const notificacionMensaje = ref('');
-const notificacionTipo = ref('info');
-const notificacionDuracion = ref(5000);
-const notificacionVisible = ref(false);
-
-const emit = defineEmits(['regresaTaxMod', 'cerrar', 
-                          'resultadoAlta', 'resultadoBaja']);
-const formRef = ref(null);
-const nombreTax = reactive({
-  nombreTaxon: '',
-  nombreAutoridad: '',
-  sistClassDicc: '',
-  citaNomenclatural: '',
-  anotacionTaxon: '',
-  otrasObservaciones: '',
-  catTax: '',
-  estatusTax: '',
-  estado: '',
-  grpSelec: [],
-  nivelRev: '',
-});
-
-const rules = ref({
-  nombreTaxon: [
-    { required: true, message: 'Ingrese un nombre de taxón', trigger: 'blur' },
-    { min: 1, max: 100, message: 'El tamaño debe ser entre 1 y 100', trigger: 'blur' }
-  ],
-  nombreAutoridad: [
-    { required: true, message: 'Ingrese un nombre de autoridad', trigger: 'blur' },
-    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
-  ],
-  sistClassDicc: [
-    { required: true, message: 'No es posible ingresar un taxón sin el dato del sistema de clasificación, catálogo de autoridad o diccionario', trigger: 'blur' },
-    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
-  ],
-  citaNomenclatural: [
-    { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
-  ],
-  anotacionTaxon: [
-    { max: 255, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
-  ],
-  otrasObservaciones: [
-    { max: 255, message: 'El tamaño debe ser menor o igual a 50 caracteres', trigger: 'blur' }
-  ],
-  catTax: [
-    { required: true, message: 'Se debe seleccionar una categoria taxonomica', trigger: 'change' }
-  ],
-  estatusTax: [
-    { required: true, message: 'Debe seleccionar el estatus', trigger: 'change' }
-  ],
-  estado: [
-    { required: true, message: 'Debe seleccionar el estado', trigger: 'change' }
-  ],
-  grpSelec: [
-    { required: true, message: 'Se debe seleccionar un grupo', trigger: 'change' }
-  ],
-  nivelRev: [
-    { required: true, message: 'Se debe seleccionar nivel de revisión', trigger: 'change' }
-  ]
-});
-
-const autTaxComp = ref('')
-
-const recibeAutores = (autores, autoridadTax) =>{
-  listAutorTax.value = autores.value;
-  autorComp.value = autoridadTax.value.trim();
-  nombreTax.nombreAutoridad = autoridadTax.value.trim();
-  dialogFormVisibleAutor.value= false;
-}
-
-const carga_inicio = () => {  
-  muestraGrd.value = props.muestraGuardar;
-  estCor.value = true;
-  estSin.value = true;
-  estNa.value = true;
-  estNd.value = true;
-  
-  Object.assign(nombreTax, {
-    nombreTaxon : props.taxonAct?.completo?.Nombre || '',
-    nombreAutoridad : props.taxonAct?.completo?.NombreAutoridad || '',
-    sistClassDicc : props.taxonAct?.completo?.SistClasCatDicc || '',
-    citaNomenclatural : props.taxonAct?.completo?.CitaNomenclatural || '',
-    anotacionTaxon : props.taxonAct?.completo?.Anotacion || '',
-    otrasObservaciones : props.taxonAct?.completo?.otrasObservaciones || '',
-    catTax : props.taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica || '',
-    estatusTax : props.taxonAct?.completo?.Estatus || '',
-    estado : props.taxonAct?.completo?.scat?.Publico
+  const props = defineProps({
+    autTaxEdit: [],
+    taxonAct: {
+      type: Object,
+      default: () => ({})
+    },
+    paginaActual: Number,
+    categoria: {
+      type: String,
+      default: ""
+    },
+    catalogos: [], 
+    regNomenclatura: {
+      type: Number,
+      default: 0
+    },
+    numHijos: {
+      type: Number,
+      default: 0
+    },
+    nuevoTax:{
+      type: Boolean,
+      default: false
+    },
+    catNuevoTax:{
+      type: Object,
+      default: () => ({})
+    }, 
+     categoriasTax: {
+      type: Object,
+  }
   });
-  idNombre.value = props.taxonAct?.completo?.IdNombre || '';
-  idCat.value = props.taxonAct?.completo?.scat?.IDCAT || '';
-  idInvasora.value = props.taxonAct?.completo?.scat.ListaInvasoras || '';
-  idCol.value = props.taxonAct?.completo?.scat.IdCOL || '';
-  idCites.value = props.taxonAct?.completo?.scat.IdCITES || '';
-  idIUCN.value = props.taxonAct?.completo?.scat.IdIUCN || '';
-  autorComp.value = props.taxonAct?.completo?.NombreAutoridad;
-  nivelAct.value = true;
-  autorAct.value = true;
-  borrarAct.value = false;
-  habAltEdic.value = true;
-  comDet.value = true;
-  listAutorTax.value = props.taxonAct?.completo?.rel_nombre_autor;
-  cargaListGrp();
-  cargaValSnib();
-  cargaNivRev();
-  cargaComSnib();
-  validaHijos();
-  comDet.value = false;
-  borrarAct.value = false;
-  habAltEdic.value = true;
-  nivelAct.value = true;
-  autorAct.value = true;
-  habActTax.value = false;
-  habModTax.value = false;
-  cargaCategorias();
-  
-  if (props.taxonAct?.completo?.IdNivel2 === 1) {
-    estDinamico.value = "Valido";
-  } else {
-    estDinamico.value = "Correcto";
+
+  const habNuevo = ref(false);
+  const habMod = ref(false);
+  const habElim = ref(false);
+  const muestraGrd = ref(false);
+  const currentZIndex = ref(1000);
+  const estCor = ref(false);
+  const estSin = ref(false);
+  const estNa = ref(false);
+  const estNd = ref(false);
+  const estPubS = ref(false);
+  const estPubN = ref(false);
+  const actGrupo = ref(true);
+  const estDinamico = ref("");
+  const categorias = ref([]);
+  const listGrp = ref([]);
+  const listAutorTax = ref([]);
+  const autorComp = ref("");
+  const listAutores = ref([]);
+  const tabInicial = ref("taxon");
+
+  const relnomcat = ref(0);
+
+  const habGuardar = ref(true);
+
+  const opcSnib = ref([{
+    id: 'si',
+    label: 'Si'
+  }, {
+    id: 'no',
+    label: 'No'
+  }, {
+    id: '',
+    label: ''
+  }
+  ]);
+
+  const opcNivRev = ref([{
+    value: 'A',
+    label: 'A - Publicado por especialista'
+  }, {
+    value: 'B',
+    label: 'B - Revisado (no publicado) por especialista'
+  }, {
+    value: 'C',
+    label: 'C - Compilación de literatura especializada'
+  }, {
+    value: 'D',
+    label: 'D - Bases de datos especializadas'
+  }, {
+    value: 'E',
+    label: 'E - Lista tipo checklist'
+  }
+  ]);
+
+  const Observaciones = ref('');
+  const comentariosSnib = ref('');
+  const idInvasora = ref('');
+  const idCol = ref('');
+  const idCites = ref('');
+  const idIUCN = ref('');
+  const homonimiaSnib = ref('');
+  const comDet = ref(true);
+  const accion = ref('');
+  const valSnib = ref('');
+  const categ = ref('');
+  const idNombre = ref('');
+  const idNom = ref(0);
+  const idCat = ref('');
+  const grpSelec= ref('');
+  const nivelAct = ref(true);
+  const autorAct = ref(true);
+  const borrarAct = ref(true);
+  const habAltEdic = ref(props.habAltEdic_prop)
+  const habActTax = ref(false);
+  const habModTax = ref(false);
+  const dialogFormVisibleGrupos = ref(false);
+  const dialogFormVisibleComentarios = ref(false);
+  const dialogFormVisibleAutor = ref(false);
+
+  const notificacionTitulo = ref('');
+  const notificacionMensaje = ref('');
+  const notificacionTipo = ref('info');
+  const notificacionDuracion = ref(5000);
+  const notificacionVisible = ref(false);
+  const numEjemp = ref('');
+
+  const emit = defineEmits(['regresaTaxMod', 'cerrar', 
+                            'resultadoAlta', 'resultadoBaja']);
+  const formRef = ref(null);
+  const nombreTax = reactive({
+    nombreTaxon: '',
+    nombreAutoridad: '',
+    sistClassDicc: '',
+    citaNomenclatural: '',
+    anotacionTaxon: '',
+    otrasObservaciones: '',
+    catTax: '',
+    estatusTax: '',
+    estado: '',
+    grpSelec: [],
+    nivelRev: '',
+  });
+
+  const rules = ref({
+    nombreTaxon: [
+      { required: true, message: 'Ingrese un nombre de taxón', trigger: 'blur' },
+      { min: 1, max: 100, message: 'El tamaño debe ser entre 1 y 100', trigger: 'blur' }
+    ],
+    nombreAutoridad: [
+      { required: true, message: 'Ingrese un nombre de autoridad', trigger: 'blur' },
+      { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
+    ],
+    sistClassDicc: [
+      { required: true, message: 'No es posible ingresar un taxón sin el dato del sistema de clasificación, catálogo de autoridad o diccionario', trigger: 'blur' },
+      { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
+    ],
+    citaNomenclatural: [
+      { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
+    ],
+    anotacionTaxon: [
+      { max: 255, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
+    ],
+    otrasObservaciones: [
+      { max: 255, message: 'El tamaño debe ser menor o igual a 50 caracteres', trigger: 'blur' }
+    ],
+    catTax: [
+      { required: true, message: 'Se debe seleccionar una categoria taxonomica', trigger: 'change' }
+    ],
+    estatusTax: [
+      { required: true, message: 'Debe seleccionar el estatus', trigger: 'change' }
+    ],
+    estado: [
+      { required: true, message: 'Debe seleccionar el estado', trigger: 'change' }
+    ],
+    grpSelec: [
+      { required: true, message: 'Se debe seleccionar un grupo', trigger: 'change' }
+    ],
+    nivelRev: [
+      { required: true, message: 'Se debe seleccionar nivel de revisión', trigger: 'change' }
+    ],
+    homonimiaSnib: [
+      { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
+    ]
+  });
+
+  const autTaxComp = ref('')
+
+  const recibeAutores = (autores, autoridadTax) =>{
+    listAutorTax.value = autores.value;
+    autorComp.value = autoridadTax.value.trim();
+    nombreTax.nombreAutoridad = autoridadTax.value.trim();
+    dialogFormVisibleAutor.value= false;
   }
 
-  habNuevo.value = false;
-  habMod.value = false; 
-  habElim.value = false;
-
-  if (props.taxonAct?.completo?.rel_nombre_autor?.length === 0 && props.infTaxon != 0) {
-    ElMessage({
-      showClose: true,
-      message: 'Recuerde que se debe actualizar los autores para generar la relación entre nombre y autor',
-      type: 'warning',
-      duration: 3000
-    })
+  const carga_inicio = () => {  
+    muestraGrd.value = true;
+    estCor.value = true;
+    estSin.value = true;
+    estNa.value = true;
+    estNd.value = true;
+    habGuardar.value = true;
     
-  }
-};
-
-  const cerrarDialogo = () => {
-        tabInicial.value = "taxon";
-        emit('cerrar');
-  };
-
-const carga_Grupos = () => {
-  dialogFormVisibleGrupos.value = true;
-};
-
-const comentarios_Snib = () => {
-  dialogFormVisibleComentarios.value = true;
-};
-
-const closeDialogComSnib= () => {
-   dialogFormVisibleComentarios.value = false;
-}
-
-const cargaListGrp = async () => {
-  const response = await axios.get('/carga-list-grp');
-
-  if (response.status === 200) {
-    listGrp.value = response.data;
-    let idGrp = props.taxonAct.completo.scat.IdGrupoSCAT;
-    const resp = listGrp.value.find(grupo => grupo.id === idGrp);
-    if(resp){
-      nombreTax.grpSelec = resp.label;
-    }
-    grpSelec.value = resp.id;
-  }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
-  }
-
-};
-
-const validaHijos = async () => {
-  let params;
-  params = {
-    idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
-    IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
-    IdNivel2: props.taxonAct.completo.categoria.IdNivel2
-  };
-
-  const response = await axios.get('/carga-categ', params);
-  
-  if (response.status === 200) {
-    if(response.data.length === 0)
-    {
-      habActTax.value = true;
-    }else{
-      habActTax.value = false;
-    }
-  }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
-  }
-}; 
-
-const cargaCategorias = async () => {
-
-  let params = {
-    idNombre: props.taxonAct?.completo?.IdCategoriaTaxonomica,
-    IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
-    IdNivel2: props.taxonAct.completo.categoria.IdNivel2
-  };
-  
-  const response = await axios.get('carga-categ', { params });
-  if (response.status === 200) {
-    categorias.value = response.data;
-    categorias.value.push({
-      id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
-      label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
+    Object.assign(nombreTax, {
+      nombreTaxon : props.taxonAct?.completo?.Nombre || '',
+      nombreAutoridad : props.taxonAct?.completo?.NombreAutoridad || '',
+      sistClassDicc : props.taxonAct?.completo?.SistClasCatDicc || '',
+      citaNomenclatural : props.taxonAct?.completo?.CitaNomenclatural || '',
+      anotacionTaxon : props.taxonAct?.completo?.Anotacion || '',
+      otrasObservaciones : props.taxonAct?.completo?.otrasObservaciones || '',
+      catTax : props.taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica || '',
+      estatusTax : props.taxonAct?.completo?.Estatus || '',
+      estado : props.taxonAct?.completo?.scat?.Publico
     });
-  }else {
-    console.log("Se presentó un error en la recuperación de los datos");
-  }
-};
-
-const cargaValSnib = async () => {
-
-  valSnib.value = '';
-
-  if (props?.taxonAct?.completo?.scat) {
+    idNombre.value = props.taxonAct?.completo?.IdNombre || '';
+    idCat.value = props.taxonAct?.completo?.scat?.IDCAT || '';
+    idInvasora.value = props.taxonAct?.completo?.scat.ListaInvasoras || '';
+    idCol.value = props.taxonAct?.completo?.scat.IdCOL || '';
+    idCites.value = props.taxonAct?.completo?.scat.IdCITES || '';
+    idIUCN.value = props.taxonAct?.completo?.scat.IdIUCN || '';
+    autorComp.value = props.taxonAct?.completo?.NombreAutoridad;
+    nivelAct.value = true;
+    autorAct.value = true;
+    borrarAct.value = false;
+    habAltEdic.value = true;
+    comDet.value = true;
+    listAutorTax.value = props.taxonAct?.completo?.rel_nombre_autor;
+    numEjemp.value = 0;
+    cargaListGrp();
+    cargaValSnib();
+    cargaNivRev();
+    cargaComSnib();
+    validaHijos();
+    comDet.value = false;
+    borrarAct.value = false;
+    habAltEdic.value = true;
+    nivelAct.value = true;
+    autorAct.value = true;
+    habActTax.value = false;
+    habModTax.value = false;
+    cargaCategorias();
     
-    let valSnibValue = props.taxonAct.completo.scat.ValidacionSNIB;
- 
-    if(valSnibValue !== null)
-    {
-      let resp = opcSnib.value.find(niv => niv.id === valSnibValue);
-
-      if (typeof resp === 'undefined') {
-        valSnib.value = '';
-      } else {
-        valSnib.value = resp.label;
-      }
+    if (props?.taxonAct?.completo?.categoria?.IdNivel1 < 5) {
+      actGrupo.value = true;
     }
-  }
-};
 
-const cargaNivRev = async () => {
-  if (props?.taxonAct?.completo?.scat) {
-    let nivRev = props.taxonAct.completo.scat.Nivel_de_revision;
-
-    let resp = opcNivRev.value.find(niv => niv.value === nivRev);
-    
-    if (typeof resp === 'undefined') {
-      nivRev.value = '';
+    if (props?.taxonAct?.completo?.categoria?.IdNivel2 === 1) {
+      estDinamico.value = "Valido";
     } else {
-      nombreTax.nivelRev = resp.label;
+      estDinamico.value = "Correcto";
     }
-  }
-};
 
-const cargaComSnib = async () => {
+    habNuevo.value = false;
+    habMod.value = false; 
+    habElim.value = false;
 
-  if (props.taxonAct.completo.scat) {
-    homonimiaSnib.value = props.taxonAct.completo.scat.HomonimiaSNIB;
-    idInvasora.value = props.taxonAct.completo.scat.ListaInvasoras;
-  }
-
-  let params = {
-    idNombre: props.taxonAct.id
-  };
- 
-  const response = await axios.get('/cargar-comSnib', {params});
-  
-  if (response.status === 200) {
-    
-    comentariosSnib.value = response.data[0].NumEjemplares;
-   
-    if (comentariosSnib.value > 0) {
-        comDet.value = false;
-       
-      } else {
-        comDet.value = true;
-      }
-  }
-  else {
-    console.log("Se presentó un error en la recuperación de los datos");
-  }
-};
-
-const AltaEstatus = async () =>{
-  console.log("Entre a alta de estatus");
-  if(props.taxonAct.completo.categoria.IdNivel1 < 5)
-    {
-      console.log("Entre a alta estatus");
-      nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
+    if(props.nuevoTax){
+      muestraGrd.value = false;
       estCor.value = true;
       estSin.value = true;
-      estNa.value= true;
+      estNa.value = true;
       estNd.value = true;
-      return; 
+      habGuardar.value = false;
 
+      Object.assign(nombreTax, {
+        catTax : props.catNuevoTax.NombreCategoriaTaxonomica,
+        estatusTax : 2,
+        grpSelec : ""
+      });
+
+      cargaListGrp();
+
+      autorAct.value = false;
+      valSnib.value = '';
+
+      comDet.value = true;
+      borrarAct.value = true;
+      habAltEdic.value = false;
+      habActTax.value = true;
+      habModTax.value = true;
+      accion.value = 'crear';
+      estPubS.value = false;
+      estPubN.value = false;
+      listAutores.value = [];
+      numEjemp.value = 0;
+      
+      actGrupo.value = false;
+    
+      habNuevo.value = true;
+      habMod.value = true; 
+      habElim.value = true;
     }
-    switch(props.taxonAct.completo.Estatus){
-      case 2:
-      console.log("Entre a case 2");
-        estCor.value = false;
-        estSin.value = false;
-        estNa.value = false;
-        estNd.value = false;
-      break;
-      case 1:
-        estCor.value = true;
-        estSin.value = false;
-        estNa.value = false;
-        estNd.value = false;
-        console.log("valido: ", estCor.value, 
-                    "sinonimo: ", estSin.value,
-                    "na: ", estNa.value,
-                    "Nd: ", estNd.value);
-      break;
-      case 6:
-      console.log("Entre a case 9");
-        estCor.value = true;
-        estSin.value = true;
-        estNa.value = false;
-        estNd.value = false;
-      break;
-    }         
-};
 
-const nuevoTax = async() => {
-  muestraGrd.value = true;
-
-  if (props.taxonAct.estatus.value === 'NA') {
-    await mostrarNotificacion(
-          "Aviso",
-          "No es posible ingresar un nuevo taxón que tenga como ascendente a un taxón con estatus NA",
-          "error",
-          5000
-        );
-    nuevoTax.break();
-  }
- 
-  if (props.taxonAct.completo.categoria.IdNivel1 < 5) {
-    actGrupo.value = false;
-  }
-  
-  habNuevo.value = true;
-  habMod.value = true; 
-  habElim.value = true;
-
-  nombreTax.estatusTax = '';
-  nivelAct.value = false;
-  autorAct.value = false;
-  nombreTax.catTax = '';
-  valSnib.value = '';
-
-  const resp = await AltaEstatus();
-  
-  nombreTax.nombreTaxon = '';
-  nombreTax.nombreAutoridad = '';
-  nombreTax.sistClassDicc = '';
-  nombreTax.citaNomenclatural = '';
-  nombreTax.anotacionTaxon = '';
-  nombreTax.otrasObservaciones = '';
-  nombreTax.nivelRev= '';
-  nombreTax.estado= '';
-  autorComp.value = '';
-  idInvasora.value = '';
-  idCol.value = '';
-  idCites.value = '';
-  idIUCN.value = '';
-  homonimiaSnib.value = '';
-  idNombre.value = '';
-  idCat.value = '';
-  grpSelec.value = '';
-  comentariosSnib.value = '';
-  comDet.value = true;
-  borrarAct.value = true;
-  habAltEdic.value = false;
-  habActTax.value = true;
-  habModTax.value = true;
-  accion.value = 'crear';
-  idNom.value = props.taxonAct.completo.IdNombre;
-  estPubS.value = false;
-  estPubN.value = false;
-  listAutores.value = [];
-};
-
-const editarTax = () => {
-  habNuevo.value = true;
-  habMod.value = true; 
-  habElim.value = true;
-  muestraGrd.value = true;
-  comDet.value = true;
-  borrarAct.value = true;
-  habAltEdic.value = false;
-  habActTax.value = true;
-  habModTax.value = true;
-  autorAct.value = false;
-  accion.value = 'editar';
-  idNom.value = props.taxonAct.completo.IdNombre;
-  nombreTax.nivelRev = props.taxonAct.completo.scat.Nivel_de_revision;
-  listAutores.value = props.taxonAct.completo.rel_nombre_autor;
-  estPubS.value = false;
-  estPubN.value = false;
-  estCor.value = false;
-  estSin.value = false;
-  estNa.value = false;
-  estNd.value = false;
-  CambioEstatus();
-};
-
-const CambioEstatus = () => {
-  let params;
-
-  params = {
-    estatusInicio: props.taxonAct.completo.Estatus,
-    nomAct: props.taxonAct.id
   };
 
-  if(accion.value === 'crear')
-  {
-    return;
+    const cerrarDialogo = () => {
+          tabInicial.value = "taxon";
+          emit('cerrar');
+    };
+
+  const carga_Grupos = () => {
+    dialogFormVisibleGrupos.value = true;
+  };
+
+  /*Esta función es para cerrar el dialog de grupos taxonomicos*/
+  const cerrar_Grupos = () => {
+    
+    cargaListGrp();
+
+    dialogFormVisibleGrupos.value = false;
+  };
+
+  const comentarios_Snib = () => {
+    dialogFormVisibleComentarios.value = true;
+  };
+
+  const closeDialogComSnib= () => {
+    dialogFormVisibleComentarios.value = false;
   }
 
-  axios.get("/valCamEstatus", { params }).then((response) => {
-    switch (props.taxonAct.completo.Estatus) {
-      case 1:
-        estCor.value = response.data != 1 ? true : false;
-        estSin.value = false;
-        estNa.value = false;
-        estNd.value = false;
-        break;
-      case 2:
-        estCor.value = false;
-        estSin.value = response.data != 1 ? false : true;
-        estNa.value = false;
-        estNd.value = false;
-        break;
-      case 6:
-        estCor.value = response.data != 1 ? true : false;
-        estSin.value = response.data != 1 ? true : false;
-        estNa.value = false;
-        estNd.value = false;
-        break;
-      case -9:
-        estCor.value = response.data != 1 ? true : false;
-        estSin.value = response.data != 1 ? true : false;
-        estNa.value = false;
-        estNd.value = false;
-        break;
-    }
-  });
-};
+  const cargaListGrp = async () => {
+      const response = await axios.get('/carga-list-grp');
 
-const borrarDatos = async () => {
+      if (response.status === 200) {
+        listGrp.value = response.data;
 
-  let rel = props.taxonAct.completo.nombre_rel.length;
-  let hijos = props.taxonAct.completo.hijos.length;
-  let catRel = props.taxonAct.completo.rel_nombre_cat.length;
-  let numEjemp = parseInt(props.taxonAct.numEjemp);
+        if(Object.keys(props.taxonAct).length > 0)
+        {
+          let idGrp = props.taxonAct.completo.scat.IdGrupoSCAT;
+          const resp = listGrp.value.find(grupo => grupo.id === idGrp);
+          if(resp){
+            nombreTax.grpSelec = resp.label;
+          }
+          grpSelec.value = resp.id;
+        }
+      }
+      else {
+        console.log("Se presentó un error en la recuperación de los datos");
+      }
+  };
 
-  let mensaje = '<strong>El nombre no puede ser eliminado ya que tiene: </p> <br></strong>';
-
-  if (numEjemp > 0) {
-    if (numEjemp === 1) {
-      mensaje += '<strong>' + numEjemp + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
-    } else {
-      mensaje += '<strong>' + numEjemp + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
-    }
-  }
-
-  if (rel > 0) {
-    if (rel === 1) {
-      mensaje += '<strong>' + rel + ' taxón relacionado. </p> <br></strong>';
-    } else {
-      mensaje += '<strong>' + rel + ' taxones relacionados. </p> <br></strong>';
-    }
-  }
-
-  if (hijos > 0) {
-    if (hijos === 1) {
-      mensaje += '<strong>' + hijos + ' taxón hijo </p> <br></strong>';
-    } else {
-      mensaje += '<strong>' + hijos + ' taxones hijos </p> <br></strong>';
-    }
-  }
-
-  if (catRel > 0) {
-    if (catRel === 1) {
-      mensaje += '<strong>' + catRel + ' caracteristica relacionada </p> <br></strong>';
-    } else {
-      mensaje += '<strong>' + catRel + ' caracteristicas relacionadas </p> <br></strong>';
-    }
-  }
-
-  if (comentariosSnib.value > 0) {
-
-    if (comentariosSnib.value === 1) {
-      mensaje += '<strong>' + comentariosSnib.value + ' comentario en el SNIB </p> <br></strong>';
-    } else {
-      mensaje += '<strong>' + comentariosSnib.value + ' comentarios en el SNIB </p> <br></strong>';
-    }
-  }
-
-  if (rel > 0 || hijos > 0 || catRel > 0 || comentariosSnib.value > 0) {
-    await mostrarNotificacion(
-        "Aviso",
-        mensaje,
-        "Error",
-        5000
-      );
-    return;
-  }
- 
-  const params = { alias: usuario.user.Alias }
-
-  try{
-      const response = await axios.put(`/baja-nombre/${props.taxonAct.id}`, params);
-                   
-      emit('cerrar', false);
-      emit('resultadoBaja', response.data);
-    }
-    catch(error){
-       console.log("este es el error: ", error);
-        if (error.response.status === 422) {
-            const errorMessages = Object.values(error.response.data.errors).flat();
-            errorMessages.forEach(msg => {
-                mostrarNotificacion(
-                  "Aviso",
-                  msg,
-                  "Error",
-                  5000
-                );
-            });
-       }
-    }
-
-};
-
-const carga_autor = () => {
-  dialogFormVisibleAutor.value = true;
-};
-
-const muestraFiltros = () => {
-  nombreTax.nombreAutoridad = autTaxComp.value;
-};
-
-const onPressSistC = async (e) => {
-  let allowedKeys = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30
-  ];
-
-  if (allowedKeys.indexOf(e.keyCode) > -1) {
-    event.preventDefault();
-    return false;
-  }
-};
-
-const resetForm = () => {
-  nombreTax.nombreTaxon = '';
-  nombreTax.nombreAutoridad = '';
-  nombreTax.sistClassDicc = '';
-  nombreTax.citaNomenclatural = '';
-  nombreTax.anotacionTaxon = '';
-  nombreTax.otrasObservaciones = '';
-  nombreTax.catTax = '';
-  nombreTax.estatusTax = '';
-  nombreTax.estado = '';
-  nombreTax.grpSelec = [];
-  nombreTax.nivelRev = '';
-};
-
-const cambioPublico = async (estadoTaxon)=> {
-  if(props.taxonAct.numEjemp > 0 && estadoTaxon != 1)
+  const validaHijos = async () => {
+    if(Object.keys(props.taxonAct).length > 0)
     {
+      let params;
+      params = {
+        idNombre: props.taxonAct.completo.IdCategoriaTaxonomica,
+        IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
+        IdNivel2: props.taxonAct.completo.categoria.IdNivel2
+      };
+
+      const response = await axios.get('/carga-categ', params);
+      
+      if (response.status === 200) {
+        if(response.data.length === 0)
+        {
+          habActTax.value = true;
+        }else{
+          habActTax.value = false;
+        }
+      }
+      else {
+        console.log("Se presentó un error en la recuperación de los datos");
+      }
+    }
+  }; 
+
+  const cargaCategorias = async () => {    
+    if(Object.keys(props.taxonAct).length > 0)
+    {
+      let params = {
+        idNombre: props.taxonAct?.completo?.IdCategoriaTaxonomica,
+        IdNivel1: props.taxonAct.completo.categoria.IdNivel1,
+        IdNivel2: props.taxonAct.completo.categoria.IdNivel2
+      };
+
+      const response = await axios.get('carga-categ', { params });
+      if (response.status === 200) {
+          categorias.value = response.data;
+          categorias.value.unshift({
+          id: props.taxonAct.completo.categoria.IdCategoriaTaxonomica,
+          label: props.taxonAct.completo.categoria.NombreCategoriaTaxonomica
+        });
+      }else {
+        console.log("Se presentó un error en la recuperación de los datos");
+      }
+    }
+  };
+
+  const cargaValSnib = async () => {
+
+    valSnib.value = '';
+
+    if (props?.taxonAct?.completo?.scat) {
+      
+      let valSnibValue = props.taxonAct.completo.scat.ValidacionSNIB;
+  
+      if(valSnibValue !== null)
+      {
+        let resp = opcSnib.value.find(niv => niv.id === valSnibValue);
+
+        if (typeof resp === 'undefined') {
+          valSnib.value = '';
+        } else {
+          valSnib.value = resp.label;
+        }
+      }
+    }
+  };
+
+  const cargaNivRev = async () => {
+    if (props?.taxonAct?.completo?.scat) {
+      let nivRev = props.taxonAct.completo.scat.Nivel_de_revision;
+
+      let resp = opcNivRev.value.find(niv => niv.value === nivRev);
+      
+      if (typeof resp === 'undefined') {
+        nivRev.value = '';
+      } else {
+        nombreTax.nivelRev = resp.label;
+      }
+    }
+  };
+
+  const cargaComSnib = async () => {
+    if(Object.keys(props.taxonAct).length > 0)
+    {  
+
+      if (props.taxonAct.completo.scat) {
+        homonimiaSnib.value = props.taxonAct.completo.scat.HomonimiaSNIB;
+        idInvasora.value = props.taxonAct.completo.scat.ListaInvasoras;
+      }
+
+      let params = {
+        idNombre: props.taxonAct.id
+      };
+    
+      const response = await axios.get('/cargar-comSnib', {params});
+      
+      if (response.status === 200) {
+
+        comentariosSnib.value = response.data.snib[0].NumComEjemplares;
+        numEjemp.value = response.data.snib[0].NumEjemplares
+        relnomcat.value = response.data.relNombreCat
+      
+        if (comentariosSnib.value > 0) {
+            comDet.value = false;
+          
+          } else {
+            comDet.value = true;
+          }
+      }
+      else {
+        console.log("Se presentó un error en la recuperación de los datos");
+      }
+    }
+  };
+
+  const AltaEstatus = async () =>{
+    if(props.taxonAct.completo.categoria.IdNivel1 < 4)
+      {
+        nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
+        estCor.value = true;
+        estSin.value = true;
+        estNa.value= true;
+        estNd.value = true;
+        return; 
+
+      }
+      switch(props.taxonAct.completo.Estatus){
+        case 2:
+          estCor.value = false;
+          estSin.value = false;
+          estNa.value = false;
+          estNd.value = false;
+        break;
+        case 1:
+          estCor.value = true;
+          estSin.value = false;
+          estNa.value = false;
+          estNd.value = false;
+          console.log("valido: ", estCor.value, 
+                      "sinonimo: ", estSin.value,
+                      "na: ", estNa.value,
+                      "Nd: ", estNd.value);
+        break;
+        case 6:
+        console.log("Entre a case 9");
+          estCor.value = true;
+          estSin.value = true;
+          estNa.value = false;
+          estNd.value = false;
+        break;
+      }         
+  };
+
+  const nuevoTax = async() => {
+    muestraGrd.value = false;
+
+    accion.value = "crear"; 
+
+    if (props.taxonAct.estatus.value === 'NA') {
       await mostrarNotificacion(
-        "Aviso",
-        'No se puede cambiar el valor a no publico ya que tiene nombres relacionados en el SNIB',
-        "Error",
-        5000
-      );
-       return false; 
-     }
-     return true;
-}
-
-const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  console.log("Entre a mostrar la notificación 321");
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
-const Guardar = async () =>{
+            "Aviso",
+            "No es posible ingresar un nuevo taxón que tenga como ascendente a un taxón con estatus NA",
+            "error",
+            5000
+          );
+      nuevoTax.break();
+    }
   
-  if (!formRef.value) return;
+    if (props.taxonAct.completo.categoria.IdNivel1 < 5) {
+      actGrupo.value = false;
+    }else{
+      actGrupo.value = true;
+    }
+    
+    habNuevo.value = true;
+    habMod.value = true; 
+    habElim.value = true;
+
+    nombreTax.estatusTax = '';
+    nivelAct.value = false;
+    autorAct.value = false;
+    nombreTax.catTax = '';
+    valSnib.value = '';
+    habGuardar.value = false;
+
+    const resp = await AltaEstatus();
+    
+    nombreTax.nombreTaxon = '';
+    nombreTax.nombreAutoridad = '';
+    nombreTax.sistClassDicc = '';
+    nombreTax.citaNomenclatural = '';
+    nombreTax.anotacionTaxon = '';
+    nombreTax.otrasObservaciones = '';
+    nombreTax.nivelRev= '';
+    nombreTax.estado= '';
+    autorComp.value = '';
+    idInvasora.value = '';
+    idCol.value = '';
+    idCites.value = '';
+    idIUCN.value = '';
+    homonimiaSnib.value = '';
+    idNombre.value = '';
+    idCat.value = '';
+    grpSelec.value = '';
+    comentariosSnib.value = '';
+    comDet.value = true;
+    borrarAct.value = true;
+    habAltEdic.value = false;
+    habActTax.value = true;
+    habModTax.value = true;
+    accion.value = 'crear';
+    idNom.value = props.taxonAct.completo.IdNombre;
+    estPubS.value = false;
+    estPubN.value = false;
+    listAutores.value = [];
+    numEjemp.value = 0;
+  };
+
+  const editarTax = () => {
+    if (props.taxonAct.completo.categoria.IdNivel1 < 5) {
+      actGrupo.value = false;
+    }
+    habNuevo.value = true;
+    habMod.value = true; 
+    habElim.value = true;
+    muestraGrd.value = false;
+    comDet.value = true;
+    borrarAct.value = true;
+    habAltEdic.value = false;
+    habActTax.value = true;
+    habModTax.value = true;
+    autorAct.value = false;
+    accion.value = 'editar';
+    idNom.value = props.taxonAct.completo.IdNombre;
+    nombreTax.nivelRev = props.taxonAct.completo.scat.Nivel_de_revision;
+    listAutores.value = props.taxonAct.completo.rel_nombre_autor;
+    estPubS.value = false;
+    estPubN.value = false;
+    estCor.value = false;
+    estSin.value = false;
+    estNa.value = false;
+    estNd.value = false;
+    habGuardar.value = false;
+    CambioEstatus();
+  };
+
+  const CambioEstatus = () => {
+    let params;
+
+    params = {
+      estatusInicio: props.taxonAct.completo.Estatus,
+      nomAct: props.taxonAct.id
+    };
+
+    if(accion.value === 'crear')
+    {
+      return;
+    }
+
+    axios.get("/valCamEstatus", { params }).then((response) => {
+      switch (props.taxonAct.completo.Estatus) {
+        case 1:
+          estCor.value = response.data != 1 ? true : false;
+          estSin.value = false;
+          estNa.value = false;
+          estNd.value = false;
+          break;
+        case 2:
+          estCor.value = false;
+          estSin.value = response.data != 1 ? false : true;
+          estNa.value = false;
+          estNd.value = false;
+          break;
+        case 6:
+          estCor.value = response.data != 1 ? true : false;
+          estSin.value = response.data != 1 ? true : false;
+          estNa.value = false;
+          estNd.value = false;
+          break;
+        case -9:
+          estCor.value = response.data != 1 ? true : false;
+          estSin.value = response.data != 1 ? true : false;
+          estNa.value = false;
+          estNd.value = false;
+          break;
+      }
+    });
+  };
+
+  const borrarDatos = async () => {
+    
+    const confirmado = await showConfirmMessage({
+                      title: 'Confirmar eliminación',
+                      message: '¿Estás seguro de eliminar el taxón actual?'
+                  });
+
+    if (!confirmado) {
+        return;
+    }
+
+    let rel = props.regNomenclatura;
+    let hijos = props.numHijos;
+
+    let mensaje = '<strong>El nombre no puede ser eliminado ya que tiene: </p> <br></strong>';
+
+    if (numEjemp.value > 0) {
+      if (numEjemp.value === 1) {
+        mensaje += '<strong>' + numEjemp.value + ' ejemplar relacionado en el SNIB. </p> <br></strong>';
+      } else {
+        mensaje += '<strong>' + numEjemp.value + ' ejemplares relacionados en el SNIB. </p> <br></strong>';
+      }
+    }
+
+    if (rel > 0) {
+      if (rel === 1) {
+        mensaje += '<strong>' + rel + ' taxón relacionado. </p> <br></strong>';
+      } else {
+        mensaje += '<strong>' + rel + ' taxones relacionados. </p> <br></strong>';
+      }
+    }
+
+    if (hijos > 0) {
+      if (hijos === 1) {
+        mensaje += '<strong>' + hijos + ' taxón hijo </p> <br></strong>';
+      } else {
+        mensaje += '<strong>' + hijos + ' taxones hijos </p> <br></strong>';
+      }
+    }
+
+    if (relnomcat.value > 0) {
+      if (relnomcat.value === 1) {
+        mensaje += '<strong>' + relnomcat.value + ' caracteristica relacionada </p> <br></strong>';
+      } else {
+        mensaje += '<strong>' + relnomcat.value + ' caracteristicas relacionadas </p> <br></strong>';
+      }
+    }
+
+    if (comentariosSnib.value > 0) {
+
+      if (comentariosSnib.value === 1) {
+        mensaje += '<strong>' + comentariosSnib.value + ' comentario en el SNIB </p> <br></strong>';
+      } else {
+        mensaje += '<strong>' + comentariosSnib.value + ' comentarios en el SNIB </p> <br></strong>';
+      }
+    }
+
+    if (rel > 0 || hijos > 0 || relnomcat.value > 0 || comentariosSnib.value > 0) {
+      await mostrarNotificacion(
+          "Aviso",
+          mensaje,
+          "Error",
+          5000
+        );
+      return;
+    }
   
-  const esValido = await formRef.value.validate().then(() => true).catch(() => false);
-  
-  if (!esValido) {
-    await mostrarNotificacion(
-      "Aviso",
-      'Por favor, complete todos los campos requeridos.',
-      "Error",
-      5000
-    );
-    return;
-  }
+    const params = { alias: usuario.user.Alias }
 
-  const estadoPub = await cambioPublico(nombreTax.estado);
+    try{
+        const response = await axios.put(`/baja-nombre/${props.taxonAct.id}`, params);
+                    
+        emit('cerrar', false);
+        emit('resultadoBaja', response.data);
 
-  if(!estadoPub)
-  {
-    console.log("Voy a cancelar");
-    return;
-  }
+        await mostrarNotificacion(
+          "Aviso",
+          "El taxón fue eliminado exitosamente",
+          "success",
+          5000
+        );
 
-  let grupoScat;
-  let nivRevision;
-  let catTax;
-  let IdAscOblig;
-
-  if(typeof nombreTax.grpSelec === 'number'){
-    grupoScat =  nombreTax.grpSelec;
-  }else{
-    const grupo = listGrp.value.find(grupo => grupo.label === nombreTax.grpSelec);
-    grupoScat = grupo.id;
-  }
-
-  if(nombreTax.nivelRev != '')
-  {
-    nivRevision = nombreTax.nivelRev;
-  }
-  
-  if(typeof nombreTax.catTax === 'number'){
-    catTax = nombreTax.catTax;
-  }else{
-
-    const categ = categorias && nombreTax && categorias.value.find(cat => cat.label === nombreTax.catTax);
-    catTax = categ;
-  }
-
-  if(props.taxonAct.completo.categoria.IdNivel3 === 0){
-    IdAscOblig = props.taxonAct.completo.IdNombre;
-  }
-  else{
-    IdAscOblig = props.taxonAct.completo.IdAscendObligatorio;
-  }
-  
-  let params;
-  let res;
-
-  switch(accion.value){
-              case 'crear':
-              if(Array.isArray(listAutorTax.value) && 
-                                       listAutorTax.value.length === 0){
-                  await mostrarNotificacion(
+      }
+      catch(error){
+        console.log("este es el error: ", error);
+          if (error.response.status === 422) {
+              const errorMessages = Object.values(error.response.data.errors).flat();
+              errorMessages.forEach(msg => {
+                  mostrarNotificacion(
                     "Aviso",
-                    'No es posible continuar ya que no hay valores de lista de autores.',
+                    msg,
                     "Error",
                     5000
                   );
-                  return;
-                }
-                params = {
-                  scat:{
-                    Grupo: grupoScat,
-                    HomonimiaSnib: homonimiaSnib.value,
-                    IdInvasora: idInvasora.value,
-                    NivelRevision: nivRevision,
-                    ValidacionSnib: valSnib.value.toLowerCase(),
-                    idIUCN: idIUCN.value,
-                    idCol: idCol.value, 
-                    idCites: idCites.value, 
-                  },
+              });
+        }
+      }
 
-                  nombreTaxon:{
-                    IdAscendente: props.taxonAct.id,
-                    IdAscenOblig: IdAscOblig,
-                    NombreTax: nombreTax,
-                    alias: usuario.user.Alias,
-                    categoria: {id:catTax},
-                  },
-                 
-                  relNombreAutor:{
-                    listAutor: listAutorTax.value,
-                  },
-                  
-                };
-                
-                try{
+  };
 
-                  console.log("Estos son los parametros a pasar en el alta de nombre: ", params);
+  const carga_autor = () => {
+    dialogFormVisibleAutor.value = true;
+  };
 
-                    const response = await axios.post(`/nombres-store`, params);
-                    
-                    emit('cerrar', false);
-                    emit('resultadoAlta', response.data.nombreNuevo);
-                }
-                catch(error){
-                  console.log("este es el error: ", error);
-                    if (error.response.status === 422) {
-                        const errorMessages = Object.values(error.response.data.errors).flat();
-                        errorMessages.forEach(msg => {
-                            mostrarNotificacion(
-                              "Aviso",
-                              msg,
-                              "Error",
-                              5000
-                            );
-                        });
-                    }
-                }
-              break;
-              case 'editar':   
-              if(Array.isArray(listAutorTax.value) && 
-                                       listAutorTax.value.length === 0){
-                  listAutorTax.value = props.taxonAct.completo.rel_nombre_autor;
-                }else if(Array.isArray(props.taxonAct.completo.rel_nombre_autor) && 
-                                       props.taxonAct.completo.rel_nombre_autor.length === 0 && 
-                                       listAutorTax.value.length === 0)
-                {
-                   await mostrarNotificacion(
-                              "Aviso",
-                              'No es posible continuar ya que no hay valores de lista de autores.',
-                              "Error",
-                              5000
-                            );
-                  return;
-                }
-                params = {
-                  scat:{
-                    Grupo: grupoScat,
-                    HomonimiaSnib: homonimiaSnib.value,
-                    IdInvasora: idInvasora.value,
-                    NivelRevision: nivRevision,
-                    ValidacionSnib: valSnib.value.toLowerCase(),
-                    idIUCN: idIUCN.value,
-                    idCol: idCol.value, 
-                    idCites: idCites.value, 
-                  },
+  const muestraFiltros = () => {
+    nombreTax.nombreAutoridad = autTaxComp.value;
+  };
 
-                  nombreTaxon:{
-                    IdAscendente: props.taxonAct.completo.IdNombreAscendente,
-                    IdAscenOblig: props.taxonAct.completo.IdAscendObligatorio,
-                    NombreTax: nombreTax,
-                    alias: usuario.user.Alias,
-                    categoria: catTax,
-                  },
+  const onPressSistC = async (e) => {
+    let allowedKeys = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+    ];
 
-                  relNombreAutor:{
-                    listAutor: listAutorTax.value,
-                  }
-                };       
-                
-                try{
-                    const response = await axios.put(`/actualiza-nombre/${props.taxonAct.id}`, params);
-                    
-                    emit('cerrar', false);
-                    emit('regresaTaxMod', response.data.nombreMod);
-                }
-                catch(error){
-                  console.log("este es el error: ", error);
-                    if (error.response.status === 422) {
-                        const errorMessages = Object.values(error.response.data.errors).flat();
-                        errorMessages.forEach(msg => {
-                            mostrarNotificacion(
-                              "Aviso",
-                               msg,
-                              "Error",
-                              5000
-                            );
-                        });
-                    }
-                }
-              break;
-              default:
-              break;
-            } 
+    if (allowedKeys.indexOf(e.keyCode) > -1) {
+      event.preventDefault();
+      return false;
+    }
+  };
 
-}
+  const resetForm = () => {
+    nombreTax.nombreTaxon = '';
+    nombreTax.nombreAutoridad = '';
+    nombreTax.sistClassDicc = '';
+    nombreTax.citaNomenclatural = '';
+    nombreTax.anotacionTaxon = '';
+    nombreTax.otrasObservaciones = '';
+    nombreTax.catTax = '';
+    nombreTax.estatusTax = '';
+    nombreTax.estado = '';
+    nombreTax.grpSelec = [];
+    nombreTax.nivelRev = '';
+  };
 
-defineExpose({ resetForm, carga_inicio, tabInicial });
+  const cambioPublico = async (estadoTaxon)=> {
 
-watch(
-  ()=> props.taxonAct,
-  (newValue, oldValue) => {
-    carga_inicio();
-  },
-  { deep: true, inmediate: true }
-);
-
-onMounted(() => {
-  carga_inicio();
-  try {
-    usuario.value = page.props.value?.auth.user;
-  } catch (error) {
-    console.error('Error al obtener el usuario: ', error);
+    if(numEjemp.value > 0 && estadoTaxon != 1)
+      {
+        await mostrarNotificacion(
+          "Aviso",
+          'No se puede cambiar el valor a no publico ya que tiene nombres relacionados en el SNIB',
+          "Error",
+          5000
+        );
+        return false; 
+      }
+      return true;
   }
-});
 
+  const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+  };
+
+  const mostrarNotificacionError = (titulo, mensaje, tipo = "error", duracion = 5000) => {
+      notificacionTitulo.value = titulo;
+      notificacionMensaje.value = mensaje;
+      notificacionTipo.value = tipo;
+      notificacionDuracion.value = duracion;
+      notificacionVisible.value = true;
+  };
+
+  const cerrarNotificacion = () => {
+    notificacionVisible.value = false;
+  };
+
+  const Guardar = async () =>{
+    
+    if (!formRef.value) return;
+    
+    const esValido = await formRef.value.validate().then(() => true).catch(() => false);
+
+    if (!esValido) {
+      await mostrarNotificacion(
+        "Aviso",
+        'Por favor, complete todos los campos requeridos.',
+        "Error",
+        5000
+      );
+      return;
+    }
+
+    const estadoPub = await cambioPublico(nombreTax.estado);
+    
+    if(!estadoPub)
+    {
+      return;
+    }
+
+    let grupoScat;
+    let nivRevision;
+    let catTax;
+    let IdAscOblig;
+    
+    if(typeof nombreTax.grpSelec === 'number'){
+      grupoScat =  nombreTax.grpSelec;
+    }else{
+      const grupo = listGrp.value.find(grupo => grupo.label === nombreTax.grpSelec);
+      grupoScat = grupo.id;
+    }
+
+    if(nombreTax.nivelRev != '')
+    {
+      nivRevision = nombreTax.nivelRev;
+    }
+    
+    if (props.nuevoTax)
+    {
+      catTax = props.catNuevoTax.IdCategoriaTaxonomica;
+    }
+    else{
+      if(typeof nombreTax.catTax === 'number'){
+        catTax = nombreTax.catTax;
+      }else{
+        const categ = categorias && nombreTax && categorias.value.find(cat => cat.label === nombreTax.catTax);
+        catTax = categ;
+      }
+    }
+
+    if(!props.nuevoTax){
+      if(props.taxonAct.completo.categoria.IdNivel3 === 0){
+        IdAscOblig = props.taxonAct.completo.IdNombre;
+      }
+      else{
+        IdAscOblig = props.taxonAct.completo.IdAscendObligatorio;
+      }
+    }else{
+      IdAscOblig = 1;
+    }
+    
+
+    let params;
+    let res;
+
+    switch(accion.value){
+                case 'crear':
+                if(Array.isArray(listAutorTax.value) && 
+                                        listAutorTax.value.length === 0){
+                    await mostrarNotificacion(
+                      "Aviso",
+                      'No es posible continuar ya que no hay valores de lista de autores.',
+                      "Error",
+                      5000
+                    );
+                    return;
+                  }
+                  params = {
+                    scat:{
+                      Grupo: grupoScat,
+                      HomonimiaSnib: homonimiaSnib.value,
+                      IdInvasora: idInvasora.value,
+                      NivelRevision: nivRevision,
+                      ValidacionSnib: valSnib.value.toLowerCase(),
+                      idIUCN: idIUCN.value,
+                      idCol: idCol.value, 
+                      idCites: idCites.value, 
+                    },
+
+                    nombreTaxon:{
+                      IdAscendente: props.taxonAct.id,
+                      IdAscenOblig: IdAscOblig,
+                      NombreTax: nombreTax,
+                      alias: usuario.user.Alias,
+                      categoria: {id:catTax},
+                    },
+                  
+                    relNombreAutor:{
+                      listAutor: listAutorTax.value,
+                    },
+                    
+                    raiz:props.nuevoTax
+                  };
+                  
+                  if(props.nuevoTax){
+                    params.nombreTaxon.IdAscendente = 1;
+                  }
+
+                  try{
+                      
+                      const response = await axios.post(`/nombres-store`, params);
+                      emit('cerrar', false);
+                      emit('resultadoAlta', response.data.nombreNuevo);
+                  }
+                  catch(error){
+                    console.log("este es el error: ", error);
+                      if (error.response.status === 422) {
+                          const errorMessages = Object.values(error.response.data.errors).flat();
+                          errorMessages.forEach(msg => {
+                              mostrarNotificacion(
+                                "Aviso",
+                                msg,
+                                "Error",
+                                5000
+                              );
+                          });
+                      }
+                  }
+                break;
+                case 'editar':  
+                
+                  const confirmado = await showConfirmMessage({
+                      title: 'Confirmar modificación',
+                      message: '¿Estás seguro de guardar los cambios para el taxón actual?'
+                  });
+
+                  if (!confirmado) {
+                      return;
+                  }
+                  console.log("Esto es props taxAct: ", listAutorTax.value);
+                  if(Array.isArray(listAutorTax.value) && 
+                                        listAutorTax.value.length === 0){
+                    await mostrarNotificacionError(
+                                "Aviso",
+                                'No es posible continuar ya que no hay valores de lista de autores.',
+                                "Error",
+                                5000
+                              );
+                    return;
+                  }
+
+                  params = {
+                    scat:{
+                      Grupo: grupoScat,
+                      HomonimiaSnib: homonimiaSnib.value,
+                      IdInvasora: idInvasora.value,
+                      NivelRevision: nivRevision,
+                      ValidacionSnib: valSnib.value.toLowerCase(),
+                      idIUCN: idIUCN.value,
+                      idCol: idCol.value, 
+                      idCites: idCites.value, 
+                    },
+
+                    nombreTaxon:{
+                      IdAscendente: props.taxonAct.completo.IdNombreAscendente,
+                      IdAscenOblig: props.taxonAct.completo.IdAscendObligatorio,
+                      NombreTax: nombreTax,
+                      alias: usuario.user.Alias,
+                      categoria: catTax,
+                    },
+
+                    relNombreAutor:{
+                      listAutor: listAutorTax.value,
+                    }
+                  };       
+                  
+                  try{
+                      const response = await axios.put(`/actualiza-nombre/${props.taxonAct.id}`, params);
+                      
+                      emit('cerrar', false);
+                      emit('regresaTaxMod', response.data.nombreMod);
+                  }
+                  catch(error){
+                    console.log("este es el error: ", error);
+                      if (error.response.status === 422) {
+                          const errorMessages = Object.values(error.response.data.errors).flat();
+                          errorMessages.forEach(msg => {
+                              mostrarNotificacion(
+                                "Aviso",
+                                msg,
+                                "Error",
+                                5000
+                              );
+                          });
+                      }
+                  }
+                break;
+                default:
+                break;
+              } 
+
+  }
+
+  defineExpose({ resetForm, carga_inicio, tabInicial });
+
+  watch(
+    ()=> props.taxonAct,
+    (newValue, oldValue) => {
+      carga_inicio();
+    },
+    { deep: true, inmediate: true }
+  );
+
+  onMounted(() => {
+    carga_inicio();
+    try {
+      usuario.value = page.props.value?.auth.user;
+    } catch (error) {
+      console.error('Error al obtener el usuario: ', error);
+    }
+  });
 </script>
 
-
 <style scoped>
+
+  /*Juan Carlos 17/02/2026
+  Esta funcion se agrega para evitar el conflicto de tailwind con element-plus
+  si se retira la parte filtrable del select no funciona */
+  :deep(.el-select__input) {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
   .form-nombre-container {
     padding: 1px;
   }
@@ -1306,6 +1468,16 @@ onMounted(() => {
         margin: 0;
         text-align: center;
     }
+
+    .titulo {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+        text-align: center;
+    }
+
+
 
   .form-header {
     padding: 20px;
@@ -1399,6 +1571,21 @@ onMounted(() => {
     vertical-align: middle;
   }
 
+  .botonera-biotica {
+      display: flex;
+      gap: 12px !important;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .botonera-biotica * {
+      margin: 0 !important;
+      padding: 0 !important;
+      flex-shrink: 0;
+    }
+    
   .el-icon {
     font-size: 16px;
     margin-right: 2px;
@@ -1478,10 +1665,12 @@ onMounted(() => {
       justify-content: flex-start;
     }
 }
+
 </style>
+<style scoped>
 
 <style>
-  .el-dialog {
+  :deep(.el-dialog) {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 90%;
@@ -1501,4 +1690,20 @@ onMounted(() => {
       max-width: none;
     }
   }
+
+
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected {
+  background-color: rgb(203, 233, 200) !important;
+  color: #0d6efd !important;
+  font-weight: bold;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-selected.is-hovering {
+  background-color: rgb(203, 233, 200) !important;
+}
+
+.select-verde-dropdown .el-select-dropdown__item.is-hovering:not(.is-selected) {
+  background-color: rgb(240, 245, 239)  !important;
+}
 </style>

@@ -31,7 +31,7 @@ const modalMode = ref("");
 const opcionNivel = ref("mismo");
 const nodoEnModal = ref(null);
 
-const emit = defineEmits(['seleccionar-tipo', 'cerrar-modal']); 
+const emit = defineEmits(['seleccionar-tipo', 'cerrar-modal']);
 
 const formModal = ref({
     Descripcion: "",
@@ -48,10 +48,21 @@ const props = defineProps({
 
 const handleNodeExpand = (data) => {
     expandedNodeIds.value.add(data.IdTipoRegion);
+    seleccionarNodoProgramaticamente(data);
 };
 
 const handleNodeCollapse = (data) => {
     expandedNodeIds.value.delete(data.IdTipoRegion);
+    seleccionarNodoProgramaticamente(data);
+};
+
+const seleccionarNodoProgramaticamente = (data) => {
+    if (esModalVisible.value) {
+        treeRef.value?.setCurrentKey(selectedNode.value?.IdTipoRegion);
+        return;
+    }
+    selectedNode.value = data;
+    treeRef.value?.setCurrentKey(data.IdTipoRegion);
 };
 
 const findNodeInTree = (nodes, nodeIdToFind) => {
@@ -70,6 +81,16 @@ const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
 watch(() => props.treeDataProp, (newVal) => {
     localTreeData.value = deepCopy(newVal);
+    if (selectedNode.value) {
+        const idActual = selectedNode.value.IdTipoRegion;
+        const nodoActualizado = findNodeInTree(localTreeData.value, idActual);
+        if (nodoActualizado) {
+            selectedNode.value = nodoActualizado;
+            nextTick(() => {
+                treeRef.value?.setCurrentKey(idActual);
+            });
+        }
+    }
 }, { immediate: true, deep: true });
 
 onMounted(() => {
@@ -91,7 +112,10 @@ const handleNodeSelected = (data) => {
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el tipo de región" : "Ingresar un nuevo tipo de región");
 
 const modalRules = {
-    Descripcion: [{ required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" }],
+    Descripcion: [
+        { required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" },
+        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" }
+    ],
 };
 
 const abrirModalParaInsertar = () => {
@@ -113,24 +137,31 @@ const abrirModalParaEditar = () => {
     if (!selectedNode.value) {
         return ElMessage.warning("Por favor, seleccione un nodo para editar.");
     }
-    modalMode.value = "editar";
-    nodoEnModal.value = { ...selectedNode.value };
-    formModal.value = { Descripcion: selectedNode.value.Descripcion };
-    esModalVisible.value = true;
-    nextTick(() => {
-        formModalRef.value?.clearValidate();
-        setTimeout(() => {
-            if (descripcionInputRef.value) {
-                descripcionInputRef.value.focus();
-                const nativeInput = descripcionInputRef.value.$el.querySelector('input');
-                if (nativeInput) {
-                    const len = nativeInput.value.length;
-                    nativeInput.setSelectionRange(len, len);
+    const nodoFresco = findNodeInTree(localTreeData.value, selectedNode.value.IdTipoRegion);
+    if (nodoFresco) {
+        selectedNode.value = nodoFresco;
+        modalMode.value = "editar";
+        nodoEnModal.value = { ...nodoFresco };
+        formModal.value = { Descripcion: nodoFresco.Descripcion };
+        esModalVisible.value = true;
+
+        nextTick(() => {
+            formModalRef.value?.clearValidate();
+            setTimeout(() => {
+                if (descripcionInputRef.value) {
+                    descripcionInputRef.value.focus();
+                    const nativeInput = descripcionInputRef.value.$el.querySelector('input');
+                    if (nativeInput) {
+                        const len = nativeInput.value.length;
+                        nativeInput.setSelectionRange(len, len);
+                    }
                 }
-            }
-        }, 100);
-    });
+            }, 100);
+        });
+    }
 };
+
+
 const cerrarModalOperacion = () => {
     esModalVisible.value = false;
     nodoEnModal.value = null;
@@ -144,46 +175,167 @@ const mostrarNotificacion = (titulo, mensaje, tipo, duracion = 5000) => {
     notificacionVisible.value = true;
 };
 
+
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
     const isValid = await formModalRef.value.validate();
     if (!isValid) return;
 
-    const onSuccess = () => {
-        cerrarModalOperacion();
-        mostrarNotificacion("¡Éxito!", "La operación se completó correctamente.", "success");
-    };
-    const onError = (errors) => {
-        mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
+    const descripcionABuscar = formModal.value.Descripcion.trim();
+    if (descripcionABuscar.length === 0) {
+        return; 
+    }
+    const modoAlGuardar = modalMode.value;
+    const opcionSeleccionada = opcionNivel.value;
+    const nodoReferencia = { ...selectedNode.value };
+
+    const obtenerProfundidad = (n) => {
+        if (n.Nivel5 > 0) return 5;
+        if (n.Nivel4 > 0) return 4;
+        if (n.Nivel3 > 0) return 3;
+        if (n.Nivel2 > 0) return 2;
+        if (n.Nivel1 > 0) return 1;
+        return 0;
     };
 
-    if (modalMode.value === "editar") {
-        const datosUpdate = {
-            Descripcion: formModal.value.Descripcion.trim(),
-            isModal: props.isModal
-        };
-        const nodeId = nodoEnModal.value.IdTipoRegion;
-        router.put(`/tipos-region/${nodeId}`, datosUpdate, { preserveState: true, preserveScroll: true, onSuccess, onError });
+    const buscarYSeleccionar = (texto) => {
+        const duplicado = props.flatTreeDataProp.find(item => {
+            const mismoTexto = item.Descripcion.trim().toLowerCase() === texto.toLowerCase();
+            if (!mismoTexto) return false;
+            const profItem = obtenerProfundidad(item);
+            const profRef = obtenerProfundidad(nodoReferencia);
+            if (modoAlGuardar === 'editar' && nodoEnModal.value) {
+                return item.Nivel1 === nodoEnModal.value.Nivel1 &&
+                    item.Nivel2 === nodoEnModal.value.Nivel2 &&
+                    item.Nivel3 === nodoEnModal.value.Nivel3 &&
+                    item.Nivel4 === nodoEnModal.value.Nivel4 &&
+                    item.Nivel5 === nodoEnModal.value.Nivel5;
+            }
+
+            if (modoAlGuardar === 'insertar') {
+                if (opcionSeleccionada === 'raiz') {
+                    return profItem === 1;
+                }
+
+                if (opcionSeleccionada === 'inferior') {
+                    if (profItem !== profRef + 1) return false;
+                    if (profRef >= 1 && item.Nivel1 !== nodoReferencia.Nivel1) return false;
+                    if (profRef >= 2 && item.Nivel2 !== nodoReferencia.Nivel2) return false;
+                    if (profRef >= 3 && item.Nivel3 !== nodoReferencia.Nivel3) return false;
+                    if (profRef >= 4 && item.Nivel4 !== nodoReferencia.Nivel4) return false;
+                    return true;
+                }
+                if (opcionSeleccionada === 'mismo') {
+                    if (profItem !== profRef) return false;
+                    if (profRef > 1 && item.Nivel1 !== nodoReferencia.Nivel1) return false;
+                    if (profRef > 2 && item.Nivel2 !== nodoReferencia.Nivel2) return false;
+                    if (profRef > 3 && item.Nivel3 !== nodoReferencia.Nivel3) return false;
+                    if (profRef > 4 && item.Nivel4 !== nodoReferencia.Nivel4) return false;
+                    return item.IdTipoRegion !== nodoReferencia.IdTipoRegion;
+                }
+            }
+            return false;
+        });
+
+        if (duplicado) {
+            const id = duplicado.IdTipoRegion;
+            selectedNode.value = duplicado;
+
+            nextTick(() => {
+                const nodeInTree = treeRef.value?.getNode(id);
+                if (nodeInTree) {
+                    let p = nodeInTree.parent;
+                    while (p) {
+                        p.expanded = true;
+                        p = p.parent;
+                    }
+                }
+
+                treeRef.value?.setCurrentKey(id, true);
+
+                setTimeout(() => {
+                    const nodeElement = document.getElementById(`tree-node-${id}`);
+                    if (nodeElement) {
+                        nodeElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    }
+                }, 300);
+            });
+        }
+    };
+
+    const onSuccess = () => {
+        const tituloNotif = modoAlGuardar === "editar" ? "Modificación" : "Ingreso";
+        const mensajeNotif = modoAlGuardar === "editar"
+            ? `El tipo de región fue modificado correctamente.`
+            : `El tipo de región fue ingresado correctamente.`;
+
+        esModalVisible.value = false;
+        nodoEnModal.value = null;
+
+        setTimeout(() => {
+            mostrarNotificacion(tituloNotif, mensajeNotif, "success");
+            buscarYSeleccionar(descripcionABuscar);
+        }, 400);
+    };
+
+    const onError = (errors) => {
+        if (errors.Descripcion) {
+            esModalVisible.value = false;
+            nodoEnModal.value = null;
+            setTimeout(() => {
+                mostrarNotificacion("Aviso", `El tipo de relación ingresado ya existe en este nivel.`, "warning");
+                buscarYSeleccionar(descripcionABuscar);
+            }, 200);
+        } else {
+            const mensajeError = Object.values(errors).flat().join("\n");
+            mostrarNotificacion("Error", mensajeError, "error");
+        }
+    };
+
+    const ejecutarEnvio = () => {
+        const dataPayload = { Descripcion: descripcionABuscar, isModal: props.isModal };
+
+        if (modoAlGuardar === "editar") {
+            const nodeId = nodoEnModal.value.IdTipoRegion;
+            router.put(`/tipos-region/${nodeId}`, dataPayload, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        } else {
+            const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
+            if (!calculoNiveles) return;
+            router.post("/tipos-region", { ...dataPayload, ...calculoNiveles.niveles }, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        }
+    };
+
+    if (modoAlGuardar === "editar") {
+        ElMessageBox({
+            title: "Confirmar modificación",
+            showConfirmButton: false, showCancelButton: false, customClass: "message-box-diseno-limpio",
+            message: h('div', { class: 'custom-message-content' }, [
+                h('div', { class: 'body-content' }, [
+                    h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle', style: "background-color: #e6a23c;" }, '!')]),
+                    h('div', { class: 'text-container' }, [h('p', null, `¿Está seguro de que desea guardar los cambios realizados al tipo de región seleccionado?`)])
+                ]),
+                h('div', { class: 'footer-buttons' }, [
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, { texto: "Sí, Guardar", onClick: () => { ElMessageBox.close(); ejecutarEnvio(); } }),
+                ]),
+            ]),
+        }).catch(() => { });
     } else {
-        const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
-        if (!calculoNiveles) return;
-        const datosInsert = {
-            Descripcion: formModal.value.Descripcion.trim(),
-            ...calculoNiveles.niveles,
-            isModal: props.isModal
-        };
-        router.post("/tipos-region", datosInsert, { preserveState: true, preserveScroll: true, onSuccess, onError });
+        ejecutarEnvio();
     }
 };
+
+
+
 
 const handleEliminar = () => {
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
-        return mostrarNotificacion("Error", "No se puede eliminar porque tiene regiones dependientes.", "error");
+        return mostrarNotificacion("Aviso", "No se puede eliminar porque tiene tipos de regiones dependientes.", "warning");
     }
 
     const nombre = selectedNode.value.Descripcion;
-    const mensaje = `¿Está seguro de eliminar el tipo de región "${nombre}"? Esta acción no se puede revertir.`;
+    const mensaje = `¿Está seguro de eliminar el tipo de región selecciondo? Esta acción no se puede revertir.`;
 
     ElMessageBox({
         title: "Confirmar eliminación",
@@ -202,15 +354,39 @@ const handleEliminar = () => {
 };
 
 const proceedWithDeletion = (nodeId, nombre) => {
+    const nodeInTree = treeRef.value?.getNode(nodeId);
+    const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
+        ? nodeInTree.parent.data.IdTipoRegion
+        : null;
+
     ElMessageBox.close();
     router.delete(`/tipos-region/${nodeId}`, {
         data: { isModal: props.isModal },
         preserveScroll: true,
         onSuccess: () => {
-            mostrarNotificacion("Eliminación exitosa", `El tipo de region "${nombre}" ha sido eliminado correctamente.`, "success");
-            selectedNode.value = null;
+            mostrarNotificacion("Eliminación", `El tipo de region ha sido eliminado correctamente.`, "success");
+            nextTick(() => {
+                if (parentId) {
+                    const padreActualizado = findNodeInTree(localTreeData.value, parentId);
+                    if (padreActualizado) {
+                        selectedNode.value = padreActualizado;
+                        treeRef.value?.setCurrentKey(parentId);
+                        return;
+                    }
+                }
+                if (localTreeData.value && localTreeData.value.length > 0) {
+                    const primerNodo = localTreeData.value[0];
+                    selectedNode.value = primerNodo;
+                    treeRef.value?.setCurrentKey(primerNodo.IdTipoRegion);
+                } else {
+                    selectedNode.value = null;
+                }
+            });
         },
-        onError: (error) => mostrarNotificacion("Error", error.message || "Ocurrió un error.", "error"),
+        onError: (error) => {
+            const mensajeError = error.message || "Ocurrió un error al intentar eliminar.";
+            mostrarNotificacion("Aviso", mensajeError, "warning");
+        },
     });
 };
 
@@ -312,12 +488,14 @@ const handleNodeDoubleClick = (data) => {
 
             <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                 :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRegion"
-                :current-node-key="selectedNode?.IdTipoRegion" :highlight-current="true" :expand-on-click-node="true"
-                @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
+                :default-expanded-keys="Array.from(expandedNodeIds)" :current-node-key="selectedNode?.IdTipoRegion"
+                :highlight-current="true" :expand-on-click-node="true" @node-expand="handleNodeExpand"
+                @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
                 @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
                 <template #default="{ node, data }">
+                    <!-- Quitamos el tooltip y dejamos solo el span -->
                     <span :id="`tree-node-${data.IdTipoRegion}`" class="custom-tree-node-content">
-                        <span>{{ node.label }}</span>
+                        {{ node.label }}
                     </span>
                 </template>
             </el-tree>
@@ -334,8 +512,7 @@ const handleNodeDoubleClick = (data) => {
                     <h3>{{ modalTitle }}</h3>
                 </div>
                 <div class="dialog-body-container">
-                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top"
-                        @submit.prevent="guardarDesdeModal">
+                    <el-form :model="formModal" ref="formModalRef" :rules="modalRules" label-position="top">
                         <div class="form-actions">
                             <GuardarButton @click="guardarDesdeModal" />
                             <BotonSalir accion="cerrar" @salir="cerrarModalOperacion" />
@@ -350,8 +527,9 @@ const handleNodeDoubleClick = (data) => {
                         </div>
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
-                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion" placeholder="Ingrese la descripción" clearable
-                                maxlength="255" show-word-limit />
+                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit
+                                @keydown.enter.prevent />
                         </el-form-item>
 
                     </el-form>
@@ -419,9 +597,10 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .custom-element-tree {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 20px;
+    display: inline-block;
+    /* Importante para que el ancho crezca con el contenido */
+    min-width: 100%;
+    /* Para que el color de selección cubra al menos todo el ancho visible */
 }
 
 .custom-element-tree .el-tree-node__content {
@@ -462,6 +641,18 @@ const handleNodeDoubleClick = (data) => {
 </style>
 
 <style scoped>
+.tree-card :deep(.el-card__body) {
+    overflow: auto !important;
+    /* Permite scroll horizontal y vertical */
+    flex-grow: 1;
+    display: block;
+    /* Cambiamos de flex a block para que el scroll horizontal funcione mejor */
+    padding: 10px;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px;
+}
+
 .tree-card {
     width: 100%;
     height: v-bind("isModal ? 'auto' : '726px'");
@@ -469,6 +660,16 @@ const handleNodeDoubleClick = (data) => {
     display: flex;
     flex-direction: column;
 }
+
+.tree-card> :deep(.el-card__body) {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    margin: 0 24px 24px 24px;
+}
+
 
 .modal-content-wrapper {
     padding: 1rem;
@@ -552,7 +753,7 @@ const handleNodeDoubleClick = (data) => {
 .form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 30px;
 }
 
 :deep(.el-form-item) {
@@ -564,11 +765,5 @@ const handleNodeDoubleClick = (data) => {
     line-height: normal !important;
     font-size: 0.9em;
     color: #606266;
-}
-
-.custom-tree-node-content {
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 </style>
