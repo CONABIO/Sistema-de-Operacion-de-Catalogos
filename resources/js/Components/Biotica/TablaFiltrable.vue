@@ -259,12 +259,17 @@ Estos watch se colocaron para que siempre se muestre seleccionada la primera fil
     (newDatos) => {
       if (!newDatos || newDatos.length === 0) return;
 
+watch(
+    () => props.datos,
+    (newDatos) => {
+      if (!newDatos || newDatos.length === 0) return;
+ 
       datosTabla.value = newDatos;
-
+ 
       nextTick(() => {
         const firstRow = newDatos[0];
-
-        // Solo si no hay fila seleccionada aún
+ 
+        // 🔥 Solo si no hay fila seleccionada aún
         if (!selectedRow.value) {
           selectedRow.value = firstRow;
           tableRefInterna.value?.setCurrentRow(firstRow);

@@ -30,7 +30,11 @@ const aplicarFiltro = () => {
     }
 };
 
-
+const esRegionProtegida = (nombre) => {
+    if (!nombre) return false;
+    const n = nombre.trim().toUpperCase();
+    return n === 'MÉXICO' || n === 'ND' || n === 'MEXICO/ND/ND';
+};
 
 const seleccionarTipoRegionBase = (data) => {
     if (!data) return;
@@ -50,31 +54,13 @@ const handleTipoRegionExpand = (data) => {
     if (!expandedTipoRegionKeys.value.includes(data.IdTipoRegion)) {
         expandedTipoRegionKeys.value.push(data.IdTipoRegion);
     }
-
-    if (selectedTipoRegionNode.value?.IdTipoRegion !== data.IdTipoRegion) {
-        filterText.value = '';
-
-        selectedTipoRegionNode.value = data;
-        activePathIds.value = findPathInTree(tiposRegionTreeData.value, data.IdTipoRegion) || [];
-        nextTick(() => {
-            tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
-        });
-        selectedNode.value = null;
-    }
+    seleccionarTipoRegionBase(data);
 };
 
 const handleTipoRegionCollapse = (data) => {
     ultimoEventoExpandTime = Date.now();
     expandedTipoRegionKeys.value = expandedTipoRegionKeys.value.filter(key => key !== data.IdTipoRegion);
-    if (selectedTipoRegionNode.value?.IdTipoRegion !== data.IdTipoRegion) {
-        filterText.value = '';
-        selectedTipoRegionNode.value = data;
-        activePathIds.value = findPathInTree(tiposRegionTreeData.value, data.IdTipoRegion) || [];
-        nextTick(() => {
-            tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
-        });
-        selectedNode.value = null;
-    }
+    seleccionarTipoRegionBase(data);
 };
 
 watch(activePathIds, (newPath) => {
@@ -153,51 +139,42 @@ const botonNuevoDeshabilitado = computed(() => {
 
 
 const botonEditarDeshabilitado = computed(() => {
-    if (!selectedTipoRegionNode.value) return true;
+    if (!selectedTipoRegionNode.value || !selectedNode.value) return true;
+    if (esRegionProtegida(selectedNode.value.NombreRegion)) return true;
     if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
     if (filterText.value && filterText.value.trim() !== '') {
         const textoBusqueda = filterText.value.toLowerCase();
         const existeCoincidencia = (nodes) => {
             return nodes.some(node => {
-                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) {
-                    return true;
-                }
-                if (node.children && node.children.length > 0) {
-                    return existeCoincidencia(node.children);
-                }
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) return true;
+                if (node.children && node.children.length > 0) return existeCoincidencia(node.children);
                 return false;
             });
         };
-        if (!existeCoincidencia(filteredRegionsTree.value)) {
-            return true;
-        }
+        if (!existeCoincidencia(filteredRegionsTree.value)) return true;
     }
     return false;
 });
 
 
 const botonEliminarDeshabilitado = computed(() => {
-    if (!selectedTipoRegionNode.value) return true;
+    if (!selectedTipoRegionNode.value || !selectedNode.value) return true;
+    if (esRegionProtegida(selectedNode.value.NombreRegion)) return true;
     if (!filteredRegionsTree.value || filteredRegionsTree.value.length === 0) return true;
     if (filterText.value && filterText.value.trim() !== '') {
         const textoBusqueda = filterText.value.toLowerCase();
         const existeCoincidencia = (nodes) => {
             return nodes.some(node => {
-                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) {
-                    return true;
-                }
-                if (node.children && node.children.length > 0) {
-                    return existeCoincidencia(node.children);
-                }
+                if (node.NombreRegion && node.NombreRegion.toLowerCase().includes(textoBusqueda)) return true;
+                if (node.children && node.children.length > 0) return existeCoincidencia(node.children);
                 return false;
             });
         };
-        if (!existeCoincidencia(filteredRegionsTree.value)) {
-            return true;
-        }
+        if (!existeCoincidencia(filteredRegionsTree.value)) return true;
     }
     return false;
 });
+
 
 
 
@@ -215,40 +192,31 @@ const intentarAbrirModalInsertar = () => {
 
 const intentarAbrirModalEditar = () => {
     if (!selectedTipoRegionNode.value) {
-        mostrarNotificacion(
-            "Aviso",
-            "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
-            "warning"
-        );
+        mostrarNotificacion("Aviso", "Debe seleccionar un Tipo de Región.", "warning");
         return;
     }
     if (!selectedNode.value) {
-        mostrarNotificacion(
-            "Aviso",
-            "Para editar una nueva región, debe seleccionar una región existente del panel derecho.",
-            "warning"
-        );
+        mostrarNotificacion("Aviso", "Seleccione una región.", "warning");
+        return;
+    }
+    if (esRegionProtegida(selectedNode.value.NombreRegion)) {
+        mostrarNotificacion("Aviso", "Esta región es del sistema y no se puede modificar.", "warning");
         return;
     }
     abrirModalParaEditar();
 };
 
-
 const intentarAbrirModalEliminar = () => {
     if (!selectedTipoRegionNode.value) {
-        mostrarNotificacion(
-            "Aviso",
-            "Debe seleccionar un Tipo de Región del panel izquierdo antes de continuar.",
-            "warning"
-        );
+        mostrarNotificacion("Aviso", "Debe seleccionar un Tipo de Región.", "warning");
         return;
     }
     if (!selectedNode.value) {
-        mostrarNotificacion(
-            "Aviso",
-            "Para eliminar una nueva región, debe seleccionar una región existente del panel derecho.",
-            "warning"
-        );
+        mostrarNotificacion("Aviso", "Seleccione una región.", "warning");
+        return;
+    }
+    if (esRegionProtegida(selectedNode.value.NombreRegion)) {
+        mostrarNotificacion("Aviso", "Esta región es del sistema y no se puede eliminar.", "warning");
         return;
     }
     handleEliminar();
@@ -514,10 +482,44 @@ const cerrarModalTipoRegion = () => {
 };
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar región" : "Ingresar nueva región");
+
 const modalRules = {
-    NombreRegion: [{ max: 100, required: true, message: "El nombre de la region es obligatorio.", trigger: "blur" }],
+    NombreRegion: [
+        {
+            required: true,
+            message: "El nombre de la región es obligatorio.",
+            trigger: "blur",
+            transform: (value) => value?.trim()
+        },
+        { max: 100, message: "Máximo 100 caracteres.", trigger: "blur" }
+    ],
     IdTipoRegion: [{ required: true, message: "El tipo de región es obligatorio.", trigger: "change" }],
-    Abreviado: [{ max: 10, message: "Máximo 10 caracteres.", trigger: "blur" }],
+    Abreviado: [
+        { max: 10, message: "Máximo 10 caracteres.", trigger: "blur" },
+        {
+            validator: (rule, value, callback) => {
+                if (value && value.trim().length === 0) {
+                    callback(new Error('No puede contener solo espacios.'));
+                } else {
+                    callback();
+                }
+            },
+            trigger: "blur"
+        }
+    ],
+    ClaveRegion: [
+        { max: 35, message: "Máximo 35 caracteres.", trigger: "blur" },
+        {
+            validator: (rule, value, callback) => {
+                if (value && value.trim().length === 0) {
+                    callback(new Error('No puede contener solo espacios.'));
+                } else {
+                    callback();
+                }
+            },
+            trigger: "blur"
+        }
+    ],
 };
 
 const abrirModalParaInsertar = () => {
@@ -572,10 +574,13 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
+    formModal.value.NombreRegion = formModal.value.NombreRegion?.trim();
+    formModal.value.Abreviado = formModal.value.Abreviado?.trim();
+    formModal.value.ClaveRegion = formModal.value.ClaveRegion?.trim();
     await formModalRef.value.validate();
     const nombreABuscar = formModal.value.NombreRegion;
     const modoActual = modalMode.value;
-    let idPadreFinal = 0; 
+    let idPadreFinal = 0;
     if (modoActual === "insertar") {
         if (opcionNivel.value === "mismo" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegionAsc || 0;
@@ -612,7 +617,7 @@ const guardarDesdeModal = async () => {
         cerrarModalOperacion();
         const tituloNotif = modoActual === 'editar' ? "Modificación" : "Ingreso";
         const mensajeNotif = modoActual === 'editar'
-            ? `La región ha sigo modificada correctamente.`
+            ? `La región ha sido modificada correctamente.`
             : `La región ha sido ingresada correctamente.`;
 
         mostrarNotificacion(tituloNotif, mensajeNotif, "success");
@@ -832,7 +837,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
                 <el-tree v-if="filteredRegionsTree.length" ref="treeRef" :data="filteredRegionsTree"
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
-                    @node-click="handleNodeSelected" :filter-node-method="filterNodeMethod" class="custom-element-tree">
+                    @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
+                    @node-collapse="handleNodeSelected" :filter-node-method="filterNodeMethod"
+                    class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
                             {{ node.label }}
@@ -881,15 +888,17 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                     </el-form-item>
 
-                    <el-form-item prop="NombreRegion" label="Nombre de la región:"><el-input
-                            v-model="formModal.NombreRegion" clearable maxlength="100"/></el-form-item>
+                    <el-form-item prop="NombreRegion" label="Nombre de la región:">
+                        <el-input v-model="formModal.NombreRegion" clearable maxlength="100" show-word-limit />
+                    </el-form-item>
 
+                    <el-form-item label="Abreviado:" prop="Abreviado">
+                        <el-input v-model="formModal.Abreviado" clearable maxlength="10" show-word-limit />
+                    </el-form-item>
 
-                    <el-form-item label="Abreviado:" prop="Abreviado"><el-input v-model="formModal.Abreviado" clearable
-                            maxlength="10" /></el-form-item>
-
-                    <el-form-item label="Clave:" prop="ClaveRegion"><el-input v-model="formModal.ClaveRegion"
-                            clearable maxlength="35"/></el-form-item>
+                    <el-form-item label="Clave:" prop="ClaveRegion">
+                        <el-input v-model="formModal.ClaveRegion" clearable maxlength="35" show-word-limit />
+                    </el-form-item>
                 </el-form>
             </div>
         </DialogGeneral>
@@ -897,7 +906,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         <DialogGeneral v-model="esModalTipoRegionVisible" :bot-cerrar="true" :press-esc="true" width="90%"
             @close="cerrarModalTipoRegion">
 
-            <div class="dialog-body-container" style="padding: 10px; max-height: 80vh; overflow-y: auto;">
+            <div class="dialog-body-container" style="padding: 10px;">
                 <CuerpoTipoRegion :treeDataProp="tiposDeRegionTreeProp" :flatTreeDataProp="tiposDeRegionProp"
                     :isModal="true" @cerrar-modal="cerrarModalTipoRegion" />
             </div>

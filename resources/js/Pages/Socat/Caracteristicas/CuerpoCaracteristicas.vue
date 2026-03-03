@@ -202,8 +202,12 @@ const modalRules = {
   Descripcion: [
     {
       required: true,
-      message:
-        "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      message: "La descripción es un dato obligatorio, no puede quedar en blanco.",
+      trigger: "blur",
+    },
+    {
+      whitespace: true,
+      message: "La descripción no puede contener solo espacios en blanco.",
       trigger: "blur",
     },
     {
@@ -269,6 +273,7 @@ const guardarDesdeModal = async () => {
   if (!isValid) return;
   const proceedWithSave = () => {
     const nuevaDesc = formModal.value.Descripcion.trim();
+    if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
       const idPadreActual = nodoEnModal.value.IdAscendente;
@@ -312,7 +317,7 @@ const guardarDesdeModal = async () => {
       if (opcionNivel.value !== "raiz" && !selectedNode.value) {
         return mostrarNotificacion("Error", "Se requiere un nodo de referencia.", "error");
       }
-      
+
       const calculoNiveles = calcularNivelesParaNuevoNodo(selectedNode.value, opcionNivel.value, props.flatTreeDataProp);
       if (!calculoNiveles) return;
       const idPadreDestino = calculoNiveles.idPadre;
@@ -760,11 +765,22 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .custom-element-tree .el-tree-node__content {
-  min-height: 26px;
-  width: 1893px;
+  height: auto !important;
+  min-height: 10px !important;
   display: flex;
-  align-items: flex-start; 
-  padding: 4px 0;    
+  align-items: center;
+  padding: 2px 0;
+  white-space: normal;
+}
+
+
+.custom-tree-node-content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.4;
+  padding-right: 15px;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 
