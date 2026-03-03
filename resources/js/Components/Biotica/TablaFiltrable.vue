@@ -254,6 +254,10 @@ const fetchData = async () => {
 Estos watch se colocaron para que siempre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
 */
 // Watch para cuando cambian los datos (desde el padre o desde fetch)
+  watch(
+    () => props.datos,
+    (newDatos) => {
+      if (!newDatos || newDatos.length === 0) return;
 
 watch(
     () => props.datos,
