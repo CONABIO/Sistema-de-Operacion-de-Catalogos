@@ -92,7 +92,6 @@ class NombresArbolController extends Controller
                 ->get();
                 
         } else {
-            log::info("Entre al primer if 6");
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
@@ -116,7 +115,8 @@ class NombresArbolController extends Controller
     {
         // Relaciones mínimas necesarias
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'ascendOblig'];
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor'];
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
