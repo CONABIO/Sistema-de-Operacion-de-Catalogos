@@ -250,15 +250,6 @@ const fetchData = async () => {
   }
 };
 
-/*Juan carlos 13022026 
-Estos watch se colocaron para que siempre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
-*/
-// Watch para cuando cambian los datos (desde el padre o desde fetch)
-  watch(
-    () => props.datos,
-    (newDatos) => {
-      if (!newDatos || newDatos.length === 0) return;
-
 watch(
     () => props.datos,
     (newDatos) => {
@@ -269,7 +260,7 @@ watch(
       nextTick(() => {
         const firstRow = newDatos[0];
  
-        // 🔥 Solo si no hay fila seleccionada aún
+        //Solo si no hay fila seleccionada aún
         if (!selectedRow.value) {
           selectedRow.value = firstRow;
           tableRefInterna.value?.setCurrentRow(firstRow);
@@ -350,6 +341,7 @@ defineExpose({
   sorting,
   selectedRow,
 });
+
 </script>
 
 <template>

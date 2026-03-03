@@ -1312,7 +1312,6 @@
                   try{
                       
                       const response = await axios.post(`/nombres-store`, params);
-                      console.log("Esta es la respuesta: ", response);
                       emit('cerrar', false);
                       emit('resultadoAlta', response.data.nombreNuevo);
                   }
@@ -1341,9 +1340,9 @@
                   if (!confirmado) {
                       return;
                   }
-
-                  if(listAutorTax.value.length === 0)
-                  {
+                  console.log("Esto es props taxAct: ", listAutorTax.value);
+                  if(Array.isArray(listAutorTax.value) && 
+                                        listAutorTax.value.length === 0){
                     await mostrarNotificacionError(
                                 "Aviso",
                                 'No es posible continuar ya que no hay valores de lista de autores.',
