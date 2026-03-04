@@ -114,7 +114,12 @@ const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el t
 const modalRules = {
     Descripcion: [
         { required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" },
-        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" }
+        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 
@@ -183,7 +188,7 @@ const guardarDesdeModal = async () => {
 
     const descripcionABuscar = formModal.value.Descripcion.trim();
     if (descripcionABuscar.length === 0) {
-        return; 
+        return;
     }
     const modoAlGuardar = modalMode.value;
     const opcionSeleccionada = opcionNivel.value;

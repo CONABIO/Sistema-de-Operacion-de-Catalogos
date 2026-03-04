@@ -485,40 +485,30 @@ const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar regi
 
 const modalRules = {
     NombreRegion: [
+        { required: true, message: "El nombre de la región es obligatorio.", trigger: "blur" },
+        { max: 100, message: "Máximo 100 caracteres.", trigger: "blur" },
         {
-            required: true,
-            message: "El nombre de la región es obligatorio.",
-            trigger: "blur",
-            transform: (value) => value?.trim()
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
         },
-        { max: 100, message: "Máximo 100 caracteres.", trigger: "blur" }
     ],
     IdTipoRegion: [{ required: true, message: "El tipo de región es obligatorio.", trigger: "change" }],
     Abreviado: [
         { max: 10, message: "Máximo 10 caracteres.", trigger: "blur" },
         {
-            validator: (rule, value, callback) => {
-                if (value && value.trim().length === 0) {
-                    callback(new Error('No puede contener solo espacios.'));
-                } else {
-                    callback();
-                }
-            },
-            trigger: "blur"
-        }
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     ClaveRegion: [
         { max: 35, message: "Máximo 35 caracteres.", trigger: "blur" },
         {
-            validator: (rule, value, callback) => {
-                if (value && value.trim().length === 0) {
-                    callback(new Error('No puede contener solo espacios.'));
-                } else {
-                    callback();
-                }
-            },
-            trigger: "blur"
-        }
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 
@@ -574,10 +564,12 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    formModal.value.NombreRegion = formModal.value.NombreRegion?.trim();
-    formModal.value.Abreviado = formModal.value.Abreviado?.trim();
-    formModal.value.ClaveRegion = formModal.value.ClaveRegion?.trim();
     await formModalRef.value.validate();
+    try {
+        await formModalRef.value.validate();
+    } catch (error) {
+        return;
+    }
     const nombreABuscar = formModal.value.NombreRegion;
     const modoActual = modalMode.value;
     let idPadreFinal = 0;

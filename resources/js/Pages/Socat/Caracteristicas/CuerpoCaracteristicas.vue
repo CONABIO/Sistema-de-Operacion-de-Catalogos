@@ -211,6 +211,11 @@ const modalRules = {
       trigger: "blur",
     },
     {
+      pattern: /^(?!.*  ).+$/, 
+      message: "No se permite ingresar más de un espacio seguido.",
+      trigger: ["blur", "change"],
+    },
+    {
       min: 1,
       max: 255,
       message: "La longitud debe estar entre 1 y 255 caracteres.",
@@ -272,7 +277,7 @@ const guardarDesdeModal = async () => {
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
   const proceedWithSave = () => {
-    const nuevaDesc = formModal.value.Descripcion.trim();
+    const nuevaDesc = formModal.value.Descripcion.trim().replace(/\s+/g, ' ');
     if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
@@ -288,7 +293,7 @@ const guardarDesdeModal = async () => {
         nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
-          `Ya existe una característica llamada "${nuevaDesc}" en este nivel.`,
+          `Ya existe una característica con el mismo nombre en este nivel.`,
           "warning"
         );
       }
@@ -331,7 +336,7 @@ const guardarDesdeModal = async () => {
         nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
-          `No se puede crear la característica "${nuevaDesc}" porque ya existe en el nivel seleccionado.`,
+          `No se puede crear la característica ingresada porque ya existe en el nivel seleccionado.`,
           "warning"
         );
       }
