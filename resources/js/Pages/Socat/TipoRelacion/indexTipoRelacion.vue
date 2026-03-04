@@ -471,16 +471,21 @@ const handleNodeSelected = (data) => {
 };
 const modalRules = {
     Descripcion: [
-        { 
-            required: true, 
-            message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.", 
-            trigger: "blur" 
+        {
+            required: true,
+            message: "La descripción de la relación es un dato obligatorio, por lo que no puede quedar en blanco.",
+            trigger: "blur"
         },
-        { 
-            whitespace: true, 
-            message: "La descripción no puede contener solo espacios.", 
-            trigger: "blur" 
-        }
+        {
+            whitespace: true,
+            message: "La descripción no puede contener solo espacios.",
+            trigger: "blur"
+        },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     Direccionalidad: [
         { required: true, message: "La direccionalidad es un dato obligatorio, por lo que no puede quedar en blanco.", trigger: "change" }
@@ -564,7 +569,7 @@ const guardarDesdeModal = async () => {
     if (!isValid) return;
 
     const nuevaDesc = formModal.value.Descripcion.trim();
-     if (nuevaDesc.length === 0) return;
+    if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
         const nodoEditando = nodoEnModal.value;
@@ -601,7 +606,7 @@ const guardarDesdeModal = async () => {
             nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
             cerrarModalOperacion();
             selectAndFocusNode(duplicado.IdTipoRelacion);
-            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            mostrarNotificacion("Aviso", `El tipo de relación ingresado ya existe en este nivel.`, "warning");
             return;
         }
     }
@@ -638,7 +643,7 @@ const guardarDesdeModal = async () => {
         if (duplicado) {
             nodeIdToScrollToAfterNotification.value = duplicado.IdTipoRelacion;
             cerrarModalOperacion();
-            mostrarNotificacion("Aviso", `El tipo de relación "${nuevaDesc}" ya existe en este nivel.`, "warning");
+            mostrarNotificacion("Aviso", `El tipo de relación ingresado ya existe en este nivel.`, "warning");
             return;
         }
         formModal.value._calculoNiveles = calculo;
@@ -758,10 +763,7 @@ const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
         if (!nodeDataForDeleteConfirmation.value) return;
-        
-        // Guardamos el ID antes de intentar borrar
-        const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion; 
-        
+        const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion;
         const nodeInTree = treeRef.value?.getNode(idQueFallo);
         const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
             ? nodeInTree.parent.data.IdTipoRelacion
@@ -769,7 +771,7 @@ const proceedWithDeletion = async () => {
 
         router.delete(`/tipos-relacion/${idQueFallo}`, {
             preserveScroll: true,
-            preserveState: true, // Importante para no perder el estado actual
+            preserveState: true, 
             onSuccess: () => {
                 mostrarNotificacion("Eliminación", `El tipo de relación ha sido eliminado correctamente.`, "success");
 
@@ -792,14 +794,14 @@ const proceedWithDeletion = async () => {
                 });
             },
             onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relación no se puede eliminar porque tiene nombres asociados`, 'warning');          
+                mostrarNotificacionError('Aviso', `El tipo de relación no se puede eliminar porque tiene nombres asociados`, 'warning');
                 nextTick(() => {
                     const nodoOriginal = findNodeInTree(localTreeData.value, idQueFallo);
                     if (nodoOriginal) {
                         selectedNode.value = nodoOriginal;
                         treeRef.value?.setCurrentKey(idQueFallo);
                         selectAndFocusNode(idQueFallo);
-                    } 
+                    }
                     nodeIdToScrollToAfterNotification.value = idQueFallo;
                 });
             },
@@ -958,11 +960,8 @@ const cerrarDialogo = () => {
                     :current-node-key="selectedNode?.IdTipoRelacion"
                     :default-expanded-keys="Array.from(expandedNodeIds)" :highlight-current="true"
                     :expand-on-click-node="true" @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
-                    @node-collapse="handleNodeSelected" 
-
-                    :node-class="getTipoRelacionNodeClass"
-                    class="custom-element-tree"
-                    >
+                    @node-collapse="handleNodeSelected" :node-class="getTipoRelacionNodeClass"
+                    class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="`tree-node-${data.IdTipoRelacion}`" class="custom-tree-node-content">
                             <img v-if="!data.RutaIcono"

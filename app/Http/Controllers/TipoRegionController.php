@@ -162,7 +162,7 @@ class TipoRegionController extends Controller
 
         if ($regionesUsandoEsteTipo) {
             throw ValidationException::withMessages([
-                'message' => 'No es posible eliminar el tipo de region seleccionado por tener regiones que dependen de ella.'
+                'message' => 'No es posible eliminar el tipo de región seleccionado por tener regiones asociadas'
             ]);
         }
 
