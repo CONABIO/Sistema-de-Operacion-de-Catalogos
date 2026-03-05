@@ -559,7 +559,7 @@
       { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
     ],
     anotacionTaxon: [
-      { max: 255, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
+      { max: 1650, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
     ],
     otrasObservaciones: [
       { max: 255, message: 'El tamaño debe ser menor o igual a 50 caracteres', trigger: 'blur' }

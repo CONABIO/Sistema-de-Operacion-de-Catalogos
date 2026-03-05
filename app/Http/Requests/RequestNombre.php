@@ -39,7 +39,7 @@ class RequestNombre extends FormRequest
                                         ->where(function ($query){
                                             $query->where('EstadoRegistro', 1);
                                         })],
-            'nombreTaxon.NombreTax.anotacionTaxon' => 'string|nullable',
+            'nombreTaxon.NombreTax.anotacionTaxon' => 'string|nullable|max:1650',
             'nombreTaxon.NombreTax.citaNomenclatural' => 'string|nullable|max:255',
             'nombreTaxon.NombreTax.estado' => 'integer',
             'nombreTaxon.NombreTax.estatusTax' => 'required|integer',
