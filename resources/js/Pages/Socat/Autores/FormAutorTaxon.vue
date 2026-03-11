@@ -28,15 +28,30 @@ const rules = {
     nombreAutoridad: [
         { required: true, message: 'El nombre de la autoridad es obligatorio', trigger: 'blur' },
         { whitespace: true, message: 'El nombre de la autoridad no puede contener solo espacios en blanco', trigger: 'blur' },
-        { min: 1, max: 100, message: 'El tamaño debe ser entre 1 y 100', trigger: ['blur', 'change'] }
+        { min: 1, max: 100, message: 'El tamaño debe ser entre 1 y 100', trigger: ['blur', 'change'] },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     nombreCompleto: [
-        { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: ['blur', 'change'] }
+        { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: ['blur', 'change'] },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     grupoTaxonomico: [
         { required: true, message: 'El grupo taxonómico es obligatorio', trigger: 'blur' },
         { whitespace: true, message: 'El grupo taxonómico no puede contener solo espacios en blanco', trigger: 'blur' },
-        { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: ['blur', 'change'] }
+        { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: ['blur', 'change'] },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ]
 };
 
@@ -109,9 +124,9 @@ const cerrarDialogo = () => {
         </div>
 
         <div class="header">
-             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar"/>
-                 <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+            <div class="form-actions">
+                <GuardarButton @click="intentarGuardar" />
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
                 <el-form :model="autorTax" :rules="rules" ref="autorTaxFormRef" label-position="top"
@@ -189,9 +204,9 @@ const cerrarDialogo = () => {
 }
 
 .form-actions {
-  display: flex;
-  gap: 30px; 
-  justify-content: flex-end;
-  margin-bottom: 15px; 
+    display: flex;
+    gap: 30px;
+    justify-content: flex-end;
+    margin-bottom: 15px;
 }
 </style>

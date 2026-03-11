@@ -29,15 +29,30 @@ const rules = {
     NomComun: [
         { required: true, message: 'El nombre común es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
         { whitespace: true, message: 'El nombre común no puede contener solo espacios en blanco', trigger: 'blur' },
-        { min: 1, max: 60, message: 'La longitud máxima es de 60 caracteres', trigger: 'blur' }
+        { min: 1, max: 60, message: 'La longitud máxima es de 60 caracteres', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     Observaciones: [
-        { max: 255, message: 'La longitud debe ser menor o igual a 255', trigger: 'blur' }
+        { max: 255, message: 'La longitud debe ser menor o igual a 255', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     Lengua: [
         { required: true, message: 'La lengua es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
         { whitespace: true, message: 'La lengua no puede contener solo espacios en blanco', trigger: 'blur' },
-        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
+        { max: 100, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 
