@@ -406,7 +406,7 @@ const handleEliminar = () => {
         } else {
           pendingId.value = "SELECT_FIRST_ROOT";
         }
-        mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminado correctamente.`, "success");
+        mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminada correctamente.`, "success");
       },
       onError: (e) => {
         pendingId.value = null;

@@ -4,6 +4,7 @@ import { ElTree, ElMessage, ElMessageBox, ElInput, ElRadioGroup, ElRadio, ElForm
 import { router } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
+import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 import EditarButton from "@/Components/Biotica/EditarButton.vue";
 import EliminarButton from "@/Components/Biotica/EliminarButton.vue";
@@ -17,6 +18,14 @@ import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import { Plus, Download } from '@element-plus/icons-vue';
 
+const tipoBusqueda = ref('inicia');
+
+watch(tipoBusqueda, () => {
+    if (treeRef.value) {
+        treeRef.value.filter(filtroEjecutado.value); 
+    }
+});
+
 const activePathIds = ref([]);
 const expandedTipoRegionKeys = ref([]);
 let ultimoEventoExpandTime = 0;
@@ -24,9 +33,9 @@ let ultimoEventoExpandTime = 0;
 const filtroEjecutado = ref('');
 
 const aplicarFiltro = () => {
-    filtroEjecutado.value = filterText.value;
+    filtroEjecutado.value = filterText.value; 
     if (treeRef.value) {
-        treeRef.value.filter(filterText.value);
+        treeRef.value.filter(filtroEjecutado.value); 
     }
 };
 
@@ -292,15 +301,6 @@ watch(() => props.tiposDeRegionTreeProp, (newVal) => {
 
 watch(() => props.tiposDeRegionProp, (newVal) => { listaTiposDeRegion.value = newVal; }, { immediate: true, deep: true });
 
-let timeoutBusqueda = null;
-watch(filterText, (val) => {
-    clearTimeout(timeoutBusqueda);
-    timeoutBusqueda = setTimeout(() => {
-        if (treeRef.value) {
-            treeRef.value.filter(val);
-        }
-    }, 300);
-});
 
 const onOpcionNivelChange = (newVal) => {
     if (!selectedNode.value || newVal === 'raiz') {
@@ -321,7 +321,17 @@ const onOpcionNivelChange = (newVal) => {
 
 const filterNodeMethod = (value, data) => {
     if (!value) return true;
-    return data.NombreRegion && data.NombreRegion.toLowerCase().includes(value.toLowerCase());
+    const nombre = data.NombreRegion ? data.NombreRegion.toLowerCase() : '';
+    const busqueda = value.toLowerCase();
+    switch (tipoBusqueda.value) {
+        case 'inicia':
+            return nombre.startsWith(busqueda);
+        case 'termina':
+            return nombre.endsWith(busqueda);
+        case 'cualquier':
+        default:
+            return nombre.includes(busqueda);
+    }
 };
 
 
@@ -472,14 +482,35 @@ const handleNodeSelected = (data) => {
 };
 
 const handleManageTiposRegion = () => { esModalTipoRegionVisible.value = true; };
+
 const cerrarModalTipoRegion = () => {
     router.reload({
         only: ['tiposDeRegionTreeProp', 'tiposDeRegionProp', 'treeDataProp'],
         onSuccess: () => {
             esModalTipoRegionVisible.value = false;
+            filterText.value = '';
+            nextTick(() => {
+                if (treeRef.value) {
+                    treeRef.value.filter('');
+                    const nodes = treeRef.value.store.nodesMap;
+                    for (let key in nodes) {
+                        nodes[key].expanded = false;
+                    }
+                }
+                expandedTipoRegionKeys.value = [];
+                if (tiposRegionTreeRef.value) {
+                    const nodesLeft = tiposRegionTreeRef.value.store.nodesMap;
+                    for (let key in nodesLeft) {
+                        nodesLeft[key].expanded = false;
+                    }
+                }
+                selectedNode.value = null;
+                if (treeRef.value) treeRef.value.setCurrentKey(null);
+            });
         }
     });
 };
+
 
 const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar región" : "Ingresar nueva región");
 
@@ -572,6 +603,17 @@ const guardarDesdeModal = async () => {
     }
     const nombreABuscar = formModal.value.NombreRegion;
     const modoActual = modalMode.value;
+
+    const nombreNormalizado = nombreABuscar.trim().toUpperCase();
+    if (nombreNormalizado === 'MÉXICO' || nombreNormalizado === 'ND' || nombreNormalizado === 'MEXICO/ND/ND') {
+        mostrarNotificacion(
+            "Aviso", 
+            "No se puede usar ese nombre  ya que es un nombre reservado por el sistema.", 
+            "warning"
+        );
+        return;
+    }
+
     let idPadreFinal = 0;
     if (modoActual === "insertar") {
         if (opcionNivel.value === "mismo" && selectedNode.value) {
@@ -772,10 +814,14 @@ const proceedWithDeletion = (nodeId, nombre) => {
             <el-card class="panel-card details-panel" shadow="never">
                 <template #header>
                     <div class="header-container">
+
                         <div class="header-buscador">
                             <el-input v-model="filterText" placeholder="Escriba para buscar" clearable
                                 @keyup.enter="aplicarFiltro" @clear="aplicarFiltro" />
                         </div>
+
+                        <TipoBusqueda v-model="tipoBusqueda" />
+
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
                             <div class="action-group">
