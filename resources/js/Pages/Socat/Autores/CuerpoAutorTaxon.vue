@@ -295,7 +295,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
 
   const mensajeDuplicado = esEdicion
     ? "La autoridad taxonómica que desea modificar ya existe, las modificaciones no se realizaron."
-    : "La autoridad taxonómica que desea ingresar ya existe.";
+    : "La autoridad taxonómica que desea ingresar ya existe, las modificaciones no se realizaron.";
   const autorLocal = datosDeAutores.value.find(autor => {
     const mismoNombre = autor.NombreAutoridad.trim().toLowerCase() === datosDelFormulario.nombreAutoridad.trim().toLowerCase();
     const mismoGrupo = autor.GrupoTaxonomico.trim().toLowerCase() === datosDelFormulario.grupoTaxonomico.trim().toLowerCase();
