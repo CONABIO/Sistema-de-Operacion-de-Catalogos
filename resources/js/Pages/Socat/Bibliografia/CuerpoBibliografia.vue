@@ -308,7 +308,7 @@ const handleFormSubmited = (datosDelFormulario) => {
   const esEdicion = accBiblio.value === 'editar';
   const mensajeDuplicado = esEdicion 
     ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron." 
-    : "La bibliografía que desea ingresar ya existe.";
+    : "La bibliografía que desea ingresar ya existe, las modificaciones no se realizaron.";
   const duplicadoLocal = localTableData.value.find(b => 
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&

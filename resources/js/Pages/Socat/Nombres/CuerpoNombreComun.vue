@@ -109,7 +109,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
     const mensajeDuplicado = esEdicion 
         ? "El nombre común que desea modificar ya existe, las modificaciones no se realizaron." 
-        : "El nombre común que desea ingresar ya existe.";
+        : "El nombre común que desea ingresar ya existe, las modificaciones no se realizaron.";
 
     const registroExistenteLocal = currentData.value.find(item => {  
         const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();

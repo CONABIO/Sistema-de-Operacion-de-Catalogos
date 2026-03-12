@@ -115,7 +115,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     const nombreNuevoTrim = datosDelFormulario.Descripcion.trim().toLowerCase();
     const mensajeDuplicado = esEdicion 
         ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron." 
-        : "El tipo de distribución que desea ingresar ya existe.";
+        : "El tipo de distribución que desea ingresar ya existe, las modificaciones no se realizaron.";
     const registroExistenteLocal = currentData.value.find(item => {
         const mismaDescripcion = item.Descripcion.trim().toLowerCase() === datosDelFormulario.Descripcion.trim().toLowerCase();
         return esEdicion 
