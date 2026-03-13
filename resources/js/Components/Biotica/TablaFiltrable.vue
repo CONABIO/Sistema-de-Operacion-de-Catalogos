@@ -29,6 +29,11 @@ const props = defineProps({
   mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
   mostrarBiblio: { type:Boolean, default: false }, 
+  
+  alturaTabla: {
+    type: Number, 
+    default: 550
+  },
 
   highlightCurrentRow: {
     type: Boolean,
@@ -397,7 +402,7 @@ defineExpose({
                 @row-click="handleRowClickInterno" 
                 @expand-change ="onExpandChange"
                 :border="true" 
-                height="550" 
+                :height="props.alturaTabla" 
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
