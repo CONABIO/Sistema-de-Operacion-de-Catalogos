@@ -1,5 +1,5 @@
 <script setup>
-import { ref, h, computed, onMounted, onUnmounted, nextTick  } from 'vue';
+import { ref, h, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { ElMessage, ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -21,7 +21,7 @@ const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
   selectedRowId.value = row.IdBibliografia;
-  handleRowClick(row); 
+  handleRowClick(row);
 };
 
 const tableRowClassName = ({ row }) => {
@@ -46,16 +46,16 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     const paginaDestino = resPagina.data.page;
     if (tablaRef.value) {
       await tablaRef.value.irAPagina(paginaDestino);
-      await nextTick(); 
+      await nextTick();
       const fila = localTableData.value.find(d => String(d.IdBibliografia) === String(idEncontrado));
       if (fila) {
-          selectedRowId.value = idEncontrado;
-          tablaRef.value.selectedRow = fila; 
-          handleRowClick(fila); 
-          
-          setTimeout(() => {
-              tablaRef.value.forzarFocoFilaVerde();
-          }, 200);
+        selectedRowId.value = idEncontrado;
+        tablaRef.value.selectedRow = fila;
+        handleRowClick(fila);
+
+        setTimeout(() => {
+          tablaRef.value.forzarFocoFilaVerde();
+        }, 200);
       }
     }
   } catch (err) {
@@ -272,13 +272,7 @@ const citaCompleta = (row) => {
   cita.value = citaComp;
 };
 
-const agregarGrupo = () => {
-  if (!selectedBibliografia.value) {
-    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
-    return;
-  }
-  esModalGruposVisible.value = true;
-};
+;
 
 const cerrarModalGrupos = () => {
   esModalGruposVisible.value = false;
@@ -306,10 +300,10 @@ const cerrarModal = () => {
 const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
   const esEdicion = accBiblio.value === 'editar';
-  const mensajeDuplicado = esEdicion 
-    ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron." 
+  const mensajeDuplicado = esEdicion
+    ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron."
     : "La bibliografía que desea ingresar ya existe, las modificaciones no se realizaron.";
-  const duplicadoLocal = localTableData.value.find(b => 
+  const duplicadoLocal = localTableData.value.find(b =>
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&
     b.TituloPublicacion.trim().toLowerCase() === datosDelFormulario.TituloPublicacion.trim().toLowerCase() &&
@@ -355,7 +349,7 @@ const handleFormSubmited = (datosDelFormulario) => {
   if (!esEdicion) {
     procederConGuardado();
   } else {
-    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la bibliografía de "${datosDelFormulario.Autor}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la bibliografía seleccionada?`;
     ElMessageBox({
       title: 'Confirmar modificación',
       showConfirmButton: false,
@@ -367,12 +361,12 @@ const handleFormSubmited = (datosDelFormulario) => {
           h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
         ]),
         h('div', { class: 'footer-buttons' }, [
-          h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
-          h(BotonAceptar, { 
-            onClick: () => { 
-              ElMessageBox.close(); 
-              procederConGuardado(); 
-            } 
+          h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+          h(BotonAceptar, {
+            onClick: () => {
+              ElMessageBox.close();
+              procederConGuardado();
+            }
           }),
         ])
       ])
@@ -394,7 +388,7 @@ const borrarDatos = (idBibliografia) => {
       if (tablaRef.value) {
         await tablaRef.value.fetchData();
       }
-      mostrarNotificacion("Eliminación", "El registro fue eliminado correctamente.", "success");
+      mostrarNotificacion("Eliminación", "La bibliografia ha sido eliminada correctamente.", "success");
     } catch (apiError) {
       console.error(apiError);
       mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
@@ -402,13 +396,13 @@ const borrarDatos = (idBibliografia) => {
   };
 
   const cancelarEliminacion = () => { ElMessageBox.close(); };
-  
-  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'este registro'}"? Esta acción no se puede revertir.`;
-  
+
+  const mensaje = `¿Está seguro de eliminar la bibliografía seleccionada? Esta acción no se puede revertir.`;
+
   ElMessageBox({
-    title: 'Confirmar eliminación', 
-    showConfirmButton: false, 
-    showCancelButton: false, 
+    title: 'Confirmar eliminación',
+    showConfirmButton: false,
+    showCancelButton: false,
     customClass: 'message-box-diseno-limpio',
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
@@ -416,7 +410,7 @@ const borrarDatos = (idBibliografia) => {
         h('div', { class: 'text-container' }, [h('p', null, mensaje)])
       ]),
       h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }), 
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
         h(BotonAceptar, { onClick: procederConEliminacion }),
       ])
     ])
@@ -452,8 +446,8 @@ onMounted(() => {
           mostrarNotificacionError("Aviso", errorMessage, "error");
         });
     }
-     if (event.data && event.data.type === 'cerrarModal') {
-        esModalGruposVisible.value = false;
+    if (event.data && event.data.type === 'cerrarModal') {
+      esModalGruposVisible.value = false;
     }
   };
   window.addEventListener('message', handleMessageFromIframe);
@@ -505,21 +499,17 @@ onMounted(() => {
         <div class="widget-card" v-loading="loadingGrupos">
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
-            <NuevoButton @crear="agregarGrupo" />
+            <div class="botones">
+              <NuevoButton @crear="agregarGrupo" />
+            </div>
+            <EditarButton @editar="abrirModalEditar(row)" />
+            <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
           </div>
           <div class="widget-table-container">
             <el-table :data="datosGrupos" border style="width: 100%"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
               <el-table-column prop="observaciones" label="Observaciones" />
-              <el-table-column label="Acciones" width="100" align="center">
-                <template #default="{ row }">
-                  <div class="action-buttons-container">
-                    <EditarButton @editar="abrirModalEditar(row)" />
-                    <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
-                  </div>
-                </template>
-              </el-table-column>
 
             </el-table>
           </div>
@@ -558,13 +548,15 @@ onMounted(() => {
     <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :pressEsc="true" width="100%"
       @close="cerrarModalGrupos" :draggable="true">
 
-      <div class="dialog-body-iframe-container" style="padding: 0; border: none; display: flex; flex-direction: column;">
+      <div class="dialog-body-iframe-container"
+        style="padding: 0; border: none; display: flex; flex-direction: column;">
         <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full"
           frameborder="0">
         </iframe>
       </div>
     </DialogGeneral>
-    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :pressEsc="false" :bot-cerrar="true">
+    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :pressEsc="false"
+      :bot-cerrar="true">
       <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
         <div class="form-actions" style="margin-top: 10px;">
           <GuardarButton @click="guardarObservaciones" />
@@ -640,10 +632,10 @@ onMounted(() => {
 }
 
 
-.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
-  color: #007bff !important; 
-  font-weight: bold; 
+  color: #007bff !important;
+  font-weight: bold;
 }
 </style>
 
@@ -710,6 +702,10 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
+}
+
+.botones {
+  margin-right: 30px;
 }
 
 .widget-actions {
@@ -805,7 +801,4 @@ onMounted(() => {
   background-color: #ddf6dd !important;
   color: #000;
 }
-
-
-
 </style>
