@@ -19,6 +19,32 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const selectedRowId = ref(null);
 
+const selectedGrupoId = ref(null);
+const selectedGrupoRow = ref(null);
+
+
+const handleGrupoRowClick = (row) => {
+  selectedGrupoId.value = row.IdGrupoSCAT;
+  selectedGrupoRow.value = row;
+};
+
+const rowGrupoClassName = ({ row }) => {
+  if (row.IdGrupoSCAT === selectedGrupoId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
+const agregarGrupo = () => {
+  if (!selectedBibliografia.value) {
+    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
+    return;
+  }
+  esModalGruposVisible.value = true;
+};
+
+
+
 const manejarClickFila = (row) => {
   selectedRowId.value = row.IdBibliografia;
   handleRowClick(row);
@@ -123,7 +149,11 @@ const props = defineProps({
 
 
 const abrirModalEditar = (filaGrupo) => {
-  grupoParaEditar.value = { ...filaGrupo };
+  if (!filaGrupo) return;
+  grupoParaEditar.value = { 
+    ...filaGrupo,
+    IdBibliografia: filaGrupo.IdBibliografia || selectedBibliografia.value?.IdBibliografia 
+  };
   esModalEditarGrupoVisible.value = true;
 };
 
@@ -151,24 +181,17 @@ const guardarObservaciones = async () => {
   }
 };
 
-const confirmarEliminacionGrupo = (filaGrupo) => {
 
-  console.log("Este es el grupo selccionado:", filaGrupo);
+const confirmarEliminacionGrupo = (filaGrupo) => {
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
     mostrarNotificacion('Error', 'Faltan datos para eliminar la asociación.', 'error');
     return;
   }
 
-  ElMessageBox.confirm(
-    `¿Estás seguro de que quieres desasociar el grupo "${filaGrupo.grupo}" de esta bibliografía?`,
-    'Confirmar eliminación',
-    {
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      type: 'warning',
-    }
-  ).then(async () => {
+  const procederConEliminacion = async () => {
     try {
+      ElMessageBox.close(); 
+      
       await axios.delete(route('bibliografias.asociarGrupo.eliminar'), {
         data: {
           IdBibliografia: filaGrupo.IdBibliografia,
@@ -177,17 +200,45 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
       });
 
       mostrarNotificacion('Éxito', 'Grupo desasociado correctamente.', 'success');
+      
       handleRowClick(selectedBibliografia.value);
+      selectedGrupoId.value = null;
+      selectedGrupoRow.value = null;
+
     } catch (error) {
       const mensajeError = error.response?.data?.message || 'No se pudo desasociar el grupo.';
       mostrarNotificacion('Error', mensajeError, 'error');
       console.error("Error al eliminar asociación:", error.response);
     }
+  };
+
+  const mensaje = `¿Estás seguro de que quieres desasociar el grupo seleccionado de esta bibliografía? Esta acción no se puede revertir.`;
+
+  ElMessageBox({
+    title: "Confirmar eliminación",
+    showConfirmButton: false,
+    showCancelButton: false,
+    customClass: "message-box-diseno-limpio",
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [
+            h('div', { class: 'custom-warning-circle' }, '!')
+        ]),
+        h('div', { class: 'text-container' }, [
+            h('p', null, mensaje)
+        ])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+        h(BotonAceptar, { 
+            texto: "Sí, Eliminar", 
+            onClick: procederConEliminacion 
+        }),
+      ]),
+    ]),
   }).catch(() => {
-    ElMessage({ type: 'info', message: 'Eliminación cancelada' });
   });
 };
-
 
 
 
@@ -228,6 +279,8 @@ const cerrarDialogo2 = () => {
 
 const handleRowClick = async (row) => {
   selectedBibliografia.value = row;
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
   citaCompleta(row);
   const idBibliografia = row.IdBibliografia;
   if (!idBibliografia) return;
@@ -501,12 +554,13 @@ onMounted(() => {
             <h3>Grupo taxonómico</h3>
             <div class="botones">
               <NuevoButton @crear="agregarGrupo" />
+              <EditarButton :disabled="!selectedGrupoRow" @editar="abrirModalEditar(selectedGrupoRow)" />
+              <EliminarButton :disabled="!selectedGrupoRow" @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
             </div>
-            <EditarButton @editar="abrirModalEditar(row)" />
-            <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
           </div>
           <div class="widget-table-container">
-            <el-table :data="datosGrupos" border style="width: 100%"
+            <el-table :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName"
+              @row-click="handleGrupoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
               <el-table-column prop="observaciones" label="Observaciones" />
@@ -517,19 +571,16 @@ onMounted(() => {
         <div class="widget-card">
           <div class="widget-header">
             <h3>Objeto externo</h3>
+            <div class="botones">
+              <NuevoButton />
+              <EditarButton  />
+              <EliminarButton />
+            </div>
           </div>
           <div class="widget-table-container">
             <el-table :data="datosObjetos" border style="width: 100%" empty-text="Sin Datos">
               <el-table-column prop="objeto" label="Objeto externo" />
               <el-table-column prop="observaciones" label="Observaciones" />
-              <el-table-column label="Acciones" width="100" align="center">
-                <template #default="{ }">
-                  <div class="action-buttons-container">
-                    <EditarButton />
-                    <EliminarButton />
-                  </div>
-                </template>
-              </el-table-column>
             </el-table>
           </div>
         </div>
@@ -705,6 +756,9 @@ onMounted(() => {
 }
 
 .botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
   margin-right: 30px;
 }
 
