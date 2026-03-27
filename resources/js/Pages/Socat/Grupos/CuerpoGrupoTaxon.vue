@@ -166,7 +166,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     const esEdicion = grupoEditado.value !== null;
     const mensajeDuplicado = esEdicion 
         ? "El grupo taxonómico que desea modificar ya existe, las modificaciones no se realizaron." 
-        : "El grupo taxonómico que desea ingresar ya existe, las modificaciones no se realizaron.";
+        : "El grupo taxonómico que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
         return esEdicion

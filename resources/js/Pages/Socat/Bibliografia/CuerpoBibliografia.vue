@@ -314,7 +314,7 @@ const handleRowClick = async (row) => {
 const citaCompleta = (row) => {
   let orden = row.OrdenCitaCompleta || '1243765';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'ISBNISSN'];
+  const campos = ['', 'Autor', 'Anio','TituloPublicacion',  'TituloSubPublicacion', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'EditoresCompiladores'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];
