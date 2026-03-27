@@ -85,7 +85,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = 5000;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -109,7 +109,7 @@ const handleFormSubmited = (datosDelFormulario) => {
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
     const mensajeDuplicado = esEdicion 
         ? "El nombre común que desea modificar ya existe, las modificaciones no se realizaron." 
-        : "El nombre común que desea ingresar ya existe, las modificaciones no se realizaron.";
+        : "El nombre común que desea ingresar ya existe.";
 
     const registroExistenteLocal = currentData.value.find(item => {  
         const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();
@@ -185,25 +185,42 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarNombreComun = (idNomComun) => {
     const procederConEliminacion = async () => {
-        const nombreItem = itemAEliminar ? `"${itemAEliminar.NomComun}"` : 'el registro';
         try {
             ElMessageBox.close();
-            const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
             await axios.delete(`/nombres-comunes/${idNomComun}`);
             if (tablaRef.value) {
-                tablaRef.value.fetchData();
+                await tablaRef.value.fetchData(); 
+                await nextTick(); 
+                if (currentData.value.length > 0) {
+                    const primerRegistro = currentData.value[0];
+                    selectedRowId.value = primerRegistro.IdNomComun;
+                    tablaRef.value.selectedRow = primerRegistro;
+                    setTimeout(() => {
+                        if (tablaRef.value && typeof tablaRef.value.forzarFocoFilaVerde === 'function') {
+                            tablaRef.value.forzarFocoFilaVerde();
+                        }
+                    }, 300); 
+                } else {
+                    selectedRowId.value = null;
+                }
             }
+            
             mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común esta asociado.`, 'success');
-
+            console.error(apiError);
+            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común está asociado.`, 'warning');
         }
     };
+
     const cancelarEliminacion = () => { ElMessageBox.close(); };
     const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
     const mensaje = `¿Está seguro de eliminar el nombre común seleccionado? Esta acción no se puede revertir.`;
+
     ElMessageBox({
-        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+        title: 'Confirmar eliminación', 
+        showConfirmButton: false, 
+        showCancelButton: false, 
+        customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
             h('div', { class: 'body-content' }, [
                 h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
