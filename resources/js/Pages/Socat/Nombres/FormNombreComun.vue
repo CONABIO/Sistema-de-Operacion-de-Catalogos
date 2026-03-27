@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch, nextTick, computed } from 'vue'; 
-import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue'; 
+import { ref, watch, nextTick, computed } from 'vue';
+import DialogGeneral from '@/Components/Biotica/DialogGeneral.vue';
 import GuardarButton from "@/Components/Biotica/GuardarButton.vue";
 import { ElMessage } from 'element-plus';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
@@ -14,7 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'formSubmited']);
 
-const dialogVisible = ref(false); 
+const dialogVisible = ref(false);
 
 const form = ref({
     NomComun: '',
@@ -61,7 +61,7 @@ const dialogTitle = computed(() => {
 });
 
 watch(() => props.visible, (newVal) => {
-    dialogVisible.value = newVal; 
+    dialogVisible.value = newVal;
     if (newVal) {
         if (props.accion === 'editar' && props.nomComEdit) {
             form.value = {
@@ -74,7 +74,7 @@ watch(() => props.visible, (newVal) => {
         }
         nextTick(() => {
             formRef.value?.clearValidate();
-             setTimeout(() => {
+            setTimeout(() => {
                 if (nomComunInputRef.value) {
                     nomComunInputRef.value.focus();
                     const nativeInput = nomComunInputRef.value.$el.querySelector('input');
@@ -102,12 +102,12 @@ const intentarGuardar = async () => {
             NomComun: form.value.NomComun.trim(),
             Lengua: form.value.Lengua.trim(),
             Observaciones: form.value.Observaciones ? form.value.Observaciones.trim() : '',
-            
+
             idParaEditar: props.accion === 'editar' ? props.nomComEdit?.IdNomComun : null,
             accionOriginal: props.accion,
         };
         emit('formSubmited', datosParaEnviar);
-    } 
+    }
 }
 
 const cerrarDialogo = () => {
@@ -119,17 +119,18 @@ const cerrarDialogo = () => {
 <template>
     <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true">
         <div class="dialog-header">
-                <h3>{{ dialogTitle }}</h3>
-            </div>
+            <h3>{{ dialogTitle }}</h3>
+        </div>
         <div class="header">
             <div class="form-actions">
-                <GuardarButton @click="intentarGuardar"/>
+                <GuardarButton @click="intentarGuardar" />
                 <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
             </div>
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
                     <el-form-item label="Nombre común" prop="NomComun">
-                        <el-input  ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="60" show-word-limit />
+                        <el-input ref="nomComunInputRef" type="text" v-model="form.NomComun" maxlength="60"
+                            show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Lengua" prop="Lengua">
@@ -137,7 +138,8 @@ const cerrarDialogo = () => {
                     </el-form-item>
 
                     <el-form-item label="Observaciones" prop="Observaciones">
-                        <el-input type="textarea" v-model="form.Observaciones" maxlength="255" show-word-limit />
+                        <el-input type="textarea" v-model="form.Observaciones" maxlength="255" show-word-limit
+                            :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                     </el-form-item>
 
                 </el-form>
@@ -168,11 +170,11 @@ const cerrarDialogo = () => {
     border: 3px;
     text-align: left;
     border-radius: 10px;
-    background-color: #ffffff; 
+    background-color: #ffffff;
     padding: 20px 24px;
     text-align: left;
-    position: relative; 
-    z-index: 10; 
+    position: relative;
+    z-index: 10;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
