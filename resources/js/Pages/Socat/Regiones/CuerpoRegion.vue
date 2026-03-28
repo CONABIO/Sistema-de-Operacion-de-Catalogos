@@ -22,7 +22,7 @@ const tipoBusqueda = ref('inicia');
 
 watch(tipoBusqueda, () => {
     if (treeRef.value) {
-        treeRef.value.filter(filtroEjecutado.value); 
+        treeRef.value.filter(filtroEjecutado.value);
     }
 });
 
@@ -33,9 +33,9 @@ let ultimoEventoExpandTime = 0;
 const filtroEjecutado = ref('');
 
 const aplicarFiltro = () => {
-    filtroEjecutado.value = filterText.value; 
+    filtroEjecutado.value = filterText.value;
     if (treeRef.value) {
-        treeRef.value.filter(filtroEjecutado.value); 
+        treeRef.value.filter(filtroEjecutado.value);
     }
 };
 
@@ -271,18 +271,24 @@ const opcionesTipoRegionDisponibles = computed(() => {
         return listaTiposDeRegion.value;
     }
     if (activePathIds.value.length === 0) return [];
+    
     if (!selectedNode.value || opcionNivel.value === 'raiz') {
         const idRaizCamino = activePathIds.value[0];
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === idRaizCamino);
     }
+    
     if (opcionNivel.value === 'mismo') {
         const tipoRegionId = selectedNode.value.IdTipoRegion;
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === tipoRegionId);
     }
+    
     if (opcionNivel.value === 'inferior') {
         const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
         const hijosPosibles = tipoRegionActual?.children || [];
-        return hijosPosibles.filter(tipoHijo => activePathIds.value.includes(tipoHijo.IdTipoRegion));
+        const hijosFiltrados = hijosPosibles.filter(h => {
+            return h.Descripcion.toUpperCase() === 'LOCALIDAD' || activePathIds.value.includes(h.IdTipoRegion);
+        });
+        return hijosFiltrados.length > 0 ? hijosFiltrados : (hijosPosibles.length > 0 ? [hijosPosibles[0]] : []);
     }
     return [];
 });
@@ -313,7 +319,7 @@ const onOpcionNivelChange = (newVal) => {
     else if (newVal === 'inferior') {
         const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
         const hijosMetadata = tipoRegionActual?.children || [];
-        const hijoValido = hijosMetadata.find(h => activePathIds.value.includes(h.IdTipoRegion));
+        const hijoValido = hijosMetadata.length > 0 ? hijosMetadata[0] : null;
         formModal.value.IdTipoRegion = hijoValido ? hijoValido.IdTipoRegion : null;
     }
 };
@@ -607,8 +613,8 @@ const guardarDesdeModal = async () => {
     const nombreNormalizado = nombreABuscar.trim().toUpperCase();
     if (nombreNormalizado === 'MÉXICO' || nombreNormalizado === 'ND' || nombreNormalizado === 'MEXICO/ND/ND') {
         mostrarNotificacion(
-            "Aviso", 
-            "No se puede usar ese nombre  ya que es un nombre reservado por el sistema.", 
+            "Aviso",
+            "No se puede usar ese nombre  ya que es un nombre reservado por el sistema.",
             "warning"
         );
         return;
