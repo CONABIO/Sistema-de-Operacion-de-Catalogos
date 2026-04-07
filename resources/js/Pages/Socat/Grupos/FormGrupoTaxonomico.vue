@@ -135,13 +135,13 @@ const cerrarDialogo = () => {
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
                     @submit.prevent="intentarGuardar">
                     <el-form-item label="Nombre del grupo" prop="GrupoSCAT">
-                        <el-input ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
+                        <el-input type="textarea" ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none"/>
                     </el-form-item>
                     <el-form-item label="Abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
-                        <el-input v-model="form.GrupoSNIB" maxlength="255" show-word-limit />
+                        <el-input type="textarea" v-model="form.GrupoSNIB" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                     </el-form-item>
                 </el-form>
 

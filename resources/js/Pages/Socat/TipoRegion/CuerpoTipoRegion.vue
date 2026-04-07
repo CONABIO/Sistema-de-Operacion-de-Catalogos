@@ -532,9 +532,9 @@ const handleNodeDoubleClick = (data) => {
                         </div>
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
-                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
-                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit
-                                @keydown.enter.prevent />
+                            <el-input  type="textarea" ref="descripcionInputRef" v-model="formModal.Descripcion"
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit 
+                                @keydown.enter.prevent :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                         </el-form-item>
 
                     </el-form>

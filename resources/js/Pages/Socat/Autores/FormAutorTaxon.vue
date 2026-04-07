@@ -137,13 +137,13 @@ const cerrarDialogo = () => {
                     </el-form-item>
 
                     <el-form-item label="Nombre completo" prop="nombreCompleto">
-                        <el-input type="text" maxlength="255" show-word-limit
-                            v-model="autorTax.nombreCompleto"></el-input>
+                        <el-input type="textarea" maxlength="255" show-word-limit
+                            v-model="autorTax.nombreCompleto"  :autosize="{ minRows: 1, maxRows: 2 }" resize="none"></el-input>
                     </el-form-item>
 
                     <el-form-item label="Grupo taxonomico" prop="grupoTaxonomico">
-                        <el-input type="text" maxlength="255" show-word-limit
-                            v-model="autorTax.grupoTaxonomico"></el-input>
+                        <el-input type="textarea" maxlength="255" show-word-limit
+                            v-model="autorTax.grupoTaxonomico"  :autosize="{ minRows: 1, maxRows: 2 }" resize="none"></el-input>
                     </el-form-item>
                 </el-form>
             </div>
