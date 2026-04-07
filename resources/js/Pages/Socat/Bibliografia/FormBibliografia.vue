@@ -127,7 +127,6 @@ const submitForm = () => {
         return;
     }
 
-    // GENERACIÓN DEL STRING: Mapeamos el ID de cada objeto en su posición actual al número del mapaIndices
     const ordenString = listaOrdenada.value
         .map(item => mapaIndices[item.id])
         .join('');
@@ -177,7 +176,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     <el-col :span="12">
                         <el-form-item required>
                             <template #label><span class="form-number">{{ orden.Autor }}</span> Autor</template>
-                            <el-input v-model="form.Autor" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.Autor" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Autor(es)"></el-input>
                         </el-form-item>
                     </el-col>
@@ -194,7 +193,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         <el-form-item required>
                             <template #label><span class="form-number">{{ orden.TituloPublicacion }}</span> Titulo de la
                                 publicacion</template>
-                            <el-input v-model="form.TituloPublicacion" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.TituloPublicacion" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Título principal"></el-input>
                         </el-form-item>
                     </el-col>
@@ -202,7 +201,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         <el-form-item>
                             <template #label><span class="form-number">{{ orden.TituloSubPublicacion }}</span> Titulo de
                                 la subpublicacion</template>
-                            <el-input v-model="form.TituloSubPublicacion" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.TituloSubPublicacion" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Título capítulo"></el-input>
                         </el-form-item>
                     </el-col>
@@ -213,7 +212,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         <el-form-item>
                             <template #label><span class="form-number">{{ orden.NumeroVolumenAnio }}</span> Numero,
                                 Volumen, Año</template>
-                            <el-input v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Datos revista"></el-input>
                         </el-form-item>
                     </el-col>
@@ -221,7 +220,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         <el-form-item>
                             <template #label><span class="form-number">{{ orden.EditorialPaisPagina }}</span> Editorial,
                                 Pais, Pagina</template>
-                            <el-input v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Datos editorial"></el-input>
                         </el-form-item>
                     </el-col>
@@ -232,7 +231,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         <el-form-item>
                             <template #label><span class="form-number">{{ orden.EditoresCompiladores }}</span> Editores
                                 / Compiladores</template>
-                            <el-input v-model="form.EditoresCompiladores" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.EditoresCompiladores" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Si aplica"></el-input>
                         </el-form-item>
                     </el-col>

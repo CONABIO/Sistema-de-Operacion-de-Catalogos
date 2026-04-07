@@ -697,8 +697,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
             <template #label>
               {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
             </template>
-            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
-              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent />
+            <el-input type="textarea" ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
+              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
           </el-form-item>
 
         </el-form>
