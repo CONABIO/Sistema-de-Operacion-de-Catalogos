@@ -20,6 +20,29 @@ import { Plus, Download } from '@element-plus/icons-vue';
 
 const tipoBusqueda = ref('inicia');
 
+const nodoDuplicadoParaSeleccionar = ref(null);
+
+
+const handleCerrarNotificacion = () => {
+    notificacionVisible.value = false;
+    if (nodoDuplicadoParaSeleccionar.value) {
+        const nodo = nodoDuplicadoParaSeleccionar.value;
+        filterText.value = '';
+        if (treeRef.value) treeRef.value.filter('');
+        nextTick(() => {
+            selectedNode.value = nodo;
+            treeRef.value?.setCurrentKey(nodo.IdRegion);
+            setTimeout(() => {
+                const el = document.getElementById('region-node-' + nodo.IdRegion);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 400);
+        });
+        nodoDuplicadoParaSeleccionar.value = null;
+    }
+};
+
 watch(tipoBusqueda, () => {
     if (treeRef.value) {
         treeRef.value.filter(filtroEjecutado.value);
@@ -271,17 +294,17 @@ const opcionesTipoRegionDisponibles = computed(() => {
         return listaTiposDeRegion.value;
     }
     if (activePathIds.value.length === 0) return [];
-    
+
     if (!selectedNode.value || opcionNivel.value === 'raiz') {
         const idRaizCamino = activePathIds.value[0];
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === idRaizCamino);
     }
-    
+
     if (opcionNivel.value === 'mismo') {
         const tipoRegionId = selectedNode.value.IdTipoRegion;
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === tipoRegionId);
     }
-    
+
     if (opcionNivel.value === 'inferior') {
         const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
         const hijosPosibles = tipoRegionActual?.children || [];
@@ -601,102 +624,93 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    await formModalRef.value.validate();
+
     try {
         await formModalRef.value.validate();
     } catch (error) {
         return;
     }
-    const nombreABuscar = formModal.value.NombreRegion;
+    const nombreABuscar = (formModal.value.NombreRegion || "").trim();
     const modoActual = modalMode.value;
+    const tipoRegionActual = formModal.value.IdTipoRegion;
+    let idPadreFinal = 0;
+    if (modoActual === "insertar") {
+        if (opcionNivel.value === "mismo" && selectedNode.value) {
+            idPadreFinal = selectedNode.value.IdRegionAsc || 0;
+        } else if (opcionNivel.value === "inferior" && selectedNode.value) {
+            idPadreFinal = selectedNode.value.IdRegion;
+        } else {
+            idPadreFinal = 0;
+        }
+    } else {
+        idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
+    }
+    const buscarDuplicadoGlobal = (nodos, padreId, nombre, tipoId, excludeId) => {
+        for (const nodo of nodos) {
+            const nodoNombre = (nodo.NombreRegion || "").trim().toLowerCase();
+            const nombreBuscado = nombre.toLowerCase();
 
-    const nombreNormalizado = nombreABuscar.trim().toUpperCase();
-    if (nombreNormalizado === 'MÉXICO' || nombreNormalizado === 'ND' || nombreNormalizado === 'MEXICO/ND/ND') {
+            if (tipoId === 1) {
+                if (nodo.IdTipoRegion === 1 && nodoNombre === nombreBuscado && nodo.IdRegion !== excludeId) {
+                    return nodo;
+                }
+            }
+            else {
+                const nodoPadreId = nodo.IdRegionAsc || 0;
+                const targetPadreId = padreId || 0;
+
+                if (
+                    Number(nodoPadreId) === Number(targetPadreId) &&
+                    nodoNombre === nombreBuscado &&
+                    nodo.IdRegion !== excludeId
+                ) {
+                    return nodo;
+                }
+            }
+
+            if (nodo.children && nodo.children.length > 0) {
+                const encontrado = buscarDuplicadoGlobal(nodo.children, padreId, nombre, tipoId, excludeId);
+                if (encontrado) return encontrado;
+            }
+        }
+        return null;
+    };
+
+    const duplicado = buscarDuplicadoGlobal(
+        localTreeData.value,
+        idPadreFinal,
+        nombreABuscar,
+        tipoRegionActual,
+        modoActual === 'editar' ? nodoEnModal.value.IdRegion : null
+    );
+
+    if (duplicado) {
+        nodoDuplicadoParaSeleccionar.value = duplicado;
+        cerrarModalOperacion();
         mostrarNotificacion(
             "Aviso",
-            "No se puede usar ese nombre  ya que es un nombre reservado por el sistema.",
+            `La región geográfica que desea ingresar ya existe.`,
             "warning"
         );
         return;
     }
 
-    let idPadreFinal = 0;
-    if (modoActual === "insertar") {
-        if (opcionNivel.value === "mismo" && selectedNode.value) {
-            idPadreFinal = selectedNode.value.IdRegionAsc || 0;
-            if (idPadreFinal === selectedNode.value.IdRegion) {
-                idPadreFinal = 0;
-            }
-        } else if (opcionNivel.value === "inferior" && selectedNode.value) {
-            idPadreFinal = selectedNode.value.IdRegion;
-        }
-    }
-
-    const isNameTakenBySibling = (parentId, regionName, currentRegionId = null) => {
-        let siblings = [];
-        if (!parentId || parentId === 0) {
-            siblings = localTreeData.value.filter(n => !n.IdRegionAsc || n.IdRegionAsc === 0);
-        } else {
-            const parentNode = findNodeById(localTreeData.value, parentId);
-            if (parentNode && parentNode.children) siblings = parentNode.children;
-        }
-
-        return siblings.some(n =>
-            n.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
-            n.IdRegion !== currentRegionId &&
-            n.IdTipoRegion === formModal.value.IdTipoRegion
-        );
-    };
-
-    if (isNameTakenBySibling(idPadreFinal, nombreABuscar, modoActual === 'editar' ? nodoEnModal.value.IdRegion : null)) {
-        mostrarNotificacion("Aviso", "Ya existe una región con el mismo nombre en este nivel.", "warning");
-        return;
-    }
-
     const onSuccess = () => {
         cerrarModalOperacion();
-        const tituloNotif = modoActual === 'editar' ? "Modificación" : "Ingreso";
-        const mensajeNotif = modoActual === 'editar'
-            ? `La región ha sido modificada correctamente.`
-            : `La región ha sido ingresada correctamente.`;
+        const titulo = modoActual === 'editar' ? "Modificación" : "Ingreso";
+        const mensaje = modoActual === 'editar'
+            ? "La región ha sido modificada con éxito."
+            : "La región ha sido ingresada con éxito.";
 
-        mostrarNotificacion(tituloNotif, mensajeNotif, "success");
-        router.reload({
-            only: ['treeDataProp'],
-            onSuccess: () => {
-                setTimeout(() => {
-                    const buscarNodoRecursivo = (nodos) => {
-                        for (const nodo of nodos) {
-                            if (nodo.NombreRegion === nombreABuscar) return nodo;
-                            if (nodo.children) {
-                                const enc = buscarNodoRecursivo(nodo.children);
-                                if (enc) return enc;
-                            }
-                        }
-                        return null;
-                    };
-                    const nuevoNodo = buscarNodoRecursivo(filteredRegionsTree.value);
-                    if (nuevoNodo) {
-                        selectedNode.value = nuevoNodo;
-                        treeRef.value?.setCurrentKey(nuevoNodo.IdRegion, true);
-                        setTimeout(() => {
-                            const el = document.getElementById('region-node-' + nuevoNodo.IdRegion);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 200);
-                    }
-                }, 500);
-            }
-        });
+        mostrarNotificacion(titulo, mensaje, "success");
+
+        router.reload({ only: ['treeDataProp'] });
     };
 
-    const onError = (errors) => {
-        mostrarNotificacion("Aviso", Object.values(errors).flat().join("\n"), "warning");
-    };
+    const onError = (errors) => mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
 
     if (modoActual === "editar") {
-        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, {
-            preserveState: true, preserveScroll: true, onSuccess, onError
-        });
+        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, { preserveState: true, onSuccess, onError });
     } else {
         const payload = {
             ...formModal.value,
@@ -704,13 +718,7 @@ const guardarDesdeModal = async () => {
             opcionNivel: opcionNivel.value,
             idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
         };
-
-        router.post("/regiones", payload, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess,
-            onError
-        });
+        router.post("/regiones", payload, { preserveState: true, onSuccess, onError });
     }
 };
 
@@ -957,7 +965,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         </DialogGeneral>
 
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-            :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="notificacionVisible = false" />
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="handleCerrarNotificacion" />
     </Teleport>
 </template>
 <style scoped>
