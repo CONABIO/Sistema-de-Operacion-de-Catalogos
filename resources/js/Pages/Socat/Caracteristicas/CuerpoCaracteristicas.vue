@@ -336,7 +336,7 @@ const guardarDesdeModal = async () => {
         nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
-          `No se puede crear la característica ingresada porque ya existe en el nivel seleccionado.`,
+          `La caracteristica que desea ingresar ya existe.`,
           "warning"
         );
       }

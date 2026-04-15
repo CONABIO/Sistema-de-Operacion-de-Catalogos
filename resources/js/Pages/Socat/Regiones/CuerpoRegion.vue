@@ -20,6 +20,28 @@ import { Plus, Download } from '@element-plus/icons-vue';
 
 const tipoBusqueda = ref('inicia');
 
+const nodoDuplicadoParaSeleccionar = ref(null);
+
+const handleCerrarNotificacion = () => {
+    notificacionVisible.value = false;
+    if (nodoDuplicadoParaSeleccionar.value) {
+        const nodo = nodoDuplicadoParaSeleccionar.value;
+        filterText.value = '';
+        if (treeRef.value) treeRef.value.filter('');
+        nextTick(() => {
+            selectedNode.value = nodo;
+            treeRef.value?.setCurrentKey(nodo.IdRegion);
+            setTimeout(() => {
+                const el = document.getElementById('region-node-' + nodo.IdRegion);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 400);
+        });
+        nodoDuplicadoParaSeleccionar.value = null;
+    }
+};
+
 watch(tipoBusqueda, () => {
     if (treeRef.value) {
         treeRef.value.filter(filtroEjecutado.value);
@@ -240,7 +262,6 @@ const selectedTipoRegionNode = ref(null);
 const treeRef = ref(null);
 const localTreeData = ref([]);
 const selectedNode = ref(null);
-const filterText = ref('');
 const listaTiposDeRegion = ref([]);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
@@ -271,17 +292,17 @@ const opcionesTipoRegionDisponibles = computed(() => {
         return listaTiposDeRegion.value;
     }
     if (activePathIds.value.length === 0) return [];
-    
+
     if (!selectedNode.value || opcionNivel.value === 'raiz') {
         const idRaizCamino = activePathIds.value[0];
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === idRaizCamino);
     }
-    
+
     if (opcionNivel.value === 'mismo') {
         const tipoRegionId = selectedNode.value.IdTipoRegion;
         return listaTiposDeRegion.value.filter(tipo => tipo.IdTipoRegion === tipoRegionId);
     }
-    
+
     if (opcionNivel.value === 'inferior') {
         const tipoRegionActual = findNodeInTipoRegionTree(tiposRegionTreeData.value, selectedNode.value.IdTipoRegion);
         const hijosPosibles = tipoRegionActual?.children || [];
@@ -292,6 +313,10 @@ const opcionesTipoRegionDisponibles = computed(() => {
     }
     return [];
 });
+
+
+const filterText = ref(''); // Definir primero
+
 
 watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(JSON.stringify(newVal)); treeKey.value++; }, { immediate: true, deep: true });
 
@@ -325,21 +350,100 @@ const onOpcionNivelChange = (newVal) => {
 };
 
 
-const filterNodeMethod = (value, data) => {
+const filterNodeMethod = (value, data, node) => {
     if (!value) return true;
+
     const nombre = data.NombreRegion ? data.NombreRegion.toLowerCase() : '';
     const busqueda = value.toLowerCase();
-    switch (tipoBusqueda.value) {
-        case 'inicia':
-            return nombre.startsWith(busqueda);
-        case 'termina':
-            return nombre.endsWith(busqueda);
-        case 'cualquier':
-        default:
-            return nombre.includes(busqueda);
+    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
+
+    // Si el nodo es del tipo que buscamos y el nombre coincide, ¡DALE!
+    if (data.IdTipoRegion === idTipoTarget && nombre.includes(busqueda)) {
+        return true;
     }
+
+    // Lógica importante: Si algún HIJO de este nodo coincide, el padre debe ser visible
+    const checkHijos = (n) => {
+        return n.childNodes.some(child => {
+            const childNombre = child.data.NombreRegion.toLowerCase();
+            const esNivelHijo = child.data.IdTipoRegion === idTipoTarget;
+            if (esNivelHijo && childNombre.includes(busqueda)) return true;
+            return checkHijos(child);
+        });
+    };
+
+    return checkHijos(node);
 };
 
+
+const irAlNodoBuscado = () => {
+    if (!filterText.value || !treeRef.value) return;
+
+    const textoBusqueda = filterText.value.toLowerCase();
+    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
+    const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
+
+    // Función de búsqueda recursiva estándar
+    const encontrarEnArbol = (nodos) => {
+        for (const nodo of nodos) {
+            const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+            const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
+
+            if (coincideNombre && coincideTipo) return nodo;
+            
+            if (nodo.children?.length) {
+                const encontrado = encontrarEnArbol(nodo.children);
+                if (encontrado) return encontrado;
+            }
+        }
+        return null;
+    };
+
+    let match = null;
+    let ambitoBusquedaNombre = "el catálogo";
+
+    // LÓGICA DE ÁMBITO RESTRINGIDO
+    if (selectedNode.value) {
+        // Si hay un nodo seleccionado (ej. Portugal), buscamos SOLO en su descendencia
+        ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
+        
+        // Obtenemos el nodo real del árbol para acceder a sus hijos actuales
+        const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
+        if (nodoActual && nodoActual.data.children) {
+            match = encontrarEnArbol(nodoActual.data.children);
+        }
+    } else {
+        // Si no hay nada seleccionado, busca en todo lo que sea visible según el panel izquierdo
+        match = encontrarEnArbol(filteredRegionsTree.value);
+    }
+
+    // PROCESAR RESULTADO
+    if (match) {
+        selectedNode.value = match;
+        treeRef.value.setCurrentKey(match.IdRegion);
+
+        // Expandir padres para que se vea el resultado
+        let nodeInTree = treeRef.value.getNode(match.IdRegion);
+        if (nodeInTree) {
+            let parent = nodeInTree.parent;
+            while (parent) {
+                parent.expanded = true;
+                parent = parent.parent;
+            }
+        }
+
+        nextTick(() => {
+            const el = document.getElementById('region-node-' + match.IdRegion);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    } else {
+        mostrarNotificacion(
+            "Aviso",
+            `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+            "warning"
+        );
+    }
+};
 
 function findNodeById(nodes, id) {
     for (const node of nodes) {
@@ -601,102 +705,93 @@ const mostrarNotificacion = (titulo, mensaje, tipo) => {
 
 const guardarDesdeModal = async () => {
     if (!formModalRef.value) return;
-    await formModalRef.value.validate();
+
     try {
         await formModalRef.value.validate();
     } catch (error) {
         return;
     }
-    const nombreABuscar = formModal.value.NombreRegion;
+    const nombreABuscar = (formModal.value.NombreRegion || "").trim();
     const modoActual = modalMode.value;
+    const tipoRegionActual = formModal.value.IdTipoRegion;
+    let idPadreFinal = 0;
+    if (modoActual === "insertar") {
+        if (opcionNivel.value === "mismo" && selectedNode.value) {
+            idPadreFinal = selectedNode.value.IdRegionAsc || 0;
+        } else if (opcionNivel.value === "inferior" && selectedNode.value) {
+            idPadreFinal = selectedNode.value.IdRegion;
+        } else {
+            idPadreFinal = 0;
+        }
+    } else {
+        idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
+    }
+    const buscarDuplicadoGlobal = (nodos, padreId, nombre, tipoId, excludeId) => {
+        for (const nodo of nodos) {
+            const nodoNombre = (nodo.NombreRegion || "").trim().toLowerCase();
+            const nombreBuscado = nombre.toLowerCase();
 
-    const nombreNormalizado = nombreABuscar.trim().toUpperCase();
-    if (nombreNormalizado === 'MÉXICO' || nombreNormalizado === 'ND' || nombreNormalizado === 'MEXICO/ND/ND') {
+            if (tipoId === 1) {
+                if (nodo.IdTipoRegion === 1 && nodoNombre === nombreBuscado && nodo.IdRegion !== excludeId) {
+                    return nodo;
+                }
+            }
+            else {
+                const nodoPadreId = nodo.IdRegionAsc || 0;
+                const targetPadreId = padreId || 0;
+
+                if (
+                    Number(nodoPadreId) === Number(targetPadreId) &&
+                    nodoNombre === nombreBuscado &&
+                    nodo.IdRegion !== excludeId
+                ) {
+                    return nodo;
+                }
+            }
+
+            if (nodo.children && nodo.children.length > 0) {
+                const encontrado = buscarDuplicadoGlobal(nodo.children, padreId, nombre, tipoId, excludeId);
+                if (encontrado) return encontrado;
+            }
+        }
+        return null;
+    };
+
+    const duplicado = buscarDuplicadoGlobal(
+        localTreeData.value,
+        idPadreFinal,
+        nombreABuscar,
+        tipoRegionActual,
+        modoActual === 'editar' ? nodoEnModal.value.IdRegion : null
+    );
+
+    if (duplicado) {
+        nodoDuplicadoParaSeleccionar.value = duplicado;
+        cerrarModalOperacion();
         mostrarNotificacion(
             "Aviso",
-            "No se puede usar ese nombre  ya que es un nombre reservado por el sistema.",
+            `La región geográfica que desea ingresar ya existe.`,
             "warning"
         );
         return;
     }
 
-    let idPadreFinal = 0;
-    if (modoActual === "insertar") {
-        if (opcionNivel.value === "mismo" && selectedNode.value) {
-            idPadreFinal = selectedNode.value.IdRegionAsc || 0;
-            if (idPadreFinal === selectedNode.value.IdRegion) {
-                idPadreFinal = 0;
-            }
-        } else if (opcionNivel.value === "inferior" && selectedNode.value) {
-            idPadreFinal = selectedNode.value.IdRegion;
-        }
-    }
-
-    const isNameTakenBySibling = (parentId, regionName, currentRegionId = null) => {
-        let siblings = [];
-        if (!parentId || parentId === 0) {
-            siblings = localTreeData.value.filter(n => !n.IdRegionAsc || n.IdRegionAsc === 0);
-        } else {
-            const parentNode = findNodeById(localTreeData.value, parentId);
-            if (parentNode && parentNode.children) siblings = parentNode.children;
-        }
-
-        return siblings.some(n =>
-            n.NombreRegion.toLowerCase() === regionName.toLowerCase() &&
-            n.IdRegion !== currentRegionId &&
-            n.IdTipoRegion === formModal.value.IdTipoRegion
-        );
-    };
-
-    if (isNameTakenBySibling(idPadreFinal, nombreABuscar, modoActual === 'editar' ? nodoEnModal.value.IdRegion : null)) {
-        mostrarNotificacion("Aviso", "Ya existe una región con el mismo nombre en este nivel.", "warning");
-        return;
-    }
-
     const onSuccess = () => {
         cerrarModalOperacion();
-        const tituloNotif = modoActual === 'editar' ? "Modificación" : "Ingreso";
-        const mensajeNotif = modoActual === 'editar'
-            ? `La región ha sido modificada correctamente.`
-            : `La región ha sido ingresada correctamente.`;
+        const titulo = modoActual === 'editar' ? "Modificación" : "Ingreso";
+        const mensaje = modoActual === 'editar'
+            ? "La región ha sido modificada con éxito."
+            : "La región ha sido ingresada con éxito.";
 
-        mostrarNotificacion(tituloNotif, mensajeNotif, "success");
-        router.reload({
-            only: ['treeDataProp'],
-            onSuccess: () => {
-                setTimeout(() => {
-                    const buscarNodoRecursivo = (nodos) => {
-                        for (const nodo of nodos) {
-                            if (nodo.NombreRegion === nombreABuscar) return nodo;
-                            if (nodo.children) {
-                                const enc = buscarNodoRecursivo(nodo.children);
-                                if (enc) return enc;
-                            }
-                        }
-                        return null;
-                    };
-                    const nuevoNodo = buscarNodoRecursivo(filteredRegionsTree.value);
-                    if (nuevoNodo) {
-                        selectedNode.value = nuevoNodo;
-                        treeRef.value?.setCurrentKey(nuevoNodo.IdRegion, true);
-                        setTimeout(() => {
-                            const el = document.getElementById('region-node-' + nuevoNodo.IdRegion);
-                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 200);
-                    }
-                }, 500);
-            }
-        });
+        mostrarNotificacion(titulo, mensaje, "success");
+
+        router.reload({ only: ['treeDataProp'] });
     };
 
-    const onError = (errors) => {
-        mostrarNotificacion("Aviso", Object.values(errors).flat().join("\n"), "warning");
-    };
+    const onError = (errors) => mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
 
     if (modoActual === "editar") {
-        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, {
-            preserveState: true, preserveScroll: true, onSuccess, onError
-        });
+        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, { preserveState: true, onSuccess, onError });
     } else {
         const payload = {
             ...formModal.value,
@@ -704,13 +799,7 @@ const guardarDesdeModal = async () => {
             opcionNivel: opcionNivel.value,
             idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
         };
-
-        router.post("/regiones", payload, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess,
-            onError
-        });
+        router.post("/regiones", payload, { preserveState: true, onSuccess, onError });
     }
 };
 
@@ -822,11 +911,10 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     <div class="header-container">
 
                         <div class="header-buscador">
-                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable
-                                @keyup.enter="aplicarFiltro" @clear="aplicarFiltro" />
+                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable  @keyup.enter="irAlNodoBuscado" 
+                                />
                         </div>
 
-                        <TipoBusqueda v-model="tipoBusqueda" />
 
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
@@ -882,7 +970,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
                     @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
-                    @node-collapse="handleNodeSelected" :filter-node-method="filterNodeMethod"
+                    @node-collapse="handleNodeSelected" 
                     class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
@@ -957,7 +1045,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
         </DialogGeneral>
 
         <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-            :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="notificacionVisible = false" />
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="handleCerrarNotificacion" />
     </Teleport>
 </template>
 <style scoped>
