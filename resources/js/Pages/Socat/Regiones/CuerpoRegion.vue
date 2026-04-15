@@ -22,7 +22,6 @@ const tipoBusqueda = ref('inicia');
 
 const nodoDuplicadoParaSeleccionar = ref(null);
 
-
 const handleCerrarNotificacion = () => {
     notificacionVisible.value = false;
     if (nodoDuplicadoParaSeleccionar.value) {
@@ -263,7 +262,6 @@ const selectedTipoRegionNode = ref(null);
 const treeRef = ref(null);
 const localTreeData = ref([]);
 const selectedNode = ref(null);
-const filterText = ref('');
 const listaTiposDeRegion = ref([]);
 const esModalVisible = ref(false);
 const formModalRef = ref(null);
@@ -316,6 +314,10 @@ const opcionesTipoRegionDisponibles = computed(() => {
     return [];
 });
 
+
+const filterText = ref(''); // Definir primero
+
+
 watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(JSON.stringify(newVal)); treeKey.value++; }, { immediate: true, deep: true });
 
 watch(() => props.tiposDeRegionTreeProp, (newVal) => {
@@ -348,21 +350,100 @@ const onOpcionNivelChange = (newVal) => {
 };
 
 
-const filterNodeMethod = (value, data) => {
+const filterNodeMethod = (value, data, node) => {
     if (!value) return true;
+
     const nombre = data.NombreRegion ? data.NombreRegion.toLowerCase() : '';
     const busqueda = value.toLowerCase();
-    switch (tipoBusqueda.value) {
-        case 'inicia':
-            return nombre.startsWith(busqueda);
-        case 'termina':
-            return nombre.endsWith(busqueda);
-        case 'cualquier':
-        default:
-            return nombre.includes(busqueda);
+    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
+
+    // Si el nodo es del tipo que buscamos y el nombre coincide, ¡DALE!
+    if (data.IdTipoRegion === idTipoTarget && nombre.includes(busqueda)) {
+        return true;
     }
+
+    // Lógica importante: Si algún HIJO de este nodo coincide, el padre debe ser visible
+    const checkHijos = (n) => {
+        return n.childNodes.some(child => {
+            const childNombre = child.data.NombreRegion.toLowerCase();
+            const esNivelHijo = child.data.IdTipoRegion === idTipoTarget;
+            if (esNivelHijo && childNombre.includes(busqueda)) return true;
+            return checkHijos(child);
+        });
+    };
+
+    return checkHijos(node);
 };
 
+
+const irAlNodoBuscado = () => {
+    if (!filterText.value || !treeRef.value) return;
+
+    const textoBusqueda = filterText.value.toLowerCase();
+    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
+    const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
+
+    // Función de búsqueda recursiva estándar
+    const encontrarEnArbol = (nodos) => {
+        for (const nodo of nodos) {
+            const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+            const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
+
+            if (coincideNombre && coincideTipo) return nodo;
+            
+            if (nodo.children?.length) {
+                const encontrado = encontrarEnArbol(nodo.children);
+                if (encontrado) return encontrado;
+            }
+        }
+        return null;
+    };
+
+    let match = null;
+    let ambitoBusquedaNombre = "el catálogo";
+
+    // LÓGICA DE ÁMBITO RESTRINGIDO
+    if (selectedNode.value) {
+        // Si hay un nodo seleccionado (ej. Portugal), buscamos SOLO en su descendencia
+        ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
+        
+        // Obtenemos el nodo real del árbol para acceder a sus hijos actuales
+        const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
+        if (nodoActual && nodoActual.data.children) {
+            match = encontrarEnArbol(nodoActual.data.children);
+        }
+    } else {
+        // Si no hay nada seleccionado, busca en todo lo que sea visible según el panel izquierdo
+        match = encontrarEnArbol(filteredRegionsTree.value);
+    }
+
+    // PROCESAR RESULTADO
+    if (match) {
+        selectedNode.value = match;
+        treeRef.value.setCurrentKey(match.IdRegion);
+
+        // Expandir padres para que se vea el resultado
+        let nodeInTree = treeRef.value.getNode(match.IdRegion);
+        if (nodeInTree) {
+            let parent = nodeInTree.parent;
+            while (parent) {
+                parent.expanded = true;
+                parent = parent.parent;
+            }
+        }
+
+        nextTick(() => {
+            const el = document.getElementById('region-node-' + match.IdRegion);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    } else {
+        mostrarNotificacion(
+            "Aviso",
+            `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+            "warning"
+        );
+    }
+};
 
 function findNodeById(nodes, id) {
     for (const node of nodes) {
@@ -830,11 +911,10 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     <div class="header-container">
 
                         <div class="header-buscador">
-                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable
-                                @keyup.enter="aplicarFiltro" @clear="aplicarFiltro" />
+                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable  @keyup.enter="irAlNodoBuscado" 
+                                />
                         </div>
 
-                        <TipoBusqueda v-model="tipoBusqueda" />
 
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
@@ -890,7 +970,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
                     @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
-                    @node-collapse="handleNodeSelected" :filter-node-method="filterNodeMethod"
+                    @node-collapse="handleNodeSelected" 
                     class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
