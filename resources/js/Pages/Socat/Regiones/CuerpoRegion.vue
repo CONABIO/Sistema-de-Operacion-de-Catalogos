@@ -22,23 +22,45 @@ const tipoBusqueda = ref('inicia');
 
 const nodoDuplicadoParaSeleccionar = ref(null);
 
-const handleCerrarNotificacion = () => {
+const handleCerrarNotificacion = async () => {
     notificacionVisible.value = false;
+
     if (nodoDuplicadoParaSeleccionar.value) {
-        const nodo = nodoDuplicadoParaSeleccionar.value;
+        const idTarget = nodoDuplicadoParaSeleccionar.value.IdRegion;
+        const tipoTargetId = nodoDuplicadoParaSeleccionar.value.IdTipoRegion;
+        nodoDuplicadoParaSeleccionar.value = null;
+        if (selectedTipoRegionNode.value?.IdTipoRegion !== tipoTargetId) {
+            const nodoTipo = findNodeInTipoRegionTree(tiposRegionTreeData.value, tipoTargetId);
+            if (nodoTipo) seleccionarTipoRegionBase(nodoTipo);
+        }
         filterText.value = '';
-        if (treeRef.value) treeRef.value.filter('');
-        nextTick(() => {
-            selectedNode.value = nodo;
-            treeRef.value?.setCurrentKey(nodo.IdRegion);
+        treeKey.value++; 
+        await nextTick();
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const tree = treeRef.value;
+        if (!tree) return;
+        const nodeInTree = tree.getNode(idTarget);
+        if (nodeInTree) {
+            let p = nodeInTree.parent;
+            while (p && p.level > 0) {
+                p.expanded = true;
+                p = p.parent;
+            }
+            selectedNode.value = nodeInTree.data;
+            tree.setCurrentKey(idTarget);
             setTimeout(() => {
-                const el = document.getElementById('region-node-' + nodo.IdRegion);
+                const el = document.getElementById('region-node-' + idTarget);
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const content = el.closest('.el-tree-node__content');
+                    if (content) {
+                        content.style.backgroundColor = "#ddf6dd";
+                        content.style.fontWeight = "bold";
+                        setTimeout(() => { content.style.backgroundColor = ""; }, 3000);
+                    }
                 }
-            }, 400);
-        });
-        nodoDuplicadoParaSeleccionar.value = null;
+            }, 300);
+        }
     }
 };
 
@@ -72,11 +94,21 @@ const seleccionarTipoRegionBase = (data) => {
     filterText.value = '';
     selectedTipoRegionNode.value = data;
     activePathIds.value = findPathInTree(tiposRegionTreeData.value, data.IdTipoRegion) || [];
+
     nextTick(() => {
         tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
+        if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
+            const primerNodo = filteredRegionsTree.value[0];
+            handleNodeSelected(primerNodo);
+            setTimeout(() => {
+                const el = document.getElementById('region-node-' + primerNodo.IdRegion);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        } else {
+            selectedNode.value = null;
+            if (treeRef.value) treeRef.value.setCurrentKey(null);
+        }
     });
-    selectedNode.value = null;
-    if (treeRef.value) treeRef.value.setCurrentKey(null);
 };
 
 const handleTipoRegionExpand = (data) => {
@@ -107,11 +139,7 @@ watch(activePathIds, (newPath) => {
 const seleccionarPrimeroPorDefault = () => {
     if (tiposRegionTreeData.value && tiposRegionTreeData.value.length > 0) {
         const primerNodo = tiposRegionTreeData.value[0];
-        selectedTipoRegionNode.value = primerNodo;
-        activePathIds.value = [primerNodo.IdTipoRegion];
-        nextTick(() => {
-            tiposRegionTreeRef.value?.setCurrentKey(primerNodo.IdTipoRegion);
-        });
+        seleccionarTipoRegionBase(primerNodo);
     }
 };
 
@@ -207,6 +235,14 @@ const botonEliminarDeshabilitado = computed(() => {
 });
 
 
+const buscadorDeshabilitado = computed(() => {
+    if (!selectedTipoRegionNode.value) return true;
+    const esNivelRaiz = selectedTipoRegionNode.value.Descripcion.toUpperCase() === 'PAÍS';
+    if (!esNivelRaiz && !selectedNode.value) {
+        return true;
+    }
+    return false;
+});
 
 
 const intentarAbrirModalInsertar = () => {
@@ -315,10 +351,26 @@ const opcionesTipoRegionDisponibles = computed(() => {
 });
 
 
-const filterText = ref(''); // Definir primero
+const filterText = ref('');
 
+watch(filterText, (nuevoValor) => {
+    if (nuevoValor) {
+        filterText.value = nuevoValor.toUpperCase();
+    }
+});
 
-watch(() => props.treeDataProp, (newVal) => { localTreeData.value = JSON.parse(JSON.stringify(newVal)); treeKey.value++; }, { immediate: true, deep: true });
+watch(() => props.treeDataProp, (newVal) => {
+    localTreeData.value = JSON.parse(JSON.stringify(newVal));
+    treeKey.value++;
+    if (selectedTipoRegionNode.value) {
+        nextTick(() => {
+            if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0 && !selectedNode.value) {
+                handleNodeSelected(filteredRegionsTree.value[0]);
+            }
+        });
+    }
+}, { immediate: true, deep: true });
+
 
 watch(() => props.tiposDeRegionTreeProp, (newVal) => {
     tiposRegionTreeData.value = JSON.parse(JSON.stringify(newVal));
@@ -352,17 +404,12 @@ const onOpcionNivelChange = (newVal) => {
 
 const filterNodeMethod = (value, data, node) => {
     if (!value) return true;
-
     const nombre = data.NombreRegion ? data.NombreRegion.toLowerCase() : '';
     const busqueda = value.toLowerCase();
     const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
-
-    // Si el nodo es del tipo que buscamos y el nombre coincide, ¡DALE!
     if (data.IdTipoRegion === idTipoTarget && nombre.includes(busqueda)) {
         return true;
     }
-
-    // Lógica importante: Si algún HIJO de este nodo coincide, el padre debe ser visible
     const checkHijos = (n) => {
         return n.childNodes.some(child => {
             const childNombre = child.data.NombreRegion.toLowerCase();
@@ -382,15 +429,13 @@ const irAlNodoBuscado = () => {
     const textoBusqueda = filterText.value.toLowerCase();
     const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
     const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
-
-    // Función de búsqueda recursiva estándar
     const encontrarEnArbol = (nodos) => {
         for (const nodo of nodos) {
             const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
             const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
 
             if (coincideNombre && coincideTipo) return nodo;
-            
+
             if (nodo.children?.length) {
                 const encontrado = encontrarEnArbol(nodo.children);
                 if (encontrado) return encontrado;
@@ -401,28 +446,18 @@ const irAlNodoBuscado = () => {
 
     let match = null;
     let ambitoBusquedaNombre = "el catálogo";
-
-    // LÓGICA DE ÁMBITO RESTRINGIDO
     if (selectedNode.value) {
-        // Si hay un nodo seleccionado (ej. Portugal), buscamos SOLO en su descendencia
         ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
-        
-        // Obtenemos el nodo real del árbol para acceder a sus hijos actuales
         const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
         if (nodoActual && nodoActual.data.children) {
             match = encontrarEnArbol(nodoActual.data.children);
         }
     } else {
-        // Si no hay nada seleccionado, busca en todo lo que sea visible según el panel izquierdo
         match = encontrarEnArbol(filteredRegionsTree.value);
     }
-
-    // PROCESAR RESULTADO
     if (match) {
         selectedNode.value = match;
         treeRef.value.setCurrentKey(match.IdRegion);
-
-        // Expandir padres para que se vea el resultado
         let nodeInTree = treeRef.value.getNode(match.IdRegion);
         if (nodeInTree) {
             let parent = nodeInTree.parent;
@@ -709,9 +744,10 @@ const guardarDesdeModal = async () => {
     try {
         await formModalRef.value.validate();
     } catch (error) {
-        return;
+        return; 
     }
-    const nombreABuscar = (formModal.value.NombreRegion || "").trim();
+
+    const nombreNuevo = (formModal.value.NombreRegion || "").trim().toUpperCase();
     const modoActual = modalMode.value;
     const tipoRegionActual = formModal.value.IdTipoRegion;
     let idPadreFinal = 0;
@@ -721,58 +757,39 @@ const guardarDesdeModal = async () => {
         } else if (opcionNivel.value === "inferior" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegion;
         } else {
-            idPadreFinal = 0;
+            idPadreFinal = 0; 
         }
     } else {
         idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
     }
-    const buscarDuplicadoGlobal = (nodos, padreId, nombre, tipoId, excludeId) => {
-        for (const nodo of nodos) {
-            const nodoNombre = (nodo.NombreRegion || "").trim().toLowerCase();
-            const nombreBuscado = nombre.toLowerCase();
 
-            if (tipoId === 1) {
-                if (nodo.IdTipoRegion === 1 && nodoNombre === nombreBuscado && nodo.IdRegion !== excludeId) {
-                    return nodo;
-                }
-            }
-            else {
-                const nodoPadreId = nodo.IdRegionAsc || 0;
-                const targetPadreId = padreId || 0;
+    let listaHermanos = [];
+    if (idPadreFinal === 0) {
+        listaHermanos = localTreeData.value; 
+    } else {
+        const nodoPadre = findNodeById(localTreeData.value, idPadreFinal);
+        listaHermanos = nodoPadre?.children || [];
+    }
 
-                if (
-                    Number(nodoPadreId) === Number(targetPadreId) &&
-                    nodoNombre === nombreBuscado &&
-                    nodo.IdRegion !== excludeId
-                ) {
-                    return nodo;
-                }
-            }
+    const duplicado = listaHermanos.find(nodo => {
+        const mismoNombre = (nodo.NombreRegion || "").trim().toUpperCase() === nombreNuevo;
+        const mismaRegion = nodo.IdTipoRegion === tipoRegionActual;
+        const noEsElMismo = modoActual === 'editar' ? nodo.IdRegion !== nodoEnModal.value.IdRegion : true;
 
-            if (nodo.children && nodo.children.length > 0) {
-                const encontrado = buscarDuplicadoGlobal(nodo.children, padreId, nombre, tipoId, excludeId);
-                if (encontrado) return encontrado;
-            }
-        }
-        return null;
-    };
-
-    const duplicado = buscarDuplicadoGlobal(
-        localTreeData.value,
-        idPadreFinal,
-        nombreABuscar,
-        tipoRegionActual,
-        modoActual === 'editar' ? nodoEnModal.value.IdRegion : null
-    );
+        return mismoNombre && mismaRegion && noEsElMismo;
+    });
 
     if (duplicado) {
         nodoDuplicadoParaSeleccionar.value = duplicado;
-        cerrarModalOperacion();
-        mostrarNotificacion(
-            "Aviso",
-            `La región geográfica que desea ingresar ya existe.`,
-            "warning"
-        );
+
+        cerrarModalOperacion(); 
+
+        const mensajeAviso = nombreNuevo === 'ND'
+            ? `La región ingresada ya existe en este nivel.`
+            : `La región ingresada ya existe en este nivel.`;
+            
+
+        mostrarNotificacion("Aviso", mensajeAviso, "warning");
         return;
     }
 
@@ -784,14 +801,19 @@ const guardarDesdeModal = async () => {
             : "La región ha sido ingresada con éxito.";
 
         mostrarNotificacion(titulo, mensaje, "success");
-
-        router.reload({ only: ['treeDataProp'] });
+        router.reload({ only: ['treeDataProp'] }); 
     };
 
-    const onError = (errors) => mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
+    const onError = (errors) => {
+        mostrarNotificacion("Error", Object.values(errors).flat().join("\n"), "error");
+    };
 
     if (modoActual === "editar") {
-        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, { preserveState: true, onSuccess, onError });
+        router.put(`/regiones/${nodoEnModal.value.IdRegion}`, formModal.value, {
+            preserveState: true,
+            onSuccess,
+            onError
+        });
     } else {
         const payload = {
             ...formModal.value,
@@ -799,10 +821,13 @@ const guardarDesdeModal = async () => {
             opcionNivel: opcionNivel.value,
             idNodoReferencia: selectedNode.value ? selectedNode.value.IdRegion : null
         };
-        router.post("/regiones", payload, { preserveState: true, onSuccess, onError });
+        router.post("/regiones", payload, {
+            preserveState: true,
+            onSuccess,
+            onError
+        });
     }
 };
-
 
 
 const handleEliminar = () => {
@@ -911,8 +936,8 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     <div class="header-container">
 
                         <div class="header-buscador">
-                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable  @keyup.enter="irAlNodoBuscado" 
-                                />
+                            <el-input v-model="filterText" placeholder="Escriba para buscar" clearable
+                                :disabled="buscadorDeshabilitado" @keyup.enter="irAlNodoBuscado" />
                         </div>
 
 
@@ -966,23 +991,17 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     </div>
                 </template>
 
-                <el-tree v-if="filteredRegionsTree.length" ref="treeRef" :data="filteredRegionsTree"
+                <el-tree v-show="filteredRegionsTree.length" ref="treeRef" :key="treeKey" :data="filteredRegionsTree"
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"
-                    @node-click="handleNodeSelected" @node-expand="handleNodeSelected"
-                    @node-collapse="handleNodeSelected" 
-                    class="custom-element-tree">
+                    @node-click="handleNodeSelected" class="custom-element-tree">
                     <template #default="{ node, data }">
                         <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
                             {{ node.label }}
                         </span>
                     </template>
                 </el-tree>
-                <div v-else class="no-data-message">
-                    <span v-if="!selectedTipoRegionNode">Seleccione un tipo de región de la izquierda para
-                        comenzar.</span>
-                    <span v-else>No hay regiones que coincidan con el filtro.</span>
-                </div>
+
             </el-card>
 
         </div>
@@ -1021,15 +1040,21 @@ const proceedWithDeletion = (nodeId, nombre) => {
                     </el-form-item>
 
                     <el-form-item prop="NombreRegion" label="Nombre de la región:">
-                        <el-input v-model="formModal.NombreRegion" clearable maxlength="100" show-word-limit />
+                        <el-input v-model="formModal.NombreRegion" class="input-mayusculas"
+                            @input="formModal.NombreRegion = formModal.NombreRegion.toUpperCase()" clearable
+                            maxlength="100" show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Abreviado:" prop="Abreviado">
-                        <el-input v-model="formModal.Abreviado" clearable maxlength="10" show-word-limit />
+                        <el-input v-model="formModal.Abreviado" class="input-mayusculas"
+                            @input="formModal.Abreviado = formModal.Abreviado.toUpperCase()" clearable maxlength="10"
+                            show-word-limit />
                     </el-form-item>
 
                     <el-form-item label="Clave:" prop="ClaveRegion">
-                        <el-input v-model="formModal.ClaveRegion" clearable maxlength="35" show-word-limit />
+                        <el-input v-model="formModal.ClaveRegion" class="input-mayusculas"
+                            @input="formModal.ClaveRegion = formModal.ClaveRegion.toUpperCase()" clearable
+                            maxlength="35" show-word-limit />
                     </el-form-item>
                 </el-form>
             </div>
@@ -1048,6 +1073,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
             :mensaje="notificacionMensaje" :tipo="notificacionTipo" @close="handleCerrarNotificacion" />
     </Teleport>
 </template>
+
 <style scoped>
 .split-container {
     display: flex;
@@ -1195,4 +1221,23 @@ const proceedWithDeletion = (nodeId, nombre) => {
     background-color: transparent !important;
     transition: color 0.3s ease;
 }
+
+:deep(.input-mayusculas .el-input__inner) {
+    text-transform: uppercase;
+}
+
+
+:deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: #ddf6dd !important;
+}
+
+:deep(.el-tree-node.is-current .nodo-texto) {
+    color: #007bff !important;
+    font-weight: bold !important;
+}
+
+:deep(.el-tree-node.is-current:hover > .el-tree-node__content) {
+    background-color: #c9eec9 !important;
+}
+
 </style>
