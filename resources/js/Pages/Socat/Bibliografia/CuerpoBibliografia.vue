@@ -122,11 +122,11 @@ const emit = defineEmits(['cerrar',
 const columnasDefinidas = ref([
   { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
   { prop: "Anio", label: "Año", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "TituloPublicacion", label: "Titulo de la publicacion", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
   { prop: "TituloSubPublicacion", label: "Titulo de la subpublicacion", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloPublicacion", label: "Titulo de la publicacion", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "EditoresCompiladores", label: "Editores / Compiladores", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "EditorialPaisPagina", label: "Editorial, Pais, Pagina", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "NumeroVolumenAnio", label: "Número, Volumen, Año", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "EditoresCompiladores", label: "Editores / Compiladores", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
 ]);
 
@@ -312,9 +312,9 @@ const handleRowClick = async (row) => {
 
 
 const citaCompleta = (row) => {
-  let orden = row.OrdenCitaCompleta || '1243765';
+  let orden = row.OrdenCitaCompleta || '1234567';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloPublicacion', 'TituloSubPublicacion', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'EditoresCompiladores'];
+  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];

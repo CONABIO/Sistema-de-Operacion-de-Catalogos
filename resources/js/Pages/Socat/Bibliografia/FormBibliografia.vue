@@ -147,7 +147,7 @@ const guardarOrden = () => {
 };
 
 const cerrarDialogo = () => emit('cerrar');
-const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva bibliografía' : 'Modificar la bibliografía');
+const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva referencia bibliográfica' : 'Modificar la  referencia bibliográfica');
 </script>
 
 <template>
