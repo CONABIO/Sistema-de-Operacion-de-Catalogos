@@ -150,9 +150,9 @@ const props = defineProps({
 
 const abrirModalEditar = (filaGrupo) => {
   if (!filaGrupo) return;
-  grupoParaEditar.value = { 
+  grupoParaEditar.value = {
     ...filaGrupo,
-    IdBibliografia: filaGrupo.IdBibliografia || selectedBibliografia.value?.IdBibliografia 
+    IdBibliografia: filaGrupo.IdBibliografia || selectedBibliografia.value?.IdBibliografia
   };
   esModalEditarGrupoVisible.value = true;
 };
@@ -190,8 +190,8 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
 
   const procederConEliminacion = async () => {
     try {
-      ElMessageBox.close(); 
-      
+      ElMessageBox.close();
+
       await axios.delete(route('bibliografias.asociarGrupo.eliminar'), {
         data: {
           IdBibliografia: filaGrupo.IdBibliografia,
@@ -200,7 +200,7 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
       });
 
       mostrarNotificacion('Éxito', 'Grupo desasociado correctamente.', 'success');
-      
+
       handleRowClick(selectedBibliografia.value);
       selectedGrupoId.value = null;
       selectedGrupoRow.value = null;
@@ -222,17 +222,17 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
         h('div', { class: 'custom-warning-icon-container' }, [
-            h('div', { class: 'custom-warning-circle' }, '!')
+          h('div', { class: 'custom-warning-circle' }, '!')
         ]),
         h('div', { class: 'text-container' }, [
-            h('p', null, mensaje)
+          h('p', null, mensaje)
         ])
       ]),
       h('div', { class: 'footer-buttons' }, [
         h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-        h(BotonAceptar, { 
-            texto: "Sí, Eliminar", 
-            onClick: procederConEliminacion 
+        h(BotonAceptar, {
+          texto: "Sí, Eliminar",
+          onClick: procederConEliminacion
         }),
       ]),
     ]),
@@ -314,7 +314,7 @@ const handleRowClick = async (row) => {
 const citaCompleta = (row) => {
   let orden = row.OrdenCitaCompleta || '1243765';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio','TituloPublicacion',  'TituloSubPublicacion', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'EditoresCompiladores'];
+  const campos = ['', 'Autor', 'Anio', 'TituloPublicacion', 'TituloSubPublicacion', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'EditoresCompiladores'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];
@@ -509,17 +509,16 @@ onMounted(() => {
   });
 });
 
-
-
-
 </script>
+
 
 <template>
   <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
 
-    <div class="layout-dos-columnas">
-      <div class="columna-principal">
-        <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
+    <div class="layout-vertical">
+
+      <div class="seccion-tabla-completa">
+        <TablaFiltrable class="flex-grow tabla-bibliografia-ancha" ref="tablaRef" :columnas="columnasDefinidas"
           v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
           id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
           @row-click="handleRowClick" @traspasaBiblio="traspasaBiblio" @cerrar="cerrarModal" :botCerrar="props.isModal"
@@ -543,13 +542,15 @@ onMounted(() => {
             </el-table-column>
           </template>
         </TablaFiltrable>
+
         <div class="cita-container">
-          <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
+          <el-input type="textarea" :rows="3" v-model="cita" readonly disabled resize="none"
             placeholder="Haga clic en una fila para ver la cita completa..." />
         </div>
       </div>
-      <div class="columna-lateral">
-        <div class="widget-card" v-loading="loadingGrupos">
+
+      <div class="contenedor-widgets-inferiores">
+        <div class="widget-card-inferior" v-loading="loadingGrupos">
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
             <div class="botones">
@@ -564,16 +565,16 @@ onMounted(() => {
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
               <el-table-column prop="observaciones" label="Observaciones" />
-
             </el-table>
           </div>
         </div>
-        <div class="widget-card">
+
+        <div class="widget-card-inferior">
           <div class="widget-header">
             <h3>Objeto externo</h3>
             <div class="botones">
               <NuevoButton />
-              <EditarButton  />
+              <EditarButton />
               <EliminarButton />
             </div>
           </div>
@@ -585,6 +586,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
     </div>
   </LayoutCuerpo>
 
@@ -855,4 +857,142 @@ onMounted(() => {
   background-color: #ddf6dd !important;
   color: #000;
 }
+
+
+.layout-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0px; 
+  width: 100%;
+  height: auto; 
+}
+
+.seccion-tabla-completa {
+  width: 100%;
+  height: auto; 
+  display: flex;
+  flex-direction: column;
+}
+
+.tabla-bibliografia-ancha {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper) {
+  max-height: 500px !important; 
+  overflow-y: auto !important;
+  overflow-x: auto !important; 
+}
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-horizontal) {
+  height: 12px !important;       
+  opacity: 1 !important;          
+  background: rgba(241, 241, 241, 0.9) !important; 
+  border-radius: 10px;
+  bottom: 0 !important;          
+  display: block !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-vertical) {
+  width: 14px !important; 
+  opacity: 1 !important; 
+  background: rgba(241, 241, 241, 0.9) !important;
+  border-radius: 10px;
+  display: block !important;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__thumb) {
+  background-color: #909399 !important; 
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  height: 20px !important;              
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper::-webkit-scrollbar:horizontal) {
+  height: 12px !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb:horizontal) {
+  background-color: #909399 !important;
+  border-radius: 10px !important;
+  border: 2px solid #ffffff !important;
+}
+
+.tabla-bibliografia-ancha :deep(::-webkit-scrollbar-button) {
+  display: none !important;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-table__inner-wrapper::before) {
+  display: none; 
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__append-wrapper) {
+  display: none;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-table) {
+  display: flex;
+  flex-direction: column;
+  height: 400px; /* Ajusta esta altura según tu diseño */
+}
+
+.tabla-bibliografia-ancha :deep(.el-pagination) {
+  margin-top: 5px !important; 
+  padding: 5px 0 !important;
+  background-color: transparent;
+}
+
+.contenedor-widgets-inferiores {
+  display: flex;
+  flex-direction: row; 
+  gap: 15px;
+  width: 100%;
+  margin-top: 0; 
+}
+
+.widget-card-inferior {
+  flex: 1; 
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 0; 
+}
+
+.widget-table-container {
+  max-height: 160px; 
+  overflow-y: auto;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.widget-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cita-container {
+  margin-top: 10px; 
+  margin-bottom: 10px;
+}
+
 </style>
