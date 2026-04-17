@@ -390,6 +390,7 @@ defineExpose({
           Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
       <el-table :key="tableKey" 
                 ref="tableRefInterna" 
+                style="width: 100%" 
                 :highlight-current-row="props.highlightCurrentRow"
                 :data="paginatedDatos" 
                 :row-key="props.idKey" 
@@ -397,7 +398,7 @@ defineExpose({
                 @row-click="handleRowClickInterno" 
                 @expand-change ="onExpandChange"
                 :border="true" 
-                height="550" 
+                height="400px" 
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
@@ -519,7 +520,11 @@ defineExpose({
 }
 
 .table-responsive {
-  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden; /* Evita scrolls dobles */
+  position: relative;
 }
 
 .action-buttons-container {
@@ -634,5 +639,34 @@ defineExpose({
   gap: 30px; 
   justify-content: flex-end;
   margin-bottom: 15px; 
+}
+
+
+
+:deep(.el-table__inner-wrapper) {
+  overflow-x: auto !important; /* Permite el flujo horizontal */
+}
+
+:deep(.el-table__body-wrapper) {
+  overflow-x: auto !important; /* Asegura scroll en el cuerpo */
+}
+
+/* Estilo para la barra de scroll (opcional pero recomendado para visibilidad) */
+:deep(.el-scrollbar__bar.is-horizontal) {
+  height: 12px !important;
+  opacity: 1 !important; /* Que siempre sea visible si hay desborde */
+  background: rgba(0, 0, 0, 0.05);
+  bottom: 0;
+  z-index: 10;
+}
+
+:deep(.el-scrollbar__thumb) {
+  background-color: #909399 !important; /* Color gris oscuro */
+  border-radius: 10px;
+}
+
+/* Ajuste para que el encabezado no se rompa al hacer scroll */
+:deep(.el-table__header-wrapper) {
+  overflow: hidden !important;
 }
 </style>
