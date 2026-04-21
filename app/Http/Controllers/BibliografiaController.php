@@ -206,25 +206,51 @@ class BibliografiaController extends Controller
         return response()->json(['page' => (int)$pagina]);
     }
 
+
     public function destroy($id)
     {
         try {
+            $asociadaANombre = DB::connection('catcentral')->table('RelNombreBiblio')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+            if ($asociadaANombre) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a uno o más nombres.'
+                ], 422);
+            }
+            $asociadaAGrupo = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+            if ($asociadaAGrupo) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a grupos taxonómicos.'
+                ], 422);
+            }
+            $asociadaAObjeto = DB::connection('catcentral')->table('RelObjetoExternoBiblio')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+            if ($asociadaAObjeto) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a objetos externos.'
+                ], 422);
+            }
             $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
             $biblio->delete();
+
             return response()->json([
                 'message' => 'Bibliografia eliminada con éxito'
             ], 200);
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'message' => 'No se puede eliminar: Esta bibliografía está asociada a taxones o grupos.'
-            ], 422);
         } catch (\Exception $e) {
             Log::error("Error deleting Bibliografia: {$e->getMessage()}");
             return response()->json([
-                'message' => 'Error interno: ' . $e->getMessage()
+                'message' => 'Error al intentar eliminar: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
 
     public function getGruposTaxonomicos($bibliografiaId)

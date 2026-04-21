@@ -402,7 +402,7 @@ defineExpose({
                 @row-click="handleRowClickInterno" 
                 @expand-change ="onExpandChange"
                 :border="true" 
-                height="400px" 
+                height="500" 
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 

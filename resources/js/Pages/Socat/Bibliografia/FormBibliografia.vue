@@ -20,6 +20,32 @@ const form = ref({
     EditoresCompiladores: '', EditorialPaisPagina: '', NumeroVolumenAnio: '', ISBNISSN: '',
 });
 
+
+const bibliografiaFormRef = ref(null); 
+
+const rules = {
+    Autor: [
+        { required: true, message: 'El autor es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
+        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
+    ],
+    Anio: [
+        { required: true, message: 'El año es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
+        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
+    ],
+    TituloPublicacion: [
+        { required: true, message: 'El título es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
+        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
+    ],
+    camposOpcionales: [
+        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] },
+        { whitespace: true, message: 'No puede enviar solo espacios', trigger: 'blur' }
+    ]
+};
+
+
 const mapaIndices = {
     'Autor': '1',
     'Anio': '2',
@@ -35,9 +61,10 @@ const ORDEN_ORIGINAL = [
     { id: 'Anio', label: 'Año' },
     { id: 'TituloSubPublicacion', label: 'Título de la subpublicación' },
     { id: 'TituloPublicacion', label: 'Título de la publicación' },
-    { id: 'EditoresCompiladores', label: 'Editores / Compiladores' },
+    { id: 'EditoresCompiladores', label: 'Editores / compiladores' },
     { id: 'NumeroVolumenAnio', label: 'Número, Volumen, Año' },
     { id: 'EditorialPaisPagina', label: 'Editorial, País, Página' },
+    { id: 'ISBNISSN', label: 'ISBNISSN' },
 ];
 
 const listaOrdenada = ref(ORDEN_ORIGINAL.map(item => ({ ...item })));
@@ -105,41 +132,44 @@ const construirReferencia = () => {
     const f = form.value;
     const bloques = {
         Autor: f.Autor || '',
-        Anio: f.Anio ? `(${f.Anio})` : '',
+        Anio: f.Anio ? `${f.Anio}` : '',
         TituloPublicacion: f.TituloPublicacion || '',
         TituloSubPublicacion: f.TituloSubPublicacion || '',
         NumeroVolumenAnio: f.NumeroVolumenAnio || '',
         EditorialPaisPagina: f.EditorialPaisPagina || '',
-        EditoresCompiladores: f.EditoresCompiladores ? `(Ed./Comp. ${f.EditoresCompiladores})` : ''
+        EditoresCompiladores: f.EditoresCompiladores ? `${f.EditoresCompiladores}` : '',
+        ISBNISSN: f.ISBNISSN ? `${f.ISBNISSN}` : ''
     };
 
     return listaOrdenada.value
         .map(item => bloques[item.id])
         .filter(val => val !== '')
-        .join('. ');
+        .join(' ');
 };
 
 const referenciaCompleta = computed(() => construirReferencia());
 
-const submitForm = () => {
-    if (!form.value.Autor || !form.value.Anio || !form.value.TituloPublicacion) {
-        ElMessage.error('Faltan campos obligatorios.');
-        return;
-    }
-
-    const ordenString = listaOrdenada.value
-        .map(item => mapaIndices[item.id])
-        .join('');
-
-    console.log("!!! ORDEN QUE SE VA A LA DB !!! ->", ordenString);
-
-    const datosParaEnviar = {
-        ...form.value,
-        OrdenCitaCompleta: ordenString,
-        citaCompleta: referenciaCompleta.value
-    };
-
-    emit('formSubmited', datosParaEnviar);
+const submitForm = async () => {
+    if (!bibliografiaFormRef.value) return;
+    await bibliografiaFormRef.value.validate((valid, fields) => {
+        if (valid) {
+            const ordenString = listaOrdenada.value
+                .map(item => mapaIndices[item.id])
+                .join('');
+            const formLimpio = {};
+            Object.keys(form.value).forEach(key => {
+                formLimpio[key] = typeof form.value[key] === 'string' 
+                    ? form.value[key].trim() 
+                    : form.value[key];
+            });
+            const datosParaEnviar = {
+                ...formLimpio,
+                OrdenCitaCompleta: ordenString,
+                citaCompleta: referenciaCompleta.value
+            };
+            emit('formSubmited', datosParaEnviar);
+        } 
+    });
 };
 
 const guardarOrden = () => {
@@ -157,7 +187,9 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
 
     <div class="header">
         <div class="dialog-body">
-            <el-form :model="form" label-position="top" class="bibliografia-form">
+            <!-- IMPORTANTE: Añadimos :model y :rules -->
+            <el-form ref="bibliografiaFormRef" :model="form" :rules="rules" label-position="top"
+                class="bibliografia-form">
 
                 <div class="form-actions" style="margin-top: -30px;">
                     <el-tooltip content="Configurar orden de referencia" placement="top">
@@ -172,25 +204,27 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </div>
 
+                <!-- FILA 1: Autor y Año -->
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="Autor">
                             <template #label><span class="form-number">{{ orden.Autor }}</span> Autor(es)</template>
                             <el-input type="textarea" v-model="form.Autor" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Autor(es)"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="Anio">
                             <template #label><span class="form-number">{{ orden.Anio }}</span> Año(s)</template>
                             <el-input v-model="form.Anio" maxlength="50" show-word-limit placeholder="Año"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
+                <!-- FILA 2: Títulos (Corregido el cruce de props) -->
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="TituloPublicacion">
                             <template #label><span class="form-number">{{ orden.TituloPublicacion }}</span> Título de la
                                 publicación</template>
                             <el-input type="textarea" v-model="form.TituloPublicacion" maxlength="255" show-word-limit
@@ -199,9 +233,9 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item>
+                        <el-form-item prop="TituloSubPublicacion" :rules="rules.camposOpcionales">
                             <template #label><span class="form-number">{{ orden.TituloSubPublicacion }}</span> Título de
-                                la subpublicación</template>
+                                la sub publicación</template>
                             <el-input type="textarea" v-model="form.TituloSubPublicacion" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Título capítulo"></el-input>
@@ -209,10 +243,11 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
+                <!-- FILA 3: Volumen y Editorial -->
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item>
-                            <template #label><span class="form-number">{{ orden.NumeroVolumenAnio }}</span> Numero,
+                        <el-form-item prop="NumeroVolumenAnio" :rules="rules.camposOpcionales">
+                            <template #label><span class="form-number">{{ orden.NumeroVolumenAnio }}</span> Número,
                                 volumen, año, mes(es)</template>
                             <el-input type="textarea" v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
@@ -220,9 +255,9 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item>
+                        <el-form-item prop="EditorialPaisPagina" :rules="rules.camposOpcionales">
                             <template #label><span class="form-number">{{ orden.EditorialPaisPagina }}</span> Editorial,
-                                pais, lugar, paginas</template>
+                                país, lugar, páginas</template>
                             <el-input type="textarea" v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Datos editorial"></el-input>
@@ -230,28 +265,28 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
+                <!-- FILA 4: Editores e ISBN -->
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item>
+                        <el-form-item prop="EditoresCompiladores" :rules="rules.camposOpcionales">
                             <template #label><span class="form-number">{{ orden.EditoresCompiladores }}</span>
-                                Editor(es)
-                                / Compilador(es)</template>
+                                Editor(es) / compilador(es)</template>
                             <el-input type="textarea" v-model="form.EditoresCompiladores" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
                                 placeholder="Si aplica"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item>
+                        <el-form-item prop="ISBNISSN" :rules="rules.camposOpcionales">
                             <template #label>ISBN/ISSN</template>
-                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="50" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Si aplica">
                             </el-input>
                         </el-form-item>
                     </el-col>
-
                 </el-row>
-                <el-col :span="25">
+
+                <el-col :span="24"> <!-- Corregido span 25 a 24 que es el máximo -->
                     <el-form-item label="Referencia completa">
                         <el-input type="textarea" v-model="referenciaCompleta" :rows="5" readonly disabled></el-input>
                     </el-form-item>
