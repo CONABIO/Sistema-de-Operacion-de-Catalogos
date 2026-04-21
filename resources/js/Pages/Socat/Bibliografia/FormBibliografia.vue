@@ -202,7 +202,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
 
     <div class="header">
         <div class="dialog-body">
-            <!-- IMPORTANTE: Añadimos :model y :rules -->
             <el-form ref="bibliografiaFormRef" :model="form" :rules="rules" label-position="top"
                 class="bibliografia-form">
 
@@ -219,7 +218,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </div>
 
-                <!-- FILA 1: Autor y Año -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="Autor">
@@ -236,7 +234,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 2: Títulos (Corregido el cruce de props) -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="TituloPublicacion">
@@ -258,7 +255,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 3: Volumen y Editorial -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="NumeroVolumenAnio" :rules="rules.camposOpcionales">
@@ -280,7 +276,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 4: Editores e ISBN -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="EditoresCompiladores" :rules="rules.camposOpcionales">
@@ -301,7 +296,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <el-col :span="24"> <!-- Corregido span 25 a 24 que es el máximo -->
+                <el-col :span="24"> 
                     <el-form-item label="Referencia completa">
                         <el-input type="textarea" v-model="referenciaCompleta" :rows="5" readonly disabled></el-input>
                     </el-form-item>
