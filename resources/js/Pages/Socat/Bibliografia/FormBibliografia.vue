@@ -21,7 +21,7 @@ const form = ref({
 });
 
 
-const bibliografiaFormRef = ref(null); 
+const bibliografiaFormRef = ref(null);
 
 const rules = {
     Autor: [
@@ -157,18 +157,33 @@ const submitForm = async () => {
                 .map(item => mapaIndices[item.id])
                 .join('');
             const formLimpio = {};
+            const asegurarPuntoFinal = (texto) => {
+                if (!texto || typeof texto !== 'string') return texto;
+                let t = texto.trim();
+                if (t === '') return '';
+                return t.endsWith('.') ? t : t + '.';
+            };
+
             Object.keys(form.value).forEach(key => {
-                formLimpio[key] = typeof form.value[key] === 'string' 
-                    ? form.value[key].trim() 
-                    : form.value[key];
+                const valor = form.value[key];
+                if (key !== 'IdBibliografia' && typeof valor === 'string') {
+                    formLimpio[key] = asegurarPuntoFinal(valor);
+                } else {
+                    formLimpio[key] = valor;
+                }
             });
+
+            const bloquesParaCita = listaOrdenada.value
+                .map(item => formLimpio[item.id])
+                .filter(val => val && val !== '')
+                .join(' ');
             const datosParaEnviar = {
                 ...formLimpio,
                 OrdenCitaCompleta: ordenString,
                 citaCompleta: referenciaCompleta.value
             };
             emit('formSubmited', datosParaEnviar);
-        } 
+        }
     });
 };
 
@@ -187,7 +202,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
 
     <div class="header">
         <div class="dialog-body">
-            <!-- IMPORTANTE: Añadimos :model y :rules -->
             <el-form ref="bibliografiaFormRef" :model="form" :rules="rules" label-position="top"
                 class="bibliografia-form">
 
@@ -204,7 +218,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </div>
 
-                <!-- FILA 1: Autor y Año -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="Autor">
@@ -221,7 +234,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 2: Títulos (Corregido el cruce de props) -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="TituloPublicacion">
@@ -243,7 +255,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 3: Volumen y Editorial -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="NumeroVolumenAnio" :rules="rules.camposOpcionales">
@@ -265,7 +276,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <!-- FILA 4: Editores e ISBN -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item prop="EditoresCompiladores" :rules="rules.camposOpcionales">
@@ -286,7 +296,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     </el-col>
                 </el-row>
 
-                <el-col :span="24"> <!-- Corregido span 25 a 24 que es el máximo -->
+                <el-col :span="24"> 
                     <el-form-item label="Referencia completa">
                         <el-input type="textarea" v-model="referenciaCompleta" :rows="5" readonly disabled></el-input>
                     </el-form-item>
