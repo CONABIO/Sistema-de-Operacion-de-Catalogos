@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed, nextTick } from 'vue';
+import { ref, watch, onMounted, computed, nextTick, reactive } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose, Management } from '@element-plus/icons-vue';
@@ -204,16 +204,41 @@ watch(
 
 const tableKey = ref(0);
 
+const busquedaLocal = async() =>{
+  console.log("Entre a busqueda local estos son los filtros: ", filtros.value);
+
+    // Verificar que filtros.value es un array
+  if (Array.isArray(filtros.value)) {
+    filtros.value.forEach(objeto => {
+      // Asegurar que objeto es un objeto (para evitar errores si hay null)
+      if (objeto && typeof objeto === 'object') {
+        Object.entries(objeto).forEach(([campo, valor]) => {
+          console.log("1", campo, valor);
+        });
+      }
+    });
+  } else {
+    console.warn('filtros.value no es un array:', filtros.value);
+  }
+  
+}
 
 const fetchData = async () => {
   try {
-
     if(props.endpoint === "")
     {
+      busquedaLocal();
       return;
     }
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
+    /*console.log("filtros: ",  filtros.value,
+        "tipo_busqueda: ", tipoDeBusqueda.value,
+        "page: ", currentPage.value,
+        "perPage: ", props.itemsPerPage,
+        "sortBy: ", sorting.value.prop,
+        "sortOrder: ", sorting.value.order);*/
 
     const response = await axios.get(props.endpoint, {
       params: {
