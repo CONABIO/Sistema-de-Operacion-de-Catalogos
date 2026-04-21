@@ -120,13 +120,13 @@ const emit = defineEmits(['cerrar',
   'cerrarBiblio']);
 
 const columnasDefinidas = ref([
-  { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "Anio", label: "Año", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "TituloSubPublicacion", label: "Titulo de la subpublicacion", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "TituloPublicacion", label: "Titulo de la publicacion", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "EditoresCompiladores", label: "Editores / Compiladores", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "EditorialPaisPagina", label: "Editorial, Pais, Pagina", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "NumeroVolumenAnio", label: "Número, Volumen, Año", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "Autor", label: "Autor(es)", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "Anio", label: "Año(s)", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloSubPublicacion", label: "Título de la sub publicación", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloPublicacion", label: "Título de la publicación", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "EditoresCompiladores", label: "Editor(es) / compilador(es)", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "EditorialPaisPagina", label: "Editorial, país, páginas", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
 ]);
 
@@ -290,6 +290,9 @@ const handleRowClick = async (row) => {
   try {
     const responseGrupos = await axios.get(`/api/bibliografias/${idBibliografia}/grupos-taxonomicos`);
     datosGrupos.value = responseGrupos.data;
+    if (datosGrupos.value.length > 0) {
+      handleGrupoRowClick(datosGrupos.value[0]);
+    }
   } catch (error) {
     console.error("Error al cargar los grupos taxonómicos:", error);
     mostrarNotificacion("Error", "No se pudieron cargar los grupos taxonómicos asociados.", "error");
@@ -312,9 +315,9 @@ const handleRowClick = async (row) => {
 
 
 const citaCompleta = (row) => {
-  let orden = row.OrdenCitaCompleta || '1234567';
+  let orden = (row.OrdenCitaCompleta && row.OrdenCitaCompleta.includes('8')) ? row.OrdenCitaCompleta : (row.OrdenCitaCompleta || '') + '8';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina'];
+  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'ISBNISSN'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];
@@ -325,7 +328,6 @@ const citaCompleta = (row) => {
   cita.value = citaComp;
 };
 
-;
 
 const cerrarModalGrupos = () => {
   esModalGruposVisible.value = false;
@@ -355,7 +357,7 @@ const handleFormSubmited = (datosDelFormulario) => {
   const esEdicion = accBiblio.value === 'editar';
   const mensajeDuplicado = esEdicion
     ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron."
-    : "La bibliografía que desea ingresar ya existe, las modificaciones no se realizaron.";
+    : "La bibliografía que desea ingresar ya existe.";
   const duplicadoLocal = localTableData.value.find(b =>
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&
@@ -444,7 +446,7 @@ const borrarDatos = (idBibliografia) => {
       mostrarNotificacion("Eliminación", "La bibliografia ha sido eliminada correctamente.", "success");
     } catch (apiError) {
       console.error(apiError);
-      mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+      mostrarNotificacion("Aviso", apiError.response?.data?.message || 'Ocurrió un error.', "warning");
     }
   };
 
@@ -608,25 +610,28 @@ onMounted(() => {
         </iframe>
       </div>
     </DialogGeneral>
-    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :pressEsc="false"
-      :bot-cerrar="true">
-      <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
-        <div class="form-actions" style="margin-top: 10px;">
+    <DialogGeneral v-model="esModalEditarGrupoVisible" :bot-cerrar="true" :press-esc="true" width="1000px">
+      <div class="dialog-header">
+        <h3>Editar observaciones de grupo taxonómico</h3>
+      </div>
+      <div class="header">
+        <div class="form-actions">
           <GuardarButton @click="guardarObservaciones" />
-          <BotonSalir accion="cerrar" @salir="cerrarDialogo2" />
+          <BotonSalir accion="cerrar" @salir="esModalEditarGrupoVisible = false" />
         </div>
+        <div class="dialog-body">
+          <el-form label-position="top">
+            <el-form-item label="Nombre del grupo">
+              <el-input type="textarea" v-model="grupoParaEditar.grupo" readonly :autosize="{ minRows: 1, maxRows: 2 }"
+                resize="none" class="input-solo-lectura" />
+            </el-form-item>
+            <el-form-item label="Observaciones">
+              <el-input type="textarea" v-model="grupoParaEditar.observaciones" :autosize="{ minRows: 1, maxRows: 3 }"
+                resize="none" placeholder="Añade tus observaciones aquí" maxlength="255" show-word-limit />
+            </el-form-item>
 
-        <div class="info-grupo">
-          <span class="info-label">Grupo:</span>
-          <span class="info-valor" style="color: red; font-weight: bold;">{{ grupoParaEditar.grupo }}</span>
+          </el-form>
         </div>
-
-        <el-form label-position="top" class="form-observaciones">
-          <el-form-item label="Observaciones">
-            <el-input type="textarea" v-model="grupoParaEditar.observaciones" :rows="4"
-              placeholder="Añade tus observaciones aquí" />
-          </el-form-item>
-        </el-form>
       </div>
     </DialogGeneral>
 
@@ -862,14 +867,14 @@ onMounted(() => {
 .layout-vertical {
   display: flex;
   flex-direction: column;
-  gap: 0px; 
+  gap: 0px;
   width: 100%;
-  height: auto; 
+  height: auto;
 }
 
 .seccion-tabla-completa {
   width: 100%;
-  height: auto; 
+  height: auto;
   display: flex;
   flex-direction: column;
 }
@@ -880,23 +885,23 @@ onMounted(() => {
 }
 
 .tabla-bibliografia-ancha :deep(.el-table__body-wrapper) {
-  max-height: 500px !important; 
+  max-height: 500px !important;
   overflow-y: auto !important;
-  overflow-x: auto !important; 
+  overflow-x: auto !important;
 }
 
 .tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-horizontal) {
-  height: 12px !important;       
-  opacity: 1 !important;          
-  background: rgba(241, 241, 241, 0.9) !important; 
+  height: 12px !important;
+  opacity: 1 !important;
+  background: rgba(241, 241, 241, 0.9) !important;
   border-radius: 10px;
-  bottom: 0 !important;          
+  bottom: 0 !important;
   display: block !important;
 }
 
 .tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-vertical) {
-  width: 14px !important; 
-  opacity: 1 !important; 
+  width: 14px !important;
+  opacity: 1 !important;
   background: rgba(241, 241, 241, 0.9) !important;
   border-radius: 10px;
   display: block !important;
@@ -904,10 +909,10 @@ onMounted(() => {
 
 
 .tabla-bibliografia-ancha :deep(.el-scrollbar__thumb) {
-  background-color: #909399 !important; 
+  background-color: #909399 !important;
   border-radius: 10px !important;
   cursor: pointer !important;
-  height: 20px !important;              
+  height: 20px !important;
 }
 
 .tabla-bibliografia-ancha :deep(.el-table__body-wrapper::-webkit-scrollbar:horizontal) {
@@ -926,7 +931,7 @@ onMounted(() => {
 
 
 .tabla-bibliografia-ancha :deep(.el-table__inner-wrapper::before) {
-  display: none; 
+  display: none;
 }
 
 .tabla-bibliografia-ancha :deep(.el-table__append-wrapper) {
@@ -937,35 +942,35 @@ onMounted(() => {
 .tabla-bibliografia-ancha :deep(.el-table) {
   display: flex;
   flex-direction: column;
-  height: 400px; /* Ajusta esta altura según tu diseño */
+  height: 400px;
 }
 
 .tabla-bibliografia-ancha :deep(.el-pagination) {
-  margin-top: 5px !important; 
+  margin-top: 5px !important;
   padding: 5px 0 !important;
   background-color: transparent;
 }
 
 .contenedor-widgets-inferiores {
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   gap: 15px;
   width: 100%;
-  margin-top: 0; 
+  margin-top: 0;
 }
 
 .widget-card-inferior {
-  flex: 1; 
+  flex: 1;
   background-color: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  min-width: 0; 
+  min-width: 0;
 }
 
 .widget-table-container {
-  max-height: 160px; 
+  max-height: 160px;
   overflow-y: auto;
 }
 
@@ -991,8 +996,69 @@ onMounted(() => {
 }
 
 .cita-container {
-  margin-top: 10px; 
+  margin-top: 10px;
   margin-bottom: 10px;
 }
 
+
+:deep(.el-dialog__body) {
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+
+.dialog-header {
+  background-color: #f5f5f5;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header {
+  background-color: #ffffff;
+  padding: 20px 24px;
+  text-align: left;
+  border-radius: 10px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+}
+
+.dialog-body {
+  padding: 30px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  margin-right: 35px;
+  gap: 30px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 4px;
+  line-height: normal;
+  font-size: 0.9em;
+  color: #606266;
+  font-weight: 600;
+}
+
+.input-solo-lectura :deep(.el-textarea__inner) {
+  background-color: #f8f9fa;
+  cursor: default;
+  color: #909399;
+}
 </style>
