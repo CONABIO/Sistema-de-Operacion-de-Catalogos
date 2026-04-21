@@ -21,7 +21,7 @@ const form = ref({
 });
 
 
-const bibliografiaFormRef = ref(null); 
+const bibliografiaFormRef = ref(null);
 
 const rules = {
     Autor: [
@@ -157,18 +157,33 @@ const submitForm = async () => {
                 .map(item => mapaIndices[item.id])
                 .join('');
             const formLimpio = {};
+            const asegurarPuntoFinal = (texto) => {
+                if (!texto || typeof texto !== 'string') return texto;
+                let t = texto.trim();
+                if (t === '') return '';
+                return t.endsWith('.') ? t : t + '.';
+            };
+
             Object.keys(form.value).forEach(key => {
-                formLimpio[key] = typeof form.value[key] === 'string' 
-                    ? form.value[key].trim() 
-                    : form.value[key];
+                const valor = form.value[key];
+                if (key !== 'IdBibliografia' && typeof valor === 'string') {
+                    formLimpio[key] = asegurarPuntoFinal(valor);
+                } else {
+                    formLimpio[key] = valor;
+                }
             });
+
+            const bloquesParaCita = listaOrdenada.value
+                .map(item => formLimpio[item.id])
+                .filter(val => val && val !== '')
+                .join(' ');
             const datosParaEnviar = {
                 ...formLimpio,
                 OrdenCitaCompleta: ordenString,
                 citaCompleta: referenciaCompleta.value
             };
             emit('formSubmited', datosParaEnviar);
-        } 
+        }
     });
 };
 
