@@ -3,20 +3,31 @@
     <el-card class="box-card">
       <div class="common-layout">
         <el-container style="height: 90vh;">
-          <el-header style="background: #f5f5f5; padding: 10px; flex-shrink: 0; display: flex; justify-content: space-between;">
-            <el-row :gutter="10" align="middle">
-              <h2 class="titulo">Relaciones taxonómicas</h2>
-            </el-row>
-            <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div> 
-          </el-header>
+          <el-header class="header">
+          <div class="header-content">
+            <h1 class="titulo">Relaciones taxonómicas</h1>
+          </div>
+        </el-header>
           <el-main style="padding: 15px; background: #fff; overflow: hidden;">
-            <el-row>
+            <el-row justify="space-between" align="middle">
+
               <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                {{ props.taxonAct.label }}
+                {{ props.taxonAct.label }} 
               </span>
+
+              <div style="display: flex; gap: 50px;">
+                <el-tooltip effect="dark" content="Selección Catálogo de Grupos" placement="bottom">
+                  <el-button @click="filtro_Catalogos()" style="background-color: #a08223;" circle>
+                    <el-icon>
+                      <filtroGrupos />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo"
+                                style="flex-shrink: 0; min-width: max-content;"/>
+              </div>
             </el-row>
+
             <el-row>
               <el-col :xs="24" :sm="24" :md="12" :lg="8" style="padding: 12px;">
                 <span>Relaciones nomenclaturales</span>
@@ -44,66 +55,125 @@
                   </el-tooltip>
                 </div>
               </el-col>
+
+              <!-- ESPACIO -->
+              <el-col :xs="0" :sm="4" style="padding: 12px;">
+                <span class="block">Nivel taxonómico</span>
+                <el-cascader
+                  :options="categoriasTax"
+                  clearable
+                  filterable
+                  v-model="categ"
+                  placeholder="Nivel taxonómico"
+                  @change="handleChange"
+                  popper-class="z-index-fix"
+                >
+                  <template #default="{ data }">
+                    <span style="display: inline-flex; align-items: center;">
+                      <img :src="processIcon(data.RutaIcono)" 
+                          style="width:16px; height:16px; margin-right:6px;" />
+                      <span>{{ data.label }}</span>
+                    </span>
+                  </template>
+                </el-cascader>
+              </el-col>
+
+              <!-- Catálogo(s) -->
+              <el-col :xs="24" :sm="6" style="padding: 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span class="demo-input-label" style="margin-bottom: 4px;">
+                    Catálogo(s)
+                  </span>
+                  <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true" />
+                </div>
+              </el-col>
+
+              <!-- Grupo SCAT -->
+              <el-col :xs="24" :sm="6" style="padding: 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span class="demo-input-label" style="margin-bottom: 4px;">
+                    Grupo SCAT
+                  </span>
+                  <el-input type="textarea" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
+                </div>
+              </el-col>
             </el-row>
 
             <el-row>
               <el-card class="main-content-card">
+                <el-col :span="24">
+                  <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+
+                    <!-- LADO IZQUIERDO -->
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="white-space:nowrap;">
+                        Ir a:
+                      </span>
+
+                      <el-input
+                        style="width:300px;"
+                        clearable
+                        placeholder="Buscar..."
+                        v-model="filterText"
+                        @change="filterNode"
+                        size="small"
+                      />
+                    </div>
+
+                    <!-- LADO DERECHO -->
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                      <el-input
+                        v-model="observacionesRel"
+                        style="width:630px"
+                        :rows="2"
+                        type="textarea"
+                        :disabled="habObservaciones"
+                        placeholder="Observaciones"
+                      />
+
+                      <el-popconfirm
+                        confirm-button-text="Si"
+                        cancel-button-text="No"
+                        :icon="InfoFilled"
+                        icon-color="#E6A23C"
+                        title="¿Realmente desea guardar los cambios?"
+                        @confirm="Guardar()"
+                      >
+                        <template #reference>
+                          <el-button circle type="warning" :disabled="habObservaciones">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                              <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                            </svg>
+                          </el-button>
+                        </template>
+                      </el-popconfirm>
+                    </div>
+                  </div>
+                </el-col>
+  
                 <div class="dual-panel-container">
                   <el-card class="tree-panel">
                     <el-container style="display: flex; flex-direction: column; height: 100%;">
-                      <el-header class="compact-header">
-                        <el-row :gutter="10" align="middle">
-                          <el-col :xs="24" :sm="12" :md="6">
-                            <span>Ir a:</span>
-                            <el-input clearable placeholder="Buscar..." v-model="filterText" @change="filterNode"
-                              size="small" />
-                          </el-col>
-                          <el-col :xs="24" :sm="12" :md="6">
-                            <span class="block" style="font-size: 11px;">Nivel taxonómico</span>
-                            <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                              placeholder="Seleccionar" @change="handleChange" size="small" />
-                          </el-col>
-                          <el-col :xs="24" :sm="18" :md="10">
-                            <span class="demo-input-label" style="text-align: center;">Catálogo(s) y Grupo SCAT</span>
-                            <div class="catalog-group-wrapper">
-                              <el-input type="textarea" :rows="1" placeholder="Catálogos" v-model="catalogos"
-                                :disabled="true" style="flex:1;" size="small" />
-                              <el-input type="textarea" :rows="1" placeholder="Grupo SCAT" v-model="grupos"
-                                :disabled="true" style="flex:1;" size="small" />
-                            </div>
-                          </el-col>
-                          <el-col :xs="24" :sm="6" :md="2">
-                            <span class="demo-input-label" style="opacity: 0;">Filtro</span>
-                            <el-tooltip effect="dark" content="Selección Catálogo de Grupos" placement="bottom">
-                              <el-button @click="filtro_Catalogos()" type="primary" circle>
-                                <el-icon>
-                                  <filtroGrupos />
-                                </el-icon>
-                              </el-button>
-                            </el-tooltip>
-                          </el-col>
-                        </el-row>
-                      </el-header>
-
                       <!-- CUERPO DEL PANEL CON ALTURA FLEXIBLE -->
                       <el-main style="flex: 1; overflow: hidden; padding: 10px 0 0 0;">
-                        <el-scrollbar height="280px">
-                          <el-tree class="filter-tree" :data="data" node-key="id" @node-click="expande"
-                            :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
-                            empty-text='No hay datos para mostrar' ref="tree" :highlight-current="true"
-                            :current-node-key="selectedNodeKey" :props="defaultProps"
-                            @node-contextmenu="handleNodeRightClick">
-                            <template #default="{ node }">
-                              <div class="tree-node-wrapper">
-                                <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
-                                <span class="tree-node-label"
-                                  :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
-                                  {{ node.label }}
-                                </span>
-                              </div>
-                            </template>
-                          </el-tree>
-                        </el-scrollbar>
+                        <div class="tree-container">
+                          <el-scrollbar height="360px">
+                            <el-tree :data="data" node-key="id" @node-click="expande"
+                              :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+                              empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
+                              :current-node-key="selectedNodeKey" :props="defaultProps">
+                              <template #default="{ node }">
+                                <div class="tree-node-wrapper">
+                                  <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+                                  <span class="tree-node-label"
+                                    :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
+                                    {{ node.label }}
+                                  </span>
+                                </div>
+                              </template>
+                            </el-tree>
+                          </el-scrollbar>
+                        </div>
                       </el-main>
                       <!-- PIE DE PANEL CON PAGINACIÓN -->
                       <el-footer v-if="totalItems > 0" class="panel-footer">
@@ -117,12 +187,18 @@
                   </el-card>
 
                   <!-- Panel de botones intermedios -->
-                  <div class="button-panel">
-                    <el-tooltip effect="dark" content="Relaciona taxón" placement="center">
-                      <el-button @click="traspasaDatos" circle type="primary" :disabled="habTraspaso"
-                        style="margin-left: 10px;">
+                  <div style="position: sticky; 
+                              top: 20%; 
+                              left: 10px;
+                              transform: translateY(15%);
+                              display: flex;
+                              flex-direction: column;
+                              gap: 16px;">
+                    <el-tooltip effect="dark" content="Relaciona taxón" placement="top">
+                      <el-button @click="traspasaDatos" circle color="#8e44ad" :disabled="habTraspaso"
+                                  style="margin-left: 10px;">
                         <el-icon>
-                          <traspasoInfo />
+                          <iconoTraspaso />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
@@ -140,36 +216,18 @@
                   <!-- Panel de la Tabla -->
                   <el-card class="table-panel">
                     <div style="display: flex; flex-direction: column; height: 100%;">
-                      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                        <el-input v-model="observacionesRel" style="width: 100%" 
-                          :rows="2" type="textarea"
-                          :disabled = "habObservaciones"
-                          placeholder="Observaciones" />
-                        <el-popconfirm confirm-button-text="Si" 
-                                        cancel-button-text="No" 
-                                        :icon="InfoFilled" 
-                                        icon-color="#E6A23C"
-                                        title="¿Realmente desea guardar los cambios?" 
-                                        @confirm="Guardar()">
-                          <template #reference>
-                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                              <el-button circle type="warning" :disabled="habObservaciones">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                                </svg>
-                              </el-button>
-                            <!--/el-tooltip-->
-                          </template>
-                        </el-popconfirm>
-                      </div>
                       <div
                         style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                         <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
                           v-model:datos = "tablaNomenclatura" v-model:total-items="totalRegNom"
                           :opciones-filtro = "opcionesFiltroNomenclatura"
                           :origen = "true"
+                          :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :mostrarSalir = "false" 
+                          :mostrarNuevo = "false"
+                          :alturaTabla = 220
                           @eliminar-item = "manejarEliminarItem"
                           @editar-item = "manejarEditar"
                           @row-click = "manejaClick"
@@ -205,6 +263,10 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
+    <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <TiposRelacion />
+    </DialogForm>
+
     <Teleport to="body">
       <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
         :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
@@ -224,7 +286,8 @@ import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
 import Conectado from '@/Components/Biotica/Icons/Conectado.vue';
 import { mensajes } from '@/Composables/mensajes';
 import FiltroGrupo from '@/Components/Biotica/FiltroGrupoTax.vue';
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import TiposRelacion from "@/Pages/Socat/TipoRelacion/indexTipoRelacion.vue";
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
 import { ElLoading, ElMessageBox } from 'element-plus';
 import usePermisos from '@/composables/usePermisos';
@@ -237,6 +300,8 @@ import axios from 'axios';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 const { permisos } = usePermisos();
 
@@ -246,6 +311,7 @@ const tiposRel = ref([]);
 const tipRel = ref("");
 const dialogFormVisibleCat = ref(false);
 const dialogFormVisibleBiblio = ref(false);
+const dialogFormVisibleTiposRel = ref(false);
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -273,6 +339,7 @@ const paginas = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(150);
 const taxonActRel = ref([]);
+const taxonAct = ref([]);
 const tree = ref(null);
 const selectedNodeKey = ref(null);
 const numHijos = ref(0);
@@ -281,6 +348,10 @@ const observacionesRel = ref('');
 const relacionAct = ref([]);
 const habCambioSinBas = ref(true);
 const taxBiblio = ref([]);
+const defaultProps = {
+    children: 'children',
+    label: 'label'
+  };
 
 const emit = defineEmits(['cerrar']);
 
@@ -460,6 +531,10 @@ const abrirBiblio = async () => {
   }
 }
 
+const catalogoRelTax = async() => {
+  dialogFormVisibleTiposRel.value= true;
+}
+
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
   notificacionTitulo.value = titulo;
   notificacionMensaje.value = mensaje;
@@ -627,7 +702,7 @@ const recibirGrupos = (payload) => {
 
 // Función para cerrar diálogo
 const cerrarDialog = async(valor) => {
-
+console.log("Entre a la funcion de cerrado", valor);
   const loading = ElLoading.service({
         lock: true,
         text: "Loading",
@@ -635,7 +710,7 @@ const cerrarDialog = async(valor) => {
         backgroud: 'rgba(255,255,255,0.85)',
       });
 
-  if(valor === grupos)
+  if(valor === "grupos")
   {
     dialogFormVisibleCat.value = false;
   }else{
@@ -693,6 +768,7 @@ const Guardar = async() => {
 
 // Función para cargar relaciones taxonómicas
     const cargaRelaciones = async(value) => {
+      console.log("estoy aqui viendo si entro: ", value);
         let idsNombreSin = 0;
         let idsNombreVal = 0;
         let params = {};
@@ -783,7 +859,7 @@ const Guardar = async() => {
             console.log("No a seleccionado ningun taxon");
              mostrarNotificacion(
                 "Alerta",
-                "Se debe selccionar al menos un taxón a relacionar",
+                "Se debe seleccionar al menos un taxón a relacionar",
                 "error",
                 7000
             );
@@ -1187,6 +1263,8 @@ const Guardar = async() => {
     // Inicialización de datos
   onMounted( async () => {
     const response = await axios.get('/cargar-tipoRel');
+    habCambioSinBas.value = true;
+
     if (response.status === 200) {            
         tiposRel.value = response.data;
         tiposRel.value.unshift({
@@ -1195,6 +1273,9 @@ const Guardar = async() => {
         });
     }
     await cargaGrupos();
+
+    tipRel.value = [0];
+    cargaRelaciones([0]);
     gruposTax.value = props.gruposTax;
     taxonAct.value = props.taxonAct;
   });
@@ -1287,23 +1368,6 @@ const Guardar = async() => {
         emit('cerrar');
     };
 
-  // Inicialización de datos
-  onMounted(async () => {
-    const response = await axios.get('/cargar-tipoRel');
-    
-    habCambioSinBas.value = true;
-
-    if (response.status === 200) {
-      tiposRel.value = response.data;
-      tiposRel.value.unshift({
-        label: "Todos",
-        value: 0
-      });
-    }
-    await cargaGrupos();
-    gruposTax.value = props.gruposTax;
-  });
-
   watchEffect(() => {
     if (props.gruposPadre) {
       cargaGrupos();
@@ -1321,6 +1385,18 @@ const Guardar = async() => {
   max-width: 100%;
   margin: 0 auto;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  height: 791px;
+}
+
+.tree-container {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  height: 360px;
+}
+
+:deep(.z-index-fix) {
+  z-index: 3000 !important;
 }
 
 .common-layout {
@@ -1328,10 +1404,33 @@ const Guardar = async() => {
   height: 100%;
 }
 
+.header {
+  background-color: #d9e1eb;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  height: auto !important;
+  min-height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: white;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .titulo {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: bold;
+  color: #333;
   margin: 0;
+  text-align: center;
 }
 
 /* Contenedor principal de dos paneles */
@@ -1339,7 +1438,8 @@ const Guardar = async() => {
   width: 100%;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  padding: 15px;
+  padding:0.5px;
+  height: 540px;
 }
 
 .dual-panel-container {
@@ -1347,13 +1447,14 @@ const Guardar = async() => {
   gap: 16px;
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 15px;
 }
 
 .tree-panel, .table-panel {
   flex: 0 0 auto;
-  width: 680px;
-  height: 600px;
+  width: 660px;
+  height: 430px;
 }
 
 .table-panel1 {

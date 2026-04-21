@@ -559,7 +559,7 @@
       { max: 255, message: 'El tamaño debe ser menor o igual a 255 caracteres', trigger: 'blur' }
     ],
     anotacionTaxon: [
-      { max: 255, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
+      { max: 1650, message: 'El tamaño debe ser menor o igual a 1650 caracteres', trigger: 'blur' }
     ],
     otrasObservaciones: [
       { max: 255, message: 'El tamaño debe ser menor o igual a 50 caracteres', trigger: 'blur' }
@@ -1469,16 +1469,6 @@
         text-align: center;
     }
 
-    .titulo {
-        font-size: 1.25rem;
-        font-weight: bold;
-        color: #333;
-        margin: 0;
-        text-align: center;
-    }
-
-
-
   .form-header {
     padding: 20px;
     min-width: 190px;
@@ -1668,8 +1658,6 @@
 
 </style>
 <style scoped>
-
-<style>
   :deep(.el-dialog) {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
