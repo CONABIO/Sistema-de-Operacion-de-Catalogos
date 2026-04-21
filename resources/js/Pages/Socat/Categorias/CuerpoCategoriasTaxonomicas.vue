@@ -154,7 +154,12 @@ const modalRules = {
       whitespace: true,
       message: "El nombre no puede contener solo espacios.",
       trigger: "blur"
-    }
+    },
+    {
+      pattern: /^(?!.*  ).+$/, 
+      message: "No se permite ingresar más de un espacio seguido.",
+      trigger: ["blur", "change"],
+    },
   ]
 };
 
@@ -401,7 +406,7 @@ const handleEliminar = () => {
         } else {
           pendingId.value = "SELECT_FIRST_ROOT";
         }
-        mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminado correctamente.`, "success");
+        mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminada correctamente.`, "success");
       },
       onError: (e) => {
         pendingId.value = null;
@@ -564,7 +569,6 @@ const cerrarModalIconos = () => { esModalIconosVisible.value = false; };
 
 const seleccionarIcono = async (iconName) => {
   try {
-    // Pedimos el SVG con color=currentColor para que sea estilizable por CSS
     const response = await fetch(`https://api.iconify.design/${iconName}.svg?color=currentColor`);
     if (!response.ok) throw new Error('No se pudo obtener el SVG del ícono.');
     let svgContent = await response.text();

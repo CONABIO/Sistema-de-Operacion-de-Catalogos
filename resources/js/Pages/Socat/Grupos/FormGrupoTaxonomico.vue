@@ -33,17 +33,32 @@ const rules = {
     GrupoSCAT: [
         { required: true, message: 'El nombre del grupo SCAT es obligatorio', trigger: 'blur' },
         { whitespace: true, message: 'El nombre no puede contener solo espacios en blanco', trigger: 'blur' }, 
-        { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' }
+        { min: 1, max: 255, message: 'La longitud debe estar entre 1 y 255', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     GrupoAbreviado: [
         { required: true, message: 'El nombre del grupo abreviado es obligatorio', trigger: 'blur' },
         { whitespace: true, message: 'La abreviatura no puede contener solo espacios en blanco', trigger: 'blur' }, 
-        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' }
+        { max: 5, message: 'La longitud debe ser menor o igual a 5', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
     GrupoSNIB: [
         { required: true, message: 'El nombre del grupo SNIB es obligatorio', trigger: 'blur' },
         { whitespace: true, message: 'El grupo SNIB no puede contener solo espacios en blanco', trigger: 'blur' }, 
-        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' }
+        { max: 255, message: 'La longitud debe ser menor o igual a 100', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 
@@ -120,13 +135,13 @@ const cerrarDialogo = () => {
                 <el-form :model="form" :rules="rules" ref="formRef" label-position="top"
                     @submit.prevent="intentarGuardar">
                     <el-form-item label="Nombre del grupo" prop="GrupoSCAT">
-                        <el-input ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit />
+                        <el-input type="textarea" ref="grupoScatInputRef" v-model="form.GrupoSCAT" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none"/>
                     </el-form-item>
                     <el-form-item label="Abreviado" prop="GrupoAbreviado">
                         <el-input v-model="form.GrupoAbreviado" maxlength="5" show-word-limit />
                     </el-form-item>
                     <el-form-item label="Grupo SNIB" prop="GrupoSNIB">
-                        <el-input v-model="form.GrupoSNIB" maxlength="255" show-word-limit />
+                        <el-input type="textarea" v-model="form.GrupoSNIB" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                     </el-form-item>
                 </el-form>
 
