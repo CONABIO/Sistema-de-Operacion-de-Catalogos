@@ -7,14 +7,18 @@
             <el-row :gutter="10" align="middle">
               <h2 class="titulo">Citas bibliograficas asociadas</h2>
             </el-row>
-            <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div>  
-          </el-header>
-            <el-main style="padding: 15px; background: #fff; overflow: hidden;">
-                <el-row>
+            
+          </el-header>  
                     
-                        <div class="dual-panel-container">
+            <el-main style="padding: 15px; background: #fff; overflow: hidden;">    
+                <el-row :gutter="10" justify="end" align="middle">
+                    <div class="form-actions">
+                        <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+                    </div>  
+                </el-row>  
+                <br/>          
+                <el-row>                    
+                    <div class="dual-panel-container">
                             <el-card class="table-panel">
                                 <span style="font-size: 20px; font-weight: bold;">
                                     Nombres cientificos asociados a:
@@ -29,10 +33,14 @@
                                     {{ tipRelacion }}
                                 </span>
                                 <br/>
-                                <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
-                                    <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
-                                        v-model:datos = "tablaRelaciones" v-model:total-items="props.totalRegistros"
+                                <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px; background: red; height: 470px">
+                                    <TablaFiltrable 
+                                        :container-class="'main-section'" 
+                                        :columnas="columnasDefinidas"
+                                        v-model:datos = "tablaRelaciones" 
+                                        v-model:total-items="props.totalRegistros"
                                         :origen = "true"
+                                        
                                         @row-click = "manejaClick">
                                         <template #expand-column>
                                             <el-table-column type="expand">
@@ -56,11 +64,24 @@
                                     {{ taxonRelacionado }}
                                 </span>
                                 <br/>
-                                <br/>
-                                <br/>
+                                <el-card class="table-panel">
+                                    <span style="font-size: 18px; font-weight: bold;">
+                                        Cita bibliográfica:
+                                    </span>
+                                    <el-input  :rows="2"
+                                            type="textarea"
+                                            placeholder="Observaciones"
+                                            :disable = true
+                                            v-model="citaCompleta">
+                                    </el-input>
+                                </el-card> 
+                                                              
                                 <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
-                                    <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidasBiblio"
-                                        v-model:datos = "bibliografiaRel" v-model:total-items="bibliografiaRel.length"
+                                    <TablaFiltrable 
+                                        :container-class="'main-section'" 
+                                        :columnas="columnasDefinidasBiblio"
+                                        :datos = "bibliografiaRel" 
+                                        :total-items="bibliografiaRel.length"
                                         :origen = "true"
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "true"
@@ -88,53 +109,40 @@
                                         </template>
                                     </TablaFiltrable>
                                 </div>
+                                <br/>
+                                <el-card class="table-panel">
+                                    <div style="display: flex; flex-direction: column; height: 100%;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                            <span style="font-size: 18px; font-weight: bold;">
+                                                Observaciones de la asociación:
+                                            </span>
+                                            <el-input  :rows="2"
+                                                    type="textarea"
+                                                    placeholder="Observaciones"
+                                                    :disabled = habObservaciones
+                                                    v-model="observacionRel">
+                                            </el-input>
+                                            <el-popconfirm confirm-button-text="Si" 
+                                                            cancel-button-text="No" 
+                                                            :icon="InfoFilled" 
+                                                            icon-color="#E6A23C"
+                                                            title="¿Realmente desea guardar los cambios?" 
+                                                            @confirm="Guardar()">
+                                                <template #reference>
+                                                    <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
+                                                    <el-button circle type="warning" :disabled="habObservaciones">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                                            <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                                                        </svg>
+                                                    </el-button>
+                                                    <!--/el-tooltip-->
+                                                </template>
+                                            </el-popconfirm>
+                                        </div>
+                                    </div>
+                                </el-card>
                             </el-card>
-                        </div>
-                        <br/>
-                        <el-card class="table-panel">
-                            <div style="display: flex; flex-direction: column; height: 100%;">
-                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                    <span style="font-size: 18px; font-weight: bold;">
-                                        Observaciones de la asociación:
-                                    </span>
-                                    <el-input  :rows="2"
-                                            type="textarea"
-                                            placeholder="Observaciones"
-                                            :disabled = habObservaciones
-                                            v-model="observacionRel">
-                                    </el-input>
-                                    <el-popconfirm confirm-button-text="Si" 
-                                                    cancel-button-text="No" 
-                                                    :icon="InfoFilled" 
-                                                    icon-color="#E6A23C"
-                                                    title="¿Realmente desea guardar los cambios?" 
-                                                    @confirm="Guardar()">
-                                        <template #reference>
-                                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                                            <el-button circle type="warning" :disabled="habObservaciones">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                                                </svg>
-                                            </el-button>
-                                            <!--/el-tooltip-->
-                                        </template>
-                                    </el-popconfirm>
-                                </div>
-                            </div>
-                        </el-card>
-                        <br/>
-                        <el-card class="table-panel">
-                            <span style="font-size: 18px; font-weight: bold;">
-                                Cita bibliográfica:
-                            </span>
-                            <el-input  :rows="2"
-                                       type="textarea"
-                                       placeholder="Observaciones"
-                                       :disable = true
-                                       v-model="citaCompleta">
-                            </el-input>
-                        </el-card> 
-                    
+                    </div>                        
                 </el-row>
             </el-main>
         </el-container>
@@ -407,6 +415,14 @@
 
 </script>
 <style scope>
+    .box-card {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        height: 791px;
+    }
+
     .titulo {
         font-size: 1.5rem;
         font-weight: bold;
@@ -432,6 +448,6 @@
         flex: 1;
         min-width: 400px;
         display: flex;
-        flex-direction: column;
+        flex-direction: column;        
     }
 </style>

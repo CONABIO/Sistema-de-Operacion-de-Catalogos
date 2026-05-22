@@ -417,6 +417,7 @@
         
         //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
         const response = await axios.get('/cargar-nomArb', { params });
+
         if (response.status === 200) {
           data.value = response.data[0];
           totalItems.value = response.data[1].total;
@@ -1454,7 +1455,7 @@
 
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"
       custom-class="responsive-dialog relations-dialog">
-      <DialogRelaciones :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
+      <DialogRelaciones v-if="dialogFormVisibleRel" :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
         :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" 
         @cerrar="closeDialogRel">
       </DialogRelaciones>

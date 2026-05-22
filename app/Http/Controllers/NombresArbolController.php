@@ -48,7 +48,7 @@ class NombresArbolController extends Controller
         
         // Determinar relaciones mínimas necesarias
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'ascendOblig'];
+                           'hijos', 'ascendOblig', 'nombreRel'];
 
         if ($request->has('taxon')) {
             if (!empty($request->categ)) {
@@ -116,7 +116,7 @@ class NombresArbolController extends Controller
         // Relaciones mínimas necesarias
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
                            'hijos', 'ascendOblig','ascendObligHijos',
-                           'relNombreRegion','relNombreAutor'];
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)

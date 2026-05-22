@@ -200,6 +200,7 @@ watch(
       fetchData();
     }
   },
+   
 )
 
 const tableKey = ref(0);
@@ -283,7 +284,9 @@ const fetchData = async () => {
 watch(
     () => props.datos,
     (newDatos) => {
-      if (!newDatos || newDatos.length === 0) return;
+      if (!newDatos || newDatos.length === 0)
+      { datosTabla.value = []; 
+        return};
  
       datosTabla.value = newDatos;
  
