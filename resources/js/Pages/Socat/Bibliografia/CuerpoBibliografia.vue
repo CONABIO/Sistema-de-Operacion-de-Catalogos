@@ -1,8 +1,6 @@
 <script setup>
 import { ref, h, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { ElMessage, ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import { ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
@@ -21,6 +19,15 @@ const selectedRowId = ref(null);
 
 const selectedGrupoId = ref(null);
 const selectedGrupoRow = ref(null);
+const selectedObjetoRow = ref(null);
+const tieneGrupoSeleccionado = computed(() => {
+  return datosGrupos.value.length > 0 && selectedObjetoRow.value !== null;
+});
+
+
+const tieneObjetoSeleccionado = computed(() => {
+  return datosObjetos.value.length > 0 && selectedGrupoRow.value !== null;
+});
 
 
 const handleGrupoRowClick = (row) => {
@@ -46,6 +53,8 @@ const agregarGrupo = () => {
 
 
 const manejarClickFila = (row) => {
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
   selectedRowId.value = row.IdBibliografia;
   handleRowClick(row);
 };
@@ -115,9 +124,7 @@ const grupoParaEditar = ref({
   observaciones: ''
 });
 
-const emit = defineEmits(['cerrar',
-  'formSubmited',
-  'cerrarBiblio']);
+const emit = defineEmits(['cerrarBiblio']);
 
 const columnasDefinidas = ref([
   { prop: "Autor", label: "Autor(es)", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
@@ -126,8 +133,8 @@ const columnasDefinidas = ref([
   { prop: "TituloPublicacion", label: "Título de la publicación", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
   { prop: "EditoresCompiladores", label: "Editor(es) / compilador(es)", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "EditorialPaisPagina", label: "Editorial, país, páginas", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
+  { prop: "EditorialPaisPagina", label: "Editorial, país, lugar, páginas", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "ISBNISSN", label: "ISBN / ISSN / DOI", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -159,7 +166,7 @@ const abrirModalEditar = (filaGrupo) => {
 
 const guardarObservaciones = async () => {
   if (!grupoParaEditar.value?.IdBibliografia || !grupoParaEditar.value?.IdGrupoSCAT) {
-    mostrarNotificacion('Error', 'Faltan datos para actualizar el grupo.', 'error');
+    mostrarNotificacion('Aviso', 'Faltan datos para actualizar el grupo.', 'warning');
     return;
   }
 
@@ -170,13 +177,13 @@ const guardarObservaciones = async () => {
       Observaciones: grupoParaEditar.value.observaciones
     });
 
-    mostrarNotificacion('Éxito', 'Observaciones actualizadas.', 'success');
+    mostrarNotificacion('Modificación', 'Las observaciones han sido actualizadas exitosamente.', 'success');
     esModalEditarGrupoVisible.value = false;
     handleRowClick(selectedBibliografia.value);
 
   } catch (error) {
     const mensajeError = error.response?.data?.message || 'No se pudieron guardar los cambios.';
-    mostrarNotificacion('Error', mensajeError, 'error');
+    mostrarNotificacion('Aviso', mensajeError, 'warning');
     console.error("Error al guardar observaciones:", error.response);
   }
 };
@@ -184,7 +191,7 @@ const guardarObservaciones = async () => {
 
 const confirmarEliminacionGrupo = (filaGrupo) => {
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
-    mostrarNotificacion('Error', 'Faltan datos para eliminar la asociación.', 'error');
+    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación.', 'warning');
     return;
   }
 
@@ -199,7 +206,7 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
         }
       });
 
-      mostrarNotificacion('Éxito', 'Grupo desasociado correctamente.', 'success');
+      mostrarNotificacion('Eliminación', 'El grupo taxonómico ha sido desasociado correctamente.', 'success');
 
       handleRowClick(selectedBibliografia.value);
       selectedGrupoId.value = null;
@@ -207,12 +214,12 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
 
     } catch (error) {
       const mensajeError = error.response?.data?.message || 'No se pudo desasociar el grupo.';
-      mostrarNotificacion('Error', mensajeError, 'error');
+      mostrarNotificacion('Aviso', mensajeError, 'warning');
       console.error("Error al eliminar asociación:", error.response);
     }
   };
 
-  const mensaje = `¿Estás seguro de que quieres desasociar el grupo seleccionado de esta bibliografía? Esta acción no se puede revertir.`;
+  const mensaje = `¿Estás seguro de que quieres desasociar el grupo taxonómico seleccionado de esta referencia bibliográfica? Esta acción no se puede revertir.`;
 
   ElMessageBox({
     title: "Confirmar eliminación",
@@ -273,9 +280,6 @@ const editar = (row) => {
 };
 const cerrarDialogo = () => { dialogFormVisible.value = false; };
 
-const cerrarDialogo2 = () => {
-  emit('cerrar');
-};
 
 const handleRowClick = async (row) => {
   selectedBibliografia.value = row;
@@ -290,12 +294,15 @@ const handleRowClick = async (row) => {
   try {
     const responseGrupos = await axios.get(`/api/bibliografias/${idBibliografia}/grupos-taxonomicos`);
     datosGrupos.value = responseGrupos.data;
-    if (datosGrupos.value.length > 0) {
+    if (datosGrupos.value.length > 0 && !selectedGrupoId.value) {
       handleGrupoRowClick(datosGrupos.value[0]);
+    } else if (selectedGrupoId.value) {
+      const actual = datosGrupos.value.find(g => g.IdGrupoSCAT === selectedGrupoId.value);
+      if (actual) handleGrupoRowClick(actual);
     }
   } catch (error) {
     console.error("Error al cargar los grupos taxonómicos:", error);
-    mostrarNotificacion("Error", "No se pudieron cargar los grupos taxonómicos asociados.", "error");
+    mostrarNotificacion("Aviso", "No se pudieron cargar los grupos taxonómicos asociados.", "warning");
   } finally {
     loadingGrupos.value = false;
   }
@@ -307,7 +314,7 @@ const handleRowClick = async (row) => {
     datosObjetos.value = responseObjetos.data;
   } catch (error) {
     console.error("Error al cargar los objetos externos:", error);
-    mostrarNotificacion("Error", "No se pudieron cargar los objetos externos asociados.", "error");
+    mostrarNotificacion("Aviso", "No se pudieron cargar los objetos externos asociados.", "warning");
   } finally {
     loadingObjetos.value = false;
   }
@@ -317,7 +324,7 @@ const handleRowClick = async (row) => {
 const citaCompleta = (row) => {
   let orden = (row.OrdenCitaCompleta && row.OrdenCitaCompleta.includes('8')) ? row.OrdenCitaCompleta : (row.OrdenCitaCompleta || '') + '8';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina', 'ISBNISSN'];
+  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];
@@ -356,8 +363,8 @@ const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
   const esEdicion = accBiblio.value === 'editar';
   const mensajeDuplicado = esEdicion
-    ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron."
-    : "La bibliografía que desea ingresar ya existe.";
+    ? "La referencia bibliográfica que desea modificar ya existe, las modificaciones no se realizaron."
+    : "La referencia bibliográfica que desea ingresar ya existe.";
   const duplicadoLocal = localTableData.value.find(b =>
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&
@@ -396,7 +403,7 @@ const handleFormSubmited = (datosDelFormulario) => {
         let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
         mostrarNotificacion("Error", errorMsg, "error", 0, true);
       } else {
-        mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
+        mostrarNotificacion("Aviso", "No se pudo procesar la solicitud.", "warning");
       }
     }
   };
@@ -404,7 +411,7 @@ const handleFormSubmited = (datosDelFormulario) => {
   if (!esEdicion) {
     procederConGuardado();
   } else {
-    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la bibliografía seleccionada?`;
+    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la referencia bibliográfica seleccionada?`;
     ElMessageBox({
       title: 'Confirmar modificación',
       showConfirmButton: false,
@@ -443,7 +450,7 @@ const borrarDatos = (idBibliografia) => {
       if (tablaRef.value) {
         await tablaRef.value.fetchData();
       }
-      mostrarNotificacion("Eliminación", "La bibliografia ha sido eliminada correctamente.", "success");
+      mostrarNotificacion("Eliminación", "La referencia bibliográfica ha sido eliminada correctamente.", "success");
     } catch (apiError) {
       console.error(apiError);
       mostrarNotificacion("Aviso", apiError.response?.data?.message || 'Ocurrió un error.', "warning");
@@ -452,7 +459,7 @@ const borrarDatos = (idBibliografia) => {
 
   const cancelarEliminacion = () => { ElMessageBox.close(); };
 
-  const mensaje = `¿Está seguro de eliminar la bibliografía seleccionada? Esta acción no se puede revertir.`;
+  const mensaje = `¿Está seguro de eliminar la referencia bibliográfica seleccionada? Esta acción no se puede revertir.`;
 
   ElMessageBox({
     title: 'Confirmar eliminación',
@@ -478,23 +485,22 @@ onMounted(() => {
     if (event.data && event.data.type === 'grupoTaxonomicoSeleccionado') {
       const grupoSeleccionado = event.data.payload;
       if (!selectedBibliografia.value) {
-        mostrarNotificacion("Error", "No hay una bibliografía seleccionada.", "error");
+        mostrarNotificacion("Aviso", "No hay una bibliografía seleccionada.", "warning");
         return;
       }
       axios.post(route('bibliografias.asociarGrupo'), {
         IdBibliografia: selectedBibliografia.value.IdBibliografia,
         IdGrupoSCAT: grupoSeleccionado.id,
       })
-        .then((response) => {
-          mostrarNotificacion("Éxito", response.data.message, "success");
+        .then(async (response) => {
+          mostrarNotificacion("Ingreso", response.data.message, "success");
           esModalGruposVisible.value = false;
-          const nuevoGrupo = response.data.grupo;
-          if (nuevoGrupo && !datosGrupos.value.some(g => g.grupo === nuevoGrupo.grupo)) {
-            datosGrupos.value.push(nuevoGrupo);
-          } else {
-            handleRowClick(selectedBibliografia.value);
+          await handleRowClick(selectedBibliografia.value);
+          const nuevoId = grupoSeleccionado.id;
+          const filaRecienAgregada = datosGrupos.value.find(g => g.IdGrupoSCAT === nuevoId);
+          if (filaRecienAgregada) {
+            handleGrupoRowClick(filaRecienAgregada);
           }
-
         })
         .catch(error => {
           const errorMessage = error.response?.data?.message || 'No se pudo asociar el grupo.';
@@ -557,8 +563,8 @@ onMounted(() => {
             <h3>Grupo taxonómico</h3>
             <div class="botones">
               <NuevoButton @crear="agregarGrupo" />
-              <EditarButton :disabled="!selectedGrupoRow" @editar="abrirModalEditar(selectedGrupoRow)" />
-              <EliminarButton :disabled="!selectedGrupoRow" @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" />
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
             </div>
           </div>
           <div class="widget-table-container">
@@ -576,8 +582,8 @@ onMounted(() => {
             <h3>Objeto externo</h3>
             <div class="botones">
               <NuevoButton />
-              <EditarButton />
-              <EliminarButton />
+              <EditarButton :disabled="!tieneObjetoSeleccionado"/>
+              <EliminarButton  :disabled="!tieneObjetoSeleccionado"/>
             </div>
           </div>
           <div class="widget-table-container">
@@ -713,11 +719,6 @@ onMounted(() => {
   max-height: 500px;
 }
 
-.layout-dos-columnas {
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
-}
 
 .columna-principal {
   display: flex;
@@ -776,12 +777,6 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-.action-buttons-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-}
 
 :deep(.el-dialog .dialog-body-iframe-container) {
   height: 700px;
@@ -812,42 +807,6 @@ onMounted(() => {
   margin-top: 4px;
   margin-right: 35px;
   gap: 10px;
-}
-
-
-.edit-observaciones-modal-content {
-  padding: 10px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.info-grupo {
-  background-color: #f5f7fa;
-  padding: 10px 15px;
-  border-radius: 6px;
-  border: 1px solid #e9e9eb;
-  font-size: 14px;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #606266;
-  margin-right: 8px;
-}
-
-.info-valor {
-  color: #303133;
-}
-
-.form-observaciones .el-form-item {
-  margin-bottom: 0;
-}
-
-.form-observaciones :deep(.el-form-item__label) {
-  font-weight: 600;
-  color: #606266;
-  padding-bottom: 5px !important;
 }
 
 .dialog-footer-custom {

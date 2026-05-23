@@ -40,9 +40,9 @@ const rules = {
         { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
     ],
     camposOpcionales: [
-        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] },
-        { whitespace: true, message: 'No puede enviar solo espacios', trigger: 'blur' }
-    ]
+    { pattern: /^(?!.*  ).*$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] },
+    { whitespace: true, message: 'No puede enviar solo espacios', trigger: 'blur' }
+]
 };
 
 
@@ -54,17 +54,17 @@ const mapaIndices = {
     'EditoresCompiladores': '5',
     'NumeroVolumenAnio': '6',
     'EditorialPaisPagina': '7',
+    'ISBNISSN': '8'
 };
 
 const ORDEN_ORIGINAL = [
-    { id: 'Autor', label: 'Autor' },
-    { id: 'Anio', label: 'Año' },
-    { id: 'TituloSubPublicacion', label: 'Título de la subpublicación' },
+    { id: 'Autor', label: 'Autor(es)' },
+    { id: 'Anio', label: 'Año(s)' },
+    { id: 'TituloSubPublicacion', label: 'Título de la sub publicación' },
     { id: 'TituloPublicacion', label: 'Título de la publicación' },
-    { id: 'EditoresCompiladores', label: 'Editores / compiladores' },
-    { id: 'NumeroVolumenAnio', label: 'Número, Volumen, Año' },
-    { id: 'EditorialPaisPagina', label: 'Editorial, País, Página' },
-    { id: 'ISBNISSN', label: 'ISBNISSN' },
+    { id: 'EditoresCompiladores', label: 'Editor(es) / compilador(es)' },
+    { id: 'NumeroVolumenAnio', label: 'Número, volumen, año, mes(es)' },
+    { id: 'EditorialPaisPagina', label: 'Editorial, país, lugar, páginas' },
 ];
 
 const listaOrdenada = ref(ORDEN_ORIGINAL.map(item => ({ ...item })));
@@ -130,15 +130,21 @@ const orden = computed(() => {
 
 const construirReferencia = () => {
     const f = form.value;
+    const formatearCampo = (valor) => {
+        if (!valor) return '';
+        let texto = valor.toString().trim();
+        if (texto === '') return '';
+        return texto.endsWith('.') ? texto : texto + '.';
+    };
+
     const bloques = {
-        Autor: f.Autor || '',
-        Anio: f.Anio ? `${f.Anio}` : '',
-        TituloPublicacion: f.TituloPublicacion || '',
-        TituloSubPublicacion: f.TituloSubPublicacion || '',
-        NumeroVolumenAnio: f.NumeroVolumenAnio || '',
-        EditorialPaisPagina: f.EditorialPaisPagina || '',
-        EditoresCompiladores: f.EditoresCompiladores ? `${f.EditoresCompiladores}` : '',
-        ISBNISSN: f.ISBNISSN ? `${f.ISBNISSN}` : ''
+        Autor: formatearCampo(f.Autor),
+        Anio: formatearCampo(f.Anio),
+        TituloPublicacion: formatearCampo(f.TituloPublicacion),
+        TituloSubPublicacion: formatearCampo(f.TituloSubPublicacion),
+        NumeroVolumenAnio: formatearCampo(f.NumeroVolumenAnio),
+        EditorialPaisPagina: formatearCampo(f.EditorialPaisPagina),
+        EditoresCompiladores: formatearCampo(f.EditoresCompiladores),
     };
 
     return listaOrdenada.value
@@ -151,37 +157,31 @@ const referenciaCompleta = computed(() => construirReferencia());
 
 const submitForm = async () => {
     if (!bibliografiaFormRef.value) return;
-    await bibliografiaFormRef.value.validate((valid, fields) => {
+    await bibliografiaFormRef.value.validate((valid) => {
         if (valid) {
-            const ordenString = listaOrdenada.value
-                .map(item => mapaIndices[item.id])
-                .join('');
             const formLimpio = {};
             const asegurarPuntoFinal = (texto) => {
                 if (!texto || typeof texto !== 'string') return texto;
                 let t = texto.trim();
                 if (t === '') return '';
-                return t.endsWith('.') ? t : t + '.';
+                return texto;
             };
 
             Object.keys(form.value).forEach(key => {
                 const valor = form.value[key];
-                if (key !== 'IdBibliografia' && typeof valor === 'string') {
+                if (key !== 'IdBibliografia' && key !== 'ISBNISSN' && typeof valor === 'string') {
                     formLimpio[key] = asegurarPuntoFinal(valor);
                 } else {
                     formLimpio[key] = valor;
                 }
             });
 
-            const bloquesParaCita = listaOrdenada.value
-                .map(item => formLimpio[item.id])
-                .filter(val => val && val !== '')
-                .join(' ');
             const datosParaEnviar = {
                 ...formLimpio,
-                OrdenCitaCompleta: ordenString,
+                OrdenCitaCompleta: listaOrdenada.value.map(item => mapaIndices[item.id]).join(''),
                 citaCompleta: referenciaCompleta.value
             };
+
             emit('formSubmited', datosParaEnviar);
         }
     });
@@ -192,7 +192,7 @@ const guardarOrden = () => {
 };
 
 const cerrarDialogo = () => emit('cerrar');
-const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva referencia bibliográfica' : 'Modificar la  referencia bibliográfica');
+const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva referencia bibliográfica' : 'Modificar la  referencia bibliográfica');
 </script>
 
 <template>
@@ -229,7 +229,8 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                     <el-col :span="12">
                         <el-form-item prop="Anio">
                             <template #label><span class="form-number">{{ orden.Anio }}</span> Año(s)</template>
-                            <el-input v-model="form.Anio" maxlength="50" show-word-limit placeholder="Año"></el-input>
+                            <el-input   type="textarea" v-model="form.Anio" maxlength="50" show-word-limit
+                            :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Año(s)"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -241,7 +242,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                                 publicación</template>
                             <el-input type="textarea" v-model="form.TituloPublicacion" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Título principal"></el-input>
+                                placeholder="Título de la publicación"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -250,7 +251,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                                 la sub publicación</template>
                             <el-input type="textarea" v-model="form.TituloSubPublicacion" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Título capítulo"></el-input>
+                                placeholder="Título de la sub publicación"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -262,7 +263,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                                 volumen, año, mes(es)</template>
                             <el-input type="textarea" v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Datos revista"></el-input>
+                                placeholder="Número, volumen, año, mes(es)"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -271,7 +272,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                                 país, lugar, páginas</template>
                             <el-input type="textarea" v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Datos editorial"></el-input>
+                                placeholder="Editorial, país, lugar, páginas"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -283,20 +284,20 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                                 Editor(es) / compilador(es)</template>
                             <el-input type="textarea" v-model="form.EditoresCompiladores" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Si aplica"></el-input>
+                                placeholder="Editor(es) / compilador(es)"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item prop="ISBNISSN" :rules="rules.camposOpcionales">
-                            <template #label>ISBN/ISSN</template>
+                            <template #label>ISBN/ISSN/DOI</template>
                             <el-input type="textarea" v-model="form.ISBNISSN" maxlength="50" show-word-limit
-                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Si aplica">
+                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="ISBN/ISSN/DOI">
                             </el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
-                <el-col :span="24"> 
+                <el-col :span="24">
                     <el-form-item label="Referencia completa">
                         <el-input type="textarea" v-model="referenciaCompleta" :rows="5" readonly disabled></el-input>
                     </el-form-item>
@@ -308,7 +309,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
     <el-dialog v-model="mostrarModalOrden" width="1000px" append-to-body class="custom-dialog-style">
         <template #header>
             <div class="header-oval modal-header-fix">
-                <h3>Orden de la referencia</h3>
+                <h3>Modificar orden de la referencia completa</h3>
             </div>
         </template>
         <div class="header">
@@ -343,7 +344,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
                 </div>
 
                 <div class="preview-section-modal">
-                    <label>VISTA PREVIA DEL FORMATO</label>
+                    <label>Referencia completa</label>
                     <div class="preview-text-modal">{{ referenciaCompleta }}</div>
                 </div>
             </div>
@@ -626,7 +627,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva 
     font-size: 1.2rem;
 }
 
-/* VISTA PREVIA MODAL */
 .preview-section-modal {
     border: 1px solid #e4e7ed;
     border-radius: 10px;
