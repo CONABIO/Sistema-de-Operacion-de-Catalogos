@@ -33,14 +33,19 @@
                                     {{ tipRelacion }}
                                 </span>
                                 <br/>
-                                <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px; background: red; height: 470px">
+                                <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                                     <TablaFiltrable 
                                         :container-class="'main-section'" 
                                         :columnas="columnasDefinidas"
                                         v-model:datos = "tablaRelaciones" 
                                         v-model:total-items="props.totalRegistros"
                                         :origen = "true"
-                                        
+                                        :alturaTabla = 313
+                                        :mostrarAcci = "true"
+                                        :mostrarNuevo = "false"
+                                        :mostrarEditar = "false"
+                                        :mostrarBorrar = "false"
+                                        :mostrarSalir = "false"
                                         @row-click = "manejaClick">
                                         <template #expand-column>
                                             <el-table-column type="expand">
@@ -52,7 +57,7 @@
                                                 </template>
                                             </el-table-column>
                                         </template>
-                                    </TablaFiltrable>
+                                    </TablaFiltrable>                                   
                                 </div>
                             </el-card>
                             <el-card class="table-panel">
@@ -83,8 +88,12 @@
                                         :datos = "bibliografiaRel" 
                                         :total-items="bibliografiaRel.length"
                                         :origen = "true"
+                                        :alturaTabla = 130
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "true"
+                                        :mostrarEditar = "true"
+                                        :mostrarBorrar = "true"
+                                        :mostrarSalir = "false"
                                         @eliminar-item = "manejarEliminarBiblio"
                                         @editar-item = "manejarEditarBiblio"
                                         @row-click = "manejaClickObs"
@@ -163,7 +172,7 @@
 </template>
 <script setup>
     import { ref, h, onMounted, watchEffect } from 'vue';
-    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
     import { ElLoading, ElMessageBox } from 'element-plus';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
@@ -435,6 +444,17 @@
         border-radius: 8px;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
         padding: 15px;
+    }
+
+    :deep(.el-table__body tr.current-row > td) {
+        background-color: #ddf6dd !important;
+        color: #0d6efd !important;
+        font-weight: bold;
+    }
+
+    /* Para que las tablas internas ocupen todo el espacio */
+    .table-wrapper :deep(.el-table) {
+        height: 100%;
     }
 
     .dual-panel-container {
