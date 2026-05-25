@@ -535,6 +535,7 @@ const abrirBiblio = async () => {
   {
     taxActBiblio.value = props.taxonAct;
 
+    console.log("Este es el valor de bibliografia: ", tablaNomenclatura);
     dialogFormVisibleBiblio.value = true;
   }else{
     mostrarNotificacionError("Bibliografia", 
@@ -750,13 +751,12 @@ const cerrarDialog = async(valor) => {
 
 const Guardar = async() => {
 
-  console.log("Estoy en la funcion de guardar");
   const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
       const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
-                                                                              observacion: observacionesRel.value,
-                                                                              taxAct: props.taxonAct.id}});
+                                                                            observacion: observacionesRel.value,
+                                                                            taxAct: props.taxonAct.id}});
 
       mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
       habObservaciones.value = true;
@@ -846,8 +846,6 @@ const Guardar = async() => {
         else {
             tablaNomenclatura.value = [];
             totalRegNom.value = 0;
-            console.log("Este es el valor de tablaNomenclatural: ", tablaNomenclatura.value);
-            console.log("Este es el valor de totalRegNom: ", totalRegNom.value);
         }
     };
 

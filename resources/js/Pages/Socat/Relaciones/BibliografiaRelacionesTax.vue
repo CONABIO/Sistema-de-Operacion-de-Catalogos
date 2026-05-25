@@ -3,11 +3,12 @@
     <el-card class="box-card">
       <div class="common-layout">
         <el-container style="height: 98vh;">
-          <el-header style="background: #f5f5f5; padding: 10px; flex-shrink: 0; display: flex; justify-content: space-between; ">
-            <el-row :gutter="10" align="middle">
+          <el-header class="header">
+            <!--el-row :gutter="10" align="middle"-->
+            <div class="header-content">
               <h2 class="titulo">Citas bibliograficas asociadas</h2>
-            </el-row>
-            
+            </div>
+            <!--/el-row-->
           </el-header>  
                     
             <el-main style="padding: 15px; background: #fff; overflow: hidden;">    
@@ -39,6 +40,7 @@
                                         :columnas="columnasDefinidas"
                                         v-model:datos = "tablaRelaciones" 
                                         v-model:total-items="props.totalRegistros"
+                                        :highlight-current-row = "true"
                                         :origen = "true"
                                         :alturaTabla = 313
                                         :mostrarAcci = "true"
@@ -87,6 +89,7 @@
                                         :columnas="columnasDefinidasBiblio"
                                         :datos = "bibliografiaRel" 
                                         :total-items="bibliografiaRel.length"
+                                        :highlight-current-row = "true"
                                         :origen = "true"
                                         :alturaTabla = 130
                                         :mostrarAcci = "true"
@@ -131,22 +134,8 @@
                                                     :disabled = habObservaciones
                                                     v-model="observacionRel">
                                             </el-input>
-                                            <el-popconfirm confirm-button-text="Si" 
-                                                            cancel-button-text="No" 
-                                                            :icon="InfoFilled" 
-                                                            icon-color="#E6A23C"
-                                                            title="¿Realmente desea guardar los cambios?" 
-                                                            @confirm="Guardar()">
-                                                <template #reference>
-                                                    <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                                                    <el-button circle type="warning" :disabled="habObservaciones">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                                            <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                                                        </svg>
-                                                    </el-button>
-                                                    <!--/el-tooltip-->
-                                                </template>
-                                            </el-popconfirm>
+                                            <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
+                                                style="flex-shrink: 0; min-width: max-content;"/>
                                         </div>
                                     </div>
                                 </el-card>
@@ -180,6 +169,7 @@
     import BotonSalir from '@/Components/Biotica/SalirButton.vue';
     import Bibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
     import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+    import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 
     // Props del componente
     const props = defineProps({
@@ -313,6 +303,7 @@
                 mostrarNotificacionError('Aviso', `La relación no se puede eliminar.`, 'success');
             }
         };
+
         const cancelarEliminacion = () => {
             ElMessageBox.close();
         };
@@ -362,6 +353,7 @@
     };
 
     const Guardar = async() => {
+
         const procederConActualizacion = async () => {
             try {
                 ElMessageBox.close();
@@ -432,10 +424,33 @@
         height: 791px;
     }
 
+    .header {
+        background-color: #d9e1eb;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        height: auto !important;
+        min-height: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        color: white;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
     .titulo {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: bold;
+        color: #333;
         margin: 0;
+        text-align: center;
     }
 
     .main-content-card {
