@@ -226,8 +226,7 @@
         notificacionVisible.value = false;
     };
 
-    const manejaClick = (row) => {   
-        console.log("Esto es lo que tiene row: ", row);     
+    const manejaClick = (row) => {        
         tipRelacion.value = row.TipoRelacion.texto;
         taxonRelacionado.value = row.Nombrecompleto.texto; 
         bibliografiaRel.value = row.bibliografia;
