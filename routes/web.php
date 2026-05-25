@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
         Route::get('/', [TipoRelacionController::class, 'index'])->name('index');
+        Route::get('/cargaInicial',[TipoRelacionController::class, 'cargaTipoRelacion'])->name('carga-Inicial');
         Route::post('/', [TipoRelacionController::class, 'store'])->name('store');
         Route::put('/{tipoRelacion}', [TipoRelacionController::class, 'update'])->name('update');
         Route::delete('/{tipoRelacion}', [TipoRelacionController::class, 'destroy'])->name('destroy');

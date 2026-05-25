@@ -143,6 +143,7 @@ class BibliografiaController extends Controller
             $biblio->OrdenCitaCompleta = $request->OrdenCitaCompleta;
             $biblio->CitaCompleta = $request->citaCompleta;
             $biblio->FechaModificacion = now()->toDateTimeString();
+            $biblio->ISBNISSN = $request->ISBNISSN;
             $biblio->save();
 
             return response()->json(['message' => 'Guardado con éxito', 'data' => $biblio], 201);
@@ -155,14 +156,11 @@ class BibliografiaController extends Controller
     {
         $biblio = Bibliografia::find($id);
         if (!$biblio) return response()->json(['message' => 'No encontrado'], 404);
-
-        // Validación de duplicado (excluyendo el actual)
         $existing = Bibliografia::where('Autor', $request->Autor)
             ->where('Anio', $request->Anio)
             ->where('TituloPublicacion', $request->TituloPublicacion)
             ->where('IdBibliografia', '!=', $id)
             ->first();
-
         if ($existing) {
             return response()->json([
                 'status' => 400,
@@ -170,7 +168,6 @@ class BibliografiaController extends Controller
                 'idExistente' => $existing->IdBibliografia
             ], 400);
         }
-
         try {
             $biblio->fill($request->all());
             $biblio->FechaModificacion = now()->toDateTimeString();
@@ -206,25 +203,63 @@ class BibliografiaController extends Controller
         return response()->json(['page' => (int)$pagina]);
     }
 
+
     public function destroy($id)
     {
         try {
+            $asociadaARelacion = DB::connection('catcentral')->table('RelacionBibliografia')
+                ->where('IdBibliografia', $id)
+                ->exists();
+            if ($asociadaARelacion ) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a uno o más nombres.'
+                ], 422);
+
+                $asociadaANombre = DB::connection('catcentral')->table('RelNombreBiblio')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+                if ($asociadaANombre) {
+                    return response()->json([
+                        'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a uno o más nombres.'
+                    ], 422);
+                }
+            }
+
+            $asociadaAGrupo = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+            if ($asociadaAGrupo) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a grupos taxonómicos.'
+                ], 422);
+            }
+            $asociadaAObjeto = DB::connection('catcentral')->table('RelObjetoExternoBiblio')
+                ->where('IdBibliografia', $id)
+                ->exists();
+
+            if ($asociadaAObjeto) {
+                return response()->json([
+                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a objetos externos.'
+                ], 422);
+            }
+
             $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
             $biblio->delete();
+
             return response()->json([
                 'message' => 'Bibliografia eliminada con éxito'
             ], 200);
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'message' => 'No se puede eliminar: Esta bibliografía está asociada a taxones o grupos.'
-            ], 422);
+
         } catch (\Exception $e) {
             Log::error("Error deleting Bibliografia: {$e->getMessage()}");
             return response()->json([
-                'message' => 'Error interno: ' . $e->getMessage()
+                'message' => 'Error al intentar eliminar: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
 
     public function getGruposTaxonomicos($bibliografiaId)
@@ -280,7 +315,7 @@ class BibliografiaController extends Controller
                 ->first();
 
             return response()->json([
-                'message' => 'Grupo asociado correctamente.',
+                'message' => 'El grupo taxonómico ha sido asociado correctamente.',
                 'grupo' => $grupoAsociado
             ], 201);
         } catch (\Exception $e) {

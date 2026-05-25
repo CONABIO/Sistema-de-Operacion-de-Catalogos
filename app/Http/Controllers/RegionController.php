@@ -182,7 +182,7 @@ class RegionController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == "23000") {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un nombre común o a alguna característica asociada al taxón.'
+                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un taxón.'
                 ]);
             }
             throw $e;

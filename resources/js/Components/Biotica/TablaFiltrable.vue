@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed, nextTick } from 'vue';
+import { ref, watch, onMounted, computed, nextTick, reactive } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose, Management } from '@element-plus/icons-vue';
@@ -29,6 +29,11 @@ const props = defineProps({
   mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
   mostrarBiblio: { type:Boolean, default: false }, 
+  
+  alturaTabla: {
+    type: Number, 
+    default: 550
+  },
 
   highlightCurrentRow: {
     type: Boolean,
@@ -195,20 +200,46 @@ watch(
       fetchData();
     }
   },
+   
 )
 
 const tableKey = ref(0);
 
+const busquedaLocal = async() =>{
+  console.log("Entre a busqueda local estos son los filtros: ", filtros.value);
+
+    // Verificar que filtros.value es un array
+  if (Array.isArray(filtros.value)) {
+    filtros.value.forEach(objeto => {
+      // Asegurar que objeto es un objeto (para evitar errores si hay null)
+      if (objeto && typeof objeto === 'object') {
+        Object.entries(objeto).forEach(([campo, valor]) => {
+          console.log("1", campo, valor);
+        });
+      }
+    });
+  } else {
+    console.warn('filtros.value no es un array:', filtros.value);
+  }
+  
+}
 
 const fetchData = async () => {
   try {
-
     if(props.endpoint === "")
     {
+      busquedaLocal();
       return;
     }
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
+    /*console.log("filtros: ",  filtros.value,
+        "tipo_busqueda: ", tipoDeBusqueda.value,
+        "page: ", currentPage.value,
+        "perPage: ", props.itemsPerPage,
+        "sortBy: ", sorting.value.prop,
+        "sortOrder: ", sorting.value.order);*/
 
     const response = await axios.get(props.endpoint, {
       params: {
@@ -253,7 +284,9 @@ const fetchData = async () => {
 watch(
     () => props.datos,
     (newDatos) => {
-      if (!newDatos || newDatos.length === 0) return;
+      if (!newDatos || newDatos.length === 0)
+      { datosTabla.value = []; 
+        return};
  
       datosTabla.value = newDatos;
  
@@ -390,6 +423,7 @@ defineExpose({
           Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
       <el-table :key="tableKey" 
                 ref="tableRefInterna" 
+                style="width: 100%" 
                 :highlight-current-row="props.highlightCurrentRow"
                 :data="paginatedDatos" 
                 :row-key="props.idKey" 
@@ -397,7 +431,7 @@ defineExpose({
                 @row-click="handleRowClickInterno" 
                 @expand-change ="onExpandChange"
                 :border="true" 
-                height="550" 
+                :height="props.alturaTabla" 
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
@@ -519,7 +553,11 @@ defineExpose({
 }
 
 .table-responsive {
-  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden; /* Evita scrolls dobles */
+  position: relative;
 }
 
 .action-buttons-container {
@@ -634,5 +672,34 @@ defineExpose({
   gap: 30px; 
   justify-content: flex-end;
   margin-bottom: 15px; 
+}
+
+
+
+:deep(.el-table__inner-wrapper) {
+  overflow-x: auto !important; /* Permite el flujo horizontal */
+}
+
+:deep(.el-table__body-wrapper) {
+  overflow-x: auto !important; /* Asegura scroll en el cuerpo */
+}
+
+/* Estilo para la barra de scroll (opcional pero recomendado para visibilidad) */
+:deep(.el-scrollbar__bar.is-horizontal) {
+  height: 12px !important;
+  opacity: 1 !important; /* Que siempre sea visible si hay desborde */
+  background: rgba(0, 0, 0, 0.05);
+  bottom: 0;
+  z-index: 10;
+}
+
+:deep(.el-scrollbar__thumb) {
+  background-color: #909399 !important; /* Color gris oscuro */
+  border-radius: 10px;
+}
+
+/* Ajuste para que el encabezado no se rompa al hacer scroll */
+:deep(.el-table__header-wrapper) {
+  overflow: hidden !important;
 }
 </style>
