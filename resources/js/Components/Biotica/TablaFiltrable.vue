@@ -206,7 +206,6 @@ watch(
 const tableKey = ref(0);
 
 const busquedaLocal = async() =>{
-  console.log("Entre a busqueda local estos son los filtros: ", filtros.value);
 
     // Verificar que filtros.value es un array
   if (Array.isArray(filtros.value)) {
@@ -219,7 +218,7 @@ const busquedaLocal = async() =>{
       }
     });
   } else {
-    console.warn('filtros.value no es un array:', filtros.value);
+    console.log('filtros.value no es un array:', filtros.value);
   }
   
 }

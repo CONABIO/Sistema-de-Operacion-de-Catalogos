@@ -390,7 +390,6 @@ const transferData = [
 
 // Función para abrir diálogo
 const openDialog = async (nodo) => {
-  console.log(nodo.label);
   alert("Estoy mandando " + nodo.label);
 };
 
@@ -534,8 +533,6 @@ const abrirBiblio = async () => {
   if(tipRel.value.length > 0)
   {
     taxActBiblio.value = props.taxonAct;
-
-    console.log("Este es el valor de bibliografia: ", tablaNomenclatura);
     dialogFormVisibleBiblio.value = true;
   }else{
     mostrarNotificacionError("Bibliografia", 
@@ -585,7 +582,6 @@ const handleChange = async (value) => {
         paginas.value = response.data[1].last_page;
       }
       else {
-        console.log("Se presentó un error en la recuperación de los datos");
       }
       loading.close();
     }
@@ -679,13 +675,11 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const handlePageChange = (page) => {
-  console.log("Este es el valor de page:", page);
   currentPage.value = page;
   fetchFilteredData();
 };
 
 const fetchFilteredData = async () => {
-  console.log("estoy en esta funcion");
   const params = {
     categ: catego.value,
     catalog: idsGrupos.value,
@@ -799,7 +793,6 @@ const Guardar = async() => {
         
         if(value != undefined)
         {
-          console.log("Este es el valor de lo que llego de relacion seleccionada: ", value);
            const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
 
             if(etiqueta != undefined)
@@ -855,7 +848,6 @@ const Guardar = async() => {
         if(nodo.value === valor){
           return nodo;
         }
-        //console.log("Nodo revisado:", nodo);
         if(nodo?.children && nodo?.children.length > 0){
           const encontrado = await buscaTipoRelacion(nodo.children, valor);
           if(encontrado){
@@ -877,7 +869,6 @@ const Guardar = async() => {
 
         if(taxonActRel.value.length === 0)
         {
-            console.log("No a seleccionado ningun taxon");
             mostrarNotificacion(
                 "Alerta",
                 "Se debe seleccionar al menos un taxón a relacionar",
@@ -885,8 +876,6 @@ const Guardar = async() => {
                 7000
             );
         }   
-
-        console.log("Esta es la relación que se va a aplicar: ", tipRelSelec.value);
 
         switch (tipRelSelec.value){
             case 0: 
@@ -899,14 +888,12 @@ const Guardar = async() => {
               break;
             case 1:
                 sinonimos = await validacionSinonimos();
-                console.log("Esto manda en la validacion de sinonimos", sinonimos);
                 if(sinonimos){
                     altaRelacion();
                 }
               break;
             case 2:
                 sinonimos = await validacionSinonimos();
-                console.log("Esto es lo que regresa de la validacion de sinonimos: ", sinonimos);
                 if (sinonimos){
                     basonimos = await validacionBasonimos();
                   if(basonimos){
@@ -943,7 +930,7 @@ const Guardar = async() => {
                 }
               break;
             default:
-                console.log("Aqui se va a generar la relación general");
+                altaRelacion();
               break
         }
     } 
@@ -1043,7 +1030,6 @@ const Guardar = async() => {
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 1");
             return false;
       }
 
@@ -1068,7 +1054,6 @@ const Guardar = async() => {
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 3");
             return false;
       }
 
@@ -1080,7 +1065,6 @@ const Guardar = async() => {
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 4");
             return false;
       }
 
@@ -1112,7 +1096,6 @@ const Guardar = async() => {
                gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))
             )
           ){
-            console.log("Entre a la validacion en el vue");
             mostrarNotificacion(
                 "Alerta",
                 "***El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
@@ -1154,7 +1137,6 @@ const Guardar = async() => {
 
     const validaHomonimos = async () => {
       if(props.taxonAct.id === taxonActRel.value.id){
-        console.log("Entre a la validacion de taxones que son el mismo id");
         mostrarNotificacion(
                 "Alerta",
                 "Está tratando de relacionar el nombre a sí mismo, lo cual no es posible",
@@ -1179,7 +1161,6 @@ const Guardar = async() => {
     case 1:
       relacionar = validacionSinonimos();
       if (relacionar) {
-        console.log("Entre a la funcion de para dar de alta las relaciones");
         altaRelacion();
       }
       break;
@@ -1330,8 +1311,6 @@ const Guardar = async() => {
           }catch(error){
             if (error.response && error.response.status === 422) {
                 // Aquí están los errores de validación
-                console.log("Este es el error completo: ", error.response.data.message);
-                
                 mostrarNotificacion(
                   "Alerta",
                   error.response.data.message,
@@ -1341,7 +1320,6 @@ const Guardar = async() => {
               
             } else {
                 // Otros errores inesperados
-                console.error("Error inesperado:", error);
                 ElMessage.error("Ocurrió un error en el servidor");
             }
 
@@ -1384,7 +1362,6 @@ const Guardar = async() => {
   };
 
   const cerrarDialogo = () => {
-      console.log("Entre a la funcion para cerrar el dialog");
         emit('cerrar');
     };
 
