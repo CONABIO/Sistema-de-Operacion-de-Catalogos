@@ -111,7 +111,6 @@ class BibliografiaController extends Controller
 
     public function store(Request $request)
     {
-        // Validación de duplicado global (Autor + Año + Titulo)
         $existing = Bibliografia::where('Autor', $request->Autor)
             ->where('Anio', $request->Anio)
             ->where('TituloPublicacion', $request->TituloPublicacion)
@@ -144,6 +143,7 @@ class BibliografiaController extends Controller
             $biblio->CitaCompleta = $request->citaCompleta;
             $biblio->FechaModificacion = now()->toDateTimeString();
             $biblio->ISBNISSN = $request->ISBNISSN;
+            $biblio->Observaciones = $request->Observaciones;
             $biblio->save();
 
             return response()->json(['message' => 'Guardado con éxito', 'data' => $biblio], 201);
