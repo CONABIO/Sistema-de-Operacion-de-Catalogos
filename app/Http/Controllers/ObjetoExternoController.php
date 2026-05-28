@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\Mime;
 
 class ObjetoExternoController extends Controller
 {
@@ -34,8 +35,7 @@ class ObjetoExternoController extends Controller
         } else {
             $query->orderBy('NombreObjeto', 'asc');
         }
-
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->input('per_page', 100);
         $objetos = $query->paginate($perPage);
 
         return response()->json($objetos);
@@ -47,7 +47,7 @@ class ObjetoExternoController extends Controller
     {
         $rules = [
             'NombreObjeto' => 'required|string|max:100|unique:catcentral.ObjetoExterno,NombreObjeto',
-            'IdMime' => 'required|integer|exists:catcentral.MIME,IdMime',
+            'IdMime' => 'required',
             'NombreSitio' => 'nullable|string|max:255',
             'Ruta' => 'nullable|string|max:255',
             'Protocolo' => 'nullable|string|max:10',
@@ -56,17 +56,38 @@ class ObjetoExternoController extends Controller
             'UnidadLogica' => 'nullable|string|max:1',
             'Autor' => 'nullable|string|max:255',
             'Institucion' => 'nullable|string|max:255',
+            'Titulo' => 'nullable|string|max:255',
             'Fecha' => 'nullable|date',
             'Observaciones' => 'nullable|string|max:255',
         ];
+
         $messages = [
             'NombreObjeto.required' => 'El nombre del archivo es obligatorio.',
+            'NombreObjeto.unique' => 'El objeto externo que desea ingresar ya existe.',
         ];
         $validatedData = $request->validate($rules, $messages);
+        $idMimeOriginal = $request->input('IdMime');
+        if (!is_numeric($idMimeOriginal)) {
+            $extension = strtoupper($idMimeOriginal);
+            $mimeEncontrado = Mime::where('Extension', $extension)->first();
+            if ($mimeEncontrado) {
+                $validatedData['IdMime'] = $mimeEncontrado->IdMime;
+            } else {
+                $nuevoMime = Mime::create([
+                    'MIME' => $extension . " FILE",
+                    'Extension' => $extension,
+                    'FechaCaptura' => now(),
+                    'FechaModificacion' => '9999-12-31 00:00:00',
+                    'IdOriginal' => null,
+                    'Catalogo' => null
+                ]);
+                $validatedData['IdMime'] = $nuevoMime->IdMime;
+            }
+        }
         $validatedData['FechaCaptura'] = now();
         ObjetoExterno::create($validatedData);
 
-        return response()->json(['message' => 'Objeto externo creado correctamente.'], 201);
+        return response()->json(['message' => 'Objeto externo y nuevo tipo de archivo guardados.'], 201);
     }
 
 

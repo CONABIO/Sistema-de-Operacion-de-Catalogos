@@ -49,19 +49,35 @@ const manejarSeleccionArchivo = (event) => {
         form.value.NombreObjeto = archivo.name;
         const partesNombre = archivo.name.split('.');
         if (partesNombre.length > 1) {
-            const extension = partesNombre.pop().toLowerCase();
-            const tipoEncontrado = opcionesTipoArchivo.value.find(
-                opt => opt.Extension.toLowerCase() === extension
-            );
-            if (tipoEncontrado) {
-                form.value.IdMime = tipoEncontrado.IdMime;
-                ElMessage.success(`Tipo de archivo '${extension.toUpperCase()}' auto-seleccionado.`);
-            } else {
-                ElMessage.warning(`La extensión '${extension.toUpperCase()}' no se encontró.`);
-            }
+            const extension = partesNombre.pop();
+            gestionarTipoArchivo(extension);
         }
     }
 };
+
+
+const gestionarTipoArchivo = (extension) => {
+    if (!extension) return;
+    const extUpper = extension.toUpperCase();
+
+    let tipoEncontrado = opcionesTipoArchivo.value.find(
+        opt => opt.Extension.toUpperCase() === extUpper
+    );
+
+    if (tipoEncontrado) {
+        form.value.IdMime = tipoEncontrado.IdMime;
+    } else {
+        form.value.IdMime = extUpper;
+        const nuevoTipoTemporal = {
+            IdMime: extUpper,
+            Extension: extUpper,
+            MIME: extUpper + " FILE"
+        };
+        opcionesTipoArchivo.value.push(nuevoTipoTemporal);
+
+    }
+};
+
 
 const opcionesProtocolo = ref(['HTTP', 'HTTPS', 'FTP', 'FILE']);
 const opcionesTipoArchivo = ref([]);
@@ -143,7 +159,7 @@ watch(selectedOption, (newVal) => {
         form.value.UrlExterna = '';
         form.value.NombreSitio = '';
         form.value.Ruta = '';
-        form.value.Protocolo = 'HTTP'; 
+        form.value.Protocolo = 'HTTP';
         form.value.NombreObjeto = '';
         form.value.UnidadLogica = '';
         form.value.Usuario = '';
@@ -157,33 +173,35 @@ watch(selectedOption, (newVal) => {
 watch(() => form.value.UrlExterna, (newUrl) => {
     if (newUrl && selectedOption.value === 'webPage') {
         try {
-            const url = new URL(newUrl);
+            let urlToParse = newUrl;
+            if (!/^https?:\/\//i.test(newUrl)) {
+                urlToParse = 'http://' + newUrl;
+            }
+            const url = new URL(urlToParse);
             const protocol = url.protocol.replace(':', '').toUpperCase();
             if (opcionesProtocolo.value.includes(protocol)) {
                 form.value.Protocolo = protocol;
             }
             form.value.NombreSitio = url.hostname;
-            const pathParts = url.pathname.split('/').filter(p => p); 
+            const fullPath = url.pathname + url.search + url.hash;
+            const cleanPath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+            const pathParts = cleanPath.split('/').filter(p => p !== "");
+
             if (pathParts.length > 0) {
-                form.value.Ruta = `/${pathParts[0]}`;
-                const remainingPath = pathParts.slice(1).join('/');
-                form.value.NombreObjeto = remainingPath + url.search;
+                form.value.NombreObjeto = pathParts.pop();
+                form.value.Ruta = pathParts.join('/');
             } else {
-                form.value.Ruta = '/';
-                form.value.NombreObjeto = url.search; 
+                form.value.Ruta = '';
+                form.value.NombreObjeto = '';
             }
             const htmlFileType = opcionesTipoArchivo.value.find(
-                opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase() === 'htmlfile'
+                opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase().includes('html')
             );
             if (htmlFileType) {
                 form.value.IdMime = htmlFileType.IdMime;
             }
         } catch (error) {
-            console.warn('URL inválida, esperando a que sea completa:', error.message);
-            form.value.Protocolo = 'HTTP';
-            form.value.NombreSitio = '';
-            form.value.Ruta = '';
-            form.value.NombreObjeto = ''; 
+            console.warn('URL incompleta o inválida');
         }
     }
 });
@@ -240,7 +258,7 @@ const cerrarDialogo = () => {
                                 style="display: none;" />
                         </el-form-item>
                         <el-form-item label="Nombre del archivo" prop="NombreObjeto">
-                            <el-input v-model="form.NombreObjeto" placeholder="nombre.extension" />
+                            <el-input v-model="form.NombreObjeto" placeholder="Nombre del archivo o recurso" />
                         </el-form-item>
                     </div>
 
@@ -272,13 +290,15 @@ const cerrarDialogo = () => {
                     </el-form-item>
 
                     <el-form-item label="Nombre del sitio" prop="NombreSitio">
-                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com"
-                            :disabled="selectedOption === 'localFile'" />
+                        <el-input
+                            v-model="form.NombreSitio"
+                            placeholder="www.ejemplo.com"
+                            :disabled="selectedOption === 'localFile'"
+                        />
                     </el-form-item>
 
                     <el-form-item label="Ruta" prop="Ruta">
-                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales"
-                            :disabled="selectedOption === 'webPage'" />
+                        <el-input v-model="form.Ruta" placeholder="Ruta del recurso" />
                     </el-form-item>
 
                     <el-row :gutter="20">
