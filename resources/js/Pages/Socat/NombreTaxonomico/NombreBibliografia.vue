@@ -126,7 +126,7 @@
 
 <script setup>
     import { ref, h, onMounted, watchEffect } from 'vue';
-    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
     import { ElLoading, ElMessageBox } from 'element-plus';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';

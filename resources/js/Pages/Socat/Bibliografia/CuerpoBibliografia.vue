@@ -134,7 +134,8 @@ const columnasDefinidas = ref([
   { prop: "EditoresCompiladores", label: "Editor(es) / compilador(es)", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
   { prop: "EditorialPaisPagina", label: "Editorial, país, lugar, páginas", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "ISBNISSN", label: "ISBN / ISSN / DOI", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
+  { prop: "ISBNISSN", label: "ISBN / ISSN / DOI", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "Observaciones", label: "Observaciones", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
