@@ -4,11 +4,9 @@
       <div class="common-layout">
         <el-container style="height: 98vh;">
           <el-header class="header">
-            <!--el-row :gutter="10" align="middle"-->
             <div class="header-content">
               <h2 class="titulo">Citas bibliograficas asociadas</h2>
             </div>
-            <!--/el-row-->
           </el-header>  
                     
             <el-main style="padding: 15px; background: #fff; overflow: hidden;">    
@@ -429,7 +427,6 @@
         border-bottom: 1px solid #e0e0e0;
         height: auto !important;
         min-height: auto !important;
-        display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
