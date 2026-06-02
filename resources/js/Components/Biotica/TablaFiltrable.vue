@@ -29,18 +29,20 @@ const props = defineProps({
   mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
   mostrarBiblio: { type:Boolean, default: false }, 
-  
   alturaTabla: {
     type: Number, 
     default: 550
   },
 
+  mostrarBiblio: { type:Boolean, default: false },
+
+
   highlightCurrentRow: {
     type: Boolean,
     default: false
-  }, 
-  asignaTrasp: { 
-    type: String, 
+  },
+  asignaTrasp: {
+    type: String,
     required: false,
     default: "izq"
   },
@@ -51,7 +53,7 @@ const props = defineProps({
   }
 });
 
-const onBiblio = () => emit('abrir-Biblio'); 
+const onBiblio = () => emit('abrir-Biblio');
 
 const handleVisibleChange = (visible, prop) => {
   if (visible) {
@@ -129,6 +131,10 @@ const setFiltroExterno = (campo, valor) => {
   onFiltroInput();
 };
 
+const setCurrentRow = (row) => {
+  selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
+  tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
+}
 
 
 const emit = defineEmits([
@@ -165,7 +171,7 @@ const paginatedDatos = computed(() => {
   {
     return props.datos;
   }
-  
+
 });
 
 const currentPage = ref(1);
@@ -280,19 +286,18 @@ const fetchData = async () => {
   }
 };
 
+
 watch(
     () => props.datos,
     (newDatos) => {
       if (!newDatos || newDatos.length === 0)
       { datosTabla.value = []; 
         return};
- 
+
       datosTabla.value = newDatos;
- 
+
       nextTick(() => {
         const firstRow = newDatos[0];
- 
-        //Solo si no hay fila seleccionada aún
         if (!selectedRow.value) {
           selectedRow.value = firstRow;
           tableRefInterna.value?.setCurrentRow(firstRow);
@@ -308,10 +313,10 @@ watch(paginatedDatos, (newPaginated) => {
   if (newPaginated && newPaginated.length > 0) {
     // Verificar si la fila seleccionada actual ya no está en los datos paginados
     const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
-    const existsInPaginated = newPaginated.some(row => 
+    const existsInPaginated = newPaginated.some(row =>
       String(row[props.idKey]) === String(currentSelectedId)
     );
-    
+
     // Si no existe o no hay selección, seleccionar la primera
     if (!existsInPaginated || !selectedRow.value) {
       nextTick(() => {
@@ -372,6 +377,7 @@ defineExpose({
   limpiarTodosLosFiltros,
   sorting,
   selectedRow,
+  setCurrentRow
 });
 
 </script>
@@ -389,30 +395,30 @@ defineExpose({
           <div class="botonera-biotica">
              <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
                 Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
-            <BotonTraspaso :icono="props.asignaTrasp" 
+            <BotonTraspaso :icono="props.asignaTrasp"
                             v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
-            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" 
+            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno"
                           v-if="props.mostrarEditar" />
-            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno" 
+            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
             <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               Se agrego la propiedad accion -->
             <BotonSalir v-if="props.mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
             <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               se agrega el boton de acceso a bibliografia para la tabla filtrable-->
-            
-            
+
+
             <!--NuevoButton @crear="onNuevo" /-->
             <div v-if = "props.mostrarBiblio">
               <el-tooltip class="item" effect="dark" content="Bibliografia">
-                <el-button @click="onBiblio" circle style="flex-shrink: 0; 
+                <el-button @click="onBiblio" circle style="flex-shrink: 0;
                             background-color: #509165; color: white;">
                     <el-icon><Management /></el-icon>
                 </el-button>
               </el-tooltip>
             </div>
-            
+
           </div>
         </div>
       </div>
@@ -420,26 +426,27 @@ defineExpose({
     <div class="table-responsive ">
       <!--Juan carlos 09/02/2026
           Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
-      <el-table :key="tableKey" 
-                ref="tableRefInterna" 
-                style="width: 100%" 
+      <el-table :key="tableKey"
+                ref="tableRefInterna"
+                style="width: 100%"
                 :highlight-current-row="props.highlightCurrentRow"
-                :data="paginatedDatos" 
-                :row-key="props.idKey" 
+                :data="paginatedDatos"
+                :row-key="props.idKey"
                 :row-class-name="props.rowClassName || rowClassNameInterno"
-                @row-click="handleRowClickInterno" 
+                @row-click="handleRowClickInterno"
                 @expand-change ="onExpandChange"
                 :border="true" 
                 :height="props.alturaTabla" 
+
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 
-        <el-table-column 
-                v-for="col in props.columnas" 
-                :key="col.prop" 
+        <el-table-column
+                v-for="col in props.columnas"
+                :key="col.prop"
                 :prop="col.prop"
-                :min-width="col.minWidth || '150'" 
-                :sortable="col.sortable ? 'custom' : false" 
+                :min-width="col.minWidth || '150'"
+                :sortable="col.sortable ? 'custom' : false"
                 :align="col.align || 'left'">
           <template #header>
             <div class="custom-header">
@@ -470,7 +477,7 @@ defineExpose({
 
           <template #default="{ row }">
             <template v-if="col.tipo === 'imagenTexto'">
-              <div style="display: flex; align-items: center; gap: 6px;">                
+              <div style="display: flex; align-items: center; gap: 6px;">
                 <span v-if="row[col.prop]?.svg" v-html="row[col.prop].svg" style="height: 25px; width: 25px;"></span>
                 <img
                           v-else-if="row[col.prop]?.url"
@@ -525,6 +532,7 @@ defineExpose({
   border-radius: 0 var(--el-border-radius-base) var(--el-border-radius-base) 0;
 }
 </style>
+
 
 <style scoped>
 .box-card-inner-table {
@@ -657,8 +665,8 @@ defineExpose({
 
 .botonera-biotica {
   display: flex;
-  gap: 12px; 
-  align-items: center; 
+  gap: 12px;
+  align-items: center;
 }
 
 .right-header-content {
@@ -668,9 +676,9 @@ defineExpose({
 
 .form-actions {
   display: flex;
-  gap: 30px; 
+  gap: 30px;
   justify-content: flex-end;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
 }
 
 

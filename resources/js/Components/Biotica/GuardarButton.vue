@@ -54,9 +54,9 @@ const props = defineProps({
   circle: {
     type: Boolean,
     default: true,
-  }, 
+  },
   habilitar: {
-    type: Boolean, 
+    type: Boolean,
     default: false
   }
 });
