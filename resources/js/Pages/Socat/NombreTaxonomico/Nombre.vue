@@ -1,375 +1,939 @@
 <script setup>
-import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
-import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
-import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
-import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
-import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
-import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
-//import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
-import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
-import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import { ElMessageBox } from 'element-plus';
-import { ElLoading } from 'element-plus';
-import AutorTaxon from '../Autores/AutorTaxon.vue';
-import Logo from '@/Components/Biotica/LogoCategoria.vue';
-import { usePage } from '@inertiajs/vue3';
-import usePermisos from '@/composables/usePermisos';
-import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
-import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
-import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
-import { showConfirmMessage } from '@/Composables/mensajeConfirm';
-//import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
-import { processIcon, getSafeIconPath } from '@/Composables/iconos';
-import salir from '@/Components/Biotica/SalirButton.vue';
+  import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
+  import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
+  import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+  import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
+  import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
+  import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+  import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
+  import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
+  import EditarButton from '@/Components/Biotica/EditarButton.vue';
+  import { ElMessageBox } from 'element-plus';
+  import { ElLoading } from 'element-plus';
+  import AutorTaxon from '../Autores/AutorTaxon.vue';
+  import Logo from '@/Components/Biotica/LogoCategoria.vue';
+  import { usePage } from '@inertiajs/vue3';
+  import usePermisos from '@/composables/usePermisos';
+  import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+  import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
+  import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+  import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+  import { showConfirmMessage } from '@/Composables/mensajeConfirm';
+  import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+  import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+  import salir from '@/Components/Biotica/SalirButton.vue';
+  import nuevoTax from '@/Components/Biotica/NuevoButton.vue';
 
-const { permisos } = usePermisos();
+  const { permisos } = usePermisos();
 
-const page = usePage();
-const authUser = page.props.auth.user || [];
+  const page = usePage();
+  const authUser = page.props.auth.user || [];
 
 
-//Definición de variables a utilizar
-const props = defineProps({
-  gruposTax: {
-    type: Object,
-    required: true,
-  },
-  categoriasTax: {
-    type: Object,
-    required: true,
+  //Definición de variables a utilizar
+  const props = defineProps({
+    gruposTax: {
+      type: Object,
+      required: true,
+    },
+    categoriasTax: {
+      type: Object,
+      required: true,
+    }
+  });
+
+  const totalRegNom = ref(0);
+  const numHijos = ref(0);
+
+  const activeNames = ref(['1']);
+
+  const columnasDefinidas = ref([
+    {
+      prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
+      align: 'left', tipo: 'imagenTexto', filtrable: true
+    },
+    {
+      prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
+      align: 'left', tipo: 'imagenTexto', filtrable: true
+    },
+    {
+      prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+      tipo: 'imagenTexto', filtrable: false
+    }
+  ]);
+
+  const opcionesFiltroNomenclatura = ref([
+    { label: 'TipoRelación', value: 'TipoRelacion' },
+    { label: 'NombreCompleto', value: 'Nombrecompleto' }
+  ]);
+
+  const opcionesPaginadoTabla = ref({ 'page-sizes': [2, 5, 10], 'page-size': 2 });
+
+  const totalRegRef = ref(0);
+
+  const columnasDefRef = ref([
+    {
+      prop: 'Cita', label: 'Cita completa', minWidth: '250',
+      align: 'left', tipo: 'textarea', filtrable: true
+    },
+  ]);
+
+  const opcionesFiltroRef = ref([
+    { label: 'Cita', value: 'Cita' }
+  ]);
+
+  //variables del paginado
+  const totalItems = ref(0);
+  const currentPage = ref(1);
+  const itemsPerPage = ref(150);
+
+  const tree = ref(null);
+  const selectedNode = ref([]);
+  const menuPosition = ref({ x: 0, y: 0 });
+  const isMenuVisible = ref(false);
+
+  const notificacionVisible = ref(false);
+  const notificacionTitulo = ref("");
+  const notificacionMensaje = ref("");
+  const notificacionTipo = ref("info");
+  const notificacionDuracion = ref(5000);
+
+  const dialogFormVisibleAlta = ref(false);
+  const taxonAct = ref([]);
+  const data = ref([]);
+  const categ = ref(null);
+  const catalogos = ref('');
+  const grupos = ref('');
+  const idsGrupos = ref('');
+  const mostrar = ref(false);
+  const dialogFormVisibleCat = ref(false);
+  const dialogFormVisibleRel = ref(false);
+  const dialogFormVisibleRelTax = ref(false);
+  const totalReg = ref(0);
+  const paginas = ref('');
+  const taxAct = ref([]);
+  const taxMov = ref([]);
+  const defaultProps = {
+    children: 'children',
+    label: 'label'
+  };
+
+  const selectedNodeKey = ref(null);
+  const filterText = ref('');
+  const catego = ref('');
+  const tablaNomenclatura = ref([]);
+  const tablaReferencias = ref([]);
+
+  const currentPageNomenclatura = ref(1);
+  const pageSizeNomenclatura = ref(2);
+
+  const taxActBiblio = ref([]);
+  const dialogFormVisibleBiblio = ref(false);
+  const dialogFormVisibleBiblioNom = ref(false);
+
+  const scrollbarHeight = ref('550px');
+  const dialogWidth = ref('35%');
+
+  const treeDataAscendentes = ref([]);
+  const dialogFormVisibleAscendentes = ref(false);
+
+  const mostrarLoading = ref(true);
+
+  const categoriaNuevoTax = ref({});
+
+  const mostrarNuevoTax = ref(false);
+
+  const updateLayout = () => {
+    if (window.innerHeight < 820) {
+      scrollbarHeight.value = '300px';
+    } else {
+      scrollbarHeight.value = '350px';
+    }
+
+    if (window.innerWidth <= 1440) {
+      dialogWidth.value = '55%';
+    } else {
+      dialogWidth.value = '35%';
+    }
+  };
+
+  onMounted(() => {
+    dialogFormVisibleCat.value = true;
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+  });
+
+  onUnmounted(() => {
+
+    window.removeEventListener('resize', updateLayout);
+  });
+
+
+  const datosPaginadosNomenclatura = computed(() => {
+    if (!tablaNomenclatura.value || tablaNomenclatura.value.length === 0) {
+      return [];
+    }
+
+    const inicio = (currentPageNomenclatura.value - 1) * pageSizeNomenclatura.value;
+    const fin = inicio + pageSizeNomenclatura.value;
+
+    return tablaNomenclatura.value.slice(inicio, fin);
+  });
+
+
+  const opcionesPaginadoTablas = { 'page-size': 2, 'page-sizes': [2, 5, 10, 20] };
+
+
+  const filtro_Catalogos = () => {
+    dialogFormVisibleCat.value = true;
+  };
+
+  const hasPermisos = (etiqueta, modulo) => {
+
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+  };
+
+  const openDialog = (nodeData) => {
+    taxonAct.value = nodeData;
+
+    emit('reset-form');
+    dialogFormVisibleAlta.value = true;
+  };
+
+  const emit = defineEmits(['reset-form']);
+  const resetFormNombre = () => {
+    emit('reset-form');
   }
-});
 
-const totalRegNom = ref(0);
-const numHijos = ref(0);
+  /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    Se agrega la reasignacion de referencia para que cuando cierra 
+      la ventana se actualice como si se ingresara de inicio*/
+  const closeDialog = () => {
+    taxonAct.value = { ...taxonAct.value };
+    dialogFormVisibleAlta.value = false;
+  };
 
-const activeNames = ref(['1']);
+  const closeDialogRel = async() => {
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
 
-const columnasDefinidas = ref([
-  {
-    prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '120',
-    align: 'left', tipo: 'imagenTexto', filtrable: true
-  },
-  {
-    prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '250',
-    align: 'left', tipo: 'imagenTexto', filtrable: true
-  },
-  {
-    prop: 'Biblio', label: '', minWidth: '55', align: 'left',
-    tipo: 'imagenTexto', filtrable: false
+    const params= {
+                    taxAct: taxonAct.value.id
+                  };
+
+    const response = await axios.get('/carga-RelacionesTax', { params });
+
+    tablaNomenclatura.value = response.data;
+
+    dialogFormVisibleRel.value = false;
+
+    loading.close();
+
+  };
+
+  const cerrarDialog = (valor) => {
+    dialogFormVisibleCat.value = valor;
+  };
+
+  const recibeGrupos = async (data) => {
+    catalogos.value = data['catalogos'];
+    grupos.value = data['grupos'];
+    idsGrupos.value = data['ids'];
+
+    tablaNomenclatura.value= [];
+    tablaReferencias.value = [];
+    totalRegNom.value = 0;
+    totalRegRef.value = 0;
+
+    if (catego.value === '') {
+      //open("Se debe seleccionar una categoría taxonómica.");
+      mostrarNotificacion(
+        "Aviso",
+        "Se debe seleccionar una categoría taxonómica",
+        "success",
+        7000
+    );
+    } else {
+      let categ = [];
+      categ.push(catego.value)
+      handleChange(categ);
+    }
+  };
+
+  //Funcion para los cambios recibidos
+  const recibeTaxMod = async (res) => {
+
+    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+
+    for (const node of data.value) {
+      if (node.id === res.id) {
+        Object.assign(node, res);
+        return true;  
+      }
+
+      if (node.children && node.children.length > 0) {
+        const found = await updateChildNode(node.children, res);
+        if (found) break;
+      }
+    }
+  };
+
+  const updateChildNode = async (children, res) => {
+    for (const child of children) {
+      if (child.id === res.id) {
+        Object.assign(child, res);
+        return true; 
+      }
+      if (child.children && child.children.length > 0) {
+        const found = await updateChildNode(child.children, res);
+        if (found) return true;
+      }
+    }
+    return false; 
+  };
+
+  //Función para recibir los nuevos taxones 
+  const recibeTaxNuevo = async (res) => {
+    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+
+    if (index !== -1) {
+      if (!data.value[index].children) {
+        data.value[index].children = [];
+      }
+
+      data.value[index].children.push(res);
+
+      // 👇 esperar a que el DOM y el tree se actualicen
+      await nextTick();
+
+      // 👇 expandir el padre (opcional pero recomendado)
+      tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
+
+      // 👇 seleccionar el nuevo nodo
+      selectedNodeKey.value = res.id;
+    }else{
+      data.value.push(res);
+
+      // 👇 esperar a que el DOM y el tree se actualicen
+      await nextTick();
+
+      // 👇 seleccionar el nuevo nodo
+      selectedNodeKey.value = res.id;
+
+      mostrarNuevoTax.value = false;
+    }
+  };
+
+  //Función para recibir los taxones que dan de baja
+  const recibeTaxBaja = (res) => {
+
+    // 1️⃣ Buscar si es nodo raíz
+    const rootIndex = data.value.findIndex(
+      node => String(node.id) === String(res.Id)
+    );
+
+    if (rootIndex !== -1) {
+      console.log("Es nodo raíz");
+      data.value.splice(rootIndex, 1);
+      taxonAct.value = [];
+      return true;
+    }
+
+    // 2️⃣ Si no es raíz, buscar en hijos (recursivo)
+    for (let i = 0; i < data.value.length; i++) {
+      if (data.value[i].children?.length) {
+        const found = deleteChildNode(data.value[i].children, res);
+        if (found) {
+          taxonAct.value = [];
+          return true;
+        }
+      }
+    }
+
+    // 3️⃣ Si no se encontró en ningún lado
+    return false;
+  };
+
+  const deleteChildNode = (children, res) => {
+
+    for (let i = 0; i < children.length; i++) {
+
+      // 🔹 Si lo encuentra en este nivel
+      if (String(children[i].id) === String(res.Id)) {
+        children.splice(i, 1);
+        return true;
+      }
+
+      // 🔹 Si tiene hijos, buscar más profundo
+      if (children[i].children?.length) {
+        const found = deleteChildNode(children[i].children, res);
+        if (found) return true;
+      }
+    }
+
+    return false;
+  };
+
+  //Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
+  onMounted(() => {
+    dialogFormVisibleCat.value = true;
+    console.log(authUser);
+  });
+
+  //Funcion para el envio de mensajes en pantalla
+  const open = (mensaje) => {
+    ElMessageBox.alert(mensaje, 'Nombres taxonómicos', {
+      confirmButtonText: 'OK',
+    });
   }
-]);
 
-const opcionesFiltroNomenclatura = ref([
-  { label: 'TipoRelación', value: 'TipoRelacion' },
-  { label: 'NombreCompleto', value: 'Nombrecompleto' }
-]);
+  //Esta funcion se dispara una vez que se selecciona una categia taxonomica
+  const handleChange = async (value) => {
+    if (value != undefined) {
+      filterText.value = "";
+      mostrar.value = false;
+      catego.value = value[0];
 
-const opcionesPaginadoTabla = ref({ 'page-sizes': [2, 5, 10], 'page-size': 2 });
+      if (idsGrupos.value != '') {
+        const params = {
+          categ: value[0],
+          catalog: idsGrupos.value
+        };
 
-const totalRegRef = ref(0);
+        const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+        
+        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
+        const response = await axios.get('/cargar-nomArb', { params });
 
-const columnasDefRef = ref([
-  {
-    prop: 'Cita', label: 'Cita completa', minWidth: '250',
-    align: 'left', tipo: 'textarea', filtrable: true
-  },
-]);
+        if (response.status === 200) {
+          data.value = response.data[0];
+          totalItems.value = response.data[1].total;
+          paginas.value = response.data[1].last_page;
 
-const opcionesFiltroRef = ref([
-  { label: 'Cita', value: 'Cita' }
-]);
+          if(response.data[3].length === 1 &&(response.data[0].length === 0 && 
+                                              (response.data[3][0].IdAscendente === 0 || 
+                                                response.data[3][0].IdAscendente === null))){
+            
+            categoriaNuevoTax.value = response.data[3][0];
+            mostrarNuevoTax.value = true;
+          }else{
+            mostrarNuevoTax.value = false;
+          }
+        }
+        else {
+          console.log("Se presentó un error en la recuperación de los datos");
+        }
+        loading.close();
 
-//variables del paginado
-const totalItems = ref(0);
-const currentPage = ref(1);
-const itemsPerPage = ref(150);
+        await nextTick();
 
-const tree = ref(null);
-const selectedNode = ref([]);
-const menuPosition = ref({ x: 0, y: 0 });
-const isMenuVisible = ref(false);
-
-const notificacionVisible = ref(false);
-const notificacionTitulo = ref("");
-const notificacionMensaje = ref("");
-const notificacionTipo = ref("info");
-const notificacionDuracion = ref(5000);
-
-const dialogFormVisibleAlta = ref(false);
-const taxonAct = ref([]);
-const data = ref([]);
-const categ = ref(null);
-const catalogos = ref('');
-const grupos = ref('');
-const idsGrupos = ref('');
-const mostrar = ref(false);
-const dialogFormVisibleCat = ref(false);
-const dialogFormVisibleRel = ref(false);
-const dialogFormVisibleRelTax = ref(false);
-const totalReg = ref(0);
-const paginas = ref('');
-const taxAct = ref([]);
-const taxMov = ref([]);
-const defaultProps = {
-  children: 'children',
-  label: 'label'
-};
-
-const selectedNodeKey = ref(null);
-const filterText = ref('');
-const catego = ref('');
-const tablaNomenclatura = ref([]);
-const tablaReferencias = ref([]);
-
-const currentPageNomenclatura = ref(1);
-const pageSizeNomenclatura = ref(2);
-
-const taxActBiblio = ref([]);
-const dialogFormVisibleBiblio = ref(false);
-const dialogFormVisibleBiblioNom = ref(false);
-
-const scrollbarHeight = ref('550px');
-const dialogWidth = ref('35%');
-
-const treeDataAscendentes = ref([]);
-const dialogFormVisibleAscendentes = ref(false);
-
-const mostrarLoading = ref(true);
-
-const updateLayout = () => {
-  if (window.innerHeight < 820) {
-    scrollbarHeight.value = '300px';
-  } else {
-    scrollbarHeight.value = '350px';
+        if(data.value.length > 0)
+        {
+          selectedNodeKey.value= data.value[0].id;
+          tree.value.setCurrentKey(data.value[0].id);
+          
+          let node = tree.value.getNode(data.value[0].id);
+          
+          expande(node.data, node);
+        }
+      }
+    }else
+    {
+      catego.value = ''; 
+      tablaNomenclatura.value = [];
+      tablaReferencias.value = [];
+      totalRegNom.value = 0;
+      totalRegRef.value = 0;
+      data.value = [];
+      numHijos.value = 0;
+      taxonAct.value = [];
+    }
   }
 
-  if (window.innerWidth <= 1440) {
-    dialogWidth.value = '55%';
-  } else {
-    dialogWidth.value = '35%';
+  //Función para hacer la busqueda de los valores colocados en el input de busqueda
+  const filterNode = async (value) => {
+    mostrar.value = false;
+
+    const loading = ElLoading.service({
+      lock: true,
+      text: "Loading",
+      spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+      backgroud: 'rgba(255,255,255,0.85)',
+    });
+
+    if (value != '' && idsGrupos.value != '' && categ.value != null) {
+      const params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: value
+      };
+
+      const response = await axios.get('/cargar-nomArb',
+        { params });
+      
+      if (response.status === 200) {
+        data.value = response.data[0];
+        totalItems.value = response.data[1].total;
+        paginas.value = response.data[1].last_page;
+        loading.close();
+      }
+    }else if (idsGrupos.value != '' && categ.value != null){
+      handleChange(categ.value);
+    }
+
+    loading.close();
   }
-};
 
-onMounted(() => {
-  dialogFormVisibleCat.value = true;
+  const mostrarNotificacion = (
+    titulo,
+    mensaje,
+    tipo = "warning",
+    duracion = 5000,
+    dangerouslyUseHTML = false
+  ) => {
+    console.log("Entre a mostrar la notificación");
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = duracion;
+    notificacionVisible.value = true;
+  };
 
-  updateLayout();
-  window.addEventListener('resize', updateLayout);
-});
+  const cerrarNotificacion = () => {
+    notificacionVisible.value = false;
+  };
 
-onUnmounted(() => {
+  //Funcion que se ejecuta para la expancion de un nodo
+  //const expande = async (draggingNode, nodeData, nodeComponent) => {
+  const expande = async (draggingNode) => {
 
-  window.removeEventListener('resize', updateLayout);
-});
+    let loadingInstance = null;
 
+    isMenuVisible.value = false;
+    mostrar.value = true;
+    taxonAct.value = draggingNode;
 
-const datosPaginadosNomenclatura = computed(() => {
-  if (!tablaNomenclatura.value || tablaNomenclatura.value.length === 0) {
-    return [];
+    if(draggingNode.children.length > 0)
+    {
+      numHijos.value = draggingNode.children.length;
+    }
+
+    if(mostrarLoading.value)
+    {
+      loadingInstance = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+    }
+
+    if (draggingNode.children.length === 0) {
+      
+      const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
+
+      if (response.status === 200) {
+        if (draggingNode.children.length === 0) {
+          for (let i = 0; i < response.data[0].length; i++) {
+            draggingNode.children.push(response.data[0][i]);
+          }
+        }
+
+        const node = tree.value.getNode(draggingNode);
+        numHijos.value = draggingNode.children.length;
+        node.expanded = true;
+
+      }
+    }
+    const params= {
+                    taxAct: draggingNode.id
+                };  
+                
+    const responseNom = await axios.get('/carga-RelacionesTax', { params });
+
+    if(mostrarLoading.value)
+    {
+      loadingInstance.close();
+    }
+    
+    if(responseNom.data.length >0 )
+    {
+      tablaNomenclatura.value = responseNom.data;
+
+      totalRegNom.value = tablaNomenclatura.value.length;
+      tablaReferencias.value = draggingNode.referencias;
+      totalRegRef.value = draggingNode?.referencias?.length;
+      selectedNodeKey.value = draggingNode.id;
+    }
+
+    mostrarLoading.value = true
   }
 
-  const inicio = (currentPageNomenclatura.value - 1) * pageSizeNomenclatura.value;
-  const fin = inicio + pageSizeNomenclatura.value;
+  //Función para mover un taxón y reasignarlo a otro 
+  const mover = async (node) => {
+    if (taxMov.value.length === 0) {
+      try {
 
-  return tablaNomenclatura.value.slice(inicio, fin);
-});
+        const result = await showConfirmMessage({
+          title: 'Atención',
+          message: '¿Está seguro de mover este taxón?',
+          icon: '!'
+        });
+
+        if (!result) {
+          return;
+        }
+
+        node.data.customClass = 'highlight-node';
+        taxMov.value = node;
+
+        triggerRef(data);
+
+        await mostrarNotificacion(
+          "Aviso",
+          "El taxón será reasignado.",
+          "info",
+          5000
+        );
+
+      } catch (error) {
+        await ElMessageBox.alert("Acción cancelada", {
+          confirmButtonText: "OK",
+          type: 'info'
+        });
+      }
+    } else {
+      if (taxMov.value.data.completo.scat === undefined) {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
+          "error",
+          5000
+        );
+        return;
+      } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0) {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
+          "error",
+          5000
+        );
+        return;
+      }
+      if (taxMov.value.data.id === node.data.id) {
+        taxMov.value = [];
+        await mostrarNotificacion(
+          "Aviso",
+          "Se cancelará el movimiento del taxón",
+          "info",
+          5000
+        );
+        delete node.data.customClass;
+        return;
+      }
+      if (taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT) {
+        if (node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 - 1)) {
+          const params = {
+            estatusInicio: taxMov.value.data.completo.Estatus,
+            nomAct: taxMov.value.data.id
+          };
+
+          try {
+            const response = await axios.get('/valCamEstatus', params);
+
+            //Lógica para validación de estatus
+            switch (taxMov.value.data.completo.Estatus) {
+              case 1:
+                switch (node.data.completo.Estatus) {
+                  case 1:
+                    await moverTaxon(
+                      taxMov.value.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node
+                    );
+                    break;
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxonMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node
+                      );
+                    }
+                    break;
+                  default:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                    break;
+                }
+                break;
+              case 2:
+                switch (node.data.completo.Estatus) {
+                  case 2:
+                    await moverTaxon(
+                      taxMov.value.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node
+                    );
+                    break;
+                  case 1:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov,
+                        node
+                      );
+                    }
+                    break;
+                  default:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                }
+                break;
+              case 6:
+                switch (node.data.completo.Estatus) {
+                  case 6:
+                  case -9:
+                    await moverTaxon(
+                      taxMov.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node);
+                    break;
+                  case 1:
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node);
+                    }
+                }
+                break;
+              case -9:
+                switch (node.data.completo.Estatus) {
+                  case 6:
+                    await moverTaxon(
+                      taxMov.data.completo.IdNombre,
+                      node.data.completo.IdNombre,
+                      taxMov.value,
+                      node);
+                    break;
+                  case -9:
+                    await mostrarNotificacion(
+                      "Error",
+                      `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      "error",
+                      5000
+                    );
+                    break;
+                  case 1:
+                  case 2:
+                    if (response.data != 1) {
+                      await mostrarNotificacion(
+                        "Error",
+                        `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                        "error",
+                        5000
+                      );
+                    } else {
+                      await moverTaxon(
+                        taxMov.value.data.completo.IdNombre,
+                        node.data.completo.IdNombre,
+                        taxMov.value,
+                        node
+                      );
+                    }
+                    break;
+                }
+                break;
+            }
+          } catch (error) {
+            console.error('Error al validar estatus:', error);
+            ElMessageBox.error('Error al validar el estatus del taxón');
+          }
+        } else {
+          await mostrarNotificacion(
+            "Error",
+            `Está intentando mover el taxón a una categoria no permitida.`,
+            "error",
+            5000
+          );
+        }
+      } else {
+        await mostrarNotificacion(
+          "Error",
+          `El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,
+          "error",
+          5000
+        );
+      }
+    }
+  }
+
+  const manejarEliminarRel = (item) => {  
+    
+    const procederConEliminacion = async () => {
+
+      try {
+        ElMessageBox.close();
+
+        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+                                                                                taxAct: props.taxonAct.id}});
+        
+        tablaNomenclatura.value = response.data;
+
+        mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+      }
+    };
+    const cancelarEliminacion = () => {
+      ElMessageBox.close();
+    };
+
+    const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
+
+    const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+    
+    ElMessageBox({
+      title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarEliminacion }),
+          h(BotonAceptar, { onClick: procederConEliminacion }),
+        ])
+      ])
+    }).catch(() => { });
+  };
+
+  const manejarEliminarRef = (item)=>{
+    
+    const procederConEliminacion = async () => {
+
+      try {
+        ElMessageBox.close();
+
+        const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
+                                                                                  taxAct: taxonAct.value.id}});     
+          
+          tablaReferencias.value = response.data;
+
+          totalRegRef.value = response.data.length;
+
+        mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
+      }
+    };
+    const cancelarEliminacion = () => {
+      ElMessageBox.close();
+    };
 
 
-const opcionesPaginadoTablas = { 'page-size': 2, 'page-sizes': [2, 5, 10, 20] };
+    const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+    
+    ElMessageBox({
+      title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarEliminacion }),
+          h(BotonAceptar, { onClick: procederConEliminacion }),
+        ])
+      ])
+    }).catch(() => { });
+  }
 
+  const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
+    console.log("Entre a mover el taxon");
+    console.log("Estos son los parametros recibidos taxMover: ", taxMover,
+                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+                " nodoRecb: ", nodoRecb);
+                
+    if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
+      await mostrarNotificacion(
+        "Error",
+        'El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',
+        "error",
+        5000
+      );
+      return;
+    }
 
-const filtro_Catalogos = () => {
-  dialogFormVisibleCat.value = true;
-};
-
-const hasPermisos = (etiqueta, modulo) => {
-
-  const permiso = permisos.find(item => item.NombreModulo === etiqueta);
-
-  return permiso[modulo];
-};
-
-const openDialog = (nodeData) => {
-  taxonAct.value = nodeData;
-  //mostrarLoading.value = false;
-
-  emit('reset-form');
-  dialogFormVisibleAlta.value = true;
-};
-
-const emit = defineEmits(['reset-form']);
-const resetFormNombre = () => {
-  emit('reset-form');
-}
-
-/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-  Se agrega la reasignacion de referencia para que cuando cierra 
-    la ventana se actualice como si se ingresara de inicio*/
-const closeDialog = () => {
-  taxonAct.value = { ...taxonAct.value };
-  dialogFormVisibleAlta.value = false;
-};
-
-const closeDialogRel = async() => {
-  const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
+    try {
+      const result = await showConfirmMessage({
+        title: 'Atención',
+        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
+                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
+                    ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
+        icon: '!'
       });
 
-  const params= {
-                  taxAct: taxonAct.value.id
-                };
+      if (!result) {
+        return;
+      }
 
-  const response = await axios.get('/carga-RelacionesTax', { params });
-
-  tablaNomenclatura.value = response.data;
-
-  dialogFormVisibleRel.value = false;
-
-  loading.close();
-
-};
-
-const cerrarDialog = (valor) => {
-  dialogFormVisibleCat.value = valor;
-};
-
-const recibeGrupos = async (data) => {
-  catalogos.value = data['catalogos'];
-  grupos.value = data['grupos'];
-  idsGrupos.value = data['ids'];
-
-  tablaNomenclatura.value= [];
-  tablaReferencias.value = [];
-  totalRegNom.value = 0;
-  totalRegRef.value = 0;
-
-  if (categ.value === '') {
-    open("Se debe seleccionar una categoría taxonómica.");
-  } else {
-    let categ = [];
-    categ.push(catego.value)
-    handleChange(categ);
-  }
-};
-
-//Funcion para los cambios recibidos
-const recibeTaxMod = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  for (const node of data.value) {
-    if (node.id === res.id) {
-      Object.assign(node, res);
-      return true;  
-    }
-
-    if (node.children && node.children.length > 0) {
-      const found = await updateChildNode(node.children, res);
-      if (found) break;
-    }
-  }
-};
-
-const updateChildNode = async (children, res) => {
-  for (const child of children) {
-    if (child.id === res.id) {
-      Object.assign(child, res);
-      return true; 
-    }
-    if (child.children && child.children.length > 0) {
-      const found = await updateChildNode(child.children, res);
-      if (found) return true;
-    }
-  }
-  return false; 
-};
-
-//Función para recibir los nuevos taxones 
-const recibeTaxNuevo = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  if (index !== -1) {
-    if (!data.value[index].children) {
-      data.value[index].children = [];
-    }
-
-    data.value[index].children.push(res);
-
-    // 👇 esperar a que el DOM y el tree se actualicen
-    await nextTick();
-
-    // 👇 expandir el padre (opcional pero recomendado)
-    tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
-
-    // 👇 seleccionar el nuevo nodo
-    selectedNodeKey.value = res.id;
-  }
-};
-
-//Función para recibir los taxones que dan de baja
-const recibeTaxBaja = async (res) => {
-
-  const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
-  let found = false;
-
-  for (let i = 0; i < data.value.length; i++) {
-    if (String(data.value[i].id) === String(res.Id)) {
-      children.splice(i, 1);
-      return true;
-    }
-
-    if (data.value[i].children && data.value[i].children.length > 0) {
-
-      found = deleteChildNode(data.value[i].children, res);
-      if (found) break;
-    }
-  }
-}
-
-const deleteChildNode = async (children, res) => {
-  for (let i = 0; i < children.length; i++) {
-    if (String(children[i].id) === String(res.Id)) {
-      children.splice(i, 1);
-      return true;
-    }
-  }
-  return false;
-};
-
-//Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
-onMounted(() => {
-  dialogFormVisibleCat.value = true;
-  console.log(authUser);
-});
-
-//Funcion para el envio de mensajes en pantalla
-const open = (mensaje) => {
-  ElMessageBox.alert(mensaje, 'Nombres taxonómicos', {
-    confirmButtonText: 'OK',
-  });
-}
-
-//Esta funcion se dispara una vez que se selecciona una categia taxonomica
-const handleChange = async (value) => {
-  if (value != undefined) {
-    filterText.value = "";
-    mostrar.value = false;
-    catego.value = value[0];
-
-    if (idsGrupos.value != '') {
-      const params = {
-        categ: value[0],
-        catalog: idsGrupos.value
+      const requestData = {
+        taxonMover: taxMover,
+        taxonRecibir: taxRecb,
+        categorias: catego.value,
+        grupos: idsGrupos.value,
+        alias: authUser.Alias
       };
 
       const loading = ElLoading.service({
@@ -380,513 +944,178 @@ const handleChange = async (value) => {
       });
 
       //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-      const response = await axios.get('/cargar-nomArb', { params });
+      const response = await axios.put('/mueveTaxones', requestData);
 
       if (response.status === 200) {
-        data.value = response.data[0];
-        totalItems.value = response.data[1].total;
-        paginas.value = response.data[1].last_page;
+        await mostrarNotificacion(
+          "Aviso",
+          'El taxón sea reasignado exitosamente',
+          "success",
+          5000
+        );
+
+        const params = {
+          categ: catego.value,
+          catalog: idsGrupos.value
+        }
+
+        const resp = await axios.get('/cargar-nomArb', { params: params });
+
+        data.value = resp.data[0];
+        totalReg.value = resp.data[1].total;
+        paginas.value = resp.data[1].last_page;
+
       }
       else {
-        console.log("Se presentó un error en la recuperación de los datos");
-      }
-      loading.close();
-
-      await nextTick();
-
-      if(data.value.length > 0)
-      {
-        selectedNodeKey.value= data.value[0].id;
-        tree.value.setCurrentKey(data.value[0].id);
-        
-        let node = tree.value.getNode(data.value[0].id);
-        
-        expande(node.data, node);
-      }
-    }
-  }else
-  {
-    catego.value = ''; 
-    tablaNomenclatura.value = [];
-    tablaReferencias.value = [];
-    totalRegNom.value = 0;
-    totalRegRef.value = 0;
-    data.value = [];
-  }
-}
-
-//Función para hacer la busqueda de los valores colocados en el input de busqueda
-const filterNode = async (value) => {
-  mostrar.value = false;
-
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  if (value != '' && idsGrupos.value != '' && categ.value != null) {
-    const params = {
-      categ: categ.value[0],
-      catalog: idsGrupos.value,
-      taxon: value
-    };
-
-    const response = await axios.get('/cargar-nomArb',
-      { params });
-    
-    if (response.status === 200) {
-      data.value = response.data[0];
-      totalItems.value = response.data[1].total;
-      paginas.value = response.data[1].last_page;
-      loading.close();
-    }
-  }else if (idsGrupos.value != '' && categ.value != null){
-    handleChange(categ.value);
-  }
-
-  loading.close();
-}
-
-const mostrarNotificacion = (
-  titulo,
-  mensaje,
-  tipo = "warning",
-  duracion = 5000,
-  dangerouslyUseHTML = false
-) => {
-  console.log("Entre a mostrar la notificación");
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = duracion;
-  notificacionVisible.value = true;
-};
-
-const cerrarNotificacion = () => {
-  notificacionVisible.value = false;
-};
-
-//Funcion que se ejecuta para la expancion de un nodo
-//const expande = async (draggingNode, nodeData, nodeComponent) => {
-const expande = async (draggingNode) => {
-
-  let loadingInstance = null;
-
-  isMenuVisible.value = false;
-  mostrar.value = true;
-  taxonAct.value = draggingNode;
-
-  if(draggingNode.children.length > 0)
-  {
-    numHijos.value = draggingNode.children.length;
-  }
-
-  if(mostrarLoading.value)
-  {
-    loadingInstance = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-  }
-
-  if (draggingNode.children.length === 0) {
-    
-    const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
-
-    if (response.status === 200) {
-      if (draggingNode.children.length === 0) {
-        for (let i = 0; i < response.data[0].length; i++) {
-          draggingNode.children.push(response.data[0][i]);
-        }
-      }
-
-      const node = tree.value.getNode(draggingNode);
-      numHijos.value = draggingNode.children.length;
-      node.expanded = true;
-
-    }
-  }
-
-  const params= {
-                  taxAct: draggingNode.id
-              };  
-              
-  const responseNom = await axios.get('/carga-RelacionesTax', { params });
-              
-  tablaNomenclatura.value = responseNom.data;
-
-  if(mostrarLoading.value)
-  {
-    loadingInstance.close();
-  }
-  
-  totalRegNom.value = tablaNomenclatura.value.length;
-  tablaReferencias.value = draggingNode.referencias;
-  totalRegRef.value = draggingNode?.referencias?.length;
-  selectedNodeKey.value = draggingNode.id;
-
-  mostrarLoading.value = true
-}
-
-//Función para mover un taxón y reasignarlo a otro 
-const mover = async (node) => {
-
-  if (taxMov.value.length === 0) {
-    try {
-
-      const result = await showConfirmMessage({
-        title: 'Atención',
-        message: '¿Está seguro de mover este taxón?',
-        icon: '!'
-      });
-
-      if (!result) {
-        return;
-      }
-
-      node.data.customClass = 'highlight-node';
-      taxMov.value = node;
-
-      triggerRef(data);
-
-      await mostrarNotificacion(
-        "Aviso",
-        "El taxón será reasignado.",
-        "info",
-        5000
-      );
-
-    } catch (error) {
-      await ElMessageBox.alert("Acción cancelada", {
-        confirmButtonText: "OK",
-        type: 'info'
-      });
-    }
-  } else {
-    if (taxMov.value.data.completo.scat === undefined) {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón ${taxMov.value.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 1`,
-        "error",
-        5000
-      );
-      return;
-    } else if (typeof node.data.completo.scat === 'object' && Object.keys(node.data.completo.scat).length <= 0) {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón ${node.data.completo.TaxonCompleto} no tiene un registro en la tabla scat 2`,
-        "error",
-        5000
-      );
-      return;
-    }
-    if (taxMov.value.data.id === node.data.id) {
-      taxMov.value = [];
-      await mostrarNotificacion(
-        "Aviso",
-        "Se cancelará el movimiento del taxón",
-        "info",
-        5000
-      );
-      delete node.data.customClass;
-      return;
-    }
-    if (taxMov.value.data.completo.scat.grupo_scat.GrupoSCAT === node.data.completo.scat.grupo_scat.GrupoSCAT) {
-      if (node.data.completo.categoria.IdNivel1 === (taxMov.value.data.completo.categoria.IdNivel1 - 1)) {
-        const params = {
-          estatusInicio: taxMov.value.data.completo.Estatus,
-          nomAct: taxMov.value.data.id
-        };
-
-        try {
-          const response = await axios.get('/valCamEstatus', params);
-
-          //Lógica para validación de estatus
-          switch (taxMov.value.data.completo.Estatus) {
-            case 1:
-              switch (node.data.completo.Estatus) {
-                case 1:
-                  await moverTaxon(
-                    taxMov.value.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node
-                  );
-                  break;
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxonMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node
-                    );
-                  }
-                  break;
-                default:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-                  break;
-              }
-              break;
-            case 2:
-              switch (node.data.completo.Estatus) {
-                case 2:
-                  await moverTaxon(
-                    taxMov.value.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node
-                  );
-                  break;
-                case 1:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover a un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov,
-                      node
-                    );
-                  }
-                  break;
-                default:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-              }
-              break;
-            case 6:
-              switch (node.data.completo.Estatus) {
-                case 6:
-                case -9:
-                  await moverTaxon(
-                    taxMov.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node);
-                  break;
-                case 1:
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node);
-                  }
-              }
-              break;
-            case -9:
-              switch (node.data.completo.Estatus) {
-                case 6:
-                  await moverTaxon(
-                    taxMov.data.completo.IdNombre,
-                    node.data.completo.IdNombre,
-                    taxMov.value,
-                    node);
-                  break;
-                case -9:
-                  await mostrarNotificacion(
-                    "Error",
-                    `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                    "error",
-                    5000
-                  );
-                  break;
-                case 1:
-                case 2:
-                  if (response.data != 1) {
-                    await mostrarNotificacion(
-                      "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
-                      "error",
-                      5000
-                    );
-                  } else {
-                    await moverTaxon(
-                      taxMov.value.data.completo.IdNombre,
-                      node.data.completo.IdNombre,
-                      taxMov.value,
-                      node
-                    );
-                  }
-                  break;
-              }
-              break;
-          }
-        } catch (error) {
-          console.error('Error al validar estatus:', error);
-          ElMessageBox.error('Error al validar el estatus del taxón');
-        }
-      } else {
         await mostrarNotificacion(
+          "Aviso",
+          'El taxón que intenta mover no se pudo reasignar',
           "Error",
-          `Está intentando mover el taxón a una categoria no permitida.`,
-          "error",
           5000
         );
       }
-    } else {
-      await mostrarNotificacion(
-        "Error",
-        `El taxón al que quiere asignar pertenece a un grupo taxonómico diferente`,
-        "error",
-        5000
-      );
+
+      loading.close();
+
+
+    } catch (error) {
+      // El usuario canceló la operación
+      console.log(error);
+      console.log('Operación cancelada por el usuario');
+    }
+
+  }
+
+  const abrirBiblio = async () => {
+
+    if(taxonAct.value.id > 0)
+    {
+      taxActBiblio.value = props.taxonAct;
+
+      totalRegNom.value = tablaNomenclatura.value.length;
+
+      dialogFormVisibleBiblio.value = true;
+
+    }else{
+      mostrarNotificacionError("Bibliografia", 
+                              "Se debe seleccionar un tipo de relación"),
+                              "Error"
     }
   }
-}
 
-const manejarEliminarRel = (item) => {  
-  
-  const procederConEliminacion = async () => {
+  const abrirBiblioNombre = async() =>{
+    if(taxonAct.value.id > 0)
+    {
+      dialogFormVisibleBiblioNom.value = true;
+    }else{
+      mostrarNotificacionError("Bibliografia", 
+                              "Se debe seleccionar un taxón"),
+                              "Error"
+    }
+  }
 
-    try {
-      ElMessageBox.close();
+  const cerrarDialogBiblio = async() => {
 
-      const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
-                                                                              taxAct: props.taxonAct.id}});
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+      const params= {
+                    taxAct: taxonAct.value.id
+                  };   
+      
+      const response = await axios.get('/carga-RelacionesTax', { params });
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
-    } catch (apiError) {
-      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+      totalRegNom.value = response.data.length;
+
+      dialogFormVisibleBiblio.value = false;
+
+    loading.close();
+    
+  };
+
+  const cerrarRelNomBiblio = async() => {
+
+    if(taxonAct.value.id > 0){
+      const params= {
+                      taxAct: taxonAct.value.id
+                    };
+
+      const response = await axios.get('/actualizaReferenciasNombre', { params });
+
+      tablaReferencias.value = response.data;
+
+      totalRegRef.value = response.data.length;
     }
-  };
-  const cancelarEliminacion = () => {
-    ElMessageBox.close();
-  };
-
-  const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
-
-  const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-  
-  ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }),
-        h(BotonAceptar, { onClick: procederConEliminacion }),
-      ])
-    ])
-  }).catch(() => { });
-};
-
-const manejarEliminarRef = (item)=>{
-  
-  const procederConEliminacion = async () => {
-
-    try {
-      ElMessageBox.close();
-
-       const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
-                                                                                taxAct: taxonAct.value.id}});     
-        
-        tablaReferencias.value = response.data;
-
-        totalRegRef.value = response.data.length;
-
-      mostrarNotificacion('Eliminación exitosa', `La referencia fue eliminada correctamente.`, 'success');
-    } catch (apiError) {
-      mostrarNotificacionError('Aviso', `La refrencia no se puede eliminar.`, 'success');
-    }
-  };
-  const cancelarEliminacion = () => {
-    ElMessageBox.close();
-  };
-
-
-  const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-  
-  ElMessageBox({
-    title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-    message: h('div', { class: 'custom-message-content' }, [
-      h('div', { class: 'body-content' }, [
-        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-        h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-      ]),
-      h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }),
-        h(BotonAceptar, { onClick: procederConEliminacion }),
-      ])
-    ])
-  }).catch(() => { });
-}
-
-const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
-  console.log("Entre a mover el taxon");
-  console.log("Estos son los parametros recibidos taxMover: ", taxMover,
-              " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
-              " nodoRecb: ", nodoRecb);
-              
-  if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
-    await mostrarNotificacion(
-      "Error",
-      'El taxón al que quiere asignar es el mismo del que parte selccione uno diferente',
-      "error",
-      5000
-    );
-    return;
+    dialogFormVisibleBiblioNom.value = false;
   }
 
-  try {
-    const result = await showConfirmMessage({
-      title: 'Atención',
-      message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
-                  ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
-                  ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
-      icon: '!'
-    });
+  const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+    notificacionTitulo.value = titulo;
+    notificacionMensaje.value = mensaje;
+    notificacionTipo.value = tipo;
+    notificacionDuracion.value = 0;
+    notificacionVisible.value = true;
+  };
 
-    if (!result) {
-      return;
-    }
+  const handleNodeRightClick = (event, data, node) => {
 
-    const requestData = {
-      taxonMover: taxMover,
-      taxonRecibir: taxRecb,
-      categorias: catego.value,
-      grupos: idsGrupos.value,
-      alias: authUser.Alias
+    event.preventDefault(); // Prevenir el menú contextual del navegador
+
+    tree.value.setCurrentKey(data.id);
+
+    expande(data, node)
+
+    taxAct.value = data;
+    selectedNode.value = data;
+    menuPosition.value = {
+      x: event.clientX,
+      y: event.clientY
     };
+    isMenuVisible.value = true;
 
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', handleEscKey);
+  };
+
+  // Manejador de acciones del menú
+  const handleMenuClick = (action) => {
+    isMenuVisible.value = false;
+    // Aquí puedes agregar lógica específica para cada acción
+    console.log('Acción seleccionada:', action);
+  };
+
+  // Cerrar menú
+  const closeMenu = () => {
+    isMenuVisible.value = false;
+    document.removeEventListener('click', closeMenu);
+    document.removeEventListener('keydown', handleEscKey);
+  };
+
+  // Manejador de tecla Escape
+  const handleEscKey = (event) => {
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      closeMenu();
+    }
+  };
+
+  const handlePageChange = (page) => {
+    console.log("Este es el valor de page:", page);
+    currentPage.value = page;
+    fetchFilteredData();
+  };
+
+  const fetchFilteredData = async () => {
+    const params = {
+      categ: catego.value,
+      catalog: idsGrupos.value,
+      page: currentPage.value
+    };
     const loading = ElLoading.service({
       lock: true,
       text: "Loading",
@@ -894,257 +1123,92 @@ const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
       backgroud: 'rgba(255,255,255,0.85)',
     });
 
-    //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-    const response = await axios.put('/mueveTaxones', requestData);
-
+    const response = await axios.get("/cargar-nomArb", { params });
     if (response.status === 200) {
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón sea reasignado exitosamente',
-        "error",
-        5000
-      );
-
-      const params = {
-        categ: catego.value,
-        catalog: idsGrupos.value
-      }
-
-      const resp = await axios.get('/cargar-nomArb', { params: params });
-
-      console.log('Esta es respuesta despues del get: ', resp);
-
-      data.value = resp.data[0];
-      totalReg.value = resp.data[1].total;
-      paginas.value = resp.data[1].last_page;
-
-    }
-    else {
-      await mostrarNotificacion(
-        "Aviso",
-        'El taxón que intenta mover no se pudo reasignar',
-        "Error",
-        5000
-      );
+      data.value = response.data[0];
     }
 
     loading.close();
+    /*currentData.value = response.data.data || [];
+    totalItems.value = response.data.total || response.data.totalItems || 0;*/
+  };
 
-
-  } catch (error) {
-    // El usuario canceló la operación
-    console.log(error);
-    console.log('Operación cancelada por el usuario');
+  const abre_Relaciones = () => {
+    dialogFormVisibleRel.value = true;
   }
 
-}
-
-const abrirBiblio = async () => {
-
-  if(taxonAct.value.id > 0)
-  {
-    taxActBiblio.value = props.taxonAct;
-
-    totalRegNom.value = tablaNomenclatura.value.length;
-
-    dialogFormVisibleBiblio.value = true;
-
-  }else{
-    mostrarNotificacionError("Bibliografia", 
-                             "Se debe seleccionar un tipo de relación"),
-                             "Error"
-  }
-}
-
-const abrirBiblioNombre = async() =>{
-  if(taxonAct.value.id > 0)
-  {
-    dialogFormVisibleBiblioNom.value = true;
-  }else{
-    mostrarNotificacionError("Bibliografia", 
-                             "Se debe seleccionar un taxón"),
-                             "Error"
-  }
-}
-
-const cerrarDialogBiblio = async() => {
-
-  const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-
-    const params= {
-                  taxAct: taxonAct.value.id
-                };   
-    
-    const response = await axios.get('/carga-RelacionesTax', { params });
-    
-    tablaNomenclatura.value = response.data;
-
-    totalRegNom.value = response.data.length;
-
-    dialogFormVisibleBiblio.value = false;
-
-  loading.close();
+  const showAscendants = async () => {
+    if (!taxonAct.value?.completo?.Ascendentes) {
+      ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
+      return;
+    }
+    const ascendantsString = taxonAct.value.completo.Ascendentes;
+    const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+    if (ascendantIds.length === 0) {
+      ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
+      return;
+    }
   
-};
-
-const cerrarRelNomBiblio = async() => {
-
-  if(taxonAct.value.id > 0){
-    const params= {
-                    taxAct: taxonAct.value.id
-                  };
-
-    const response = await axios.get('/actualizaReferenciasNombre', { params });
-
-    tablaReferencias.value = response.data;
-
-    totalRegRef.value = response.data.length;
-  }
-  dialogFormVisibleBiblioNom.value = false;
-}
-
-const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
-  notificacionTitulo.value = titulo;
-  notificacionMensaje.value = mensaje;
-  notificacionTipo.value = tipo;
-  notificacionDuracion.value = 0;
-  notificacionVisible.value = true;
-};
-
-const handleNodeRightClick = (event, data, node) => {
-
-  event.preventDefault(); // Prevenir el menú contextual del navegador
-
-  tree.value.setCurrentKey(data.id);
-
-  expande(data, node)
-
-  taxAct.value = data;
-  selectedNode.value = data;
-  menuPosition.value = {
-    x: event.clientX,
-    y: event.clientY
-  };
-  isMenuVisible.value = true;
-
-  document.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', handleEscKey);
-};
-
-// Manejador de acciones del menú
-const handleMenuClick = (action) => {
-  isMenuVisible.value = false;
-  // Aquí puedes agregar lógica específica para cada acción
-  console.log('Acción seleccionada:', action);
-};
-
-// Cerrar menú
-const closeMenu = () => {
-  isMenuVisible.value = false;
-  document.removeEventListener('click', closeMenu);
-  document.removeEventListener('keydown', handleEscKey);
-};
-
-// Manejador de tecla Escape
-const handleEscKey = (event) => {
-  if (event.key === 'Escape' || event.key === 'Esc') {
-    closeMenu();
-  }
-};
-
-const handlePageChange = (page) => {
-  console.log("Este es el valor de page:", page);
-  currentPage.value = page;
-  fetchFilteredData();
-};
-
-const fetchFilteredData = async () => {
-  const params = {
-    categ: catego.value,
-    catalog: idsGrupos.value,
-    page: currentPage.value
-  };
-  const loading = ElLoading.service({
-    lock: true,
-    text: "Loading",
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-    backgroud: 'rgba(255,255,255,0.85)',
-  });
-
-  const response = await axios.get("/cargar-nomArb", { params });
-  if (response.status === 200) {
-    data.value = response.data[0];
-  }
-
-  loading.close();
-  /*currentData.value = response.data.data || [];
-  totalItems.value = response.data.total || response.data.totalItems || 0;*/
-};
-
-const abre_Relaciones = () => {
-  dialogFormVisibleRel.value = true;
-}
-
-const showAscendants = async () => {
-  if (!taxonAct.value?.completo?.Ascendentes) {
-    ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
-    return;
-  }
-  const ascendantsString = taxonAct.value.completo.Ascendentes;
-  const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
-  if (ascendantIds.length === 0) {
-    ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
-    return;
-  }
- 
-  const loading = ElLoading.service({
-    lock: true,
-    text: 'Cargando ascendentes...',
-    background: 'rgba(0, 0, 0, 0.7)',
-  });
- 
-  try {
-    const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
-    if (response.status === 200 && Array.isArray(response.data)) {
-      const ascendantTaxa = response.data;
-      let nestedTree = [];
-      if (ascendantTaxa.length > 0) {
-        nestedTree.push(ascendantTaxa[0]);
-        let currentNode = nestedTree[0];
-        for (let i = 1; i < ascendantTaxa.length; i++) {
-          const nextNode = ascendantTaxa[i];
-          currentNode.children = [nextNode];
-          currentNode = nextNode;
+    const loading = ElLoading.service({
+      lock: true,
+      text: 'Cargando ascendentes...',
+      background: 'rgba(0, 0, 0, 0.7)',
+    });
+  
+    try {
+      const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
+      if (response.status === 200 && Array.isArray(response.data)) {
+        const ascendantTaxa = response.data;
+        let nestedTree = [];
+        if (ascendantTaxa.length > 0) {
+          nestedTree.push(ascendantTaxa[0]);
+          let currentNode = nestedTree[0];
+          for (let i = 1; i < ascendantTaxa.length; i++) {
+            const nextNode = ascendantTaxa[i];
+            currentNode.children = [nextNode];
+            currentNode = nextNode;
+          }
         }
+  
+        treeDataAscendentes.value = nestedTree;
+        dialogFormVisibleAscendentes.value = true;
+      } else {
+        ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
       }
- 
-      treeDataAscendentes.value = nestedTree;
-      dialogFormVisibleAscendentes.value = true;
-    } else {
-      ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
+    } catch (error) {
+      console.error("Error al cargar los ascendentes:", error);
+      ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
+    } finally {
+      loading.close();
     }
-  } catch (error) {
-    console.error("Error al cargar los ascendentes:", error);
-    ElMessageBox.alert('Ocurrió un error al cargar los ascendentes.', 'Error de Conexión', { confirmButtonText: 'OK' });
-  } finally {
-    loading.close();
-  }
-};
+  };
 </script>
 
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
     <el-container >
-      <div style =" display: flex; justify-content: flex-end;">
-        <salir/>
-      </div> 
+      <div style="display: flex; justify-content: flex-end; gap: 50px;">
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <el-tooltip effect="dark"
+            content="Selección Catálogo de Grupos taxonómicos"
+            placement="bottom"
+          >
+            <el-button
+              @click="filtro_Catalogos()"
+              circle
+              style="background-color: #a08223;"
+            >
+              <el-icon>
+                <filtroGrupos />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+        <salir />
+      </div>
+
       <el-header class="main-header-override">
-        <div>
+        <div> <!--style="background: red"-->
           <el-row :gutter="16">
             <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
@@ -1157,16 +1221,30 @@ const showAscendants = async () => {
             <!-- Segunda columna -->
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
-              <el-cascader :options="categoriasTax" clearable filterable v-model="categ" placeholder="Nivel taxonómico"
-                @change="handleChange" popper-class="z-index-fix" >
-
+              <el-cascader
+                :options="categoriasTax"
+                clearable
+                filterable
+                v-model="categ"
+                placeholder="Nivel taxonómico"
+                @change="handleChange"
+                popper-class="z-index-fix"
+              >
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="processIcon(data.RutaIcono)" alt="" style="width: 16px; height: 16px; margin-right: 6px;" />
+                    <img :src="processIcon(data.RutaIcono)" 
+                        style="width:16px; height:16px; margin-right:6px;" />
                     <span>{{ data.label }}</span>
                   </span>
                 </template>
               </el-cascader>
+
+              <!-- Botón debajo -->
+              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;" 
+                    v-if="mostrarNuevoTax">
+                <nuevoTax  @crear="openDialog"/>
+              </div>
+
             </el-col>
 
             <el-col :xs="24" :md="12" class="form-item-col">
@@ -1188,19 +1266,6 @@ const showAscendants = async () => {
                       Grupo SCAT
                     </span>
                     <el-input type="textarea" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
-                  </div>
-                </el-col>
-
-                <!-- Botón -->
-                <el-col :xs="24" :sm="2">
-                  <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                    <el-tooltip effect="dark" content="Selección Catálogo de Grupos taxonómicos" placement="bottom">
-                      <el-button @click="filtro_Catalogos()" circle style="flex-shrink: 0; background-color: #a08223;">
-                        <el-icon>
-                          <filtroGrupos />
-                        </el-icon>
-                      </el-button>
-                    </el-tooltip>
                   </div>
                 </el-col>
               </el-row>
@@ -1275,8 +1340,9 @@ const showAscendants = async () => {
             <el-container class="details-container">
               <el-header class="details-header">
                 <div class="details-title">
-                  <img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                    class="details-title-icon">
+                  <!--img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
+                    class="details-title-icon"-->
+                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" />
                   <span class="details-title-text">
                     {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
                   </span>
@@ -1285,7 +1351,7 @@ const showAscendants = async () => {
               <el-main class="details-main">
                 <!--Prueba colapse-->
                 <div>
-                   <el-collapse accordion expand-icon-position="left"
+                  <el-collapse accordion expand-icon-position="left"
                                  v-model="activeNames">
                     <el-collapse-item name="1">
                       <template #title="{ isActive}">
@@ -1305,6 +1371,7 @@ const showAscendants = async () => {
                         :itemsPerPage = 2
                         :mostrarBiblio = "true"
                         :mostrarAcci = "true"
+                        :alturaTabla = 170
                         @eliminar-item = "manejarEliminarRel"
                         @abrir-Biblio = "abrirBiblio"
                         :highlight-current-row = "true"
@@ -1334,6 +1401,7 @@ const showAscendants = async () => {
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :alturaTabla = 170
                           @abrir-Biblio = "abrirBiblioNombre"
                           @eliminar-item = "manejarEliminarRef"
                           :highlight-current-row = "true"
@@ -1364,7 +1432,7 @@ const showAscendants = async () => {
                 Taxa desc. : {{ numHijos }}
               </span>
             </div>            
-          </div>
+          </div>          
         </el-footer>
       </el-header>
     </el-container>
@@ -1377,16 +1445,17 @@ const showAscendants = async () => {
     <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
-      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego.value" 
-                  :catalogos="idsGrupos.value" :regNomclatura= "totalRegNom.value"
-                  :numHijos = "numHijos.value"
+      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego" 
+                  :catalogos="idsGrupos.value" :regNomenclatura= "totalRegNom"
+                  :numHijos = "numHijos" :nuevoTax="mostrarNuevoTax" :catNuevoTax="categoriaNuevoTax"
+                  :categoriasTax="categoriasTax"
         @cerrar="closeDialog" @regresaTaxMod="recibeTaxMod" @resultadoAlta="recibeTaxNuevo"
         @resultadoBaja="recibeTaxBaja"/>
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"
       custom-class="responsive-dialog relations-dialog">
-      <DialogRelaciones :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
+      <DialogRelaciones v-if="dialogFormVisibleRel" :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
         :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" 
         @cerrar="closeDialogRel">
       </DialogRelaciones>
@@ -1434,536 +1503,560 @@ const showAscendants = async () => {
 </template>
 
 <style scoped>
-:deep(.z-index-fix) {
-  z-index: 3000 !important;
-}
-
-.tree-container {
-  flex: 1;
-  overflow: auto;
-  min-height: 0;
-}
-
-.el-tree {
-  min-width: fit-content;
-  width: 100%;
-  padding-bottom: 25px;
-}
-
-.tree-node-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  font-size: 14px;
-}
-
-.tree-node-logo {
-  width: 25px;
-  height: 25px;
-  flex-shrink: 0;
-}
-
-.context-menu {
-  position: absolute;
-  z-index: 1000;
-  background-color: white;
-  border: 1px solid #dcdfe6;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 5px 0;
-  border-radius: 8px;
-  min-width: 160px;
-  max-width: 200px;
-}
-
-
-:deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgb(203, 233, 200);
-  color: #0d6efd !important;
-  font-weight: bold;
-}
-
-:deep(.highlight-node) {
-  color: #a52f2f !important;
-}
-
-.form-item-col {
-  margin-bottom: 10px;
-}
-
-.icono {
-  margin-right: 8px;
-}
-
-.pagination-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  /*flex-wrap: wrap;*/
-  width: 45%;
-  padding-top: 5px;
-  flex-shrink: 0;
-}
-
-.pagination-right {
-  margin-left: auto;  /*empuja el texto al extremo derecho*/
-  font-weight: 500;
-  /*white-space: nowrap;*/
-}
-
-.main-header-override {
-  height: 100% !important;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.main-layout-container-fixed {
-  height: 250px;
-}
-
-.content-wrapper {
-  flex-grow: 1;
-  margin-top: 1px;
-  overflow: hidden;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content-container {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Estilos para pantallas grandes (desktop) */
-@media (min-width: 992px) {
-  .content-wrapper {
-    max-height: 500px;
+  :deep(.z-index-fix) {
+    z-index: 3000 !important;
   }
 
-  .main-content-container {
-    flex-direction: row;
+  :deep(.el-collapse-item__header){
+    min-height:40px;
   }
 
-  .aside-tree {
-    width: 600px !important;
-    background-color: rgb(238, 241, 246);
-    height: 470px;
-    overflow: auto;
+  :deep(.el-collapse-item__content){
+    height: 350px;
     display: flex;
-    flex-direction: column;
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
-  }
-
-  .details-container {
-    flex-grow: 1;
-    padding-left: 10px;
-    display: flex;
-    flex-direction: column;
-    height: 470px;
+    flex-direction: column;/*height: 370px;*/
+    padding:10px;    
     overflow: hidden;
   }
 
-  .details-main {
+  .table-wrapper{
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    overflow: hidden;
-    padding-top: 1px;
-    padding-bottom: 20px;
-  }
-
-  /* Sección de cada tabla */
-  .table-section {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
+    /*height: 360px !important;*/
     min-height: 0;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
-    overflow: hidden;
+    overflow: auto;
   }
 
-  /* Cabecera de la tabla */
-  .table-header {
+  :deep(.el-collapse-item__wrap){
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
+
+  .tree-container {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .el-tree {
+    min-width: fit-content;
+    width: 100%;
+    padding-bottom: 25px;
+  }
+
+  .tree-node-wrapper {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 1px 16px;
-    background: #d9e1eb;
-    border-bottom: 1px solid #f5ebeb;
-  }
-
-  .table-title {
+    gap: 8px;
+    white-space: nowrap;
     font-size: 14px;
-    font-weight: 600;
-    color: #303133;
   }
 
-  .table-count {
-    font-size: 14px;
-    font-weight: bold;
-    font-weight: normal;
-    color: #67746b;
-    margin-left: 4px;
+  .tree-node-logo {
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
   }
 
-  .table-action-button {
-    height: 28px;
-    font-size: 12px;
+  .context-menu {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #dcdfe6;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 5px 0;
+    border-radius: 8px;
+    min-width: 160px;
+    max-width: 200px;
   }
 
-  /* Contenedor de la tabla con scroll propio */
-  .table-wrapper {
-    flex: 1;
-    overflow: auto;
-    min-height: 0;
-    max-height: 300px !important;
-  }
 
-  .table-wrapper :deep(.el-table__body tr.current-row > td) {
-    background-color: #ddf6dd !important;
+  :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: rgb(203, 233, 200);
     color: #0d6efd !important;
     font-weight: bold;
   }
 
-  /* Para que las tablas internas ocupen todo el espacio */
-  .table-wrapper :deep(.el-table) {
-    height: 100%;
+  :deep(.highlight-node) {
+    color: #a52f2f !important;
   }
 
-  /* Paginación */
-  .table-pagination {
-    padding: 12px 16px;
-    border-top: 1px solid #ebeef5;
-    background: #f8f9fa;
+  .form-item-col {
+    margin-bottom: 10px;
+  }
+
+  .icono {
+    margin-right: 8px;
+  }
+
+  .pagination-footer {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 45%;
+    padding-top: 15px;
+    flex-shrink: 0;
   }
-}
 
-/* Estilos para pantallas pequeñas (mobile/tablet) */
-@media (max-width: 991px) {
+  .pagination-right {
+    margin-left: auto;  /*empuja el texto al extremo derecho*/
+    font-weight: 500;
+  }
+
   .main-header-override {
     height: 100% !important;
-    overflow-y: auto !important;
-    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .main-layout-container-fixed {
+    height: 250px;
   }
 
   .content-wrapper {
-    flex-grow: 0;
-    min-height: auto;
+    flex-grow: 1;
+    margin-top: 1px;
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .main-content-container {
-    height: 100%;
-    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
-  .aside-tree {
-    width: 100% !important;
-    background-color: rgb(238, 241, 246);
-    margin-bottom: 20px;
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
-    height: 400px;
+  /* Estilos para pantallas grandes (desktop) */
+  @media (min-width: 992px) {
+    .content-wrapper {
+      max-height: 500px;
+    }
+
+    .main-content-container {
+      flex-direction: row;
+    }
+
+    .aside-tree {
+      width: 600px !important;
+      background-color: rgb(238, 241, 246);
+      height: 500px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+    }
+
+    .details-container {
+      flex-grow: 1;
+      padding-left: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 500px;
+      overflow: hidden;
+    }
+
+    .details-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: hidden;
+      padding-top: 1px;
+      padding-bottom: 20px;
+    }
+
+    /* Sección de cada tabla */
+    .table-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      border: 1px solid #ebeef5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    /* Cabecera de la tabla */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1px 16px;
+      background: #d9e1eb;
+      border-bottom: 1px solid #f5ebeb;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    .table-count {
+      font-size: 14px;
+      font-weight: bold;
+      font-weight: normal;
+      color: #67746b;
+      margin-left: 4px;
+    }
+
+    .table-action-button {
+      height: 28px;
+      font-size: 12px;
+    }
+
+    /* Contenedor de la tabla con scroll propio */
+    .table-wrapper {
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .table-wrapper :deep(.el-table__body tr.current-row > td) {
+      background-color: #ddf6dd !important;
+      color: #0d6efd !important;
+      font-weight: bold;
+    }
+
+    /* Para que las tablas internas ocupen todo el espacio */
+    .table-wrapper :deep(.el-table) {
+      height: 100%;
+    }
+
+    /* Paginación */
+    .table-pagination {
+      padding: 12px 16px;
+      border-top: 1px solid #ebeef5;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+    }
   }
 
-  .details-container {
-    width: 100%;
-    padding-left: 0;
-    height: auto;
+  /* Estilos para pantallas pequeñas (mobile/tablet) */
+  @media (max-width: 991px) {
+    .main-header-override {
+      height: 100% !important;
+      overflow-y: auto !important;
+      padding-bottom: 20px;
+    }
+
+    .content-wrapper {
+      flex-grow: 0;
+      min-height: auto;
+    }
+
+    .main-content-container {
+      height: 100%;
+      flex-direction: column;
+    }
+
+    .aside-tree {
+      width: 100% !important;
+      background-color: rgb(238, 241, 246);
+      margin-bottom: 20px;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+      height: 400px;
+    }
+
+    .details-container {
+      width: 100%;
+      padding-left: 0;
+      height: auto;
+    }
+
+    .details-main {
+      overflow-y: visible;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .aside-tree .el-scrollbar {
+      height: 350px !important;
+    }
+
+    .details-container .el-scrollbar {
+      height: auto !important;
+    }
+
+    .details-header,
+    .details-main {
+      padding: 0 !important;
+      text-align: left;
+    }
+
+    :deep(.responsive-dialog .el-dialog) {
+      width: 95% !important;
+    }
+
+    :deep(.responsive-dialog .el-dialog__body) {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    :deep(.relations-dialog .el-dialog__body .form-item-col) {
+      display: none !important;
+    }
+
+    :deep(.context-menu) {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 280px;
+    }
+
+    .table-section {
+      flex: none;
+      margin-bottom: 20px;
+      border: 1px solid #ebeef5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #ebeef5;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    .table-count {
+      font-weight: normal;
+      color: #909399;
+      margin-left: 4px;
+    }
+
+    .table-action-button {
+      height: 28px;
+      font-size: 12px;
+    }
+
+    .table-wrapper {
+      max-height: 250px;
+      overflow: auto;
+    }
+
+    .table-pagination {
+      padding: 12px 16px;
+      border-top: 1px solid #ebeef5;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+    }
   }
 
-  .details-main {
-    overflow-y: visible;
-    flex-direction: column;
-    gap: 20px;
+  .main-layout-container-fixed {
+    min-height: 700px;
   }
 
-  .aside-tree .el-scrollbar {
-    height: 350px !important;
+  .context-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 999;
   }
 
-  .details-container .el-scrollbar {
+  .context-menu .el-menu-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+    padding: 8px 12px !important;
+    min-height: 36px !important; /* Altura reducida */
+    width: auto !important; /* No ocupar todo el ancho */
+    margin: 0 4px !important; /* Margen lateral */
+    border-radius: 4px !important; /* Bordes redondeados */
+  }
+
+  .context-menu .el-menu-item span {
+    white-space: nowrap;
+    font-size: 13px !important; /* Texto más pequeño */
+  }
+
+  /* Ajustar íconos */
+  .context-menu .el-icon {
+    font-size: 16px !important; /* Íconos más pequeños */
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* SVG personalizado */
+  .context-menu svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .details-header {
     height: auto !important;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
-  .details-header,
-  .details-main {
+  .details-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .details-title-icon {
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+  }
+
+  .details-title-text {
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  /* Ajustes para pantallas de 1440px */
+  @media (max-width: 1440px) and (min-width: 992px) {
+    .aside-tree {
+      width: 500px !important;
+    }
+
+    .content-wrapper {
+      max-height: 450px;
+    }
+
+    .table-wrapper {
+      max-height: 250px;
+    }
+  }
+
+  /* Ajustes para pantallas de 1280px */
+  @media (max-width: 1280px) and (min-width: 992px) {
+    .aside-tree {
+      width: 450px !important;
+    }
+
+    .content-wrapper {
+      max-height: 400px;
+    }
+
+    .table-wrapper {
+      max-height: 200px;
+    }
+  }
+
+  /* Para pantallas altas */
+  @media (min-height: 800px) {
+    .main-layout-container-fixed {
+      height: 800px;
+    }
+    
+    .details-container {
+      height: 520px;
+    }
+    
+    .table-wrapper {
+      max-height: 350px;
+    }
+  }
+
+  /* Para que el árbol no se haga demasiado pequeño */
+  .aside-tree {
+    min-width: 350px;
+  }
+
+  /* Asegurar que el árbol también tenga altura fija */
+  .tree-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Quitar márgenes y padding innecesarios */
+  :deep(.el-table__body-wrapper) {
+    scrollbar-width: thin;
+  }
+
+  :deep(.el-table__body-wrapper::-webkit-scrollbar) {
+    width: 6px;
+    height: 6px;
+  }
+
+  :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
+    background: #c0c4cc;
+    border-radius: 3px;
+  }
+
+  :deep(.dialog-ascendentes-diseno .el-dialog__body) {
     padding: 0 !important;
+  }
+  
+  :deep(.dialog-ascendentes-diseno .el-dialog__header) {
+    display: none;
+  }
+  
+  .dialog-header-custom {
+    background-color: #f1f7ff;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
     text-align: left;
   }
-
-  :deep(.responsive-dialog .el-dialog) {
-    width: 95% !important;
-  }
-
-  :deep(.responsive-dialog .el-dialog__body) {
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-
-  :deep(.relations-dialog .el-dialog__body .form-item-col) {
-    display: none !important;
-  }
-
-  :deep(.context-menu) {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 280px;
-  }
-
-  .table-section {
-    flex: none;
-    margin-bottom: 20px;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-  }
-
-  .table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #ebeef5;
-  }
-
-  .table-title {
-    font-size: 14px;
+  
+  .dialog-header-custom h3 {
+    margin: 0;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #303133;
   }
-
-  .table-count {
-    font-weight: normal;
-    color: #909399;
-    margin-left: 4px;
-  }
-
-  .table-action-button {
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .table-wrapper {
-    max-height: 250px;
-    overflow: auto;
-  }
-
-  .table-pagination {
-    padding: 12px 16px;
-    border-top: 1px solid #ebeef5;
-    background: #f8f9fa;
-    display: flex;
-    justify-content: center;
-  }
-}
-
-.main-layout-container-fixed {
-  min-height: 700px;
-}
-
-.context-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 999;
-}
-
-.context-menu .el-menu-item {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px;
-  padding: 8px 12px !important;
-  min-height: 36px !important; /* Altura reducida */
-  width: auto !important; /* No ocupar todo el ancho */
-  margin: 0 4px !important; /* Margen lateral */
-  border-radius: 4px !important; /* Bordes redondeados */
-}
-
-.context-menu .el-menu-item span {
-  white-space: nowrap;
-  font-size: 13px !important; /* Texto más pequeño */
-}
-
-/* Ajustar íconos */
-.context-menu .el-icon {
-  font-size: 16px !important; /* Íconos más pequeños */
-  width: 16px !important;
-  height: 16px !important;
-}
-
-/* SVG personalizado */
-.context-menu svg {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.details-header {
-  height: auto !important;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.details-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.details-title-icon {
-  width: 25px;
-  height: 25px;
-  flex-shrink: 0;
-}
-
-.details-title-text {
-  word-break: break-word;
-  line-height: 1.4;
-}
-
-/* Ajustes para pantallas de 1440px */
-@media (max-width: 1440px) and (min-width: 992px) {
-  .aside-tree {
-    width: 500px !important;
-  }
-
-  .content-wrapper {
-    max-height: 450px;
-  }
-
-  .table-wrapper {
-    max-height: 250px;
-  }
-}
-
-/* Ajustes para pantallas de 1280px */
-@media (max-width: 1280px) and (min-width: 992px) {
-  .aside-tree {
-    width: 450px !important;
-  }
-
-  .content-wrapper {
-    max-height: 400px;
-  }
-
-  .table-wrapper {
-    max-height: 200px;
-  }
-}
-
-/* Para pantallas altas */
-@media (min-height: 800px) {
-  .main-layout-container-fixed {
-    height: 800px;
-  }
   
-  .details-container {
-    height: 520px;
-  }
-  
-  .table-wrapper {
-    max-height: 350px;
-  }
-}
-
-/* Para que el árbol no se haga demasiado pequeño */
-.aside-tree {
-  min-width: 350px;
-}
-
-/* Asegurar que el árbol también tenga altura fija */
-.tree-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Quitar márgenes y padding innecesarios */
-:deep(.el-table__body-wrapper) {
-  scrollbar-width: thin;
-}
-
-:deep(.el-table__body-wrapper::-webkit-scrollbar) {
-  width: 6px;
-  height: 6px;
-}
-
-:deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
-  background: #c0c4cc;
-  border-radius: 3px;
-}
-
-:deep(.dialog-ascendentes-diseno .el-dialog__body) {
-  padding: 0 !important;
-}
- 
-:deep(.dialog-ascendentes-diseno .el-dialog__header) {
-  display: none;
-}
- 
-.dialog-header-custom {
-  background-color: #f1f7ff;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  text-align: left;
-}
- 
-.dialog-header-custom h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #303133;
-}
- 
-.dialog-header-custom {
-  background-color: #f5f5f5;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  text-align: left;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
- 
-.content-wrapper-custom {
-    background-color: #ffffff;
-    padding: 24px;
+  .dialog-header-custom {
+    background-color: #f5f5f5;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
+    text-align: left;
     border-radius: 10px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-    max-height: 65vh;
-    overflow-y: auto;
-}
+    margin-bottom: 10px;
+  }
+  
+  .content-wrapper-custom {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+      max-height: 65vh;
+      overflow-y: auto;
+  }
 
 
-/* ===== CASCADER VERDE ===== */
+  /* ===== CASCADER VERDE ===== */
 
-.cascader-verde-dropdown .el-cascader-node.is-active,
-.cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
-  background-color: rgb(203, 233, 200) !important;
-  color: #0d6efd !important;
-  font-weight: bold;
-}
+  .cascader-verde-dropdown .el-cascader-node.is-active,
+  .cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
+    background-color: rgb(203, 233, 200) !important;
+    color: #0d6efd !important;
+    font-weight: bold;
+  }
 
-.cascader-verde-dropdown .el-cascader-node:hover {
-  background-color: rgb(240, 245, 239) !important;
-}
+  .cascader-verde-dropdown .el-cascader-node:hover {
+    background-color: rgb(240, 245, 239) !important;
+  }
 </style>

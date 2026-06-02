@@ -34,6 +34,8 @@ const formModalRef = ref(null);
 const descripcionInputRef = ref(null);
 const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
 
+/*Se agrego la funcion emit para que retorne el cerrar al componente padre  */
+const emit = defineEmits(['cerrar']);
 
 const esModalIconosVisible = ref(false);
 const terminoBusquedaIcono = ref('');
@@ -52,6 +54,7 @@ const nodoEnModal = ref(null);
 const props = defineProps({
     treeDataProp: { type: Array, required: true, default: () => [] },
     flatTreeDataProp: { type: Array, required: true, default: () => [] },
+    accion: { type: String, required:false, default: "salida"}
 });
 
 
@@ -72,8 +75,6 @@ const findPathInTree = (nodes, targetId, path = []) => {
 const getTipoRelacionNodeClass = (data) => {
     return activePathIds.value.includes(data.IdTipoRelacion) ? 'is-active-path-row' : '';
 };
-
-
 
 const iconosSugeridos = [
     'mdi:leaf', 'mdi:tree', 'mdi:flower', 'mdi:forest', 'mdi:pine-tree', 'mdi:sprout', 'mdi:seed', 'mdi:grass',
@@ -383,6 +384,7 @@ const cerrarNotificacion = () => {
 };
 
 const deepCopy = (data) => JSON.parse(JSON.stringify(data));
+
 const sortNodesAlphabetically = (nodes) => {
     if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return;
     nodes.sort((a, b) => (a.Descripcion || "").localeCompare(b.Descripcion || "", undefined, { sensitivity: "base" }));
@@ -453,6 +455,7 @@ watch(() => props.treeDataProp, async (newVal) => {
 
 
 onMounted(() => {
+    
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
         const firstNodeId = localTreeData.value[0].IdTipoRelacion;
         selectAndFocusNode(firstNodeId);
@@ -949,12 +952,11 @@ const cerrarDialogo = () => {
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" />
-                                <BotonSalir toolPosicion="bottom" />
+                                <BotonSalir toolPosicion="bottom" :accion = props.accion  @salir="cerrarDialogo" />                            
                             </div>
                         </div>
                     </div>
                 </template>
-
                 <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
                     :props="{ children: 'children', label: 'Descripcion' }" node-key="IdTipoRelacion"
                     :current-node-key="selectedNode?.IdTipoRelacion"

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed, nextTick } from 'vue';
+import { ref, watch, onMounted, computed, nextTick, reactive } from 'vue';
 import axios from 'axios';
 import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
 import { Search, CircleClose, Management } from '@element-plus/icons-vue';
@@ -28,7 +28,14 @@ const props = defineProps({
   mostrarEditar: { type: Boolean, default: true },
   mostrarBorrar: { type: Boolean, default: true },
   rowClassName: { type: Function, default: null },
+  mostrarBiblio: { type:Boolean, default: false }, 
+  alturaTabla: {
+    type: Number, 
+    default: 550
+  },
+
   mostrarBiblio: { type:Boolean, default: false },
+
 
   highlightCurrentRow: {
     type: Boolean,
@@ -199,20 +206,45 @@ watch(
       fetchData();
     }
   },
+   
 )
 
 const tableKey = ref(0);
 
+const busquedaLocal = async() =>{
+
+    // Verificar que filtros.value es un array
+  if (Array.isArray(filtros.value)) {
+    filtros.value.forEach(objeto => {
+      // Asegurar que objeto es un objeto (para evitar errores si hay null)
+      if (objeto && typeof objeto === 'object') {
+        Object.entries(objeto).forEach(([campo, valor]) => {
+          console.log("1", campo, valor);
+        });
+      }
+    });
+  } else {
+    console.log('filtros.value no es un array:', filtros.value);
+  }
+  
+}
 
 const fetchData = async () => {
   try {
-
     if(props.endpoint === "")
     {
+      busquedaLocal();
       return;
     }
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
+    /*console.log("filtros: ",  filtros.value,
+        "tipo_busqueda: ", tipoDeBusqueda.value,
+        "page: ", currentPage.value,
+        "perPage: ", props.itemsPerPage,
+        "sortBy: ", sorting.value.prop,
+        "sortOrder: ", sorting.value.order);*/
 
     const response = await axios.get(props.endpoint, {
       params: {
@@ -254,22 +286,18 @@ const fetchData = async () => {
   }
 };
 
-/*Juan carlos 13022026
-Estos watch se colocaron para que siempre se muestre seleccionada la primera fila de la tabla sin importar como se carguen los datos por end-point o por paso de valores
-*/
-// Watch para cuando cambian los datos (desde el padre o desde fetch)
 
 watch(
     () => props.datos,
     (newDatos) => {
-      if (!newDatos || newDatos.length === 0) return;
+      if (!newDatos || newDatos.length === 0)
+      { datosTabla.value = []; 
+        return};
 
       datosTabla.value = newDatos;
 
       nextTick(() => {
         const firstRow = newDatos[0];
-
-        // 🔥 Solo si no hay fila seleccionada aún
         if (!selectedRow.value) {
           selectedRow.value = firstRow;
           tableRefInterna.value?.setCurrentRow(firstRow);
@@ -351,6 +379,7 @@ defineExpose({
   selectedRow,
   setCurrentRow
 });
+
 </script>
 
 <template>
@@ -406,8 +435,9 @@ defineExpose({
                 :row-class-name="props.rowClassName || rowClassNameInterno"
                 @row-click="handleRowClickInterno"
                 @expand-change ="onExpandChange"
-                :border="true"
-                height="500"
+                :border="true" 
+                :height="props.alturaTabla" 
+
                 @sort-change="handleSortChange">
         <slot name="expand-column"></slot>
 

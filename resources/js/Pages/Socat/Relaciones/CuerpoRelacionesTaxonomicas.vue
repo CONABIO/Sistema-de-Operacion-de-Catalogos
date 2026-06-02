@@ -3,20 +3,31 @@
     <el-card class="box-card">
       <div class="common-layout">
         <el-container style="height: 90vh;">
-          <el-header style="background: #f5f5f5; padding: 10px; flex-shrink: 0; display: flex; justify-content: space-between;">
-            <el-row :gutter="10" align="middle">
-              <h2 class="titulo">Relaciones taxonómicas</h2>
-            </el-row>
-            <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div> 
-          </el-header>
+          <el-header class="header">
+          <div class="header-content">
+            <h1 class="titulo">Relaciones taxonómicas</h1>
+          </div>
+        </el-header>
           <el-main style="padding: 15px; background: #fff; overflow: hidden;">
-            <el-row>
+            <el-row justify="space-between" align="middle">
+
               <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                {{ props.taxonAct.label }}
+                {{ props.taxonAct.label }} 
               </span>
+
+              <div style="display: flex; gap: 50px;">
+                <el-tooltip effect="dark" content="Selección Catálogo de Grupos" placement="bottom">
+                  <el-button @click="filtro_Catalogos()" style="background-color: #a08223;" circle>
+                    <el-icon>
+                      <filtroGrupos />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+                <BotonSalir accion="cerrar" @salir="cerrarDialogo"
+                                style="flex-shrink: 0; min-width: max-content;"/>
+              </div>
             </el-row>
+
             <el-row>
               <el-col :xs="24" :sm="24" :md="12" :lg="8" style="padding: 12px;">
                 <span>Relaciones nomenclaturales</span>
@@ -44,66 +55,110 @@
                   </el-tooltip>
                 </div>
               </el-col>
+
+              <!-- ESPACIO -->
+              <el-col :xs="0" :sm="4" style="padding: 12px;">
+                <span class="block">Nivel taxonómico</span>
+                <el-cascader
+                  :options="categoriasTax"
+                  clearable
+                  filterable
+                  v-model="categ"
+                  placeholder="Nivel taxonómico"
+                  @change="handleChange"
+                  popper-class="z-index-fix"
+                >
+                  <template #default="{ data }">
+                    <span style="display: inline-flex; align-items: center;">
+                      <img :src="processIcon(data.RutaIcono)" 
+                          style="width:16px; height:16px; margin-right:6px;" />
+                      <span>{{ data.label }}</span>
+                    </span>
+                  </template>
+                </el-cascader>
+              </el-col>
+
+              <!-- Catálogo(s) -->
+              <el-col :xs="24" :sm="6" style="padding: 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span class="demo-input-label" style="margin-bottom: 4px;">
+                    Catálogo(s)
+                  </span>
+                  <el-input type="textarea" :rows="2" placeholder="Catálogos" v-model="catalogos" :disabled="true" />
+                </div>
+              </el-col>
+
+              <!-- Grupo SCAT -->
+              <el-col :xs="24" :sm="6" style="padding: 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span class="demo-input-label" style="margin-bottom: 4px;">
+                    Grupo SCAT
+                  </span>
+                  <el-input type="textarea" placeholder="Grupo SCAT" v-model="grupos" :disabled="true" />
+                </div>
+              </el-col>
             </el-row>
 
             <el-row>
               <el-card class="main-content-card">
+                <el-col :span="24">
+                  <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+
+                    <!-- LADO IZQUIERDO -->
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="white-space:nowrap;">
+                        Ir a:
+                      </span>
+
+                      <el-input
+                        style="width:300px;"
+                        clearable
+                        placeholder="Buscar..."
+                        v-model="filterText"
+                        @change="filterNode"
+                        size="small"
+                      />
+                    </div>
+
+                    <!-- LADO DERECHO -->
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                      <el-input
+                        v-model="observacionesRel"
+                        style="width:630px"
+                        :rows="2"
+                        type="textarea"
+                        :disabled="habObservaciones"
+                        placeholder="Observaciones"
+                      />
+                      <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
+                                    style="flex-shrink: 0; min-width: max-content;"/>
+                    </div>
+                  </div>
+                </el-col>
+  
                 <div class="dual-panel-container">
                   <el-card class="tree-panel">
                     <el-container style="display: flex; flex-direction: column; height: 100%;">
-                      <el-header class="compact-header">
-                        <el-row :gutter="10" align="middle">
-                          <el-col :xs="24" :sm="12" :md="6">
-                            <span>Ir a:</span>
-                            <el-input clearable placeholder="Buscar..." v-model="filterText" @change="filterNode"
-                              size="small" />
-                          </el-col>
-                          <el-col :xs="24" :sm="12" :md="6">
-                            <span class="block" style="font-size: 11px;">Nivel taxonómico</span>
-                            <el-cascader :options="categoriasTax" clearable filterable v-model="categ"
-                              placeholder="Seleccionar" @change="handleChange" size="small" />
-                          </el-col>
-                          <el-col :xs="24" :sm="18" :md="10">
-                            <span class="demo-input-label" style="text-align: center;">Catálogo(s) y Grupo SCAT</span>
-                            <div class="catalog-group-wrapper">
-                              <el-input type="textarea" :rows="1" placeholder="Catálogos" v-model="catalogos"
-                                :disabled="true" style="flex:1;" size="small" />
-                              <el-input type="textarea" :rows="1" placeholder="Grupo SCAT" v-model="grupos"
-                                :disabled="true" style="flex:1;" size="small" />
-                            </div>
-                          </el-col>
-                          <el-col :xs="24" :sm="6" :md="2">
-                            <span class="demo-input-label" style="opacity: 0;">Filtro</span>
-                            <el-tooltip effect="dark" content="Selección Catálogo de Grupos" placement="bottom">
-                              <el-button @click="filtro_Catalogos()" type="primary" circle>
-                                <el-icon>
-                                  <filtroGrupos />
-                                </el-icon>
-                              </el-button>
-                            </el-tooltip>
-                          </el-col>
-                        </el-row>
-                      </el-header>
-
                       <!-- CUERPO DEL PANEL CON ALTURA FLEXIBLE -->
                       <el-main style="flex: 1; overflow: hidden; padding: 10px 0 0 0;">
-                        <el-scrollbar height="280px">
-                          <el-tree class="filter-tree" :data="data" node-key="id" @node-click="expande"
-                            :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
-                            empty-text='No hay datos para mostrar' ref="tree" :highlight-current="true"
-                            :current-node-key="selectedNodeKey" :props="defaultProps"
-                            @node-contextmenu="handleNodeRightClick">
-                            <template #default="{ node }">
-                              <div class="tree-node-wrapper">
-                                <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
-                                <span class="tree-node-label"
-                                  :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
-                                  {{ node.label }}
-                                </span>
-                              </div>
-                            </template>
-                          </el-tree>
-                        </el-scrollbar>
+                        <div class="tree-container">
+                          <el-scrollbar height="360px">
+                            <el-tree :data="data" node-key="id" @node-click="expande"
+                              :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+                              empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
+                              :current-node-key="selectedNodeKey" :props="defaultProps">
+                              <template #default="{ node }">
+                                <div class="tree-node-wrapper">
+                                  <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+                                  <span class="tree-node-label"
+                                    :class="{ 'highlight-node': node.data.customClass === 'highlight-node' }">
+                                    {{ node.label }}
+                                  </span>
+                                </div>
+                              </template>
+                            </el-tree>
+                          </el-scrollbar>
+                        </div>
                       </el-main>
                       <!-- PIE DE PANEL CON PAGINACIÓN -->
                       <el-footer v-if="totalItems > 0" class="panel-footer">
@@ -117,12 +172,18 @@
                   </el-card>
 
                   <!-- Panel de botones intermedios -->
-                  <div class="button-panel">
-                    <el-tooltip effect="dark" content="Relaciona taxón" placement="center">
-                      <el-button @click="traspasaDatos" circle type="primary" :disabled="habTraspaso"
-                        style="margin-left: 10px;">
+                  <div style="position: sticky; 
+                              top: 20%; 
+                              left: 10px;
+                              transform: translateY(15%);
+                              display: flex;
+                              flex-direction: column;
+                              gap: 16px;">
+                    <el-tooltip effect="dark" content="Relaciona taxón" placement="top">
+                      <el-button @click="traspasaDatos" circle color="#8e44ad" :disabled="habTraspaso"
+                                  style="margin-left: 10px;">
                         <el-icon>
-                          <traspasoInfo />
+                          <iconoTraspaso />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
@@ -135,41 +196,34 @@
                         </el-icon>
                       </el-button>
                     </el-tooltip>
+                    <el-tooltip effect="dark" content="Traspaso de información" placement="right">
+                      <el-button @click="CambioBasSin" circle  
+                                  style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
+                                  :disabled = "habCambioSinBas">
+                        <img :src = "'/storage/images/TraspasoInformacion.png'" style="width: 25px; height: 28px">
+                      </el-button>
+                    </el-tooltip>
                   </div>
 
                   <!-- Panel de la Tabla -->
                   <el-card class="table-panel">
                     <div style="display: flex; flex-direction: column; height: 100%;">
-                      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                        <el-input v-model="observacionesRel" style="width: 100%" 
-                          :rows="2" type="textarea"
-                          :disabled = "habObservaciones"
-                          placeholder="Observaciones" />
-                        <el-popconfirm confirm-button-text="Si" 
-                                        cancel-button-text="No" 
-                                        :icon="InfoFilled" 
-                                        icon-color="#E6A23C"
-                                        title="¿Realmente desea guardar los cambios?" 
-                                        @confirm="Guardar()">
-                          <template #reference>
-                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                              <el-button circle type="warning" :disabled="habObservaciones">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                                </svg>
-                              </el-button>
-                            <!--/el-tooltip-->
-                          </template>
-                        </el-popconfirm>
-                      </div>
                       <div
                         style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
-                        <TablaFiltrable :container-class="'main-section'" :columnas="columnasDefinidas"
-                          v-model:datos = "tablaNomenclatura" v-model:total-items="totalRegNom"
+                        <TablaFiltrable 
+                          :columnas="columnasDefinidas"  
+                          :container-class="'main-section'"                           
+                          :datos = "tablaNomenclatura" 
+                          :total-items="totalRegNom"
                           :opciones-filtro = "opcionesFiltroNomenclatura"
+                          :highlight-current-row = "true"
                           :origen = "true"
+                          :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :mostrarSalir = "false" 
+                          :mostrarNuevo = "false"
+                          :alturaTabla = 220
                           @eliminar-item = "manejarEliminarItem"
                           @editar-item = "manejarEditar"
                           @row-click = "manejaClick"
@@ -205,6 +259,21 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
+    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83+%'">
+      <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
+                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <IndexRelaciones 
+          :treeDataProp = "tipRelacion.treeDataProp"
+          :flatTreeDataProp = "tipRelacion.flatTreeDataProp"
+          :accionSalida = "'cerrar'"
+          :layout = "false"          
+          @cerrar="cerrarDialog('relTax')"
+      />
+    </DialogForm>
+
     <Teleport to="body">
       <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
         :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
@@ -216,19 +285,23 @@
 <script setup>
 import { ref, onMounted, watchEffect, h, nextTick  } from 'vue';
 import { Setting, User, Location, ShoppingCart, InfoFilled } from '@element-plus/icons-vue';
+import { ElLoading, ElMessageBox } from 'element-plus';
+import { processIcon, getSafeIconPath } from '@/Composables/iconos';
+import { mensajes } from '@/Composables/mensajes';
+import { showConfirmMessage } from '@/Composables/mensajeConfirm';
+import { usePage } from '@inertiajs/vue3';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
 import Conectado from '@/Components/Biotica/Icons/Conectado.vue';
-import { mensajes } from '@/Composables/mensajes';
 import FiltroGrupo from '@/Components/Biotica/FiltroGrupoTax.vue';
-import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+import TiposRelacion from "@/Pages/Socat/TipoRelacion/CuerpoTipoRelación.vue";
+import IndexRelaciones from "@/Pages/Socat/TipoRelacion/indexTipoRelacion.vue";
+import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import filtroGrupos from '@/Components/Biotica/Icons/Conectado.vue';
-import { ElLoading, ElMessageBox } from 'element-plus';
 import usePermisos from '@/composables/usePermisos';
-import { usePage } from '@inertiajs/vue3';
 import traspasoInfo from '@/Components/Biotica/Icons/TraspasoInfo.vue';
 import regresoInfo from '@/Components/Biotica/Icons/RegresoInfo.vue';
 import reemplazo from '@/Components/Biotica/Icons/Reemplazar.vue';
@@ -237,6 +310,8 @@ import axios from 'axios';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
+import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 
 const { permisos } = usePermisos();
 
@@ -246,6 +321,8 @@ const tiposRel = ref([]);
 const tipRel = ref("");
 const dialogFormVisibleCat = ref(false);
 const dialogFormVisibleBiblio = ref(false);
+const dialogFormVisibleTiposRel = ref(false);
+const dialogFormVisibleTraspasoInfo = ref(false);
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -258,6 +335,7 @@ const totalItems = ref(0);
 const habObservaciones = ref(true);
 const relDetectada = ref([]);
 const taxActBiblio = ref([]);
+const tipRelacion = ref([]);
 
 const habTraspaso = ref(true);
 const notificacionVisible = ref(false);
@@ -273,6 +351,7 @@ const paginas = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(150);
 const taxonActRel = ref([]);
+const taxonAct = ref([]);
 const tree = ref(null);
 const selectedNodeKey = ref(null);
 const numHijos = ref(0);
@@ -281,6 +360,10 @@ const observacionesRel = ref('');
 const relacionAct = ref([]);
 const habCambioSinBas = ref(true);
 const taxBiblio = ref([]);
+const defaultProps = {
+    children: 'children',
+    label: 'label'
+  };
 
 const emit = defineEmits(['cerrar']);
 
@@ -307,7 +390,6 @@ const transferData = [
 
 // Función para abrir diálogo
 const openDialog = async (nodo) => {
-  console.log(nodo.label);
   alert("Estoy mandando " + nodo.label);
 };
 
@@ -451,13 +533,16 @@ const abrirBiblio = async () => {
   if(tipRel.value.length > 0)
   {
     taxActBiblio.value = props.taxonAct;
-
     dialogFormVisibleBiblio.value = true;
   }else{
     mostrarNotificacionError("Bibliografia", 
                              "Se debe seleccionar un tipo de relación"),
                              "Error"
   }
+}
+
+const catalogoRelTax = async() => {
+  dialogFormVisibleTiposRel.value= true;
 }
 
 const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -497,7 +582,6 @@ const handleChange = async (value) => {
         paginas.value = response.data[1].last_page;
       }
       else {
-        console.log("Se presentó un error en la recuperación de los datos");
       }
       loading.close();
     }
@@ -591,13 +675,11 @@ const hasPermisos = (etiqueta, modulo) => {
 };
 
 const handlePageChange = (page) => {
-  console.log("Este es el valor de page:", page);
   currentPage.value = page;
   fetchFilteredData();
 };
 
 const fetchFilteredData = async () => {
-  console.log("estoy en esta funcion");
   const params = {
     categ: catego.value,
     catalog: idsGrupos.value,
@@ -627,7 +709,6 @@ const recibirGrupos = (payload) => {
 
 // Función para cerrar diálogo
 const cerrarDialog = async(valor) => {
-
   const loading = ElLoading.service({
         lock: true,
         text: "Loading",
@@ -635,38 +716,47 @@ const cerrarDialog = async(valor) => {
         backgroud: 'rgba(255,255,255,0.85)',
       });
 
-  if(valor === grupos)
-  {
-    dialogFormVisibleCat.value = false;
-  }else{
-    const params= {
+  switch(valor){
+    case "grupos":
+      dialogFormVisibleCat.value = false;
+    break;
+    case "biblio":
+      const params= {
                   taxAct: props.taxonAct.id
                 };   
     
-    const response = await axios.get('/carga-RelacionesTax', { params });
-    
-    tablaNomenclatura.value = response.data;
-    totalRegNom.value = response.data.length;
-    habTraspaso.value = false;
+      const response = await axios.get('/carga-RelacionesTax', { params });
+      
+      tablaNomenclatura.value = response.data;
+      totalRegNom.value = response.data.length;
+      habTraspaso.value = false;
 
-    dialogFormVisibleBiblio.value = false;
+      dialogFormVisibleBiblio.value = false;
+
+    break;
+    case "relTax": 
+      dialogFormVisibleTiposRel.value = false;
+    break;
   }
-
+  
   loading.close();
   
 };
 
 const Guardar = async() => {
+
   const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
       const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
-                                                                              observacion: observacionesRel.value,
-                                                                              taxAct: props.taxonAct.id}});
-      
+                                                                            observacion: observacionesRel.value,
+                                                                            taxAct: props.taxonAct.id}});
+
       mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
+      habObservaciones.value = true;
     } catch (apiError) {
       mostrarNotificacionError('Aviso', `Las observaciones no se pueden actualizar.`, 'success');
+      habObservaciones.value = true; 
     }
   };
 
@@ -700,7 +790,7 @@ const Guardar = async() => {
         
         observacionesRel.value = "" 
         habCambioSinBas.value = true;
-
+        
         if(value != undefined)
         {
            const etiqueta = await buscaTipoRelacion (tiposRel.value, value[value.length - 1]);
@@ -714,12 +804,12 @@ const Guardar = async() => {
                   taxAct: props.taxonAct.id
               };                  
 
-        const loading = ElLoading.service({
-            lock: true,
-            text: "Loading",
-            spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-            backgroud: 'rgba(255,255,255,0.85)',
-        });
+          const loading = ElLoading.service({
+              lock: true,
+              text: "Loading",
+              spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+              backgroud: 'rgba(255,255,255,0.85)',
+          });
           
           const response = await axios.get('/carga-RelacionesTax', { params });
 
@@ -758,7 +848,6 @@ const Guardar = async() => {
         if(nodo.value === valor){
           return nodo;
         }
-        //console.log("Nodo revisado:", nodo);
         if(nodo?.children && nodo?.children.length > 0){
           const encontrado = await buscaTipoRelacion(nodo.children, valor);
           if(encontrado){
@@ -769,8 +858,8 @@ const Guardar = async() => {
        return null;
     }
 
-    const traspasaDatos = async() => {
-        
+    const traspasaDatos = async() => {        
+
         let sinonimos = false;
         let basonimos = false;
         let equivalencia = false;
@@ -780,27 +869,33 @@ const Guardar = async() => {
 
         if(taxonActRel.value.length === 0)
         {
-            console.log("No a seleccionado ningun taxon");
-             mostrarNotificacion(
+            mostrarNotificacion(
                 "Alerta",
-                "Se debe selccionar al menos un taxón a relacionar",
+                "Se debe seleccionar al menos un taxón a relacionar",
                 "error",
                 7000
             );
         }   
 
         switch (tipRelSelec.value){
+            case 0: 
+              mostrarNotificacion(
+                "Alerta",
+                "Se debe seleccionar solo un tipo de relación",
+                "error",
+                7000
+              );
+              break;
             case 1:
-                sinonimos = validacionSinonimos();
-
+                sinonimos = await validacionSinonimos();
                 if(sinonimos){
                     altaRelacion();
                 }
-                break;
+              break;
             case 2:
-                sinonimos = validacionSinonimos();
+                sinonimos = await validacionSinonimos();
                 if (sinonimos){
-                    basonimos = validacionBasonimos();
+                    basonimos = await validacionBasonimos();
                   if(basonimos){
                     altaRelacion();
                   }
@@ -834,42 +929,34 @@ const Guardar = async() => {
                    altaRelacion();
                 }
               break;
+            default:
+                altaRelacion();
+              break
         }
     } 
     
     const validacionSinonimos = async () => {
-        
-      if(tipRelSelec.value === 2)
-      {
-        let filtraVal = props.taxonAct.relaciones.filter(item => 
-                                item.TipoRelacion?.idTipoRel === 1);
-
-        let filtraRel = taxonActRel.value.relaciones.filter(item => 
-                                item.TipoRelacion?.idTipoRel === 1);
-      }else{
-        let filtraVal = props.taxonAct.relaciones.filter(item => 
-                                  item.TipoRelacion?.idTipoRel === tipRelSelec.value);
-
-        let filtraRel = taxonActRel.value.relaciones.filter(item => 
-                                  item.TipoRelacion?.idTipoRel === tipRelSelec.value);
-      }
-      const contValidoAct = filtraVal.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
-                                                  rel.Nombrecompleto?.estatus === "Correcto");
-
-      const conValidoRel = filtraRel.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
-                                                 rel.Nombrecompleto?.estatus === "Correcto");                                                      
+        const valTaxAct = Object.values(props.taxonAct.relaciones)
+                               .flat()
+                               .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));                               
+      
+        const valTaxRel = Object.values(taxonActRel.value)
+                               .flat()
+                               .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));
 
         //Se valida que el taxon no sea del mismo estatus 
-        if(taxonActRel.value.estatus === props.taxonAct.estatus)
+        if(taxonActRel.value.completo.Estatus === props.taxonAct.completo.Estatus)
         {
-            mostrarNotificacion(
-                "Alerta",
-                "El taxón actual y el taxon a relacionar o pueden tener el mismo estatus",
-                "error",
-                7000
-            ); 
-            return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-        }else if(contValidoAct || conValidoRel){
+          mostrarNotificacion(
+              "Alerta",
+              "El taxón actual y el taxon a relacionar no pueden tener el mismo estatus",
+              "error",
+              7000
+          ); 
+          return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
+        }else{
+          if(valTaxAct !== undefined || valTaxRel !== undefined)
+          {
             mostrarNotificacion(
                 "Alerta",
                 "El taxón sinonimo seleccionado ya cuenta con un valido relacionado ",
@@ -877,71 +964,60 @@ const Guardar = async() => {
                 7000
             );
             return false;//Se valida que el taxon a relacionar no tenga validos asociados
-        }else if(props.taxonAct.estatus === "ND"){
-            mostrarNotificacion(
-                "Alerta",
-                "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
-                "error",
-                7000
-            );
-            return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-        }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || taxonActRel.value.completo.categoria.IdNivel1 < 5){
-            mostrarNotificacion(
-                "Alerta",
-                "No se puede tener relaciones de sinonimia en taxones de categoria superior a familia",
-                "error",
-                7000
-            );
-            return false;
-        }
-
+          }else{
+              if(props.taxonAct.completo.Estatus === "ND"){
+                mostrarNotificacion(
+                  "Alerta",
+                  "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
+                  "error",
+                  7000
+              );
+              return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
+            }else{
+              if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
+                 taxonActRel.value.completo.categoria.IdNivel1 < 5){
+                  mostrarNotificacion(
+                    "Alerta",
+                    "No se puede tener relaciones de sinonimia en taxones de categoria superior a familia",
+                    "error",
+                    7000
+                  );
+                  return false;
+                 }              
+                }
+              }
+            }
         return true;
-    }
-
-    const validacionBasonimos = async () => {
-
-      let filtraVal = props.taxonAct.relaciones;
-
-      let filtraRel = taxonActRel.value.relaciones;
-
-      const contValidoAct = filtraVal.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
-                                                  rel.Nombrecompleto?.estatus === "Correcto" ||
-                                                  rel.TipoRelacion.idTipoRel === 2);
-
-      const conValidoRel = filtraRel.some(rel => rel.Nombrecompleto?.estatus === "Válido" || 
-                                                 rel.Nombrecompleto?.estatus === "Correcto" ||
-                                                 rel.TipoRelacion.idTipoRel === 2);      
-
-      if((props.taxonAct.estatus === 'Válido' || props.taxonAct.estatus === 'Correcto') && props.taxonAct.completo.categoria.IdNivel1 < 7){
-         mostrarNotificacion(
-                "Alerta",
-                "El taxón actual es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
-                "error",
-                7000
-            ); 
-            return false;
       }
 
-      if((taxonActRel.value.estatus === 'Válido' || taxonActRel.value.estatus === 'Correcto') && taxonActRel.value.completo.categoria.IdNivel1 < 7){
-         mostrarNotificacion(
-                "Alerta",
-                "El taxón a relacionar es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
-                "error",
-                7000
-            ); 
-            return false;
-      }
+     const validacionBasonimos = async () => {
 
-      if(contValidoAct || conValidoRel){
+      const valTaxAct = Object.values(props.taxonAct.relaciones)
+                               .flat()
+                               .find(item => item.IdTipoRelacion === 2);                               
+      
+      const valTaxRel = Object.values(taxonActRel.value)
+                               .flat()
+                               .find(item => item.IdTipoRelacion === 2);
+
+      if(valTaxAct !== undefined || valTaxRel !== undefined){
         mostrarNotificacion(
-                "Alerta",
-                "El taxón ya cuenta con una relación de basonimia o el taxon sinonimo ya cuenta con una relacion valida",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
+             "Alerta",
+             "La relacion de basonimia no puede ser generada ya que alguno de los taxones ya cuenta con una relacion de este tipo",
+             "error",
+             7000
+        ); 
+        return false;
+      }else if(props.taxonAct.completo.categoria.IdNivel1 < 7 || 
+               taxonActRel.value.completo.categoria.IdNivel1 < 7){
+                mostrarNotificacion(
+                  "Alerta",
+                  "El taxón actual es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
+                  "error",
+                  7000
+                ); 
+                return false;
+              }
       return true;
     }
 
@@ -950,11 +1026,10 @@ const Guardar = async() => {
       if(props.taxonAct.completo.SistClasCatDicc === taxonActRel.value.completo.SistClasCatDicc){
             mostrarNotificacion(
                 "Alerta",
-                "No se puede generar la relacion ya que el sistema de clasificación es el mismo en ambos taxones",
+                "No se puede generar la relación ya que el sistema de clasificación es el mismo en ambos taxones",
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 1");
             return false;
       }
 
@@ -979,7 +1054,6 @@ const Guardar = async() => {
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 3");
             return false;
       }
 
@@ -991,7 +1065,6 @@ const Guardar = async() => {
                 "error",
                 7000
             ); 
-            console.log("Entre al error equivalencia 4");
             return false;
       }
 
@@ -1023,7 +1096,6 @@ const Guardar = async() => {
                gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))
             )
           ){
-            console.log("Entre a la validacion en el vue");
             mostrarNotificacion(
                 "Alerta",
                 "***El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
@@ -1065,7 +1137,6 @@ const Guardar = async() => {
 
     const validaHomonimos = async () => {
       if(props.taxonAct.id === taxonActRel.value.id){
-        console.log("Entre a la validacion de taxones que son el mismo id");
         mostrarNotificacion(
                 "Alerta",
                 "Está tratando de relacionar el nombre a sí mismo, lo cual no es posible",
@@ -1090,7 +1161,6 @@ const Guardar = async() => {
     case 1:
       relacionar = validacionSinonimos();
       if (relacionar) {
-        console.log("Entre a la funcion de para dar de alta las relaciones");
         altaRelacion();
       }
       break;
@@ -1101,57 +1171,17 @@ const Guardar = async() => {
     let relActualizada = 0;
     let valBasonimo = false;
 
-    if(relacionAct.value.TipoRelacion.idTipoRel === 2){
-      mensaje = "¿Realmente desea cambiar la relación de BASONIMIA a SINONIMIA?";
-      relActualizada = 1;
-    }else{
-      if(props.taxonAct.id === relacionAct.value.TipoRelacion.relCompleta.relIdNombre){
-        let params = {
-          idNombre: relacionAct.value.TipoRelacion.relCompleta.relIdNombreRel
-        };
+    //---------------------------------Aqui se definen las funciones internas--------------------------------- 
+    const cancelarActBasSin = () => {
+      ElMessageBox.close();
+    };
 
-        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-        const response = await axios.get('/cargar-nomArb', { params });
-        console.log ("Esta es la respuesta del servidor: ", response.data[0]);
-        taxonActRel.value = response.data[0][0];
-         
-        await nextTick();
-      }else{
-        let params = {
-          idNombre: relacionAct.value.TipoRelacion.relCompleta.relIdNombreRel
-        };
-
-        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-        const response = await axios.get('/cargar-nomArb', { params });
-        console.log ("Esta es la respuesta del servidor: ", response.data);
-        taxonActRel.value = response.data[0][0];
-         
-        await nextTick();
-      }
-
-      const contValidoAct = props.taxonAct.relaciones.some(rel => rel.TipoRelacion.idTipoRel === 2);
-
-      const conValidoRel = taxonActRel.value.relaciones.some(rel => rel.TipoRelacion.idTipoRel === 2);
-
-      if(contValidoAct || conValidoRel){
-        mostrarNotificacion(
-                "Alerta",
-                "El taxón ya cuenta con una relación de basonimia o el taxon sinonimo ya cuenta con una relacion valida",
-                "error",
-                7000
-            ); 
-            return ;
-      }
-
-      mensaje = "¿Realmente desea cambiar la relación de SINONIMIA a BASONIMIA?";
-
-      relActualizada = 2;
-
-    }
-
+    
     const procederConActBasSin = async () => {
       try {
+        
         ElMessageBox.close();
+
         const response = await axios.put('/actualiza-RelBasSin', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
                                                                                 nuevaRelacion: relActualizada,
                                                                                 taxAct: props.taxonAct.id}});
@@ -1163,13 +1193,35 @@ const Guardar = async() => {
       }
     };
 
-    const cancelarActBasSin = () => {
-      ElMessageBox.close();
+    const procederConActSinBas = async () => {
+      try {
+        
+        ElMessageBox.close();
+
+        const conValidoRel = Object.values(taxonActRel.value?.relaciones || {}).flat().some(rel => rel.TipoRelacion.idTipoRel === 2);
+
+        if(conValidoRel){
+          mostrarNotificacion(
+                  "Alerta",
+                  "El taxón ya cuenta con una relación de basonimia",
+                  "error",
+                  7000
+              ); 
+             return ;
+        }
+      } catch (apiError) {
+        mostrarNotificacionError('Aviso', `El tipo de relación no se puede actualizar.`, 'success');
+      }
     };
-    
-    //const mensaje = ` Las observaciones seran actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir`;
-    
-    ElMessageBox({
+    //---------------------------------Aqui termina la definición de las funciones internas--------------------------------- 
+
+    //---------------------------------Se valida si es basonimo o sinonimo 
+    if(relacionAct.value.TipoRelacion.idTipoRel === 2){
+
+      mensaje = "¿Realmente desea cambiar la relación de BASONIMIA a SINONIMIA?";
+      relActualizada = 1;
+
+      ElMessageBox({
       title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
         h('div', { class: 'body-content' }, [
@@ -1179,14 +1231,41 @@ const Guardar = async() => {
         h('div', { class: 'footer-buttons' }, [
           h(BotonCancelar, { onClick: cancelarActBasSin }),
           h(BotonAceptar, { onClick: procederConActBasSin }),
+          ])
         ])
-      ])
-    }).catch(() => { });
+      }).catch(() => { });
+    }else if(relacionAct.value.TipoRelacion.idTipoRel === 1)
+    {
+      mensaje = "¿Realmente desea cambiar la relación de SINONIMIA a BASONIMIA?";
+      relActualizada = 2;
+
+      ElMessageBox({
+      title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+      message: h('div', { class: 'custom-message-content' }, [
+        h('div', { class: 'body-content' }, [
+          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+          h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+        ]),
+        h('div', { class: 'footer-buttons' }, [
+          h(BotonCancelar, { onClick: cancelarActBasSin }),
+          h(BotonAceptar, { onClick: procederConActBasSin }),
+          ])
+        ])
+      }).catch(() => { });
+    }
   }
 
     // Inicialización de datos
   onMounted( async () => {
     const response = await axios.get('/cargar-tipoRel');
+    const resTiposRel = await axios.get('/tipos-relacion/cargaInicial');
+
+    if(resTiposRel.status === 200){
+      tipRelacion.value = resTiposRel.data;
+    }
+
+    habCambioSinBas.value = true;
+
     if (response.status === 200) {            
         tiposRel.value = response.data;
         tiposRel.value.unshift({
@@ -1195,6 +1274,9 @@ const Guardar = async() => {
         });
     }
     await cargaGrupos();
+
+    tipRel.value = [0];
+    cargaRelaciones([0]);
     gruposTax.value = props.gruposTax;
     taxonAct.value = props.taxonAct;
   });
@@ -1229,8 +1311,6 @@ const Guardar = async() => {
           }catch(error){
             if (error.response && error.response.status === 422) {
                 // Aquí están los errores de validación
-                console.log("Este es el error completo: ", error.response.data.message);
-                
                 mostrarNotificacion(
                   "Alerta",
                   error.response.data.message,
@@ -1240,7 +1320,6 @@ const Guardar = async() => {
               
             } else {
                 // Otros errores inesperados
-                console.error("Error inesperado:", error);
                 ElMessage.error("Ocurrió un error en el servidor");
             }
 
@@ -1283,26 +1362,8 @@ const Guardar = async() => {
   };
 
   const cerrarDialogo = () => {
-      console.log("Entre a la funcion para cerrar el dialog");
         emit('cerrar');
     };
-
-  // Inicialización de datos
-  onMounted(async () => {
-    const response = await axios.get('/cargar-tipoRel');
-    
-    habCambioSinBas.value = true;
-
-    if (response.status === 200) {
-      tiposRel.value = response.data;
-      tiposRel.value.unshift({
-        label: "Todos",
-        value: 0
-      });
-    }
-    await cargaGrupos();
-    gruposTax.value = props.gruposTax;
-  });
 
   watchEffect(() => {
     if (props.gruposPadre) {
@@ -1321,6 +1382,18 @@ const Guardar = async() => {
   max-width: 100%;
   margin: 0 auto;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  height: 791px;
+}
+
+.tree-container {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  height: 360px;
+}
+
+:deep(.z-index-fix) {
+  z-index: 3000 !important;
 }
 
 .common-layout {
@@ -1328,10 +1401,44 @@ const Guardar = async() => {
   height: 100%;
 }
 
-.titulo {
-  font-size: 1.5rem;
+.header {
+  background-color: #d9e1eb;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  height: auto !important;
+  min-height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: white;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+:deep(.el-table__body tr.current-row > td) {
+  background-color: #ddf6dd !important;
+  color: #0d6efd !important;
   font-weight: bold;
+}
+
+/* Para que las tablas internas ocupen todo el espacio */
+.table-wrapper :deep(.el-table) {
+  height: 100%;
+}
+
+.titulo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #333;
   margin: 0;
+  text-align: center;
 }
 
 /* Contenedor principal de dos paneles */
@@ -1339,7 +1446,8 @@ const Guardar = async() => {
   width: 100%;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  padding: 15px;
+  padding:0.5px;
+  height: 540px;
 }
 
 .dual-panel-container {
@@ -1347,13 +1455,14 @@ const Guardar = async() => {
   gap: 16px;
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 15px;
 }
 
 .tree-panel, .table-panel {
   flex: 0 0 auto;
-  width: 680px;
-  height: 600px;
+  width: 660px;
+  height: 430px;
 }
 
 .table-panel1 {
