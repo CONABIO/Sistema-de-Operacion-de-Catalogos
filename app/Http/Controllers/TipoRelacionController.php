@@ -159,9 +159,23 @@ class TipoRelacionController extends Controller
 
         return $data;
     }
+    
+    /*Esta es la modificacion agregada para que sea respuesta AJAX y indes como cargaba normalmente
+        Juan Carlos Mora Morquecho 22/04/2026 
+    Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     public function index()
-    {
+    {        
+        $data = $this->cargaInicio();
+
+        return Inertia::render('Socat/TipoRelacion/indexTipoRelacion', [
+            'treeDataProp' => $data['treeDataProp'],
+            'flatTreeDataProp' => $data['flatTreeDataProp']
+        ]);
+    }
+
+    private function cargaInicio(){
+        
         $todosLosNodosPlanos = Tipo_Relacion::orderBy('Nivel1')
             ->orderBy('Nivel2')
             ->orderBy('Nivel3')
@@ -171,12 +185,17 @@ class TipoRelacionController extends Controller
 
         $treeDataParaVisualizacion = $this->buildTreeFromLevels($todosLosNodosPlanos);
 
-        return Inertia::render('Socat/TipoRelacion/indexTipoRelacion', [
-            'treeDataProp' => $treeDataParaVisualizacion,
-            'flatTreeDataProp' => $todosLosNodosPlanos,
-        ]);
+        return ['treeDataProp' => $treeDataParaVisualizacion,
+                'flatTreeDataProp' => $todosLosNodosPlanos];
     }
 
+    public function cargaTipoRelacion(){
+        return response()->json($this->cargaInicio());
+    }
+
+    /*Esta es la modificacion agregada para que sea respuesta AJAX 
+        Juan Carlos Mora Morquecho 22/04/2026 
+    Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     private function buildTreeFromLevels(Collection $nodes): array
     {

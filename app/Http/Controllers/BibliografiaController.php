@@ -207,58 +207,51 @@ class BibliografiaController extends Controller
     public function destroy($id)
     {
         try {
-            $asociadaARelacion = DB::connection('catcentral')->table('RelacionBibliografia')
-                ->where('IdBibliografia', $id)
-                ->exists();
-            if ($asociadaARelacion ) {
-                return response()->json([
-                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a uno o más nombres.'
-                ], 422);
+            $conn = DB::connection('catcentral');
 
-                $asociadaANombre = DB::connection('catcentral')->table('RelNombreBiblio')
-                ->where('IdBibliografia', $id)
-                ->exists();
-
-                if ($asociadaANombre) {
-                    return response()->json([
-                        'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a uno o más nombres.'
-                    ], 422);
-                }
+            if ($conn->table('RelacionBibliografia')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una relación bibliográfica.'], 400);
             }
 
-            $asociadaAGrupo = DB::connection('catcentral')->table('RelBiblioGrupoSCAT')
-                ->where('IdBibliografia', $id)
-                ->exists();
-
-            if ($asociadaAGrupo) {
-                return response()->json([
-                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a grupos taxonómicos.'
-                ], 422);
+            if ($conn->table('RelNombreBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres.'], 400);
             }
-            $asociadaAObjeto = DB::connection('catcentral')->table('RelObjetoExternoBiblio')
-                ->where('IdBibliografia', $id)
-                ->exists();
 
-            if ($asociadaAObjeto) {
-                return response()->json([
-                    'message' => 'La referencia bibliográfica seleccionada no se puede eliminar, ya que está asociada a objetos externos.'
-                ], 422);
+            if ($conn->table('RelBiblioGrupoSCAT')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más grupos taxonómicos.'], 400);
+            }
+
+            if ($conn->table('RelNombreCatalogoBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres de catálogo.'], 400);
+            }
+
+            if ($conn->table('RelNombreCatalogoRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a catálogo de región.'], 400);
+            }
+
+            if ($conn->table('RelNombreRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más regiones.'], 400);
+            }
+
+            if ($conn->table('RelNomNomComunRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres comunes .'], 400);
+            }
+
+            if ($conn->table('RelObjetoExternoBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más objetos externos.'], 400);
             }
 
             $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
             $biblio->delete();
 
-            return response()->json([
-                'message' => 'Bibliografia eliminada con éxito'
-            ], 200);
+            return response()->json(['message' => 'Bibliografia eliminada con éxito'], 200);
 
         } catch (\Exception $e) {
             Log::error("Error deleting Bibliografia: {$e->getMessage()}");
-            return response()->json([
-                'message' => 'Error al intentar eliminar: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['message' => 'Error al intentar eliminar: ' . $e->getMessage()], 500);
         }
     }
+
 
 
 

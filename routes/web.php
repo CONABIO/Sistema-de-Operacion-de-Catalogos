@@ -133,7 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/bibliografiasIndex', [BibliografiaController::class, 'index'])->name('bibliografias.index');
     Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store');
     Route::post('/bibliografias/obtener-pagina', [BibliografiaController::class, 'obtenerPaginaDeBiblio']);
-    
+
 
     Route::delete('/caracteristicas-taxon/{id}', [CaracteristicasController::class, 'destroy'])
         ->name('caracteristicasTaxon.destroy');
@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
         Route::get('/', [TipoRelacionController::class, 'index'])->name('index');
+        Route::get('/cargaInicial',[TipoRelacionController::class, 'cargaTipoRelacion'])->name('carga-Inicial');
         Route::post('/', [TipoRelacionController::class, 'store'])->name('store');
         Route::put('/{tipoRelacion}', [TipoRelacionController::class, 'update'])->name('update');
         Route::delete('/{tipoRelacion}', [TipoRelacionController::class, 'destroy'])->name('destroy');
@@ -201,6 +202,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Mime::orderBy('Extension')->get();
     });
 
+    Route::post('/objetos-externos/obtener-pagina', [ObjetoExternoController::class, 'obtenerPaginaDeObjeto']);
+    Route::get('/busca-objeto-externo', [ObjetoExternoController::class, 'buscaObjetoExterno']);
+
+
     //________________________________________________________________________________________________
 
 
@@ -221,7 +226,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
-    
+
     Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])

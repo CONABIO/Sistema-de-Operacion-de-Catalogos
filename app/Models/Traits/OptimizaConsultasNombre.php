@@ -3,6 +3,7 @@
 namespace App\Models\Traits;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 trait OptimizaConsultasNombre
 {
@@ -127,28 +128,17 @@ trait OptimizaConsultasNombre
                     Nombre.IdNombre,
                     Nombre.NombreCompleto,
                     Nombre.Estatus,
-                    Nombre.SistClasCatDicc,
-                    Nombre.NombreAutoridad,
-                    COUNT(DISTINCT RelacionBibliografia.IdBibliografia) AS Biblio,
-                    CategoriaTaxonomica.IdNivel2,
-                    CategoriaTaxonomica.RutaIcono AS CategIcono,
                     Nombre_Relacion.FechaCaptura,
                     Nombre_Relacion.FechaModificacion,
                     Nombre_Relacion.Observaciones,
                     Nombre_Relacion.IdNombre AS RelIdNom,
                     Nombre_Relacion.IdNombreRel AS RelIdNomRel
                 FROM Nombre
-                INNER JOIN CategoriaTaxonomica 
-                    ON Nombre.IdCategoriaTaxonomica = CategoriaTaxonomica.IdCategoriaTaxonomica
                 INNER JOIN Nombre_Relacion 
                     ON (Nombre.IdNombre = Nombre_Relacion.IdNombre 
                         OR Nombre.IdNombre = Nombre_Relacion.IdNombreRel)
                 INNER JOIN Tipo_Relacion 
                     ON Tipo_Relacion.IdTipoRelacion = Nombre_Relacion.IdTipoRelacion
-                LEFT JOIN RelacionBibliografia 
-                    ON RelacionBibliografia.IdNombre = Nombre_Relacion.IdNombre 
-                    AND RelacionBibliografia.IdNombreRel = Nombre_Relacion.IdNombreRel
-                    AND RelacionBibliografia.IdTipoRelacion = Nombre_Relacion.IdTipoRelacion
                 WHERE (
                     Nombre_Relacion.IdNombre IN ($placeholders) 
                     OR Nombre_Relacion.IdNombreRel IN ($placeholders)
@@ -164,8 +154,6 @@ trait OptimizaConsultasNombre
                     Nombre.Estatus, 
                     Nombre.SistClasCatDicc,
                     Nombre.NombreAutoridad, 
-                    CategoriaTaxonomica.IdNivel2, 
-                    CategoriaTaxonomica.RutaIcono,
                     Nombre_Relacion.FechaCaptura, 
                     Nombre_Relacion.FechaModificacion, 
                     Nombre_Relacion.Observaciones, 
@@ -252,7 +240,8 @@ trait OptimizaConsultasNombre
 
             // Datos batch
             $referencias = $referenciasBatch->get($nombre->IdNombre, collect());
-            //$relaciones = $relacionesBatch->get($nombre->IdNombre, collect());
+            $relaciones = $this->obtenerRelacionesBatch([$nombre->IdNombre], collect());
+
             //$conteo = $conteosBatch->get($nombre->IdNombre, 0);
 
             $data[] = [
@@ -261,6 +250,7 @@ trait OptimizaConsultasNombre
                 'children' => [],
                 'texto' => $nomCat,
                 'estatus' => $status,
+                'relaciones' => $relaciones,
                 'referencias' => $referencias,
                 'completo' => $nombre
             ];

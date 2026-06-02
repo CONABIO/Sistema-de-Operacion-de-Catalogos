@@ -7,19 +7,20 @@
             <el-row :gutter="10" align="middle">
               <h2 class="titulo">Citas bibliograficas asociadas</h2>
             </el-row>
-            <div class="form-actions">
-                <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
-            </div>  
           </el-header>
             <el-main style="padding: 15px; background: #fff; overflow: hidden;">
                 <el-row>
-                
                     <div class="dual-panel-container">
                             <el-card class="table-panel">
-                                <span style="font-size: 20px; font-weight: bold;">
-                                    Cita(s) bibliografica(s) asociada(s) a:
-                                </span>
-                                <br/>
+                                    <!--span style="font-size: 20px; font-weight: bold;"-->
+                                <div class="header-row">
+                                    <span  class="etiqueta">
+                                        Cita(s) bibliografica(s) asociada(s) a:                                     
+                                    </span>  
+                                    <div class="form-actions">
+                                        <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
+                                    </div>                  
+                                </div>             
                                 <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
                                     {{ props.taxonAct.label }}
                                 </span>                                
@@ -35,6 +36,9 @@
                                         :origen = "true"
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "true"
+                                        :mostrarSalir = "false"
+                                        :highlight-current-row = "true"
+                                        :alturaTabla = 275
                                         @eliminar-item = "manejarEliminarBiblio"
                                         @editar-item = "manejarEditarBiblio"
                                         @row-click = "manejaClickObs"
@@ -74,22 +78,11 @@
                                             :disabled = habObservaciones
                                             v-model="observacionRel">
                                     </el-input>
-                                    <el-popconfirm confirm-button-text="Si" 
-                                                    cancel-button-text="No" 
-                                                    :icon="InfoFilled" 
-                                                    icon-color="#E6A23C"
-                                                    title="¿Realmente desea guardar los cambios?" 
-                                                    @confirm="Guardar()">
-                                        <template #reference>
-                                            <!--el-tooltip class="item" effect="dark" content="Guardar" placement="bottom"-->
-                                            <el-button circle type="warning" :disabled="habObservaciones">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
-                                                    <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
-                                                </svg>
-                                            </el-button>
-                                            <!--/el-tooltip-->
-                                        </template>
-                                    </el-popconfirm>
+                                    <el-button circle type="warning" :disabled="habObservaciones" @click="Guardar" >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive" viewBox="0 0 16 16">
+                                            <path d="M6 .5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4H6v-4ZM7 1v1h1V1H7Zm2 0v1h1V1H9ZM6 5a1 1 0 0 0-1 1v8.5A1.5 1.5 0 0 0 6.5 16h4a1.5 1.5 0 0 0 1.5-1.5V6a1 1 0 0 0-1-1H6Zm0 1h5v8.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V6Z"/>
+                                        </svg>
+                                    </el-button>
                                 </div>
                             </div>
                     </el-card>
@@ -112,7 +105,7 @@
     </el-card>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <Bibliografia :isModal = "true"  @cerrarBiblio = "cerrarRelBiblio" />
+      <Bibliografia :isModal = "true" :traspaso="true" @cerrarBiblio = "cerrarRelBiblio" />
     </DialogForm>
 
     <Teleport to="body">
@@ -126,7 +119,7 @@
 
 <script setup>
     import { ref, h, onMounted, watchEffect } from 'vue';
-    import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
     import { ElLoading, ElMessageBox } from 'element-plus';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
@@ -342,11 +335,23 @@
 
 
 </script>
-<style scope>
+<style scoped>
     .titulo {
         font-size: 1.5rem;
         font-weight: bold;
         margin: 0;
+    }
+
+    .etiqueta {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
 
     .main-content-card {
@@ -361,13 +366,21 @@
         display: flex;
         gap: 12px;
         width: 100%;
-        height: 60vh;
+        height: 54vh;
     }
 
     .table-panel {
         flex: 1;
-        min-width: 400px;
+        min-width: 300px;
         display: flex;
         flex-direction: column;
+    }
+
+    .table-panel :deep(.el-table__body tr.current-row > td) {
+        background-color: #ddf6dd !important;
+        color: #0d6efd !important;
+        /*background-color: #3c793c !important;
+        color: #18a72b !important;*/
+        font-weight: bold;
     }
 </style>

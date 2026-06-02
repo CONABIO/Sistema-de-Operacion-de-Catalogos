@@ -10,8 +10,8 @@ class Mime extends Model
     use HasFactory;
 
     protected $connection = 'catcentral';
-    protected $table = 'MIME'; 
-    protected $primaryKey = 'IdMime'; 
+    protected $table = 'MIME';
+    protected $primaryKey = 'IdMime';
     public $timestamps = false;
 
     protected $fillable = [
