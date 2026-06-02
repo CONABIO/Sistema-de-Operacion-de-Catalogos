@@ -1,10 +1,10 @@
 <script setup>
 import { ref, watch, defineProps, defineEmits, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Setting, Rank, RefreshLeft, Sort  } from '@element-plus/icons-vue';
+import { Setting, Rank, RefreshLeft } from '@element-plus/icons-vue';
 
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
+import BtnTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const props = defineProps({
@@ -14,44 +14,12 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'formSubmited']);
 const mostrarModalOrden = ref(false);
-const esEditable = ref(false);
-
-const abrirConfiguracionOrden = () => {
-    esEditable.value = false;
-    mostrarModalOrden.value = true;
-};
 
 const form = ref({
     IdBibliografia: null,
     Autor: '', Anio: '', TituloSubPublicacion: '', TituloPublicacion: '',
     EditoresCompiladores: '', EditorialPaisPagina: '', NumeroVolumenAnio: '', ISBNISSN: '',
 });
-
-
-const bibliografiaFormRef = ref(null);
-
-const rules = {
-    Autor: [
-        { required: true, message: 'El autor es obligatorio', trigger: 'blur' },
-        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
-        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
-    ],
-    Anio: [
-        { required: true, message: 'El año es obligatorio', trigger: 'blur' },
-        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
-        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
-    ],
-    TituloPublicacion: [
-        { required: true, message: 'El título es obligatorio', trigger: 'blur' },
-        { whitespace: true, message: 'No puede contener solo espacios', trigger: 'blur' },
-        { pattern: /^(?!.*  ).+$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] }
-    ],
-    camposOpcionales: [
-        { pattern: /^(?!.*  ).*$/, message: 'No se permite más de un espacio seguido', trigger: ['blur', 'change'] },
-        { whitespace: true, message: 'No puede enviar solo espacios', trigger: 'blur' }
-    ]
-};
-
 
 const mapaIndices = {
     'Autor': '1',
@@ -61,18 +29,19 @@ const mapaIndices = {
     'EditoresCompiladores': '5',
     'NumeroVolumenAnio': '6',
     'EditorialPaisPagina': '7',
-    'ISBNISSN': '8'
 };
 
 const ORDEN_ORIGINAL = [
-    { id: 'Autor', label: 'Autor(es)' },
-    { id: 'Anio', label: 'Año(s)' },
-    { id: 'TituloSubPublicacion', label: 'Título de la sub publicación' },
+    { id: 'Autor', label: 'Autor' },
+    { id: 'Anio', label: 'Año' },
+    { id: 'TituloSubPublicacion', label: 'Título de la subpublicación' },
     { id: 'TituloPublicacion', label: 'Título de la publicación' },
-    { id: 'EditoresCompiladores', label: 'Editor(es) / compilador(es)' },
-    { id: 'NumeroVolumenAnio', label: 'Número, volumen, año, mes(es)' },
-    { id: 'EditorialPaisPagina', label: 'Editorial, país, lugar, páginas' },
+    { id: 'EditoresCompiladores', label: 'Editores / Compiladores' },
+    { id: 'NumeroVolumenAnio', label: 'Número, Volumen, Año' },
+    { id: 'EditorialPaisPagina', label: 'Editorial, País, Página' },
 ];
+
+const formTitle = computed(() => props.accion === 'crear' ? 'Insertar una nueva referencia bibliográfica' : 'Modificar la  referencia bibliográfica');
 
 const listaOrdenada = ref(ORDEN_ORIGINAL.map(item => ({ ...item })));
 
@@ -106,12 +75,10 @@ watch(() => props.biblioEdit?.IdBibliografia, (newId) => {
 const draggingIndex = ref(null);
 
 const handleDragStart = (index) => {
-    if (!esEditable.value) return;
     draggingIndex.value = index;
 };
 
 const handleDragOver = (index) => {
-    if (!esEditable.value) return;
     if (draggingIndex.value === null || draggingIndex.value === index) return;
     const items = [...listaOrdenada.value];
     const draggedItem = items[draggingIndex.value];
@@ -139,61 +106,43 @@ const orden = computed(() => {
 
 const construirReferencia = () => {
     const f = form.value;
-    const formatearCampo = (valor) => {
-        if (!valor) return '';
-        let texto = valor.toString().trim();
-        if (texto === '') return '';
-        return texto.endsWith('.') ? texto : texto + '.';
-    };
-
     const bloques = {
-        Autor: formatearCampo(f.Autor),
-        Anio: formatearCampo(f.Anio),
-        TituloPublicacion: formatearCampo(f.TituloPublicacion),
-        TituloSubPublicacion: formatearCampo(f.TituloSubPublicacion),
-        NumeroVolumenAnio: formatearCampo(f.NumeroVolumenAnio),
-        EditorialPaisPagina: formatearCampo(f.EditorialPaisPagina),
-        EditoresCompiladores: formatearCampo(f.EditoresCompiladores),
+        Autor: f.Autor || '',
+        Anio: f.Anio ? `(${f.Anio})` : '',
+        TituloPublicacion: f.TituloPublicacion || '',
+        TituloSubPublicacion: f.TituloSubPublicacion || '',
+        NumeroVolumenAnio: f.NumeroVolumenAnio || '',
+        EditorialPaisPagina: f.EditorialPaisPagina || '',
+        EditoresCompiladores: f.EditoresCompiladores ? `(Ed./Comp. ${f.EditoresCompiladores})` : ''
     };
 
     return listaOrdenada.value
         .map(item => bloques[item.id])
         .filter(val => val !== '')
-        .join(' ');
+        .join('. ');
 };
 
 const referenciaCompleta = computed(() => construirReferencia());
 
-const submitForm = async () => {
-    if (!bibliografiaFormRef.value) return;
-    await bibliografiaFormRef.value.validate((valid) => {
-        if (valid) {
-            const formLimpio = {};
-            const asegurarPuntoFinal = (texto) => {
-                if (!texto || typeof texto !== 'string') return texto;
-                let t = texto.trim();
-                if (t === '') return '';
-                return texto;
-            };
+const submitForm = () => {
+    if (!form.value.Autor || !form.value.Anio || !form.value.TituloPublicacion) {
+        ElMessage.error('Faltan campos obligatorios.');
+        return;
+    }
 
-            Object.keys(form.value).forEach(key => {
-                const valor = form.value[key];
-                if (key !== 'IdBibliografia' && key !== 'ISBNISSN' && typeof valor === 'string') {
-                    formLimpio[key] = asegurarPuntoFinal(valor);
-                } else {
-                    formLimpio[key] = valor;
-                }
-            });
+    const ordenString = listaOrdenada.value
+        .map(item => mapaIndices[item.id])
+        .join('');
 
-            const datosParaEnviar = {
-                ...formLimpio,
-                OrdenCitaCompleta: listaOrdenada.value.map(item => mapaIndices[item.id]).join(''),
-                citaCompleta: referenciaCompleta.value
-            };
 
-            emit('formSubmited', datosParaEnviar);
-        }
-    });
+
+    const datosParaEnviar = {
+        ...form.value,
+        OrdenCitaCompleta: ordenString,
+        citaCompleta: referenciaCompleta.value
+    };
+
+    emit('formSubmited', datosParaEnviar);
 };
 
 const guardarOrden = () => {
@@ -201,7 +150,7 @@ const guardarOrden = () => {
 };
 
 const cerrarDialogo = () => emit('cerrar');
-const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva referencia bibliográfica' : 'Modificar la  referencia bibliográfica');
+
 </script>
 
 <template>
@@ -211,14 +160,15 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
 
     <div class="header">
         <div class="dialog-body">
-            <el-form ref="bibliografiaFormRef" :model="form" :rules="rules" label-position="top"
-                class="bibliografia-form">
+            <el-form :model="form" label-position="top" class="bibliografia-form">
 
-                <div class="form-actions" style="margin-top: -30px;">
+                <div class="form-actions" style="margin-top: -30px; margin-right: 10px;">
                     <el-tooltip content="Configurar orden de referencia" placement="top">
-                        <el-button type="info" circle @click="abrirConfiguracionOrden"
+                        <el-button type="info" circle @click="mostrarModalOrden = true"
                             style="width: 35px; height: 35px; font-size: 20px; background-color: blue; border:none;">
-                            <el-icon><Sort/></el-icon>
+                            <el-icon>
+                                <Setting />
+                            </el-icon>
                         </el-button>
                     </el-tooltip>
                     <GuardarButton @click="submitForm" />
@@ -227,95 +177,86 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item prop="Autor">
+                        <el-form-item required>
                             <template #label><span class="form-number">{{ orden.Autor }}</span> Autor(es)</template>
                             <el-input type="textarea" v-model="form.Autor" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Autor(es)"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item prop="Anio">
+                        <el-form-item required>
                             <template #label><span class="form-number">{{ orden.Anio }}</span> Año(s)</template>
-                            <el-input type="textarea" v-model="form.Anio" maxlength="50" show-word-limit
-                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Año(s)"></el-input>
+                            <el-input v-model="form.Anio" maxlength="50" show-word-limit placeholder="Año"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item prop="TituloPublicacion">
+                        <el-form-item required>
                             <template #label><span class="form-number">{{ orden.TituloPublicacion }}</span> Título de la
                                 publicación</template>
                             <el-input type="textarea" v-model="form.TituloPublicacion" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Título de la publicación"></el-input>
+                                placeholder="Título principal"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item prop="TituloSubPublicacion" :rules="rules.camposOpcionales">
+                        <el-form-item>
                             <template #label><span class="form-number">{{ orden.TituloSubPublicacion }}</span> Título de
-                                la sub publicación</template>
+                                la subpublicación</template>
                             <el-input type="textarea" v-model="form.TituloSubPublicacion" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Título de la sub publicación"></el-input>
+                                placeholder="Título capítulo"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item prop="EditorialPaisPagina" :rules="rules.camposOpcionales">
-                            <template #label><span class="form-number">{{ orden.EditorialPaisPagina }}</span> Editorial,
-                                país, lugar, páginas</template>
-                            <el-input type="textarea" v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
-                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Editorial, país, lugar, páginas"></el-input>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item prop="NumeroVolumenAnio" :rules="rules.camposOpcionales">
-                            <template #label><span class="form-number">{{ orden.NumeroVolumenAnio }}</span> Número,
+                        <el-form-item>
+                            <template #label><span class="form-number">{{ orden.NumeroVolumenAnio }}</span> Numero,
                                 volumen, año, mes(es)</template>
                             <el-input type="textarea" v-model="form.NumeroVolumenAnio" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Número, volumen, año, mes(es)"></el-input>
+                                placeholder="Datos revista"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item>
+                            <template #label><span class="form-number">{{ orden.EditorialPaisPagina }}</span> Editorial,
+                                pais, lugar, paginas</template>
+                            <el-input type="textarea" v-model="form.EditorialPaisPagina" maxlength="255" show-word-limit
+                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
+                                placeholder="Datos editorial"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item prop="EditoresCompiladores" :rules="rules.camposOpcionales">
+                        <el-form-item>
                             <template #label><span class="form-number">{{ orden.EditoresCompiladores }}</span>
-                                Editor(es) / compilador(es)</template>
+                                Editor(es)
+                                / Compilador(es)</template>
                             <el-input type="textarea" v-model="form.EditoresCompiladores" maxlength="255"
                                 show-word-limit :autosize="{ minRows: 1, maxRows: 3 }" resize="none"
-                                placeholder="Editor(es) / compilador(es)"></el-input>
+                                placeholder="Si aplica"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item prop="ISBNISSN" :rules="rules.camposOpcionales">
-                            <template #label>ISBN/ISSN/DOI</template>
-                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="50" show-word-limit
-                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="ISBN/ISSN/DOI">
+                        <el-form-item>
+                            <template #label>ISBN/ISSN</template>
+                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="255" show-word-limit
+                                :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Si aplica">
                             </el-input>
                         </el-form-item>
                     </el-col>
-                </el-row>
-                <el-col :span="24">
-                    <el-form-item prop="ISBNISSN">
-                        <template #label>Observaciones</template>
-                        <el-input type="textarea" v-model="form.Observaciones" maxlength="255" show-word-limit
-                            :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Observaciones">
-                        </el-input>
-                    </el-form-item>
-                </el-col>
 
-                <el-col :span="24" v-if="referenciaCompleta.trim() !== ''">
+                </el-row>
+                <el-col :span="25">
                     <el-form-item label="Referencia completa">
-                        <el-input type="textarea" :model-value="referenciaCompleta" :rows="4" readonly disabled>
-                        </el-input>
+                        <el-input type="textarea" v-model="referenciaCompleta" :rows="5" readonly disabled></el-input>
                     </el-form-item>
                 </el-col>
             </el-form>
@@ -325,48 +266,42 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
     <el-dialog v-model="mostrarModalOrden" width="1000px" append-to-body class="custom-dialog-style">
         <template #header>
             <div class="header-oval modal-header-fix">
-                <h3>Modificar el orden de la referencia completa</h3>
+                <h3>Modificar orden de la referencia</h3>
             </div>
         </template>
         <div class="header">
-            <div class="modal-footer-btns">
-                <template v-if="esEditable">
-                    <el-tooltip content="Reiniciar orden" placement="bottom">
-                        <el-button circle @click="reiniciarOrden"
-                            style="width: 34px; height: 34px; font-size: 20px; margin-right: -10px; background-color: chartreuse;">
-                            <el-icon>
-                                <RefreshLeft />
-                            </el-icon>
-                        </el-button>
-                    </el-tooltip>
-                    <GuardarButton @click="guardarOrden" />
-                </template>
-                <span v-if="!esEditable" @click="esEditable = true">
-                    <EditarButton />
-                </span>
+            <div class="modal-footer-btns" style="margin-right: 10px;">
+                <el-tooltip content="Reiniciar orden" placement="bottom">
+                    <el-button circle @click="reiniciarOrden"
+                        style="width: 34px; height: 34px; font-size: 20px; margin-right: -10px; background-color: chartreuse;">
+                        <el-icon>
+                            <RefreshLeft />
+                        </el-icon>
+                    </el-button>
+                </el-tooltip>
+
+                <BtnTraspaso @traspasa="guardarOrden" />
                 <BotonSalir accion="cerrar" @salir="mostrarModalOrden = false" />
             </div>
 
             <div class="modal-inner">
                 <div class="drag-zone">
-                    <div v-for="(item, index) in listaOrdenada" :key="item.id" class="order-card" :class="{
-                        'is-dragging': draggingIndex === index,
-                        'no-editable': !esEditable
-                    }" :draggable="esEditable" @dragstart="handleDragStart(index)"
-                        @dragover.prevent="handleDragOver(index)" @dragend="handleDragEnd">
-
+                    <div v-for="(item, index) in listaOrdenada" :key="item.id" class="order-card"
+                        :class="{ 'is-dragging': draggingIndex === index }" draggable="true"
+                        @dragstart="handleDragStart(index)" @dragover.prevent="handleDragOver(index)"
+                        @dragend="handleDragEnd">
                         <div class="card-left">
                             <span class="form-number">{{ index + 1 }}</span>
                             <span class="field-name">{{ item.label }}</span>
                         </div>
-                        <el-icon v-if="esEditable" class="drag-icon">
+                        <el-icon class="drag-icon">
                             <Rank />
                         </el-icon>
                     </div>
                 </div>
 
-                <div v-if="referenciaCompleta.trim() !== ''" class="preview-section-modal">
-                    <label>Referencia completa</label>
+                <div class="preview-section-modal">
+                    <label>VISTA PREVIA DEL FORMATO</label>
                     <div class="preview-text-modal">{{ referenciaCompleta }}</div>
                 </div>
             </div>
@@ -377,28 +312,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
 </template>
 
 <style scoped>
-.order-card.no-editable {
-    cursor: not-allowed !important;
-    opacity: 0.6 !important;
-    background-color: #f5f7fa !important;
-    border-color: #dcdfe6 !important;
-    pointer-events: none;
-}
-
-.order-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 20px;
-    background: #ffffff;
-    border: 1px solid #e4e7ed;
-    border-radius: 10px;
-    cursor: grab;
-    transition: all 0.2s;
-}
-
-
-
 :deep(.el-dialog__body) {
     padding: 0 !important;
 }
@@ -437,7 +350,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
     display: flex;
     justify-content: flex-end;
     margin-top: 4px;
-    margin-right: 5px;
+    margin-right: 35px;
     gap: 30px;
 }
 
@@ -690,8 +603,6 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
 
 .preview-text-modal {
     padding: 18px;
-    font-family: 'Georgia', serif;
-    font-style: italic;
     color: #333;
     line-height: 1.6;
 }
@@ -700,7 +611,7 @@ const formTitle = computed(() => props.accion === 'crear' ? 'Ingresar una nueva 
     display: flex;
     justify-content: flex-end;
     gap: 30px;
-    margin-right: 15px;
+    margin-right: 40px;
     margin-bottom: 10px;
 }
 </style>

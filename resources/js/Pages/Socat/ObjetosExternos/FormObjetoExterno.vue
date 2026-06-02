@@ -19,7 +19,8 @@ const inputFileRef = ref(null);
 const dialogVisible = ref(false);
 const formRef = ref(null);
 const selectedOption = ref('localFile');
-const form = ref({
+
+const getFormInicial = () => ({
     IdMime: null,
     NombreObjeto: '',
     NombreSitio: '',
@@ -35,6 +36,8 @@ const form = ref({
     Observaciones: '',
     UrlExterna: '',
 });
+
+const form = ref(getFormInicial());
 
 const abrirExploradorArchivos = () => {
     if (inputFileRef.value) {
@@ -116,30 +119,24 @@ onMounted(() => {
 watch(() => props.visible, (newVal) => {
     dialogVisible.value = newVal;
     if (newVal) {
+        form.value = getFormInicial();
         if (props.accion === 'editar' && props.objetoExternoEdit) {
-            form.value = { ...props.objetoExternoEdit };
-            if (form.value.UrlExterna) {
+            Object.assign(form.value, JSON.parse(JSON.stringify(props.objetoExternoEdit)));
+            if (!form.value.UrlExterna) {
+                const proto = (form.value.Protocolo || 'http').toLowerCase();
+                const sitio = form.value.NombreSitio || '';
+                const ruta = form.value.Ruta ? `/${form.value.Ruta}` : '';
+                const nombre = form.value.NombreObjeto ? `/${form.value.NombreObjeto}` : '';
+                if (sitio) {
+                    form.value.UrlExterna = `${proto}://${sitio}${ruta}${nombre}`;
+                }
+            }
+            if (form.value.UrlExterna || form.value.NombreSitio) {
                 selectedOption.value = 'webPage';
             } else {
                 selectedOption.value = 'localFile';
             }
         } else {
-            form.value = {
-                IdMime: null,
-                NombreObjeto: '',
-                NombreSitio: '',
-                Ruta: '',
-                Protocolo: 'HTTP',
-                Usuario: '',
-                Password: '',
-                UnidadLogica: '',
-                Titulo: '',
-                Autor: '',
-                Institucion: '',
-                Fecha: null,
-                Observaciones: '',
-                UrlExterna: '',
-            };
             selectedOption.value = 'localFile';
         }
         nextTick(() => {
@@ -148,22 +145,16 @@ watch(() => props.visible, (newVal) => {
     }
 }, { immediate: true });
 
-watch(dialogVisible, (newVal) => {
-    if (!newVal) {
-        emit('cerrar');
-    }
-});
-
 watch(selectedOption, (newVal) => {
-    if (newVal === 'localFile') {
-        form.value.UrlExterna = '';
-        form.value.NombreSitio = '';
-        form.value.Ruta = '';
-        form.value.Protocolo = 'HTTP';
-        form.value.NombreObjeto = '';
-        form.value.UnidadLogica = '';
-        form.value.Usuario = '';
-        form.value.Password = '';
+    if (props.accion === 'crear') {
+        if (newVal === 'localFile') {
+            form.value.UrlExterna = '';
+            form.value.NombreSitio = '';
+            form.value.Ruta = '';
+            form.value.Protocolo = 'HTTP';
+            form.value.NombreObjeto = '';
+            form.value.UnidadLogica = '';
+        }
     }
     nextTick(() => {
         formRef.value?.clearValidate();
@@ -171,7 +162,7 @@ watch(selectedOption, (newVal) => {
 });
 
 watch(() => form.value.UrlExterna, (newUrl) => {
-    if (newUrl && selectedOption.value === 'webPage') {
+    if (newUrl && selectedOption.value === 'webPage' && props.accion === 'crear') {
         try {
             let urlToParse = newUrl;
             if (!/^https?:\/\//i.test(newUrl)) {
@@ -239,8 +230,8 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
 
-                    <el-form-item label="Origen del objeto" style="margin-bottom: 20px; margin-top: -75px;">
-                        <el-radio-group v-model="selectedOption">
+                    <el-form-item style="margin-bottom: 20px; margin-top: -75px;">
+                        <el-radio-group v-model="selectedOption" :disabled="accion === 'editar'">
                             <el-radio label="localFile">Archivo local</el-radio>
                             <el-radio label="webPage">Página web (URL)</el-radio>
                         </el-radio-group>
@@ -258,7 +249,7 @@ const cerrarDialogo = () => {
                                 style="display: none;" />
                         </el-form-item>
                         <el-form-item label="Nombre del archivo" prop="NombreObjeto">
-                            <el-input v-model="form.NombreObjeto" placeholder="Nombre del archivo o recurso" />
+                            <el-input v-model="form.NombreObjeto" placeholder="Nombre del archivo o recurso" disabled/>
                         </el-form-item>
                     </div>
 
