@@ -28,7 +28,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
             tablaRef.value.limpiarTodosLosFiltros();
         }
 
-        selectedRowId.value = null; 
+        selectedRowId.value = null;
         if (tablaRef.value) tablaRef.value.selectedRow = null;
 
         const currentSort = tablaRef.value?.sorting || { prop: 'Descripcion', order: 'asc' };
@@ -41,16 +41,16 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
         });
 
         const paginaDestino = resPagina.data.page;
-        
+
         if (tablaRef.value) {
             await tablaRef.value.irAPagina(paginaDestino);
             await nextTick();
-            
+
             const fila = currentData.value.find(d => d.IdTipoDistribucion === idEncontrado);
             if (fila) {
                 selectedRowId.value = idEncontrado;
-                tablaRef.value.selectedRow = fila;  
-                
+                tablaRef.value.selectedRow = fila;
+
                 setTimeout(() => {
                     tablaRef.value.forzarFocoFilaVerde();
                 }, 150);
@@ -113,13 +113,13 @@ const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
     const nombreNuevoTrim = datosDelFormulario.Descripcion.trim().toLowerCase();
-    const mensajeDuplicado = esEdicion 
-        ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron." 
+    const mensajeDuplicado = esEdicion
+        ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron."
         : "El tipo de distribución que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(item => {
         const mismaDescripcion = item.Descripcion.trim().toLowerCase() === datosDelFormulario.Descripcion.trim().toLowerCase();
-        return esEdicion 
-            ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar) 
+        return esEdicion
+            ? (mismaDescripcion && item.IdTipoDistribucion !== datosDelFormulario.idParaEditar)
             : mismaDescripcion;
     });
 
@@ -130,13 +130,13 @@ const handleFormSubmited = (datosDelFormulario) => {
             tablaRef.value.forzarFocoFilaVerde();
         }
         mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
-        return; 
+        return;
     }
 
     const procederConGuardado = async () => {
         try {
             const payload = { Descripcion: datosDelFormulario.Descripcion };
-            
+
             if (datosDelFormulario.accionOriginal === 'crear') {
                 const response = await axios.post('/tipos-distribucion', payload);
                 mostrarNotificacion("Ingreso", "El tipo de distribución ha sido ingresado correctamente.", "success");
@@ -165,7 +165,7 @@ const handleFormSubmited = (datosDelFormulario) => {
         procederConGuardado();
     } else {
         const mensajeConfirmacion = `¿Estás seguro de guardar cambios para el tipo de distribución seleccionado?`;
-        
+
         ElMessageBox({
             title: 'Confirmar modificación',
             showConfirmButton: false,
@@ -181,12 +181,12 @@ const handleFormSubmited = (datosDelFormulario) => {
                     ])
                 ]),
                 h('div', { class: 'footer-buttons' }, [
-                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
-                    h(BotonAceptar, { 
-                        onClick: () => { 
-                            ElMessageBox.close(); 
-                            procederConGuardado(); 
-                        } 
+                    h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                    h(BotonAceptar, {
+                        onClick: () => {
+                            ElMessageBox.close();
+                            procederConGuardado();
+                        }
                     }),
                 ])
             ])
@@ -313,10 +313,10 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
     margin-top: 35px;
 }
 
-.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
-  color: #007bff !important; 
-  font-weight: bold; 
+  color: #007bff !important;
+  font-weight: bold;
 }
 
 

@@ -19,7 +19,8 @@ const inputFileRef = ref(null);
 const dialogVisible = ref(false);
 const formRef = ref(null);
 const selectedOption = ref('localFile');
-const form = ref({
+
+const getFormInicial = () => ({
     IdMime: null,
     NombreObjeto: '',
     NombreSitio: '',
@@ -36,6 +37,8 @@ const form = ref({
     UrlExterna: '',
 });
 
+const form = ref(getFormInicial());
+
 const abrirExploradorArchivos = () => {
     if (inputFileRef.value) {
         inputFileRef.value.click();
@@ -49,19 +52,35 @@ const manejarSeleccionArchivo = (event) => {
         form.value.NombreObjeto = archivo.name;
         const partesNombre = archivo.name.split('.');
         if (partesNombre.length > 1) {
-            const extension = partesNombre.pop().toLowerCase();
-            const tipoEncontrado = opcionesTipoArchivo.value.find(
-                opt => opt.Extension.toLowerCase() === extension
-            );
-            if (tipoEncontrado) {
-                form.value.IdMime = tipoEncontrado.IdMime;
-                ElMessage.success(`Tipo de archivo '${extension.toUpperCase()}' auto-seleccionado.`);
-            } else {
-                ElMessage.warning(`La extensión '${extension.toUpperCase()}' no se encontró.`);
-            }
+            const extension = partesNombre.pop();
+            gestionarTipoArchivo(extension);
         }
     }
 };
+
+
+const gestionarTipoArchivo = (extension) => {
+    if (!extension) return;
+    const extUpper = extension.toUpperCase();
+
+    let tipoEncontrado = opcionesTipoArchivo.value.find(
+        opt => opt.Extension.toUpperCase() === extUpper
+    );
+
+    if (tipoEncontrado) {
+        form.value.IdMime = tipoEncontrado.IdMime;
+    } else {
+        form.value.IdMime = extUpper;
+        const nuevoTipoTemporal = {
+            IdMime: extUpper,
+            Extension: extUpper,
+            MIME: extUpper + " FILE"
+        };
+        opcionesTipoArchivo.value.push(nuevoTipoTemporal);
+
+    }
+};
+
 
 const opcionesProtocolo = ref(['HTTP', 'HTTPS', 'FTP', 'FILE']);
 const opcionesTipoArchivo = ref([]);
@@ -100,30 +119,24 @@ onMounted(() => {
 watch(() => props.visible, (newVal) => {
     dialogVisible.value = newVal;
     if (newVal) {
+        form.value = getFormInicial();
         if (props.accion === 'editar' && props.objetoExternoEdit) {
-            form.value = { ...props.objetoExternoEdit };
-            if (form.value.UrlExterna) {
+            Object.assign(form.value, JSON.parse(JSON.stringify(props.objetoExternoEdit)));
+            if (!form.value.UrlExterna) {
+                const proto = (form.value.Protocolo || 'http').toLowerCase();
+                const sitio = form.value.NombreSitio || '';
+                const ruta = form.value.Ruta ? `/${form.value.Ruta}` : '';
+                const nombre = form.value.NombreObjeto ? `/${form.value.NombreObjeto}` : '';
+                if (sitio) {
+                    form.value.UrlExterna = `${proto}://${sitio}${ruta}${nombre}`;
+                }
+            }
+            if (form.value.UrlExterna || form.value.NombreSitio) {
                 selectedOption.value = 'webPage';
             } else {
                 selectedOption.value = 'localFile';
             }
         } else {
-            form.value = {
-                IdMime: null,
-                NombreObjeto: '',
-                NombreSitio: '',
-                Ruta: '',
-                Protocolo: 'HTTP',
-                Usuario: '',
-                Password: '',
-                UnidadLogica: '',
-                Titulo: '',
-                Autor: '',
-                Institucion: '',
-                Fecha: null,
-                Observaciones: '',
-                UrlExterna: '',
-            };
             selectedOption.value = 'localFile';
         }
         nextTick(() => {
@@ -132,22 +145,16 @@ watch(() => props.visible, (newVal) => {
     }
 }, { immediate: true });
 
-watch(dialogVisible, (newVal) => {
-    if (!newVal) {
-        emit('cerrar');
-    }
-});
-
 watch(selectedOption, (newVal) => {
-    if (newVal === 'localFile') {
-        form.value.UrlExterna = '';
-        form.value.NombreSitio = '';
-        form.value.Ruta = '';
-        form.value.Protocolo = 'HTTP'; 
-        form.value.NombreObjeto = '';
-        form.value.UnidadLogica = '';
-        form.value.Usuario = '';
-        form.value.Password = '';
+    if (props.accion === 'crear') {
+        if (newVal === 'localFile') {
+            form.value.UrlExterna = '';
+            form.value.NombreSitio = '';
+            form.value.Ruta = '';
+            form.value.Protocolo = 'HTTP';
+            form.value.NombreObjeto = '';
+            form.value.UnidadLogica = '';
+        }
     }
     nextTick(() => {
         formRef.value?.clearValidate();
@@ -155,35 +162,37 @@ watch(selectedOption, (newVal) => {
 });
 
 watch(() => form.value.UrlExterna, (newUrl) => {
-    if (newUrl && selectedOption.value === 'webPage') {
+    if (newUrl && selectedOption.value === 'webPage' && props.accion === 'crear') {
         try {
-            const url = new URL(newUrl);
+            let urlToParse = newUrl;
+            if (!/^https?:\/\//i.test(newUrl)) {
+                urlToParse = 'http://' + newUrl;
+            }
+            const url = new URL(urlToParse);
             const protocol = url.protocol.replace(':', '').toUpperCase();
             if (opcionesProtocolo.value.includes(protocol)) {
                 form.value.Protocolo = protocol;
             }
             form.value.NombreSitio = url.hostname;
-            const pathParts = url.pathname.split('/').filter(p => p); 
+            const fullPath = url.pathname + url.search + url.hash;
+            const cleanPath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+            const pathParts = cleanPath.split('/').filter(p => p !== "");
+
             if (pathParts.length > 0) {
-                form.value.Ruta = `/${pathParts[0]}`;
-                const remainingPath = pathParts.slice(1).join('/');
-                form.value.NombreObjeto = remainingPath + url.search;
+                form.value.NombreObjeto = pathParts.pop();
+                form.value.Ruta = pathParts.join('/');
             } else {
-                form.value.Ruta = '/';
-                form.value.NombreObjeto = url.search; 
+                form.value.Ruta = '';
+                form.value.NombreObjeto = '';
             }
             const htmlFileType = opcionesTipoArchivo.value.find(
-                opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase() === 'htmlfile'
+                opt => opt.Extension.toLowerCase() === 'html' || opt.MIME.toLowerCase().includes('html')
             );
             if (htmlFileType) {
                 form.value.IdMime = htmlFileType.IdMime;
             }
         } catch (error) {
-            console.warn('URL inválida, esperando a que sea completa:', error.message);
-            form.value.Protocolo = 'HTTP';
-            form.value.NombreSitio = '';
-            form.value.Ruta = '';
-            form.value.NombreObjeto = ''; 
+            console.warn('URL incompleta o inválida');
         }
     }
 });
@@ -221,8 +230,8 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
 
-                    <el-form-item label="Origen del objeto" style="margin-bottom: 20px; margin-top: -75px;">
-                        <el-radio-group v-model="selectedOption">
+                    <el-form-item style="margin-bottom: 20px; margin-top: -75px;">
+                        <el-radio-group v-model="selectedOption" :disabled="accion === 'editar'">
                             <el-radio label="localFile">Archivo local</el-radio>
                             <el-radio label="webPage">Página web (URL)</el-radio>
                         </el-radio-group>
@@ -240,7 +249,7 @@ const cerrarDialogo = () => {
                                 style="display: none;" />
                         </el-form-item>
                         <el-form-item label="Nombre del archivo" prop="NombreObjeto">
-                            <el-input v-model="form.NombreObjeto" placeholder="nombre.extension" />
+                            <el-input v-model="form.NombreObjeto" placeholder="Nombre del archivo o recurso" disabled/>
                         </el-form-item>
                     </div>
 
@@ -272,13 +281,15 @@ const cerrarDialogo = () => {
                     </el-form-item>
 
                     <el-form-item label="Nombre del sitio" prop="NombreSitio">
-                        <el-input v-model="form.NombreSitio" placeholder="www.ejemplo.com"
-                            :disabled="selectedOption === 'localFile'" />
+                        <el-input
+                            v-model="form.NombreSitio"
+                            placeholder="www.ejemplo.com"
+                            :disabled="selectedOption === 'localFile'"
+                        />
                     </el-form-item>
 
                     <el-form-item label="Ruta" prop="Ruta">
-                        <el-input v-model="form.Ruta" placeholder="/carpetas/adicionales"
-                            :disabled="selectedOption === 'webPage'" />
+                        <el-input v-model="form.Ruta" placeholder="Ruta del recurso" />
                     </el-form-item>
 
                     <el-row :gutter="20">

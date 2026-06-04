@@ -540,7 +540,6 @@ onMounted(() => {
               <template #default="{ row }">
                 <div class="expand-content-detail">
                   <p><strong>IdBibliografia:</strong> {{ row.IdBibliografia }}</p>
-                  <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
                   <p><strong>OrdenCitaCompleta:</strong> {{ row.OrdenCitaCompleta }}</p>
                   <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
                   <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
@@ -622,7 +621,7 @@ onMounted(() => {
     </DialogGeneral>
     <DialogGeneral v-model="esModalEditarGrupoVisible" :bot-cerrar="true" :press-esc="true" width="1000px">
       <div class="dialog-header">
-        <h3>Editar observaciones de grupo taxonómico</h3>
+        <h3>Modificar las observaciones de grupo taxonómico</h3>
       </div>
       <div class="header">
         <div class="form-actions">
