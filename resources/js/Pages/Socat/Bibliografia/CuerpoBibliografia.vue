@@ -50,8 +50,6 @@ const agregarGrupo = () => {
   esModalGruposVisible.value = true;
 };
 
-
-
 const manejarClickFila = (row) => {
   selectedGrupoId.value = null;
   selectedGrupoRow.value = null;
@@ -152,6 +150,10 @@ const props = defineProps({
   traspaso: {
     type: Boolean,
     default: false
+  },
+  biblioAct: {
+    type: Array,
+     default: () => []
   }
 });
 
@@ -345,12 +347,13 @@ const cerrarModalGrupos = () => {
 };
 
 const traspasaBiblio = () => {
-
   const id = selectedBibliografia.value.IdBibliografia;
-
-  if (!biblioRelacion.value.includes(id)) {
+  
+  if (!biblioRelacion.value.includes(id) && !props.biblioAct.includes(id)) {
     biblioRelacion.value.push(id);
     mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
+  }else{
+    mostrarNotificacion("Error", "La referencia bibliográfica ya se encuentra relacionada.", "error");
   }
 
 };

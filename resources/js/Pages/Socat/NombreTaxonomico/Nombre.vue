@@ -7,6 +7,7 @@
   import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
   import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
   import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
+  import CatalogosAsociados from '@/Pages/Socat/RelCatalogosAsociados/CatalogosAsociados.vue'
   import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
   import EditarButton from '@/Components/Biotica/EditarButton.vue';
   import { ElMessageBox } from 'element-plus';
@@ -131,6 +132,7 @@
   const taxActBiblio = ref([]);
   const dialogFormVisibleBiblio = ref(false);
   const dialogFormVisibleBiblioNom = ref(false);
+  const dialogFormVisibleAsocCat = ref(false);
 
   const scrollbarHeight = ref('550px');
   const dialogWidth = ref('35%');
@@ -1055,6 +1057,10 @@
     dialogFormVisibleBiblioNom.value = false;
   }
 
+  const cerrarRelCatAsoc = async() => {
+    dialogFormVisibleAsocCat.value = false;
+  }
+
   const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
@@ -1135,6 +1141,10 @@
 
   const abre_Relaciones = () => {
     dialogFormVisibleRel.value = true;
+  }
+
+  const abre_CatalogosAsociados = () => {
+        dialogFormVisibleAsocCat.value = true;
   }
 
   const showAscendants = async () => {
@@ -1320,7 +1330,7 @@
                     </el-icon>
                     <span>Relaciones taxonómicas</span>
                   </el-menu-item>
-                  <el-menu-item class="item">
+                  <el-menu-item class="item" @click="abre_CatalogosAsociados">
                     <el-icon>
                       <Grid />
                     </el-icon>
@@ -1471,7 +1481,11 @@
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="true" :pressEsc="true"
+    <DialogForm v-model="dialogFormVisibleAsocCat" :botCerrar="true" :pressEsc="true" :width="'83%'">
+      <CatalogosAsociados :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" />
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
         <h3>Ascendentes del taxón</h3>

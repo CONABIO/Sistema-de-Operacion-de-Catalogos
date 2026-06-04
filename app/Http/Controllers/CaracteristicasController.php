@@ -14,8 +14,25 @@ use Inertia\Response as InertiaResponse;
 
 class CaracteristicasController extends Controller
 {
+    /*Esta es la modificacion agregada para que sea respuesta AJAX 
+        Juan Carlos Mora Morquecho 02/06/2026 
+    Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
+
     public function index(Request $request): InertiaResponse
     {
+        $data = $this->cargaInicio();
+
+        return Inertia::render('Socat/Caracteristicas/indexCaracteristicas', [
+            'treeDataProp' => $data['treeDataProp'],
+            'flatTreeDataProp' => $data['flatTreeDataProp'],
+            'errors' => session('errors') ? session('errors')->getBag('default')->getMessages() : (object) [],
+
+
+        ]);
+    }
+
+    private function cargaInicio(){
+
         $todosLosNodosPlanos = CatalogoNombre::orderBy('Nivel1')
             ->orderBy('Nivel2')
             ->orderBy('Nivel3')
@@ -28,14 +45,17 @@ class CaracteristicasController extends Controller
 
         $treeDataParaVisualizacion = $this->buildTreeOptimized($todosLosNodosPlanos);
 
-        return Inertia::render('Socat/Caracteristicas/indexCaracteristicas', [
-            'treeDataProp' => $treeDataParaVisualizacion,
-            'flatTreeDataProp' => $todosLosNodosPlanos,
-            'errors' => session('errors') ? session('errors')->getBag('default')->getMessages() : (object) [],
-
-
-        ]);
+        return ['treeDataProp' => $treeDataParaVisualizacion,
+                'flatTreeDataProp' => $todosLosNodosPlanos];
     }
+
+    public function cargaCaracteristicasNombre() {
+        return response()->json($this->cargaInicio());
+    }
+
+    /*Esta es la modificacion agregada para que sea respuesta AJAX 
+        Juan Carlos Mora Morquecho 22/04/2026 
+    Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     private function buildTreeOptimized(Collection $elements): array
     {

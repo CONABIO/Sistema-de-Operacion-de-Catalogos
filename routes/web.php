@@ -147,6 +147,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
         ->name('caracteristicas-taxon.index');
 
+     Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicasNombre']);
+
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
         Route::get('/', [TipoRelacionController::class, 'index'])->name('index');
