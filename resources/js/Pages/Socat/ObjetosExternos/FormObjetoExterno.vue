@@ -198,16 +198,23 @@ watch(() => form.value.UrlExterna, (newUrl) => {
 });
 
 const intentarGuardar = async () => {
-    if (!formRef.value) return;
+    console.log("¡EL CLICK FUNCIONA!"); // <--- SI ESTO NO SALE EN CONSOLA, ES CSS.
 
-    const isValid = await formRef.value.validate();
-    if (isValid) {
+    if (!formRef.value) {
+        console.log("Error: formRef es null");
+        return;
+    }
+
+    try {
+        await formRef.value.validate();
+        console.log("Formulario válido, enviando...");
         const datosParaEnviar = {
             ...form.value,
             IdObjetoExterno: props.accion === 'editar' ? props.objetoExternoEdit?.IdObjetoExterno : null,
         };
         emit('formSubmited', datosParaEnviar);
-    } else {
+    } catch (error) {
+        console.log("Errores de validación:", error);
         ElMessage.error('Por favor, corrija los errores en el formulario.');
     }
 };
@@ -390,6 +397,8 @@ const cerrarDialogo = () => {
     justify-content: flex-end;
     margin-bottom: 20px;
     gap: 30px;
+     position: relative;
+    z-index: 999;
 }
 
 :deep(.el-form-item) {

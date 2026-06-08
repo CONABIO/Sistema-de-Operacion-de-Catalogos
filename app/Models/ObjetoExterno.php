@@ -37,7 +37,6 @@ class ObjetoExterno extends Model
         'Observaciones',
         'FechaCaptura',
         'FechaModificacion',
-        'UrlExterna'
     ];
 
      protected $casts = [
