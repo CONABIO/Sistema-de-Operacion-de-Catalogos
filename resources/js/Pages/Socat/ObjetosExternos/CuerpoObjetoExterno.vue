@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, h, nextTick, watch  } from 'vue';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
@@ -9,8 +8,11 @@ import FormObjetoExterno from './FormObjetoExterno.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 
 const selectedRowId = ref(null);
+// VARIABLE NUEVA PARA FORZAR EL REFRESCO
+const modalKey = ref(Date.now());
 
 const manejarClickFila = (row) => {
     selectedRowId.value = row.IdObjetoExterno;
@@ -104,14 +106,16 @@ const cerrarNotificacion = () => {
 };
 
 const nuevoObjetoExterno = () => {
-    objetoExternoEditado.value = null;
-    modalVisible.value = true;
+  objetoExternoEditado.value = null;
+  // CAMBIAMOS LA KEY PARA QUE VUE RE-RENDERICE EL MODAL
+  modalKey.value = Date.now();
+  modalVisible.value = true;
+  console.log("Entrando")
 };
+
+
 const editarObjetoExterno = async (item) => {
-
-
     await nextTick();
-
     objetoExternoEditado.value = item;
     modalVisible.value = true;
 };
@@ -135,16 +139,19 @@ const handleFormSubmited = (datosDelFormulario) => {
     const esEdicion = objetoExternoEditado.value !== null;
     const idParaEditar = datosDelFormulario.IdObjetoExterno || (objetoExternoEditado.value?.IdObjetoExterno);
 
-    const nombreNuevoTrim = datosDelFormulario.NombreObjeto?.trim().toLowerCase();
+    const nNuevo = (datosDelFormulario.NombreObjeto || "").trim().toLowerCase();
+    const sNuevo = (datosDelFormulario.NombreSitio || "").trim().toLowerCase();
+
     const mensajeDuplicado = esEdicion
         ? "El objeto externo que desea modificar ya existe, las modificaciones no se realizaron."
         : "El objeto externo que desea ingresar ya existe.";
 
+    // Validación local: Solo bloquea si coinciden Nombre Y Sitio
     const registroExistenteLocal = currentData.value.find(item => {
-        const mismoNombre = item.NombreObjeto?.trim().toLowerCase() === nombreNuevoTrim;
-        return esEdicion
-            ? (mismoNombre && item.IdObjetoExterno !== idParaEditar)
-            : mismoNombre;
+        const nItem = (item.NombreObjeto || "").trim().toLowerCase();
+        const sItem = (item.NombreSitio || "").trim().toLowerCase();
+        const esMismo = (nItem === nNuevo && sItem === sNuevo);
+        return esEdicion ? (esMismo && item.IdObjetoExterno !== idParaEditar) : esMismo;
     });
 
     if (registroExistenteLocal) {
@@ -163,11 +170,8 @@ const handleFormSubmited = (datosDelFormulario) => {
                 const response = await axios.post('/objetos-externos', datosDelFormulario);
                 mostrarNotificacion("Ingreso", "El objeto externo ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdObjetoExterno || response.data.IdObjetoExterno;
-                if (nuevoId) {
-                    await irAlRegistroEspecifico(nuevoId);
-                } else {
-                    if (tablaRef.value) await tablaRef.value.fetchData();
-                }
+                if (nuevoId) await irAlRegistroEspecifico(nuevoId);
+                else if (tablaRef.value) await tablaRef.value.fetchData();
             } else {
                 await axios.put(`/objetos-externos/${idParaEditar}`, datosDelFormulario);
                 mostrarNotificacion("Modificación", "El objeto externo ha sido modificado correctamente.", "success");
@@ -260,6 +264,10 @@ const eliminarObjetoExterno = (idObjeto) => {
                 @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno"  @row-click="manejarClickFila">
 
+                <template #header-actions>
+                    <NuevoButton @crear="nuevoObjetoExterno" />
+                </template>
+
                 <template #extra-columns>
                     <el-table-column label="Extensión" min-width="100">
                         <template #default="{ row }"><span>{{ row.extension }}</span></template>
@@ -283,11 +291,16 @@ const eliminarObjetoExterno = (idObjeto) => {
             </TablaFiltrable>
         </div>
 
-        <FormObjetoExterno :visible="modalVisible" :objeto-externo-edit="objetoExternoEditado" :key="objetoExternoEditado?.IdObjetoExterno || 'nuevo'"
-            :accion="objetoExternoEditado ? 'editar' : 'crear'" @cerrar="cerrarModal"
-            @formSubmited="handleFormSubmited" />
-
         <Teleport to="body">
+            <!-- LA KEY AHORA USA EL TIMESTAMP SI ES NUEVO PARA FORZAR EL RESET -->
+            <FormObjetoExterno
+                :visible="modalVisible"
+                :objeto-externo-edit="objetoExternoEditado"
+                :key="objetoExternoEditado ? objetoExternoEditado.IdObjetoExterno : modalKey"
+                :accion="objetoExternoEditado ? 'editar' : 'crear'"
+                @cerrar="cerrarModal"
+                @formSubmited="handleFormSubmited" />
+
             <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
                 :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
                 @close="cerrarNotificacion" />

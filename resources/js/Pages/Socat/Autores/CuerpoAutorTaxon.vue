@@ -15,7 +15,7 @@ import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 
 
-const cargandoTabla = ref(false); 
+const cargandoTabla = ref(false);
 const selectedRowId = ref(null);
 
 const filaSeleccionada = ref(null);
@@ -242,21 +242,19 @@ const cerrarFormModal = () => {
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
   try {
-    cargandoTabla.value = true; // Iniciamos carga para bloquear parpadeo
+    cargandoTabla.value = true;
     selectedRowId.value = null;
-    
+
     if (tablaRef.value) {
       tablaRef.value.selectedRow = null;
-      // IMPORTANTE: Asegúrate que limpiarTodosLosFiltros no ejecute un fetch automático
-      // O si lo hace, espera a que termine antes de pedir la página específica.
-      await tablaRef.value.limpiarTodosLosFiltros(); 
+      await tablaRef.value.limpiarTodosLosFiltros();
     }
 
     const currentSort = tablaRef.value?.sorting || { prop: 'NombreAutoridad', order: 'asc' };
-    
+
     const resPagina = await axios.post('/autores/obtener-pagina', {
       id: idEncontrado,
-      perPage: 100, // Ajusta según tu configuración
+      perPage: 100,
       sortBy: currentSort.prop || 'NombreAutoridad',
       sortOrder: currentSort.order || 'asc'
     });
@@ -264,12 +262,11 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     const paginaDestino = resPagina.data.page;
 
     if (tablaRef.value) {
-      // irAPagina ya hace el fetch interno
       await tablaRef.value.irAPagina(paginaDestino);
-      
+
       await nextTick();
-      
-      const filaEncontrada = datosDeAutores.value.find(d => 
+
+      const filaEncontrada = datosDeAutores.value.find(d =>
         String(d.IdAutorTaxon) === String(idEncontrado)
       );
 
@@ -284,7 +281,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
   } catch (err) {
     console.error("Error al redirigir al registro:", err);
   } finally {
-    cargandoTabla.value = false; // Finalizamos carga
+    cargandoTabla.value = false;
   }
 };
 
@@ -621,15 +618,11 @@ const onEliminarInterno = () => {
   margin-top: 35px;
 }
 
-/*Leonardo - 22/01/2026 
-Etiqueta que marca en verde las filas de la tabla*/
+
 .el-table .fila-seleccionada-verde {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important;
 }
-
-/*Leonardo - 22/01/2026*/
-
 
 .el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
@@ -638,7 +631,6 @@ Etiqueta que marca en verde las filas de la tabla*/
 }
 
 
-/* Este estilo NO tiene scoped y se aplica globalmente */
 .tabla-autores-personalizada .el-table__body tr.current-row>td {
   background-color: #ddf6dd !important;
   color: #007bff !important;
@@ -655,26 +647,21 @@ Etiqueta que marca en verde las filas de la tabla*/
   background-color: #ddf6dd !important;
 }
 
-/* Estilos para la tabla principal (si es necesario) */
 .main-section .el-table__body tr.current-row>td {
   background-color: #ddf6dd !important;
 }
 
-/* JC 23/01/2026 jira 06  al ingresar o modificar los datos de un taxón, si haces clic en el botón para el catálogo de Grupo me saca de la pantalla del taxón. Si no está habilitado el grupo en la lista tampoco debería estar habilitado el botón.” */
 .icon-bold {
   font-size: 12px !important;
 }
 
-/* JC 23/01/2026 jira 06 */
 
 .icon-bold svg path {
   stroke-width: 1.5 !important;
-  /* por defecto es ~2 */
 }
 
 .el-table .cell {
   word-break: break-word !important;
-  /* Corta palabras largas de forma natural */
   line-height: 1.4 !important;
 }
 </style>
