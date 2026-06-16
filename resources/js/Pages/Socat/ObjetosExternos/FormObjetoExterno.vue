@@ -50,6 +50,7 @@ const manejarSeleccionArchivo = (event) => {
     if (archivos.length > 0) {
         const archivo = archivos[0];
         form.value.NombreObjeto = archivo.name;
+        nextTick(() => {formRef.value?.validateField('NombreObjeto');});
         const partesNombre = archivo.name.split('.');
         if (partesNombre.length > 1) {
             const extension = partesNombre.pop();
@@ -91,9 +92,9 @@ const rules = computed(() => {
     };
 
     if (selectedOption.value === 'localFile') {
-        baseRules.NombreObjeto = [{ required: true, message: 'El nombre del archivo es obligatorio', trigger: 'blur' }];
+        baseRules.NombreObjeto = [{ required: true, message: 'El nombre del archivo es obligatorio', trigger: 'change' }];
     } else {
-        baseRules.UrlExterna = [{ required: true, message: 'La URL externa es obligatoria', trigger: 'blur' }];
+        baseRules.UrlExterna = [{ required: true, message: 'La URL externa es obligatoria', trigger: 'change' }];
     }
     return baseRules;
 });
@@ -198,13 +199,7 @@ watch(() => form.value.UrlExterna, (newUrl) => {
 });
 
 const intentarGuardar = async () => {
-    console.log("¡EL CLICK FUNCIONA!"); // <--- SI ESTO NO SALE EN CONSOLA, ES CSS.
-
-    if (!formRef.value) {
-        console.log("Error: formRef es null");
-        return;
-    }
-
+    if (!formRef.value) return;
     try {
         await formRef.value.validate();
         console.log("Formulario válido, enviando...");
@@ -214,8 +209,7 @@ const intentarGuardar = async () => {
         };
         emit('formSubmited', datosParaEnviar);
     } catch (error) {
-        console.log("Errores de validación:", error);
-        ElMessage.error('Por favor, corrija los errores en el formulario.');
+        console.log("Error de validación en el formulario", error);
     }
 };
 
@@ -237,7 +231,7 @@ const cerrarDialogo = () => {
             <div class="dialog-body">
                 <el-form :model="form" ref="formRef" :rules="rules" label-position="top">
 
-                    <el-form-item style="margin-bottom: 20px; margin-top: -75px;">
+                    <el-form-item style="margin-bottom: 20px; margin-top: -55px;">
                         <el-radio-group v-model="selectedOption" :disabled="accion === 'editar'">
                             <el-radio label="localFile">Archivo local</el-radio>
                             <el-radio label="webPage">Página web (URL)</el-radio>
@@ -278,7 +272,7 @@ const cerrarDialogo = () => {
                         <el-col :span="12">
                             <el-form-item label="Unidad lógica" prop="UnidadLogica">
                                 <el-input v-model="form.UnidadLogica" placeholder="Ej: c, d, etc."
-                                    :disabled="selectedOption === 'webPage'" />
+                                    :disabled="selectedOption === 'webPage'" maxlength="1" show-word-limit />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -296,7 +290,7 @@ const cerrarDialogo = () => {
                     </el-form-item>
 
                     <el-form-item label="Ruta" prop="Ruta">
-                        <el-input v-model="form.Ruta" placeholder="Ruta del recurso" />
+                        <el-input type="textarea" v-model="form.Ruta" placeholder="Ruta del recurso" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none"/>
                     </el-form-item>
 
                     <el-row :gutter="20">
@@ -321,23 +315,23 @@ const cerrarDialogo = () => {
                     </el-row>
 
                     <el-form-item label="Observaciones" prop="Observaciones">
-                        <el-input v-model="form.Observaciones" type="textarea" :rows="3" />
+                        <el-input v-model="form.Observaciones" type="textarea" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none"/>
                     </el-form-item>
 
                     <el-divider content-position="center">Cita del objeto externo</el-divider>
 
                     <el-form-item label="Título" prop="Titulo">
-                        <el-input v-model="form.Titulo" />
+                        <el-input type="textarea" v-model="form.Titulo" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none"/>
                     </el-form-item>
 
                     <el-form-item label="Institución" prop="Institucion">
-                        <el-input v-model="form.Institucion" />
+                        <el-input type="textarea" v-model="form.Institucion" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                     </el-form-item>
 
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Autor" prop="Autor">
-                                <el-input v-model="form.Autor" />
+                                <el-input type="textarea" v-model="form.Autor" maxlength="255" show-word-limit :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                             </el-form-item>
                         </el-col>
                         <el-col :span="12">
