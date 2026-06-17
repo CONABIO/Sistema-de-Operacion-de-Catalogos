@@ -210,11 +210,11 @@ class BibliografiaController extends Controller
             $conn = DB::connection('catcentral');
 
             if ($conn->table('RelacionBibliografia')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una relación bibliográfica.'], 400);
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una relación taxonómica.'], 400);
             }
 
             if ($conn->table('RelNombreBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres.'], 400);
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más taxones.'], 400);
             }
 
             if ($conn->table('RelBiblioGrupoSCAT')->where('IdBibliografia', $id)->exists()) {
@@ -222,11 +222,11 @@ class BibliografiaController extends Controller
             }
 
             if ($conn->table('RelNombreCatalogoBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres de catálogo.'], 400);
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más características del nombre.'], 400);
             }
 
             if ($conn->table('RelNombreCatalogoRegionBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a catálogo de región.'], 400);
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más característica(s)-región(es) del nombre.'], 400);
             }
 
             if ($conn->table('RelNombreRegionBiblio')->where('IdBibliografia', $id)->exists()) {
