@@ -296,7 +296,7 @@ const cerrarDialogo = () => {
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="Tipo de archivo" prop="IdMime">
-                                <el-select v-model="form.IdMime" placeholder="Seleccione un tipo" style="width: 100%;">
+                                <el-select v-model="form.IdMime" placeholder="Seleccione un tipo" style="width: 100%;" disabled>
                                     <el-option v-for="item in opcionesTipoArchivo" :key="item.IdMime"
                                         :label="`${item.Extension} - ${item.MIME}`" :value="item.IdMime" />
                                 </el-select>
@@ -304,12 +304,12 @@ const cerrarDialogo = () => {
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Usuario" prop="Usuario">
-                                <el-input v-model="form.Usuario" disabled />
+                                <el-input v-model="form.Usuario" />
                             </el-form-item>
                         </el-col>
                         <el-col :span="6">
                             <el-form-item label="Contraseña" prop="Password">
-                                <el-input v-model="form.Password" type="password" show-password disabled />
+                                <el-input v-model="form.Password" type="password" show-password  />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -336,8 +336,13 @@ const cerrarDialogo = () => {
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="Fecha de creación" prop="Fecha">
-                                <el-date-picker v-model="form.Fecha" type="date" placeholder="Seleccione una fecha"
-                                    style="width: 100%;" />
+                                <el-date-picker
+                                    v-model="form.Fecha"
+                                    :model-value="form.Fecha = (form.Fecha || new Date())"
+                                    type="date"
+                                    disabled
+                                    style="width: 100%;"
+                                />
                             </el-form-item>
                         </el-col>
                     </el-row>
