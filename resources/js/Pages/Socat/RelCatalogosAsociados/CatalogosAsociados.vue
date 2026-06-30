@@ -2,111 +2,177 @@
     <div>
         <el-card class="box-card">
             <div class="common-layout">
-                <el-container style="height: 90vh;">
+                <el-container style="height: 72vh;">
                     <el-header class="header">
                         <div class="header-content">
                             <h1 class="titulo">Asociación de catalogos</h1>
                         </div>
                     </el-header>
                     <el-main style="padding: 15px; background: #fff; overflow: hidden;">
-                        <el-row justify="space-between" align="middle">
-
-                            <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                {{ props.taxonAct.label }} 
-                            </span>
-
-                            <div style="display: flex; gap: 50px;">                                
-                                <BotonSalir accion="cerrar" @salir="cerrarDialogo"
-                                                style="flex-shrink: 0; min-width: max-content;"/>
-                            </div>
+                        <el-row :gutter="21">
+                            <el-col :span="18">
+                                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                    {{ props.taxonAct.label }} 
+                                </span>
+                            </el-col>
+                            <el-col :span="5" >
+                                <div style="display: flex; gap: 5px; justify-content: flex-end;">                                
+                                    <BotonCaract @click="abrirCaract"
+                                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                                            
+                                    <BotonRegiones @click="abrirReg"
+                                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                                            
+                                    <BotonNomComun @click="abrirNomCom"
+                                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                                            
+                                    <BotonSalir accion="cerrar" @salir="closeDialog"
+                                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                </div>
+                            </el-col>
                         </el-row>
                         <el-tabs type="card" v-model="tabInicial">
-                            <el-tab-pane label="Características" name="taxon">
-                                <!--Aqui debo de pasar los datos del arbol para mostrar la informacion-->
-                                <div class="dual-panel-container">
-                                    <el-card class="box-card tree-card" shadow="never">
-                                        <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeData"
-                                            :props="{ children: 'children', label: 'Descripcion' }" node-key="IdCatNombre"
-                                            :current-node-key="selectedNode?.IdCatNombre" :highlight-current="true" :expand-on-click-node="true"
-                                            :default-expanded-keys="expandedKeysArray" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                                            @node-click="handleNodeSelected" class="custom-element-tree">
-                                            <template #default="{ node, data }">
-                                            <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
-                                                <span>{{ node.label }}</span>
-                                            </span>
-                                            </template>
-                                        </el-tree>
-                                        <div v-else class="no-data-message">
-                                            No hay datos de características para mostrar.
+                            <el-tab-pane label="Características" name="Caracteristicas">
+                                <el-container>
+                                    <el-aside width="710px">
+                                        <div class="table-wrapper">
+                                            <TablaFiltrable 
+                                                :columnas = "columnasDefinidasCaract" 
+                                                :datos = "tablaCaracteristicas"
+                                                :opciones-filtro = "opcionesFiltroCaract"
+                                                :totalItems = "totalRegCaract"
+                                                :itemsPerPage = 9
+                                                :mostrarBiblio = "false"
+                                                :mostrarAcci = "false"
+                                                :alturaTabla = 330
+                                                :highlight-current-row = "true"
+                                                :mostrarNuevo = "false"
+                                                :mostrarEditar = "true"
+                                                :mostrarBorrar = "true"
+                                                :mostrarSalir = "false"
+                                                @row-click="clickCaract"/>
                                         </div>
-                                    </el-card>
-                                    <!-- Panel de botones intermedios -->
-                                    <div style="position: sticky; 
-                                                top: 20%; 
-                                                left: 10px;
-                                                transform: translateY(15%);
-                                                display: flex;
-                                                flex-direction: column;
-                                                gap: 16px;">
-                                        <el-tooltip effect="dark" content="Relaciona taxón" placement="top">
-                                        <el-button @click="traspasaDatos" circle color="#8e44ad" :disabled="habTraspaso"
-                                                    style="margin-left: 10px;">
-                                            <el-icon>
-                                            <iconoTraspaso />
-                                            </el-icon>
-                                        </el-button>
-                                        </el-tooltip>
-                                        <el-tooltip effect="dark" content="Cambio de relación" placement="right">
-                                        <el-button @click="CambioBasSin" circle type="warning" 
-                                                    style="margin-left: 10px;"
-                                                    :disabled = "habCambioSinBas">
-                                            <el-icon>
-                                            <reemplazo />
-                                            </el-icon>
-                                        </el-button>
-                                        </el-tooltip>
-                                        <el-tooltip effect="dark" content="Traspaso de información" placement="right">
-                                        <el-button @click="CambioBasSin" circle  
-                                                    style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
-                                                    :disabled = "habCambioSinBas">
-                                            <img :src = "'/storage/images/TraspasoInformacion.png'" style="width: 25px; height: 28px">
-                                        </el-button>
-                                        </el-tooltip>
-                                    </div>
-                                    <el-card class="box-card tree-card" shadow="never">
-                                        <el-tree v-if="localTreeData && localTreeData.length" ref="treeRef" :data="localTreeDataTaxon"
-                                            :props="{ children: 'children', label: 'Descripcion' }" node-key="IdCatNombre"
-                                            :current-node-key="selectedNode?.IdCatNombre" :highlight-current="true" :expand-on-click-node="true"
-                                            :default-expanded-keys="expandedKeysArray" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                                            @node-click="handleNodeSelected" class="custom-element-tree">
-                                            <template #default="{ node, data }">
-                                            <span :id="`tree-node-${data.IdCatNombre}`" class="custom-tree-node-content">
-                                                <span>{{ node.label }}</span>
-                                            </span>
-                                            </template>
-                                        </el-tree>
-                                        <div v-else class="no-data-message">
-                                            No hay datos de características para mostrar.
+                                    </el-aside>
+                                    <el-aside width="30px"/>
+                                    <el-aside width="710px">
+                                        <div class="table-wrapper">
+                                            <TablaFiltrable 
+                                                :columnas = "columnasDefinidasRegCaract" 
+                                                :datos = "tablaCaractReg"
+                                                :opciones-filtro = "opcionesFiltroRegCaract"
+                                                :totalItems = "totalRegionCaract"
+                                                :itemsPerPage = 9
+                                                :mostrarBiblio = "true"
+                                                :mostrarAcci = "false"
+                                                :alturaTabla = 380
+                                                :highlight-current-row = "true"
+                                                :mostrarNuevo = "false"
+                                                :mostrarEditar = "true"
+                                                :mostrarBorrar = "true"
+                                                :mostrarSalir = "false"
+                                                @row-click="clickRegCaract">                                                
+                                            </TablaFiltrable> 
                                         </div>
-                                    </el-card>
-                                </div>
+                                    </el-aside>           
+                                </el-container>
                             </el-tab-pane>
-                            <el-tab-pane label="Nombre(s) común(es)" name="taxon">
-
+                            <el-tab-pane label="Nombre(s) común(es)" name="NomComun">
+                                <el-container>
+                                    <el-aside width="710px">
+                                        <div class="table-wrapper">
+                                            <TablaFiltrable 
+                                                :columnas = "columnasDefinidas" 
+                                                :datos = "tablaNomComun"
+                                                :opciones-filtro = "opcionesFiltroNomComun"
+                                                :totalItems = "totalRegNomComun"
+                                                :itemsPerPage = 9
+                                                :mostrarBiblio = "false"
+                                                :mostrarAcci = "false"
+                                                :alturaTabla = 330
+                                                :highlight-current-row = "true"
+                                                :mostrarNuevo = "false"
+                                                :mostrarEditar = "true"
+                                                :mostrarBorrar = "true"
+                                                :mostrarSalir = "false"
+                                                @row-click="clickNomCom"/>
+                                        </div>
+                                    </el-aside>
+                                    <el-aside width="30px"/>
+                                    <el-aside width="710px">
+                                        <div class="table-wrapper">
+                                            <TablaFiltrable 
+                                                :columnas = "columnasDefinidasRegNomCom" 
+                                                :datos = "tablaNomComunReg"
+                                                :opciones-filtro = "opcionesFiltroRegNomComun"
+                                                :totalItems = "totalRegionNomComun"
+                                                :itemsPerPage = 9
+                                                :mostrarBiblio = "true"
+                                                :mostrarAcci = "false"
+                                                :alturaTabla = 380
+                                                :highlight-current-row = "true"
+                                                :mostrarNuevo = "false"
+                                                :mostrarEditar = "true"
+                                                :mostrarBorrar = "true"
+                                                :mostrarSalir = "false"
+                                                @row-click="clickRegNomCom">                                                
+                                            </TablaFiltrable> 
+                                        </div>
+                                    </el-aside>                                     
+                                </el-container>
                             </el-tab-pane>
-                            <el-tab-pane label="Regiones" name="taxon">
-
+                            <el-tab-pane label="Regiones" name="Region">
+                                Regiones
                             </el-tab-pane>
                         </el-tabs>
-                    </el-main>                
+                    </el-main>  
+                    <el-footer height="60px">
+                        Observaciones {{ etiquetaObs }}
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <el-input
+                                v-model="observaciones"
+                                style="width:97%"
+                                :rows="2"
+                                type="textarea"
+                                :disabled="habObservaciones"
+                                placeholder="Observaciones"
+                            />
+                            <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
+                                            style="flex-shrink: 0; min-width: max-content;"/>
+                        </div>
+                    </el-footer>                              
                 </el-container>
             </div>
         </el-card>
+        <DialogForm v-model="dialogFormVisibleCaract" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <CuerpoCaracteristicas :modal="true" @cerrar="cerrarCarac"
+                :treeDataProp="treeDataProp"
+                :flatTreeDataProp="flatTreeDataProp"
+            />
+        </DialogForm>
+        <DialogForm v-model="dialogFormVisibleReg" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <CuerpoRegion :modal="true" @cerrar="cerrarReg"
+                :treeDataProp="treeRegionDataProp"
+                :tiposDeRegionProp="tiposDeRegionProp"
+                :tiposDeRegionTreeProp="tiposDeRegionTreeProp"
+            />
+        </DialogForm>
+        <DialogForm v-model="dialogFormVisibleNomCom" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <CuerpoNombreCom :modal="true" @cerrar="cerrarNomCom"/>
+        </DialogForm>
     </div>
 </template> 
 <script setup>
     import BotonSalir from '@/Components/Biotica/SalirButton.vue';
-    import { onMounted, ref } from 'vue';
+    import BotonCaract from '@/Components/Biotica/BtnCaracteristicas.vue';
+    import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
+    import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
+    import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+    import CuerpoCaracteristicas from '@/Pages/Socat/Caracteristicas/CuerpoCaracteristicas.vue';
+    import CuerpoRegion from '@/Pages/Socat/Regiones/CuerpoRegion.vue';
+    import CuerpoNombreCom from '@/Pages/Socat/Nombres/CuerpoNombreComun.vue';
+    import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+    import { onMounted, ref, watch } from 'vue';
+    import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 
     const props = defineProps({
         taxonAct: {
@@ -114,8 +180,31 @@
         },
     });
 
+    const tabInicial = ref("NomComun");
+
     const localTreeData = ref([]);
     const localTreeDataTaxon = ref([]);
+    const flatTreeDataProp = ref([]);
+    const treeDataProp = ref([]);
+    const dialogFormVisibleCaract = ref(false);
+    const dialogFormVisibleReg = ref(false);
+    const dialogFormVisibleNomCom = ref(false);
+
+    /*Declaracion de propiedades para regiones*/
+    const treeRegionDataProp = ref([]);
+    const tiposDeRegionProp = ref([]);
+    const tiposDeRegionTreeProp = ref([]);
+    const etiquetaObs = ref('');
+    const observaciones = ref('');
+    const habObservaciones = ref(true);
+
+    const tablaNomComun = ref([]);
+    const tablaNomComunReg = ref([]);
+    const tablaCaracteristicas = ref([]);
+    const tablaCaractReg = ref([]); 
+
+    const totalRegCaract = ref(0);
+    const totalRegionCaract = ref(0);
     
     const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
@@ -134,105 +223,235 @@
 
     const emit = defineEmits(['cerrar']);
 
-    const cerrarDialogo = () => {
+    const closeDialog = () => {
         emit('cerrar');
     };
-/*
+
+    //Estas son las columnas a mostrar Nombres Comunes 
+    const columnasDefinidas = ref([
+        {
+            prop: 'NombreComun', label: 'Nombre comun', minWidth: '120',
+            align: 'left', tipo: 'texto', filtrable: true
+        },
+        {
+            prop: 'Lengua', label: 'Lengua', minWidth: '250',
+            align: 'left', tipo: 'texto', filtrable: true
+        }
+    ]);
+
+    //Estas son las columnas a mostrar regiones de Nombres Comunes 
+    const columnasDefinidasRegNomCom = ref([
+        {
+            prop: 'Region', label: 'Región', minWidth: '120',
+            align: 'left', tipo: 'Texto', filtrable: true
+        },
+        {
+            prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        }
+    ]);
+
+    const opcionesFiltroNomComun = ref([
+        { label: 'Nombre comun', value: 'NombreComun' },
+        { label: 'Lengua', value: 'Lengua' }
+    ]);
+
+    const opcionesFiltroRegNomComun = ref([
+        { label: 'Region', value: 'Region' },
+    ]);
+
+    const opcionesFiltroRegCaract = ref([
+        { label: 'Region', value: 'Region' },
+        { label: 'Tipo Distribución', value: 'TipDistribucion' },
+    ]);
+
+    //Estas son las columnas a mostrar Caracteristicas 
+    const columnasDefinidasCaract = ref([
+        {
+            prop: 'Caracteristica', label: 'Caracteristica', minWidth: '100',
+            align: 'left', tipo: 'texto', filtrable: true
+        },
+        {
+            prop: 'BiblioCaract', label: '', minWidth: '35', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        }
+    ]);
+
+    const opcionesFiltroCaract = ref([
+        { label: 'Caracteristica', value: 'Caracteristica' }
+    ]);
+
+     const columnasDefinidasRegCaract = ref([
+        {
+            prop: 'Region', label: 'Región', minWidth: '120',
+            align: 'left', tipo: 'Texto', filtrable: true
+        },
+        {
+            prop: 'TipDistribucion', label: 'Tipo Distribucion', minWidth: '120',
+            align: 'left', tipo: 'Texto', filtrable: true
+        },
+        {
+            prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        }
+    ]);
+
+    const totalRegNomComun = ref(0);
+    const totalRegionNomComun = ref(0);
+
     watch(
-  () => props.treeDataProp,
-  (newVal) => {
-    const copiedData = deepCopy(newVal);
-    sortNodesAlphabetically(copiedData);
-    localTreeData.value = copiedData;
+        () => props.taxonAct,
+        async (nuevoValor, valorAnterior) => {
+            const respNomCom = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
 
-    let idToProcess = null;
-    if (nodeIdToSelectAfterInsert.value) {
-      idToProcess = String(nodeIdToSelectAfterInsert.value);
-    } else if (nodeIdToFocus.value) {
-      idToProcess = String(nodeIdToFocus.value);
+            if(respNomCom.status === 200)
+            {                
+                tablaNomComun.value = respNomCom.data;
+                totalRegNomComun.value = respNomCom.data.length;
+            }
+
+            const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
+
+            if(listCaract.status === 200)
+            {
+                console.log("Estas son las caracteristicas: ", listCaract);
+                tablaCaracteristicas.value = listCaract.data;
+                totalRegCaract.value = listCaract.data.length;
+            }
+        }
+    );
+
+    const abrirCaract = async () => {
+        const respCarac = await axios.get('/cargar-caracteristicas');
+
+        if(respCarac.status === 200){
+
+            flatTreeDataProp.value = respCarac.data.flatTreeDataProp;
+            treeDataProp.value = respCarac.data.treeDataProp;
+        }
+
+        dialogFormVisibleCaract.value = true;
     }
 
-    if (idToProcess) {
-      selectAndFocusNode(idToProcess);
+    const cerrarCarac = () => {
+        dialogFormVisibleCaract.value = false;
     }
-  },
-  { immediate: true, deep: true }
-);
-*/
+
+    const abrirReg = async () => {
+        const respRegiones = await axios.get('/carga-regiones');
+
+        if(respRegiones.status === 200){
+            treeRegionDataProp.value = respRegiones.data.treeData;
+            tiposDeRegionProp.value = respRegiones.data.todosLosTiposDeRegion;
+            tiposDeRegionTreeProp.value = respRegiones.data.tiposDeRegionTree;
+        }
+
+        dialogFormVisibleReg.value = true;
+    }
+
+    const clickNomCom = (row) =>{
+        observaciones.value = "";
+
+        tablaNomComunReg.value = row.Regiones;
+        
+        if(row.Regiones != undefined)
+        {
+            totalRegionNomComun.value = row.Regiones.length;
+            observaciones.value = row.Observaciones;
+        }
+        
+        etiquetaObs.value = 'nombre común'
+    } 
+
+    const clickCaract = (row) => {
+        observaciones.value = "";
+
+        tablaCaractReg.value = row.Regiones
+
+        if(row.Regiones != undefined){
+            totalRegionCaract.value = row.Regiones.length;
+        }
+
+        etiquetaObs.value = 'caracteristicas'
+    }
+
+    const clickRegCaract = (row) => {
+        observaciones.value = "";
+
+        etiquetaObs.value = 'relacion con caracteristicas';
+        observaciones.value = row.Observaciones;
+    }
+
+    const clickRegNomCom = (row) => {
+        observaciones.value = "";
+        
+        etiquetaObs.value = 'relación con región';
+        observaciones.value = row.ObservacionesReg;
+    }
+
+    const cerrarReg = () => {
+        dialogFormVisibleReg.value = false;
+    }
+
+    const abrirNomCom = () => {
+        dialogFormVisibleNomCom.value = true;
+    }
+
+    const cerrarNomCom= () => {
+        dialogFormVisibleNomCom.value = false;
+    }
+
+    const Guardar = () => {
+        console.log("Esta es la funcion de guardar");
+    }
 
     onMounted( async () => {
-        const response = await axios.get('/cargar-caracteristicas');
-
-        if(response.status === 200)
+        const respCarac = await axios.get('/cargar-caracteristicas');
+        
+        if(respCarac.status === 200)
         {
-            const copiedData = deepCopy(response.data.treeDataProp);
+            flatTreeDataProp.value = respCarac.data.flatTreeDataProp;
+            treeDataProp.value = respCarac.data.treeDataProp;
+
+            const copiedData = deepCopy(respCarac.data.treeDataProp);
             sortNodesAlphabetically(copiedData);
             localTreeData.value = copiedData;
         }
+        
+        //Aqui se va a verificar los nombre comunes 
+
+        const respNomCom = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
+        
+        if(respNomCom.status === 200)
+        {
+            tablaNomComun.value = respNomCom.data;
+            totalRegNomComun.value = respNomCom.data.length;
+        }
+
+        const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
+
+        if(listCaract.status === 200)
+        {
+            console.log("Estas son las caracteristicas: ", listCaract);
+            tablaCaracteristicas.value = listCaract.data;
+            totalRegCaract.value = listCaract.data.length;
+        }
+        
     });
+
 </script>
-
-<style>
-    .custom-element-tree {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        font-size: 14px;
-        line-height: 20px;
-    }
-
-    .custom-element-tree .el-tree-node__content {
-        height: auto !important;
-        min-height: 10px !important;
-        display: flex;
-        align-items: center;
-        padding: 2px 0;
-        white-space: normal;
-    }
-
-
-    .custom-tree-node-content {
-        flex: 1;
-        min-width: 0;
-        line-height: 1.4;
-        padding-right: 15px;
-        word-break: normal;
-        overflow-wrap: anywhere;
-    }
-
-    .custom-element-tree .el-tree-node__content:hover {
-        background-color: #f4f6f8;
-    }
-
-    .custom-element-tree .el-tree-node.is-current>.el-tree-node__content {
-        background-color: #e4f5e1;
-        font-weight: 500;
-        color: #007bff;
-    }
-
-    .custom-element-tree .el-tree-node__expand-icon {
-        font-size: 1.2em;
-        color: #909399;
-    }
-
-    .custom-element-tree .el-tree-node__expand-icon:hover {
-        color: #606266;
-    }
-
-    .tree-card>.el-card__body {
-        overflow-y: auto;
-        flex-grow: 1;
-        padding: 10px;
-        border: 1px solid #ebeef5;
-        border-radius: 4px;
-        margin: 0 24px 24px 24px;
-    }
-</style>
 
 <style scoped>
     .tree-card {
         width: 100%;
         max-width: 1600px;
-        max-height: 726px;
+        max-height: 590px;
         display: flex;
         flex-direction: column;
+    }
+    .table-wrapper :deep(.el-table__body tr.current-row > td) {
+      background-color: #ddf6dd !important;
+      color: #0d6efd !important;
+      font-weight: bold;
     }
 </style>

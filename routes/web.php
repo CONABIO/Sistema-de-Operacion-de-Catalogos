@@ -92,6 +92,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
 
+    //Juan Carlos Mora cargo solo los nombres comunes por taxón 
+    Route::get('cargar-nomcomun-taxon/{id}', [NombreComunController::class, 'cargaNombresComunes']);
+
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
 
     Route::get('/categoria-taxonomica', [CategoriaTaxonomicaController::class, 'index'])->name('categoria-taxonomica.index');
@@ -147,7 +150,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
         ->name('caracteristicas-taxon.index');
 
-     Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicasNombre']);
+    Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicas']);
+
+    Route::get('/cargaCaracTaxon/{id}', [CaracteristicasController::class, 'cargaCaracteristicasTaxon']);
+
+
 
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
@@ -170,10 +177,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [RegionController::class, 'index'])->name('index');
         Route::post('/', [RegionController::class, 'store'])->name('store');
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
-        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
+        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');        
     });
+    Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
-
+    
     Route::get('/api/bibliografias/{bibliografia}/grupos-taxonomicos', [BibliografiaController::class, 'getGruposTaxonomicos']);
 
     Route::post('/bibliografias/asociar-grupo', [BibliografiaController::class, 'asociarGrupo'])->name('bibliografias.asociarGrupo');

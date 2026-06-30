@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\NomComun;
+use App\Models\RelNomNomComunRegion;
+use App\Models\RelNomNomComunRegionBiblio;
+use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\Traits\OptimizaConsultasRegiones;
 use Inertia\Inertia;
 
 class NombreComunController extends Controller
 {
+    use OptimizaConsultasRegiones;
+
     public function index()
     {
         Log::info("Mostrando el índice de Nombres Comunes");
@@ -218,4 +224,71 @@ class NombreComunController extends Controller
             'prevPageUrl' => $result->previousPageUrl(),
         ]);
     }
+
+    public function cargaNombresComunes($IdNombre)
+    {        
+        //En esta sentencia se maneja el control de los inner join manejados por medio de funciones
+        $datos = RelNomNomComunRegion::from('RelNomNomComunRegion as rnncr')
+                            ->join('RelNomNomComunRegionBiblio as rnncrb', function ($join){
+                                $join->on('rnncrb.IdNomComun', 'rnncr.IdNomComun')
+                                     ->on('rnncrb.IdNombre', 'rnncr.IdNombre')
+                                     ->on('rnncrb.IdRegion', 'rnncr.IdRegion');
+                            })
+                            ->join('NomComun as nc', 'nc.IdNomComun', 'rnncr.IdNomComun')
+                        ->select('rnncr.IdNomComun', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones AS ObsNomCom', 
+                                 'rnncr.IdNombre', 'rnncr.IdRegion', 'rnncr.Observaciones AS ObsRel',
+                                    DB::raw('COUNT(rnncrb.IdBibliografia) as Biblio')
+                        )
+                        ->where('rnncr.IdNombre', $IdNombre)
+                        ->groupBy('rnncr.IdNomComun',
+                                  'rnncr.IdNombre',
+                                  'rnncr.IdRegion', 
+                                  'nc.NomComun',
+                                  'nc.Lengua', 
+                                  'nc.Observaciones',
+                                  'rnncr.Observaciones')
+                        ->get();
+
+        $idsRegiones = $datos->pluck('IdRegion')->unique();
+
+        $todosLosNodosRegiones = Region::orderBy('NombreRegion')
+                                       ->get()
+                                       ->keyBy('IdRegion')
+                                       ->all();
+
+        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+
+        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
+
+        $agrupado = $datos
+                ->groupBy('IdNomComun')
+                ->map(function ($registro) use ($regionesIndexadas){
+                    $valor = $registro->first();
+
+                    return[
+                        'IdNomComun' => $valor -> IdNomComun,
+                        'NombreComun' => $valor -> NomComun,
+                        'Lengua' => $valor -> Lengua,
+                        'Observaciones' => $valor -> Observaciones,
+                        'Regiones' => $registro->map(function ($item) use ($regionesIndexadas, $valor) {
+                            if($valor->Biblio > 0){
+                                    $biblio = '/storage/images/Libro_Verde.svg';
+                            }else{
+                                    $biblio = '/storage/images/Libro_Rojo.svg';
+                            }
+                            return[
+                                'IdRegion' => $item -> IdRegion,
+                                'Region' => $regionesIndexadas[$item->IdRegion]['Region'] ?? '',
+                                'Biblio' => ['texto'=> '',
+                                       'url'=>$biblio], 
+                                'ObservacionesReg' => $item->ObsRel,
+                            ];
+                        }) -> values()
+                    ];
+                })
+                -> values();
+        
+        return response()->json($agrupado);    
+    }
+
 }
