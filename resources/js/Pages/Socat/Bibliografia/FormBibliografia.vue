@@ -14,6 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'formSubmited']);
 const mostrarModalOrden = ref(false);
+const biblioFormRef = ref(null);
 
 const form = ref({
     IdBibliografia: null,
@@ -30,6 +31,28 @@ const mapaIndices = {
     'NumeroVolumenAnio': '6',
     'EditorialPaisPagina': '7',
 };
+
+
+const rules = {
+    Autor: [
+        { required: true, message: 'El autor es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'No puede contener solo espacios en blanco', trigger: 'blur' },
+        { max: 255, message: 'El tamaño máximo es 255 caracteres', trigger: ['blur', 'change'] },
+        { pattern: /^(?!.*  ).+$/, message: "No se permite ingresar más de un espacio seguido.", trigger: ["blur", "change"] },
+    ],
+    Anio: [
+        { required: true, message: 'El año es obligatorio', trigger: 'blur' },
+        { max: 50, message: 'Máximo 50 caracteres', trigger: ['blur', 'change'] },
+        { pattern: /^(?!.*  ).+$/, message: "No se permite ingresar más de un espacio seguido.", trigger: ["blur", "change"] },
+    ],
+    TituloPublicacion: [
+        { required: true, message: 'El título es obligatorio', trigger: 'blur' },
+        { whitespace: true, message: 'No puede contener solo espacios en blanco', trigger: 'blur' },
+        { max: 255, message: 'Máximo 255 caracteres', trigger: ['blur', 'change'] },
+        { pattern: /^(?!.*  ).+$/, message: "No se permite ingresar más de un espacio seguido.", trigger: ["blur", "change"] },
+    ],
+};
+
 
 const ORDEN_ORIGINAL = [
     { id: 'Autor', label: 'Autor' },
@@ -124,25 +147,25 @@ const construirReferencia = () => {
 
 const referenciaCompleta = computed(() => construirReferencia());
 
-const submitForm = () => {
-    if (!form.value.Autor || !form.value.Anio || !form.value.TituloPublicacion) {
-        ElMessage.error('Faltan campos obligatorios.');
-        return;
+const submitForm = async () => {
+    if (!biblioFormRef.value) return;
+    try {
+        const isValid = await biblioFormRef.value.validate();
+        if (isValid) {
+            const ordenString = listaOrdenada.value
+                .map(item => mapaIndices[item.id])
+                .join('');
+            const datosParaEnviar = {
+                ...form.value,
+                OrdenCitaCompleta: ordenString,
+                citaCompleta: referenciaCompleta.value
+            };
+            emit('formSubmited', datosParaEnviar);
+        }
+    } catch (error) {
+        console.error('Error de validación:', error);
+        ElMessage.error('Por favor, complete los campos obligatorios.');
     }
-
-    const ordenString = listaOrdenada.value
-        .map(item => mapaIndices[item.id])
-        .join('');
-
-
-
-    const datosParaEnviar = {
-        ...form.value,
-        OrdenCitaCompleta: ordenString,
-        citaCompleta: referenciaCompleta.value
-    };
-
-    emit('formSubmited', datosParaEnviar);
 };
 
 const guardarOrden = () => {
@@ -160,7 +183,7 @@ const cerrarDialogo = () => emit('cerrar');
 
     <div class="header">
         <div class="dialog-body">
-            <el-form :model="form" label-position="top" class="bibliografia-form">
+            <el-form :model="form" label-position="top" class="bibliografia-form" :rules="rules" ref="biblioFormRef" >
 
                 <div class="form-actions" style="margin-top: -30px; margin-right: 10px;">
                     <el-tooltip content="Configurar orden de referencia" placement="top">
@@ -175,16 +198,17 @@ const cerrarDialogo = () => emit('cerrar');
                     <BotonSalir accion="cerrar" @salir="cerrarDialogo" />
                 </div>
 
+
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="Autor">
                             <template #label><span class="form-number">{{ orden.Autor }}</span> Autor(es)</template>
                             <el-input type="textarea" v-model="form.Autor" maxlength="255" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Autor(es)"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="Anio">
                             <template #label><span class="form-number">{{ orden.Anio }}</span> Año(s)</template>
                             <el-input v-model="form.Anio" maxlength="50" show-word-limit placeholder="Año"></el-input>
                         </el-form-item>
@@ -193,7 +217,7 @@ const cerrarDialogo = () => emit('cerrar');
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item required>
+                        <el-form-item prop="TituloPublicacion">
                             <template #label><span class="form-number">{{ orden.TituloPublicacion }}</span> Título de la
                                 publicación</template>
                             <el-input type="textarea" v-model="form.TituloPublicacion" maxlength="255" show-word-limit
@@ -247,7 +271,7 @@ const cerrarDialogo = () => emit('cerrar');
                     <el-col :span="12">
                         <el-form-item>
                             <template #label>ISBN/ISSN</template>
-                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="255" show-word-limit
+                            <el-input type="textarea" v-model="form.ISBNISSN" maxlength="50" show-word-limit
                                 :autosize="{ minRows: 1, maxRows: 3 }" resize="none" placeholder="Si aplica">
                             </el-input>
                         </el-form-item>

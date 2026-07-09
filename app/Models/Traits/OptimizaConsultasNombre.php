@@ -258,4 +258,28 @@ trait OptimizaConsultasNombre
 
         return $data;
     }
+
+    private function buildRegionTreeBatch(array $elements): array
+    {
+        if (count($elements) === 0) {
+            return [];
+        }
+        $nodes = [];
+        foreach ($elements as $el) {
+            $el->children = [];
+            $nodes[$el->IdRegion] = $el;
+        }
+        $rootNodes = [];
+        foreach ($nodes as $nodeId => $node) {
+            if ($node->IdRegionAsc && isset($nodes[$node->IdRegionAsc]) && $node->IdRegion != $node->IdRegionAsc) {
+                $parent = $nodes[$node->IdRegionAsc];
+                $tempChildren = $parent->children;
+                $tempChildren[] = $node;
+                $parent->children = $tempChildren;
+            } else {
+                $rootNodes[] = $node;
+            }
+        }
+        return $rootNodes;
+    }
 }

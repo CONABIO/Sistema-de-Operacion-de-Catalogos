@@ -16,6 +16,22 @@ const manejarClickFila = (row) => {
     selectedRowId.value = row ? row.IdNomComun : null;
 };
 
+/*Juan Carlos Mora Morquecho 11/06/2026
+    Se agregan las funciones y elementos necesarios para aplicar el cerrado del moda*/
+
+const emit = defineEmits(['cerrar']);
+
+const props = defineProps({
+        modal: { type:Boolean, required:false, default:false }
+    });
+
+const cerrarDialogo = () => {
+    console.log("Esta es la funcion para cerrar el modal disparado desde la tabla")
+    emit('cerrar');
+}
+
+/*Juan Carlos Mora Morquecho*/
+
 const tableRowClassName = ({ row }) => {
     if (row.IdNomComun === selectedRowId.value) {
         return 'fila-seleccionada-verde';
@@ -238,9 +254,20 @@ const eliminarNombreComun = (idNomComun) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
         <div class="h-full flex flex-col">
-            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
-                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun" @row-click="manejarClickFila"  :highlight-current-row="false"  
-                @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun" @nuevo-item="nuevoNombreComun">
+            <TablaFiltrable ref="tablaRef" class="flex-grow" 
+                :columnas="columnasDefinidas" 
+                v-model:datos="currentData" 
+                :row-class-name="tableRowClassName"
+                :botCerrar = props.modal           
+                v-model:total-items="totalItems" 
+                endpoint="/busca-nombre-comun" 
+                id-key="IdNomComun" 
+                @row-click="manejarClickFila"  
+                :highlight-current-row="false"  
+                @editar-item="editarNombreComun" 
+                @eliminar-item="eliminarNombreComun" 
+                @nuevo-item="nuevoNombreComun"
+                @cerrar="cerrarDialogo">
 
                 <template #expand-column>
                     <el-table-column type="expand">

@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tipos-distribucion/obtener-pagina', [TiposDistribucionController::class, 'obtenerPaginaDeTipoDistribucion']);
 
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
+    Route::get('/carga-tipos-distribucion', [TiposDistribucionController::class, 'cargaTiposDist']);
 
     Route::get('/nombres-comunes', [NombreComunController::class, 'index'])->name('nombresComunes.index');
     Route::get('/nombres-comunes/create', [NombreComunController::class, 'create'])->name('nombresComunes.create');
@@ -91,6 +92,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/nombres-comunes/obtener-pagina', [NombreComunController::class, 'obtenerPaginaDeNombreComun']);
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
+
+    Route::get('/cargaCatNomComun', [NombreComunController::class, 'cargaNomComun']);
+
+    //Juan Carlos Mora cargo solo los nombres comunes por taxón 
+    Route::get('cargar-nomcomun-taxon/{id}', [NombreComunController::class, 'cargaNombresComunes']);
 
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
 
@@ -147,7 +153,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
         ->name('caracteristicas-taxon.index');
 
-     Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicasNombre']);
+    Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicas']);
+
+    Route::get('/cargaCaracTaxon/{id}', [CaracteristicasController::class, 'cargaCaracteristicasTaxon']);
+
+    Route::get('/cargaRegionesTaxon/{id}', [CaracteristicasController::class, 'cargaRegionesNombre']);
 
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
@@ -170,10 +180,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [RegionController::class, 'index'])->name('index');
         Route::post('/', [RegionController::class, 'store'])->name('store');
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
-        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
+        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');        
     });
+    Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
-
+    
     Route::get('/api/bibliografias/{bibliografia}/grupos-taxonomicos', [BibliografiaController::class, 'getGruposTaxonomicos']);
 
     Route::post('/bibliografias/asociar-grupo', [BibliografiaController::class, 'asociarGrupo'])->name('bibliografias.asociarGrupo');
@@ -229,7 +240,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
 
-    Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
+    //Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');

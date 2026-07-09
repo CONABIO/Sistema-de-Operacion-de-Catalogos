@@ -104,9 +104,11 @@ class ObjetoExternoController extends Controller
     public function update(Request $request, $id)
     {
         $objeto = ObjetoExterno::findOrFail($id);
-        $existing = ObjetoExterno::where(DB::raw('lower(NombreObjeto)'), strtolower($request->NombreObjeto))
+        $existing = ObjetoExterno::where(DB::raw('lower(COALESCE(NombreObjeto, ""))'), strtolower($request->NombreObjeto ?? ''))
+            ->where(DB::raw('lower(COALESCE(NombreSitio, ""))'), strtolower($request->NombreSitio ?? ''))
             ->where('IdObjetoExterno', '!=', $id)
             ->first();
+
         if ($existing) {
             return response()->json([
                 'status' => 400,
@@ -114,6 +116,7 @@ class ObjetoExternoController extends Controller
                 'idExistente' => $existing->IdObjetoExterno
             ], 400);
         }
+
         $data = $request->all();
         $data['FechaModificacion'] = now();
         $objeto->update($data);
