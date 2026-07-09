@@ -33,6 +33,13 @@ class NombreComunController extends Controller
         ]);
     }
 
+    public function cargaNomComun()
+    {
+        $nombresComunes = NomComun::orderBy('NomComun')->paginate(100);
+
+        return response()->json($nombresComunes);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -290,5 +297,4 @@ class NombreComunController extends Controller
         
         return response()->json($agrupado);    
     }
-
 }

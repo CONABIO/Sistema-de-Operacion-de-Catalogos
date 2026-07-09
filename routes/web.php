@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tipos-distribucion/obtener-pagina', [TiposDistribucionController::class, 'obtenerPaginaDeTipoDistribucion']);
 
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
+    Route::get('/carga-tipos-distribucion', [TiposDistribucionController::class, 'cargaTiposDist']);
 
     Route::get('/nombres-comunes', [NombreComunController::class, 'index'])->name('nombresComunes.index');
     Route::get('/nombres-comunes/create', [NombreComunController::class, 'create'])->name('nombresComunes.create');
@@ -91,6 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/nombres-comunes/obtener-pagina', [NombreComunController::class, 'obtenerPaginaDeNombreComun']);
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
+
+    Route::get('/cargaCatNomComun', [NombreComunController::class, 'cargaNomComun']);
 
     //Juan Carlos Mora cargo solo los nombres comunes por taxón 
     Route::get('cargar-nomcomun-taxon/{id}', [NombreComunController::class, 'cargaNombresComunes']);
@@ -154,7 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cargaCaracTaxon/{id}', [CaracteristicasController::class, 'cargaCaracteristicasTaxon']);
 
-
+    Route::get('/cargaRegionesTaxon/{id}', [CaracteristicasController::class, 'cargaRegionesNombre']);
 
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
@@ -237,7 +240,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
 
-    Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
+    //Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');

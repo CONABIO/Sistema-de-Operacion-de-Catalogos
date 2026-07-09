@@ -61,6 +61,8 @@
                                                 :datos = "tablaCaractReg"
                                                 :opciones-filtro = "opcionesFiltroRegCaract"
                                                 :totalItems = "totalRegionCaract"
+                                                :valoresOpcion = "tiposDistribucion"
+                                                :habOpciones ="habOpciones"
                                                 :itemsPerPage = 9
                                                 :mostrarBiblio = "true"
                                                 :mostrarAcci = "false"
@@ -90,11 +92,12 @@
                                                 :mostrarAcci = "false"
                                                 :alturaTabla = 330
                                                 :highlight-current-row = "true"
-                                                :mostrarNuevo = "false"
+                                                :mostrarNuevo = "true"
                                                 :mostrarEditar = "true"
                                                 :mostrarBorrar = "true"
                                                 :mostrarSalir = "false"
-                                                @row-click="clickNomCom"/>
+                                                @row-click="clickNomCom"
+                                                @nuevo-item="nuevoRelNomComun"/>
                                         </div>
                                     </el-aside>
                                     <el-aside width="30px"/>
@@ -120,8 +123,127 @@
                                     </el-aside>                                     
                                 </el-container>
                             </el-tab-pane>
-                            <el-tab-pane label="Regiones" name="Region">
-                                Regiones
+                            <el-tab-pane label="Regiones2" name="Region3">
+                                <div style="height: 500px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                    <el-splitter lazy>
+                                        <el-splitter-panel min="50">
+                                            <div class="demo-panel panel-nombre">
+                                                <el-container style="width:100%; height:100%;">
+                                                    <el-header height="40px" style=" display:flex; justify-content:center; align-items:center;">
+                                                        <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                                           Regiones asociadas al Taxón 
+                                                        </span>
+                                                    </el-header>
+                                                    
+                                                        <TablaFiltrable 
+                                                            :columnas = "colDefRegionNombre" 
+                                                            :datos = "regionesNombre"
+                                                            :opciones-filtro = "opcionesFiltroRegCaract"
+                                                            :totalItems = "totalRegionesNom"
+                                                            :valoresOpcion = "tiposDistribucion"
+                                                            :habOpciones ="habOpciones"
+                                                            :itemsPerPage = 4
+                                                            :mostrarBiblio = "true"
+                                                            :mostrarAcci = "false"
+                                                            :alturaTabla = 264
+                                                            :highlight-current-row = "true"
+                                                            :mostrarNuevo = "false"
+                                                            :mostrarRegion = "true"
+                                                            :mostrarGuardar = "true"
+                                                            :mostrarEditar = "true"
+                                                            :mostrarBorrar = "true"
+                                                            :mostrarSalir = "false">                                                
+                                                        </TablaFiltrable>
+                                                    
+                                                </el-container>
+                                            </div>
+                                        </el-splitter-panel>
+                                        <el-splitter-panel min="50">
+                                            <div class="demo-panel panel-carac">
+                                                <el-container>
+                                                    <el-header height="40px" style=" display:flex; justify-content:center; align-items:center;">
+                                                        <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                                           Regiones asociadas al Taxón-Caracteristica
+                                                        </span>
+                                                    </el-header>
+                                                    <TablaFiltrable 
+                                                        :columnas = "colDefRegionCaract" 
+                                                        :datos = "regionesCaract"
+                                                        :opciones-filtro = "opcionesFiltroRegCaract"
+                                                        :totalItems = "totalRegionesCaract"
+                                                        :valoresOpcion = "tiposDistribucion"
+                                                        :habOpciones ="habOpciones"
+                                                        :itemsPerPage = 4
+                                                        :mostrarBiblio = "true"
+                                                        :mostrarAcci = "false"
+                                                        :alturaTabla = 288
+                                                        :highlight-current-row = "true"
+                                                        :mostrarNuevo = "false"
+                                                        :mostrarGuardar = "true"
+                                                        :mostrarEditar = "true"
+                                                        :mostrarBorrar = "false"
+                                                        :mostrarSalir = "false">                                                
+                                                    </TablaFiltrable>    
+                                                </el-container>
+                                            </div>
+                                        </el-splitter-panel>
+                                        <el-splitter-panel min="50">
+                                            <div class="demo-panel panel-nomcomun">
+                                                <el-container>
+                                                    <el-header height="40px" style=" display:flex; justify-content:center; align-items:center;">
+                                                        <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                                           Regiones asociadas al Taxón-Nombre Comun
+                                                        </span>
+                                                    </el-header>                                                    
+                                                    <TablaFiltrable 
+                                                        :columnas = "colDefRegionNomCom" 
+                                                        :datos = "regionesNomCom"
+                                                        :opciones-filtro = "opcionesFiltroRegCaract"
+                                                        :totalItems = "totalRegionesNomCom"
+                                                        :itemsPerPage = 5
+                                                        :mostrarBiblio = "true"
+                                                        :mostrarAcci = "false"
+                                                        :alturaTabla = 304
+                                                        :highlight-current-row = "true"
+                                                        :mostrarNuevo = "false"
+                                                        :mostrarEditar = "false"
+                                                        :mostrarBorrar = "false"
+                                                        :mostrarSalir = "false">                                                
+                                                    </TablaFiltrable>
+                                                </el-container>
+                                            </div>
+                                        </el-splitter-panel>
+                                    </el-splitter>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="Regiones3" name="Region4">
+                                <div style="height: 500px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                    <el-splitter lazy>
+                                        <el-splitter-panel collapsible min="50">
+                                            <div class="demo-tree panel-nombre">
+                                                <el-tree
+                                                    class="tree-full"
+                                                    :data="todasRegiones"
+                                                    :props="defaultProps">                                                    
+                                                    <template #default="{ node, data }">
+                                                        <Logo class="tree-node-logo" :rutaCategoria="data.Biblio.url" />
+                                                        <span :class="claseOrigen(data)">
+                                                            {{ data.Region }}
+                                                            <template v-if="data.TipoDistribucion">
+                                                                ({{ data.TipoDistribucion.descripcion }})
+                                                            </template>
+                                                        </span>
+                                                    </template>
+                                                </el-tree>                                               
+                                            </div>
+                                        </el-splitter-panel>
+                                        <el-splitter-panel collapsible min="50">
+                                            <div class="demo-panel panel-carac">
+                                                Aqui puedo mostar el detalle 
+                                            </div>
+                                        </el-splitter-panel>
+                                    </el-splitter>
+                                </div>
                             </el-tab-pane>
                         </el-tabs>
                     </el-main>  
@@ -159,6 +281,10 @@
         <DialogForm v-model="dialogFormVisibleNomCom" :botCerrar="true" :pressEsc="false" :width="'83%'">
             <CuerpoNombreCom :modal="true" @cerrar="cerrarNomCom"/>
         </DialogForm>
+
+        <DialogForm v-model="dialogFormVisibleRelNomCom" :botCerrar="true" :pressEsc="false" :width="'90%'">
+            <RelNomComun :modal="true" @cerrar="cerrarRelNomCom"/>
+        </DialogForm>
     </div>
 </template> 
 <script setup>
@@ -169,16 +295,42 @@
     import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
     import CuerpoCaracteristicas from '@/Pages/Socat/Caracteristicas/CuerpoCaracteristicas.vue';
     import CuerpoRegion from '@/Pages/Socat/Regiones/CuerpoRegion.vue';
+    import RelNomComun from '@/Pages/Socat/RelCatalogosAsociados/RelacionNomComun.vue';
     import CuerpoNombreCom from '@/Pages/Socat/Nombres/CuerpoNombreComun.vue';
     import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
     import { onMounted, ref, watch } from 'vue';
     import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+    import Logo from '@/Components/Biotica/LogoCategoria.vue';
 
     const props = defineProps({
         taxonAct: {
             type: Object
         },
     });
+
+    const defaultProps = {
+  children: 'children',
+  label: 'Region',
+}
+
+
+const claseOrigen = (data) => {
+    console.log("Esto es claseOrigen: ", data.origen);
+    switch (data.origen) {
+
+        case 'nombre':
+            return 'origen-rojo';
+
+        case 'caracteristica':
+            return 'origen-verde';
+
+        case 'nomComun':
+            return 'origen-amarillo';
+    }
+}
+
+
+
 
     const tabInicial = ref("NomComun");
 
@@ -189,6 +341,8 @@
     const dialogFormVisibleCaract = ref(false);
     const dialogFormVisibleReg = ref(false);
     const dialogFormVisibleNomCom = ref(false);
+
+    const dialogFormVisibleRelNomCom = ref(false);
 
     /*Declaracion de propiedades para regiones*/
     const treeRegionDataProp = ref([]);
@@ -205,6 +359,20 @@
 
     const totalRegCaract = ref(0);
     const totalRegionCaract = ref(0);
+
+    const tiposDistribucion = ref([]);
+    const habOpciones = ref(true);
+
+    const regionesNombre = ref([]);
+    const regionesCaract = ref([]);
+    const regionesNomCom = ref([]);
+
+    const todasRegiones = ref([]);
+    const totalRegiones = ref(0);
+
+    const totalRegionesNom = ref(0);
+    const totalRegionesCaract = ref(0);
+    const totalRegionesNomCom = ref(0);
     
     const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
@@ -281,19 +449,60 @@
         { label: 'Caracteristica', value: 'Caracteristica' }
     ]);
 
-     const columnasDefinidasRegCaract = ref([
+    const columnasDefinidasRegCaract = ref([
         {
             prop: 'Region', label: 'Región', minWidth: '120',
             align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'TipDistribucion', label: 'Tipo Distribucion', minWidth: '120',
+            align: 'left', tipo: 'lista', filtrable: true
+        },
+        {
+            prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        },
+    ]);
+
+    const colDefRegionNombre = ref([
+        {
+            prop: 'Region', label: 'Región', minWidth: '120',
+            align: 'left', tipo: 'Texto', filtrable: true
+        },
+        {
+            prop: 'TipoDistribucion', label: 'Tipo Distribucion', minWidth: '120',
+            align: 'left', tipo: 'lista', filtrable: true
+        },
+        {
+            prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        },
+    ]);
+
+    const colDefRegionCaract = ref([
+        {
+            prop: 'Region', label: 'Región', minWidth: '120',
+            align: 'left', tipo: 'Texto', filtrable: true
+        },
+        {
+            prop: 'TipoDistribucion', label: 'Tipo Distribucion', minWidth: '120',
+            align: 'left', tipo: 'lista', filtrable: true
+        },
+        {
+            prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+            tipo: 'imagenTexto', filtrable: false
+        },
+    ]);
+
+    const colDefRegionNomCom = ref([
+        {
+            prop: 'Region', label: 'Región', minWidth: '120',
             align: 'left', tipo: 'Texto', filtrable: true
         },
         {
             prop: 'Biblio', label: '', minWidth: '55', align: 'left',
             tipo: 'imagenTexto', filtrable: false
-        }
+        },
     ]);
 
     const totalRegNomComun = ref(0);
@@ -318,6 +527,22 @@
                 tablaCaracteristicas.value = listCaract.data;
                 totalRegCaract.value = listCaract.data.length;
             }
+
+            const regionTaxon = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
+
+            if(regionTaxon.status === 200)
+            {
+                regionesNombre.value = regionTaxon.data.regPorNombre;
+                totalRegionesNom.value = regionTaxon.data.regPorNombre.length;
+                console.log("Regiones Nombre: ", regionesNombre.value);
+                regionesCaract.value = regionTaxon.data.regPorCaract;
+                totalRegionesNom.value = regionTaxon.data.regPorCaract.length;
+                console.log("Regiones Caracteristicas: ", regionesCaract.value);
+                regionesNomCom.value = regionTaxon.data.regPorNomCom;
+                totalRegionesNom.value = regionTaxon.data.regPorCaract.length;
+                console.log("Regiones nombre comun: ", regionesNomCom.value);
+            }
+
         }
     );
 
@@ -384,7 +609,7 @@
 
     const clickRegNomCom = (row) => {
         observaciones.value = "";
-        
+
         etiquetaObs.value = 'relación con región';
         observaciones.value = row.ObservacionesReg;
     }
@@ -399,6 +624,16 @@
 
     const cerrarNomCom= () => {
         dialogFormVisibleNomCom.value = false;
+    }
+
+    const cerrarRelNomCom = () => {
+        dialogFormVisibleRelNomCom.value = false;
+    }
+
+    const nuevoRelNomComun = () => {
+        console.log("le di click al boton de nuevo")
+        dialogFormVisibleRelNomCom.value = true;
+        console.log("Este es el valor de dialogRolNomComun: ", dialogFormVisibleRelNomCom.value);
     }
 
     const Guardar = () => {
@@ -436,6 +671,33 @@
             tablaCaracteristicas.value = listCaract.data;
             totalRegCaract.value = listCaract.data.length;
         }
+
+        const tiposDistrib = await axios.get('/carga-tipos-distribucion');
+
+        if(tiposDistrib.status === 200)
+        {
+            tiposDistribucion.value = tiposDistrib.data;
+        }
+
+        const regionTaxon = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
+
+        if(regionTaxon.status === 200)
+        {
+            
+            regionesNombre.value = regionTaxon.data.regPorNombre;
+            totalRegionesNom.value = regionTaxon.data.regPorNombre.length;
+            
+            regionesCaract.value = regionTaxon.data.regPorCaract;
+            totalRegionesCaract.value = regionTaxon.data.regPorCaract.length;
+            
+            regionesNomCom.value = regionTaxon.data.regPorNomCom;
+            totalRegionesNomCom.value = regionTaxon.data.regPorCaract.length;
+            
+            todasRegiones.value = regionTaxon.data.todas;
+            totalRegiones.value = regionTaxon.data.todas.length;
+
+            console.log("Estas son todas las regiones: ", todasRegiones.value);
+        }
         
     });
 
@@ -453,5 +715,74 @@
       background-color: #ddf6dd !important;
       color: #0d6efd !important;
       font-weight: bold;
+    }
+
+    /* Cabecera de la tabla */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1px 16px;
+      background: #d9e1eb;
+      border-bottom: 1px solid #f5ebeb;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    /*.demo-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }*/
+
+    .demo-panel {
+        width: 100%;
+        height: 100%;
+    }
+
+    .demo-tree {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .tree-full {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+    .panel-nombre{
+        background: rgb(241, 189, 189);
+         width: 100%;
+    height: 100%;
+    overflow: auto;
+    }
+    .panel-carac{
+        background: rgb(189, 231, 241);
+    }
+    .panel-nomcomun{
+        background: rgb(236, 241, 189);
+    }
+
+    .origen-rojo {
+        color: #d32f2f;
+        font-weight: bold;
+    }
+
+    .origen-verde {
+        color: #0556cf;
+        font-weight: bold;
+    }
+
+    .origen-amarillo {
+        color: #b8860b;
+        font-weight: bold;
     }
 </style>

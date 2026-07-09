@@ -119,8 +119,8 @@ class CaracteristicasController extends Controller
                 $item['Regiones'][] = [
                         'IdRegion' => $registro->IdRegion,
                         'Region' => $regionesIndexadas[$registro->IdRegion]['Region'] ?? '',
-                        'IdTipoDistribucion' => $registro->IdTipoDistribucion,
-                        'TipDistribucion' => $registro->Descripcion,
+                        'TipDistribucion' => ['id' => $registro->IdTipoDistribucion,
+                                              'descripcion' => $registro->Descripcion],
                         'Observaciones' => $registro->RelNomCatReg,
                         'Biblio' =>  ['texto'=> '',
                                        'url'=>$biblioReg],
@@ -130,9 +130,77 @@ class CaracteristicasController extends Controller
             $resultado[] = $item;
         }
 
-        Log::info("Este es el agrupado completo: ");
-        Log::info($resultado);
         return response()->json($resultado);
+    }
+
+    public function cargaRegionesNombre($idNombre){
+        
+        $regNombre = Region::regionPorNombre($idNombre)->get();
+        $regCaract = Region::regionPorCaract($idNombre)->get();
+        $regNomComun = Region::regionPorNomComun($idNombre)->get();
+
+        $idsRegiones = collect($regNombre) -> pluck('IdRegion')
+             ->merge(collect($regCaract) -> pluck('IdRegion'))
+             ->merge(collect($regNomComun) -> pluck('IdRegion'))
+             ->unique()
+             ->values()
+             ->toArray();
+
+        $todosLosNodosRegiones = Region::orderBy('NombreRegion')
+                                       ->get()
+                                       ->keyBy('IdRegion')
+                                       ->all();
+
+        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+
+        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
+
+        $regPorNombre = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
+
+        $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
+
+        $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
+
+        $todasLasRegiones = collect()
+                                ->concat($regPorNombre)
+                                ->concat($regPorCarct)
+                                ->concat($regPorNomCom);
+
+        return response()->json([
+            'regPorNombre' => $regPorNombre,
+            'regPorCaract' => $regPorCarct,
+            'regPorNomCom' => $regPorNomCom,
+            'todas' => $todasLasRegiones,
+        ]);
+    }
+
+    private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
+        $agrupado = $listaReg
+                ->groupBy('IdRegion')
+                ->map(function ($registro) use ($regIndexadas, $origenDatos){
+                    $valor = $registro->first();
+                    $biblio = $valor->Biblio > 0
+                                    ? '/storage/images/Libro_Verde.svg'
+                                    : '/storage/images/Libro_Rojo.svg';
+                    $tipDist = null;
+
+                    if(isset($valor->IdTipoDistribucion)){
+                        $tipDist = ['id' => $valor->IdTipoDistribucion,
+                                    'descripcion' => $valor->TipoDist];
+                    }
+
+                    return [
+                        'IdRegion' => $valor->IdRegion, 
+                        'Region' => $regIndexadas[$valor->IdRegion]['Region'] ?? '',
+                        'TipoDistribucion' => $tipDist,
+                        'origen' => $origenDatos,
+                        'Biblio' => ['texto' => '',
+                                     'url' => $biblio]
+                    ];
+                })
+                -> values();
+
+        return $agrupado;
     }
 
     /*Esta es la modificacion agregada para que sea respuesta AJAX 

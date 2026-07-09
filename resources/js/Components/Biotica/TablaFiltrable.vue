@@ -9,6 +9,8 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
+import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -27,16 +29,17 @@ const props = defineProps({
   mostrarNuevo: { type: Boolean, default: true },
   mostrarEditar: { type: Boolean, default: true },
   mostrarBorrar: { type: Boolean, default: true },
+  mostrarGuardar: { type: Boolean, default: false },
+  mostrarRegion: { type: Boolean, default: false },
   rowClassName: { type: Function, default: null },
   mostrarBiblio: { type:Boolean, default: false }, 
+  valoresOpcion: { type:Array, required: false, default: []},
+  habOpciones: { type: Boolean, default: true }, 
   alturaTabla: {
     type: Number, 
     default: 550
   },
-
   mostrarBiblio: { type:Boolean, default: false },
-
-
   highlightCurrentRow: {
     type: Boolean,
     default: false
@@ -239,13 +242,6 @@ const fetchData = async () => {
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
-    /*console.log("filtros: ",  filtros.value,
-        "tipo_busqueda: ", tipoDeBusqueda.value,
-        "page: ", currentPage.value,
-        "perPage: ", props.itemsPerPage,
-        "sortBy: ", sorting.value.prop,
-        "sortOrder: ", sorting.value.order);*/
-
     const response = await axios.get(props.endpoint, {
       params: {
         filtros: filtros.value,
@@ -358,6 +354,10 @@ const handlePageChange = (page) => {
   fetchData();
 };
 
+const cambioLista = (row) => {
+  console.log("Este es el row seleccionado de la lista: ", row);
+}
+
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
@@ -398,8 +398,12 @@ defineExpose({
             <BotonTraspaso :icono="props.asignaTrasp"
                             v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
             <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
+            <BotonRegiones style="flex-shrink: 0; min-width: max-content;"
+                           v-if="props.mostrarRegion"/>
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno"
                           v-if="props.mostrarEditar" />
+            <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
+                           v-if="props.mostrarGuardar"/>
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
             <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
@@ -497,6 +501,23 @@ defineExpose({
                       type="textarea"
                       readonly
                     />
+            </template>
+
+            <template v-else-if="col.tipo === 'lista'">
+              
+              <el-select 
+                      v-if="row[col.prop]"
+                      v-model="row[col.prop].id"
+                      placeholder="Seleccione"
+                      @change="cambioLista($event, row)"
+                      :disabled = props.habOpciones>
+                <el-option
+                        v-for="item in valoresOpcion"
+                          :key="item.id"
+                          :label="item.descripcion"
+                          :value="item.id"
+                />    
+              </el-select>
             </template>
 
             <template v-else>
