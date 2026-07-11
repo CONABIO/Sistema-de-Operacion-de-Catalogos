@@ -309,25 +309,25 @@
     });
 
     const defaultProps = {
-  children: 'children',
-  label: 'Region',
-}
-
-
-const claseOrigen = (data) => {
-    console.log("Esto es claseOrigen: ", data.origen);
-    switch (data.origen) {
-
-        case 'nombre':
-            return 'origen-rojo';
-
-        case 'caracteristica':
-            return 'origen-verde';
-
-        case 'nomComun':
-            return 'origen-amarillo';
+        children: 'children',
+        label: 'Region',
     }
-}
+
+
+    const claseOrigen = (data) => {
+        console.log("Esto es claseOrigen: ", data.origen);
+        switch (data.origen) {
+
+            case 'nombre':
+                return 'origen-rojo';
+
+            case 'caracteristica':
+                return 'origen-verde';
+
+            case 'nomComun':
+                return 'origen-amarillo';
+        }
+    }
 
 
 
@@ -764,9 +764,11 @@ const claseOrigen = (data) => {
     height: 100%;
     overflow: auto;
     }
+
     .panel-carac{
         background: rgb(189, 231, 241);
     }
+    
     .panel-nomcomun{
         background: rgb(236, 241, 189);
     }

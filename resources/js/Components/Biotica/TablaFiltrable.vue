@@ -238,7 +238,7 @@ const fetchData = async () => {
     {
       busquedaLocal();
       return;
-    }
+    }    
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
@@ -250,9 +250,10 @@ const fetchData = async () => {
         perPage: props.itemsPerPage,
         sortBy: sorting.value.prop,
         sortOrder: sorting.value.order,
-      }
+      }      
     });
 
+    console.log("Esta es la respuesta: ",response);
     const resultados = response.data.data || [];
     const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
 

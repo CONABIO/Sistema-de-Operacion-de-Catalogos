@@ -1001,7 +1001,6 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         </div>
                     </div>
                 </template>
-
                 <el-tree v-show="filteredRegionsTree.length" ref="treeRef" :key="treeKey" :data="filteredRegionsTree"
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"

@@ -182,6 +182,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
         Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');        
     });
+    
     Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
     
