@@ -20,6 +20,7 @@ const props = defineProps({
         default: "80%",
     },
 
+  
     draggable: {
         type: Boolean,
         default: false
@@ -41,7 +42,7 @@ const dialogFormVisible = defineModel();
         <el-dialog v-model="dialogFormVisible" :z-index="currentZIndex" :draggable="draggable"
             :close-on-click-modal="false" :show-close="botCerrar" :destroy-on-close="false"
             :close-on-press-escape="pressEsc" class="my-responsive-dialog" :fullscreen="false"
-            :style="{ width: width }">
+            :style="{ width: width}">
             <template #header="{ close, titleId, titleClass }">
                 <div class="my-dialog-header">
                     <slot name="header"></slot>
@@ -69,19 +70,6 @@ const dialogFormVisible = defineModel();
     max-width: none !important;
     margin: 5vh auto !important;
 }
-
-/* @media (max-width: 1500px) {
-    :deep(.el-dialog) {
-        width: 85% !important;
-    }
-
-    .my-responsive-dialog {
-        width: 90%;
-        max-width: 500px;
-
-    }
-}
- */
 
 @media (max-width: 768px) {
     :deep(.el-dialog) {

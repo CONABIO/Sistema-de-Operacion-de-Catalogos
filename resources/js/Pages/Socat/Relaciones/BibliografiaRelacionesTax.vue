@@ -19,16 +19,16 @@
                 <el-row>                    
                     <div class="dual-panel-container">
                             <el-card class="table-panel">
-                                <span style="font-size: 20px; font-weight: bold;">
+                                <span style="font-size: 15px; font-weight: bold;">
                                     Nombres cientificos asociados a:
                                 </span>
                                 <br/>
-                                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                <span style="font-size: 15px; color: #8A2815; font-weight: bold;">
                                     {{ props.taxonAct.label }}
                                 </span>
                                 <br/>
                                 <br/>
-                                <span style="font-size: 18px; color: #2A661E; font-weight: bold;">
+                                <span style="font-size: 15px; color: #2A661E; font-weight: bold;">
                                     {{ tipRelacion }}
                                 </span>
                                 <br/>
@@ -40,7 +40,7 @@
                                         v-model:total-items="props.totalRegistros"
                                         :highlight-current-row = "true"
                                         :origen = "true"
-                                        :alturaTabla = 313
+                                        :alturaTabla = 320
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "false"
                                         :mostrarEditar = "false"
@@ -61,26 +61,13 @@
                                 </div>
                             </el-card>
                             <el-card class="table-panel">
-                                <span style="font-size: 20px; font-weight: bold;">
+                                <span style="font-size: 15px; font-weight: bold;">
                                     Cita(s) bibliografica(s) asociada(s) a:
                                 </span>
                                 <br/>
-                                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                                <span style="font-size: 15px; color: #8A2815; font-weight: bold;">
                                     {{ taxonRelacionado }}
-                                </span>
-                                <br/>
-                                <el-card class="table-panel">
-                                    <span style="font-size: 18px; font-weight: bold;">
-                                        Cita bibliográfica:
-                                    </span>
-                                    <el-input  :rows="2"
-                                            type="textarea"
-                                            placeholder="Observaciones"
-                                            :disable = true
-                                            v-model="citaCompleta">
-                                    </el-input>
-                                </el-card> 
-                                                              
+                                </span>                                                                                                                            
                                 <div style="flex: 1; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; margin-top: 10px;">
                                     <TablaFiltrable 
                                         :container-class="'main-section'" 
@@ -89,7 +76,8 @@
                                         :total-items="bibliografiaRel.length"
                                         :highlight-current-row = "true"
                                         :origen = "true"
-                                        :alturaTabla = 130
+                                        :alturaTabla = 195
+                                        :itemsPerPage = 3
                                         :mostrarAcci = "true"
                                         :mostrarNuevo = "true"
                                         :mostrarEditar = "true"
@@ -120,8 +108,21 @@
                                     </TablaFiltrable>
                                 </div>
                                 <br/>
-                                <el-card class="table-panel">
-                                    <div style="display: flex; flex-direction: column; height: 100%;">
+                                <div style="margin-bottom: 10px;">
+                                    <span style="font-size: 18px; font-weight: bold;">
+                                        Cita bibliográfica:
+                                    </span>
+                                    <el-input  :rows="2"
+                                            type="textarea"
+                                            placeholder="Observaciones"
+                                            :disable = true
+                                            v-model="citaCompleta">
+                                    </el-input>
+                                </div>
+                                <!--/el-card-->
+                                <!--el-card class="table-panel"-->
+                                
+                                    <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                             <span style="font-size: 18px; font-weight: bold;">
                                                 Observaciones de la asociación:
@@ -136,7 +137,7 @@
                                                 style="flex-shrink: 0; min-width: max-content;"/>
                                         </div>
                                     </div>
-                                </el-card>
+                                <!--/el-card-->
                             </el-card>
                     </div>                        
                 </el-row>
@@ -146,7 +147,7 @@
     </el-card>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <Bibliografia :isModal = "true" :traspaso="true" @cerrarBiblio = "cerrarRelBiblio" />      
+      <Bibliografia :isModal = "true" :traspaso="true" :biblioAct = "idsBiblioActuales" @cerrarBiblio = "cerrarRelBiblio" />      
     </DialogForm>
 
     <Teleport to="body">
@@ -203,20 +204,18 @@
     const dialogFormVisibleBiblio = ref(false);
     const habNuevaBiblio = ref(false);
 
+    const idsBiblioActuales = ref([]);
+
     const emit = defineEmits(['cerrar']);
 
     const columnasDefinidas = ref([
         {
-            prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '190', sortable: true,
+            prop: 'TipoRelacion', label: 'Tipo Relación', minWidth: '140', sortable: true,
             align: 'left', tipo: 'imagenTexto', filtrable: true
         },
         {
-            prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '230', sortable: true,
+            prop: 'Nombrecompleto', label: 'Nombre Completo', minWidth: '240', sortable: true,
             align: 'left', tipo: 'imagenTexto', filtrable: true
-        },
-        {
-            prop: 'Biblio', label: 'Ref.', minWidth: '90', sortable: false, align: 'center',
-            tipo: 'imagenTexto', filtrable: false
         }
     ]);
 
@@ -240,7 +239,11 @@
     }
 
     const crear = () => {
+
         if(taxonRelacionado.value != ""){
+
+            idsBiblioActuales.value = bibliografiaRel.value.map(item => item.IdBibliografia);
+
             dialogFormVisibleBiblio.value = true;
         }
         else{
@@ -391,7 +394,7 @@
 
     const columnasDefinidasBiblio = ref([
         { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
-        { prop: "Anio", label: "Año", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
+        { prop: "Anio", label: "Año", minWidth: 120, sortable: 'custom', filtrable: true, align: 'left' },
         { prop: "TituloPublicacion", label: "Titulo de la publicacion", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
         { prop: "TituloSubPublicacion", label: "Titulo de la subpublicacion", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
         { prop: "EditorialPaisPagina", label: "Editorial, Pais, Pagina", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
@@ -479,6 +482,7 @@
         flex: 1;
         min-width: 400px;
         display: flex;
-        flex-direction: column;        
+        flex-direction: column;   
+        margin-bottom: 5px;     
     }
 </style>

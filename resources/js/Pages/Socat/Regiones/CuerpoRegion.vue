@@ -171,8 +171,20 @@ const props = defineProps({
     treeDataProp: { type: Array, required: true, default: () => [] },
     tiposDeRegionProp: { type: Array, required: true, default: () => [] },
     tiposDeRegionTreeProp: { type: Array, required: true, default: () => [] },
+    modal: { type:Boolean, required:false, default:false }
 });
 
+/*Juan carlos Mora 11/06/2026
+Se agregan las funciones para que al presionar el boton de salir cierre 
+    el modal y no salga al menu principal*/
+
+const emit = defineEmits(['cerrar']);
+
+const cerrarDialogo = () => {
+    emit('cerrar');
+} 
+
+/*Juan Carlos Mora Morquecho */
 
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
@@ -984,8 +996,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                         </el-icon>
                                     </el-button>
                                 </el-tooltip>
-
-                                <BotonSalir />
+                                <BotonSalir :accion="modal ? 'cerrar' : 'salida'" @salir="cerrarDialogo" />
                             </div>
                         </div>
                     </div>
