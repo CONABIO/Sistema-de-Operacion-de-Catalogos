@@ -20,6 +20,8 @@ use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\RelNombresController;
+use App\Http\Controllers\RelNomNomComunRegionBiblioController;
+use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
 use App\Models\Mime;
 
 
@@ -95,7 +97,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cargaCatNomComun', [NombreComunController::class, 'cargaNomComun']);
 
-    //Juan Carlos Mora cargo solo los nombres comunes por taxón 
+    //Juan Carlos Mora cargo solo los nombres comunes por taxón
     Route::get('cargar-nomcomun-taxon/{id}', [NombreComunController::class, 'cargaNombresComunes']);
 
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
@@ -180,11 +182,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [RegionController::class, 'index'])->name('index');
         Route::post('/', [RegionController::class, 'store'])->name('store');
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
-        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');        
+        Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
     });
     Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
-    
+
     Route::get('/api/bibliografias/{bibliografia}/grupos-taxonomicos', [BibliografiaController::class, 'getGruposTaxonomicos']);
 
     Route::post('/bibliografias/asociar-grupo', [BibliografiaController::class, 'asociarGrupo'])->name('bibliografias.asociarGrupo');
@@ -258,4 +260,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('categorias-taxonomicas.updateIcon');
 
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
+
+
+    Route::get('/obtener-biblio-nomcomun-region/{idNomComun}/{idRegion}/{idNombre}', [RelNomNomComunRegionBiblioController::class, 'obtenerBiblioNomComunRegion']);
+    Route::post('/asociar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'asociarBiblioNomComunRegion']);
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+
+
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+    Route::post('/asociar-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractRegion']);
+
+    Route::get('/obtener-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractSolo']);
+    Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
+
+    Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
+Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 });
