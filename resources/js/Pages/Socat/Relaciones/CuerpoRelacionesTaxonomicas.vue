@@ -478,9 +478,9 @@ const manejarEliminarItem = (item) => {
       
       tablaNomenclatura.value = response.data;
 
-      mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
+      mostrarNotificacion('Eliminación', `La relación de: ${item.TipoRelacion.texto} fue eliminada correctamente.`, 'success');
     } catch (apiError) {
-      mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
+      mostrarNotificacionError('Error', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'error');
     }
   };
   const cancelarEliminacion = () => {
@@ -535,8 +535,8 @@ const abrirBiblio = async () => {
     taxActBiblio.value = props.taxonAct;
     dialogFormVisibleBiblio.value = true;
   }else{
-    mostrarNotificacionError("Bibliografia", 
-                             "Se debe seleccionar un tipo de relación"),
+    mostrarNotificacionError("Error", 
+                             "Se debe seleccionar un tipo de relación."),
                              "Error"
   }
 }
@@ -752,10 +752,10 @@ const Guardar = async() => {
                                                                             observacion: observacionesRel.value,
                                                                             taxAct: props.taxonAct.id}});
 
-      mostrarNotificacion('Actualización Exitosa', `Las observaciones se actualizaron correctamente.`, 'success');
+      mostrarNotificacion('Actualización', `Las observaciones se actualizaron correctamente.`, 'success');
       habObservaciones.value = true;
     } catch (apiError) {
-      mostrarNotificacionError('Aviso', `Las observaciones no se pueden actualizar.`, 'success');
+      mostrarNotificacionError('Error', `Las observaciones no se pueden actualizar.`, 'error');
       habObservaciones.value = true; 
     }
   };
@@ -764,7 +764,7 @@ const Guardar = async() => {
     ElMessageBox.close();
   };
   
-  const mensaje = ` Las observaciones seran actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir`;
+  const mensaje = ` Las observaciones serán actualizadas. ¿Realmente desea relizar el cambio?. Esta acción no se puede revertir.`;
   
   ElMessageBox({
     title: 'Confirmar actualización', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
@@ -870,8 +870,8 @@ const Guardar = async() => {
         if(taxonActRel.value.length === 0)
         {
             mostrarNotificacion(
-                "Alerta",
-                "Se debe seleccionar al menos un taxón a relacionar",
+                "Error",
+                "Se debe seleccionar al menos un taxón a relacionar.",
                 "error",
                 7000
             );
@@ -880,8 +880,8 @@ const Guardar = async() => {
         switch (tipRelSelec.value){
             case 0: 
               mostrarNotificacion(
-                "Alerta",
-                "Se debe seleccionar solo un tipo de relación",
+                "Error",
+                "Se debe seleccionar solo un tipo de relación.",
                 "error",
                 7000
               );
@@ -948,8 +948,8 @@ const Guardar = async() => {
         if(taxonActRel.value.completo.Estatus === props.taxonAct.completo.Estatus)
         {
           mostrarNotificacion(
-              "Alerta",
-              "El taxón actual y el taxon a relacionar no pueden tener el mismo estatus",
+              "Error",
+              "El taxón actual y el taxón a relacionar no pueden tener el mismo estatus.",
               "error",
               7000
           ); 
@@ -958,8 +958,8 @@ const Guardar = async() => {
           if(valTaxAct !== undefined || valTaxRel !== undefined)
           {
             mostrarNotificacion(
-                "Alerta",
-                "El taxón sinonimo seleccionado ya cuenta con un valido relacionado ",
+                "Error",
+                "El taxón sinónimo seleccionado ya cuenta con un válido relacionado.",
                 "error",
                 7000
             );
@@ -967,8 +967,8 @@ const Guardar = async() => {
           }else{
               if(props.taxonAct.completo.Estatus === "ND"){
                 mostrarNotificacion(
-                  "Alerta",
-                  "El taxón actual tiene estatus ND por lo cual no puede tener relaciones de sinonimia",
+                  "Error",
+                  "El taxón actual tiene estatus ND, por lo cual no puede tener relaciones de sinonimia.",
                   "error",
                   7000
               );
@@ -977,8 +977,8 @@ const Guardar = async() => {
               if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
                  taxonActRel.value.completo.categoria.IdNivel1 < 5){
                   mostrarNotificacion(
-                    "Alerta",
-                    "No se puede tener relaciones de sinonimia en taxones de categoria superior a familia",
+                    "Error",
+                    "No se pueden tener relaciones de sinonimia en taxones de categoría superior a familia.",
                     "error",
                     7000
                   );
@@ -1002,8 +1002,8 @@ const Guardar = async() => {
 
       if(valTaxAct !== undefined || valTaxRel !== undefined){
         mostrarNotificacion(
-             "Alerta",
-             "La relacion de basonimia no puede ser generada ya que alguno de los taxones ya cuenta con una relacion de este tipo",
+             "Error",
+             "La relación de basonimia no puede ser generada, ya que alguno de los taxones ya cuenta con una relación de este tipo.",
              "error",
              7000
         ); 
@@ -1011,8 +1011,8 @@ const Guardar = async() => {
       }else if(props.taxonAct.completo.categoria.IdNivel1 < 7 || 
                taxonActRel.value.completo.categoria.IdNivel1 < 7){
                 mostrarNotificacion(
-                  "Alerta",
-                  "El taxón actual es de categoria superior a especie por lo cual no se puede generar la relación de basonimia",
+                  "Error",
+                  "El taxón actual es de categoría superior a especie, por lo cual no se puede generar la relación de basonimia.",
                   "error",
                   7000
                 ); 
@@ -1025,8 +1025,8 @@ const Guardar = async() => {
 
       if(props.taxonAct.completo.SistClasCatDicc === taxonActRel.value.completo.SistClasCatDicc){
             mostrarNotificacion(
-                "Alerta",
-                "No se puede generar la relación ya que el sistema de clasificación es el mismo en ambos taxones",
+                "Error",
+                "No se puede generar la relación, ya que el sistema de clasificación es el mismo en ambos taxones.",
                 "error",
                 7000
             ); 
@@ -1038,8 +1038,8 @@ const Guardar = async() => {
          taxonActRel.value.completo.SistClasCatDicc === 'NA' || 
          taxonActRel.value.completo.SistClasCatDicc === 'ND'){
           mostrarNotificacion(
-                "Alerta",
-                "No se puede generar la relación porque el sistema de clasificación de uno de los taxones es NA o ND",
+                "Error",
+                "No se puede generar la relación porque el sistema de clasificación de uno de los taxones es NA o ND.",
                 "error",
                 7000
             ); 
@@ -1050,7 +1050,7 @@ const Guardar = async() => {
       if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
           mostrarNotificacion(
                 "Alerta",
-                "No se puede generar la relación porque la categoria taxonomica no es la misma en ambos taxones",
+                "No se puede generar la relación porque la categoría taxonómica no es la misma en ambos taxones.",
                 "error",
                 7000
             ); 
@@ -1060,8 +1060,8 @@ const Guardar = async() => {
       if(!(props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.IdNivel3 === 0) ||
          !(taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
           mostrarNotificacion(
-                "Alerta",
-                "No se puede generar la relación porque la debe ser género o superior",
+                "Error",
+                "No se puede generar la relación porque la debe ser género o superior.",
                 "error",
                 7000
             ); 
@@ -1081,8 +1081,8 @@ const Guardar = async() => {
 
       if(!estatusPermitidos.includes(props.taxonAct.estatus) || !estatusPermitidos.includes(taxonActRel.value.estatus)){
         mostrarNotificacion(
-                "Alerta",
-                "No se puede generar la relación ya que uno o ambos taxones tienen estatus diferente de válido/correcto",
+                "Error",
+                "No se puede generar la relación, ya que uno o ambos taxones tienen estatus diferente de válido/correcto.",
                 "error",
                 7000
             ); 
@@ -1097,8 +1097,8 @@ const Guardar = async() => {
             )
           ){
             mostrarNotificacion(
-                "Alerta",
-                "***El vertebrado o parásito que selecciono no pertenece aun grupo válido - Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA)",
+                "Error",
+                "***El vertebrado o parásito que selecciono no pertenece a un grupo válido7: Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA).",
                 "error",
                 7000
             ); 
@@ -1111,8 +1111,8 @@ const Guardar = async() => {
     const validacionParental = async () => {
       if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != "híbrido"){
          mostrarNotificacion(
-                "Alerta",
-                "No es posible asociar un parental a un taxón que no es un híbrido",
+                "Error",
+                "No es posible asociar un parental a un taxón que no es un híbrido.",
                 "error",
                 7000
             ); 
@@ -1124,8 +1124,8 @@ const Guardar = async() => {
           if(!categPerm.includes(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica) || 
              !categPerm.includes(taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica)){
            mostrarNotificacion(
-                "Alerta",
-                "No es posible asociar un parental a un taxón que su categoria taxonomica sea diferente de género o especie",
+                "Error",
+                "No es posible asociar un parental a un taxón cuya categoría taxonómica sea diferente de género o especie.",
                 "error",
                 7000
             ); 
@@ -1139,7 +1139,7 @@ const Guardar = async() => {
       if(props.taxonAct.id === taxonActRel.value.id){
         mostrarNotificacion(
                 "Alerta",
-                "Está tratando de relacionar el nombre a sí mismo, lo cual no es posible",
+                "Está tratando de relacionar el nombre consigo mismo, lo cual no es posible.",
                 "error",
                 7000
             ); 
@@ -1147,8 +1147,8 @@ const Guardar = async() => {
       }
       if(props.taxonAct.completo.TaxonCompleto != taxonActRel.value.completo.TaxonCompleto){
         mostrarNotificacion(
-                "Alerta",
-                "Está tratando de relacionar dos taxones con diferente nombre esto no es posible",
+                "Error",
+                "Está tratando de relacionar dos taxones con diferente nombre; esto no es posible.",
                 "error",
                 7000
             ); 
@@ -1187,9 +1187,9 @@ const Guardar = async() => {
                                                                                 taxAct: props.taxonAct.id}});
         
         tablaNomenclatura.value = response.data;
-        mostrarNotificacion('Actualización Exitosa', `El tipo de relación ha sido actualizado correctamente.`, 'success');
+        mostrarNotificacion('Actualización', `El tipo de relación ha sido actualizado correctamente.`, 'success');
       } catch (apiError) {
-        mostrarNotificacionError('Aviso', `El tipo de relación no se puede actualizar.`, 'success');
+        mostrarNotificacionError('Error', `El tipo de relación no se puede actualizar.`, 'error');
       }
     };
 
@@ -1202,15 +1202,15 @@ const Guardar = async() => {
 
         if(conValidoRel){
           mostrarNotificacion(
-                  "Alerta",
-                  "El taxón ya cuenta con una relación de basonimia",
+                  "Error",
+                  "El taxón ya cuenta con una relación de basonimia.",
                   "error",
                   7000
               ); 
              return ;
         }
       } catch (apiError) {
-        mostrarNotificacionError('Aviso', `El tipo de relación no se puede actualizar.`, 'success');
+        mostrarNotificacionError('Error', `El tipo de relación no se puede actualizar.`, 'error');
       }
     };
     //---------------------------------Aqui termina la definición de las funciones internas--------------------------------- 
@@ -1300,9 +1300,9 @@ const Guardar = async() => {
             const response = await axios.post('/alta-RelacionesTax', { params });
 
             mostrarNotificacion(
-                  "Alerta",
-                  "La relación se genero correctamente",
-                  "info",
+                  "Ingreso",
+                  "La relación se generó correctamente.",
+                  "success",
                   7000
               );
 
@@ -1312,15 +1312,15 @@ const Guardar = async() => {
             if (error.response && error.response.status === 422) {
                 // Aquí están los errores de validación
                 mostrarNotificacion(
-                  "Alerta",
+                  "Error",
                   error.response.data.message,
-                  "info",
+                  "error",
                   7000
               );
               
             } else {
                 // Otros errores inesperados
-                ElMessage.error("Ocurrió un error en el servidor");
+                ElMessage.error("Ocurrió un error en el servidor.");
             }
 
             loading.close();

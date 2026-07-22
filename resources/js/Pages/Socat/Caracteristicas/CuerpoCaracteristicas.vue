@@ -38,6 +38,8 @@ const nodeDataForDeleteConfirmation = ref(null);
 
 const nodeIdToScrollToAfterNotification = ref(null);
 
+const emit = defineEmits(['cerrar']);
+
 const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 
 const handleNodeExpand = (data, node) => {
@@ -49,6 +51,15 @@ const handleNodeCollapse = (data, node) => {
   expandedNodeIds.value.delete(data.IdCatNombre);
   handleNodeSelected(data, node);
 };
+
+/*Juan Carlos Mora 10/06/2026
+  Se agrega la función para el cerrado del modal*/
+
+const cerrarDialogo = () => {
+        emit('cerrar');
+    };
+
+/*Juan Carlos Mora Morquecho*/
 
 const scrollToNode = (nodeId) => {
   nextTick(() => {
@@ -86,7 +97,9 @@ const findNodeInTree = (nodes, nodeIdToFind) => {
 const props = defineProps({
   treeDataProp: { type: Array, required: true, default: () => [] },
   flatTreeDataProp: { type: Array, required: true, default: () => [] },
+  modal: { type: Boolean, required: false, default: false }
 });
+
 const mostrarNotificacion = (
   titulo,
   mensaje,
@@ -648,7 +661,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
               <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
-              <BotonSalir />
+              <BotonSalir :accion="modal ? 'cerrar' : 'salida'" @salir="cerrarDialogo"/>
             </div>
           </div>
         </div>

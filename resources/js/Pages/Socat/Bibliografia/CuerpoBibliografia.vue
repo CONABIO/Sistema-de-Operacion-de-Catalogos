@@ -25,6 +25,34 @@ const tieneGrupoSeleccionado = computed(() => {
 });
 
 
+
+const cerrarBiblio = async (bibliografiasSeleccionadas) => {
+    dialogFormVisibleBiblio.value = false;
+
+    if (!bibliografiasSeleccionadas || bibliografiasSeleccionadas.length === 0) return;
+    if (!idNomComunSeleccionado.value || !idRegionSeleccionada.value) {
+        alert("Por favor seleccione un nombre común y una región primero");
+        return;
+    }
+
+    try {
+        const response = await axios.post('/asociar-biblio-nomcomun-region', {
+            IdNomComun: idNomComunSeleccionado.value,
+            IdRegion: idRegionSeleccionada.value,
+            idsBibliografias: bibliografiasSeleccionadas
+        });
+
+        if (response.status === 200) {
+            await cargarBibliografiasRelacionadas();
+            console.log("Asociación exitosa");
+        }
+    } catch (error) {
+        console.error("Error al asociar bibliografía:", error);
+        alert("Error al guardar la asociación");
+    }
+};
+
+
 const tieneObjetoSeleccionado = computed(() => {
   return datosObjetos.value.length > 0 && selectedGrupoRow.value !== null;
 });
@@ -49,8 +77,6 @@ const agregarGrupo = () => {
   }
   esModalGruposVisible.value = true;
 };
-
-
 
 const manejarClickFila = (row) => {
   selectedGrupoId.value = null;
@@ -124,7 +150,7 @@ const grupoParaEditar = ref({
   observaciones: ''
 });
 
-const emit = defineEmits(['cerrarBiblio']);
+const emit = defineEmits(['cerrarBiblio','asociar']);
 
 const columnasDefinidas = ref([
   { prop: "Autor", label: "Autor(es)", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
@@ -152,6 +178,10 @@ const props = defineProps({
   traspaso: {
     type: Boolean,
     default: false
+  },
+  biblioAct: {
+    type: Array,
+     default: () => []
   }
 });
 
@@ -345,18 +375,21 @@ const cerrarModalGrupos = () => {
 };
 
 const traspasaBiblio = () => {
-
   const id = selectedBibliografia.value.IdBibliografia;
-
-  if (!biblioRelacion.value.includes(id)) {
-    biblioRelacion.value.push(id);
-    mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
+  if (!props.biblioAct.includes(id)) {
+    emit('asociar', id);
+    mostrarNotificacion("Aviso", "Se ha enviado la asociación correctamente.", "success");
+  } else {
+    mostrarNotificacion("Error", "La referencia bibliográfica ya se encuentra relacionada.", "error");
   }
-
 };
 
 const cerrarModal = () => {
-  emit('cerrarBiblio', biblioRelacion.value);
+  if (biblioRelacion.value.length === 0) {
+      emit('cerrarBiblio', []);
+  } else {
+      emit('cerrarBiblio', biblioRelacion.value);
+  }
   biblioRelacion.value = [];
 }
 
