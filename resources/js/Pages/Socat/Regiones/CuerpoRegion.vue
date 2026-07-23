@@ -394,7 +394,9 @@ watch(() => props.tiposDeRegionTreeProp, (newVal) => {
     }
 }, { immediate: true, deep: true });
 
-watch(() => props.tiposDeRegionProp, (newVal) => { listaTiposDeRegion.value = newVal; }, { immediate: true, deep: true });
+watch(() => props.tiposDeRegionProp, (newVal) => { 
+    listaTiposDeRegion.value = newVal; 
+}, { immediate: true, deep: true });
 
 
 const onOpcionNivelChange = (newVal) => {
@@ -596,7 +598,7 @@ onMounted(() => {
             formModal.value.IdTipoRegion = id;
             esModalTipoRegionVisible.value = false;
             ElMessage.success(`Se ha seleccionado: "${descripcion}"`);
-            router.reload({ only: ['tiposDeRegionProp'] });
+            //router.reload({ only: ['tiposDeRegionProp'] });
         }
     };
     window.addEventListener('message', handleMessageFromIframe);

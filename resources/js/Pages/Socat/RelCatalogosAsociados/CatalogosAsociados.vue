@@ -46,11 +46,12 @@
                                                 :mostrarAcci = "false"
                                                 :alturaTabla = 330
                                                 :highlight-current-row = "true"
-                                                :mostrarNuevo = "false"
+                                                :mostrarNuevo = "true"
                                                 :mostrarEditar = "true"
                                                 :mostrarBorrar = "true"
                                                 :mostrarSalir = "false"
-                                                @row-click="clickCaract"/>
+                                                @row-click="clickCaract"
+                                                @nuevo-item="nuevoRelCaract"/>
                                         </div>
                                     </el-aside>
                                     <el-aside width="30px"/>
@@ -283,8 +284,13 @@
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelNomCom" :botCerrar="true" :pressEsc="false" :width="'90%'">
-            <RelNomComun :modal="true" @cerrar="cerrarRelNomCom"/>
+            <RelNomComun :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelNomCom"/>
         </DialogForm>
+
+        <DialogForm v-model="dialogFormVisibleRelCaract" :botCerrar="true" :pressEsc="false" :width="'90%'">
+            <RelCaract :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelCaract"/>
+        </DialogForm>
+        
     </div>
 </template> 
 <script setup>
@@ -296,6 +302,7 @@
     import CuerpoCaracteristicas from '@/Pages/Socat/Caracteristicas/CuerpoCaracteristicas.vue';
     import CuerpoRegion from '@/Pages/Socat/Regiones/CuerpoRegion.vue';
     import RelNomComun from '@/Pages/Socat/RelCatalogosAsociados/RelacionNomComun.vue';
+    import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
     import CuerpoNombreCom from '@/Pages/Socat/Nombres/CuerpoNombreComun.vue';
     import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
     import { onMounted, ref, watch } from 'vue';
@@ -343,6 +350,7 @@
     const dialogFormVisibleNomCom = ref(false);
 
     const dialogFormVisibleRelNomCom = ref(false);
+    const dialogFormVisibleRelCaract = ref(false);
 
     /*Declaracion de propiedades para regiones*/
     const treeRegionDataProp = ref([]);
@@ -630,10 +638,17 @@
         dialogFormVisibleRelNomCom.value = false;
     }
 
+    const cerrarRelCaract = () => {
+        dialogFormVisibleRelCaract.value = false;
+    }
+    
+
     const nuevoRelNomComun = () => {
-        console.log("le di click al boton de nuevo")
         dialogFormVisibleRelNomCom.value = true;
-        console.log("Este es el valor de dialogRolNomComun: ", dialogFormVisibleRelNomCom.value);
+    }
+
+    const nuevoRelCaract = () => {
+        dialogFormVisibleRelCaract.value = true;
     }
 
     const Guardar = () => {
@@ -711,6 +726,7 @@
         display: flex;
         flex-direction: column;
     }
+    
     .table-wrapper :deep(.el-table__body tr.current-row > td) {
       background-color: #ddf6dd !important;
       color: #0d6efd !important;

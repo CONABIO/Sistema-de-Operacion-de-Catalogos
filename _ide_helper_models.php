@@ -454,6 +454,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorCaract($idNombre)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorNomComun($idNombre)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorNombre($idNombre)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereAbreviado($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereCatalogo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereClaveRegion($value)
@@ -567,6 +570,7 @@ namespace App\Models{
  * @property string $FechaCaptura Fecha de captura del registro.
  * @property string|null $FechaModificacion Fecha de modificación del registro.
  * @property string|null $Marca
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo caracteristicasTaxon($idNombre)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo query()
