@@ -394,7 +394,9 @@ watch(() => props.tiposDeRegionTreeProp, (newVal) => {
     }
 }, { immediate: true, deep: true });
 
-watch(() => props.tiposDeRegionProp, (newVal) => { listaTiposDeRegion.value = newVal; }, { immediate: true, deep: true });
+watch(() => props.tiposDeRegionProp, (newVal) => { 
+    listaTiposDeRegion.value = newVal; 
+}, { immediate: true, deep: true });
 
 
 const onOpcionNivelChange = (newVal) => {
@@ -596,7 +598,7 @@ onMounted(() => {
             formModal.value.IdTipoRegion = id;
             esModalTipoRegionVisible.value = false;
             ElMessage.success(`Se ha seleccionado: "${descripcion}"`);
-            router.reload({ only: ['tiposDeRegionProp'] });
+            //router.reload({ only: ['tiposDeRegionProp'] });
         }
     };
     window.addEventListener('message', handleMessageFromIframe);
@@ -1001,7 +1003,6 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         </div>
                     </div>
                 </template>
-
                 <el-tree v-show="filteredRegionsTree.length" ref="treeRef" :key="treeKey" :data="filteredRegionsTree"
                     :props="{ children: 'children', label: 'NombreRegion' }" node-key="IdRegion"
                     :current-node-key="selectedNode?.IdRegion" :highlight-current="true" :expand-on-click-node="true"

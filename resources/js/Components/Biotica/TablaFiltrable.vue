@@ -11,6 +11,8 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
+import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
+import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -31,6 +33,8 @@ const props = defineProps({
   mostrarBorrar: { type: Boolean, default: true },
   mostrarGuardar: { type: Boolean, default: false },
   mostrarRegion: { type: Boolean, default: false },
+  mostrarNomComun: { type: Boolean, default: false },
+  mostrarTipoDist: { type: Boolean, default: false },
   rowClassName: { type: Function, default: null },
   mostrarBiblio: { type:Boolean, default: false }, 
   valoresOpcion: { type:Array, required: false, default: []},
@@ -238,7 +242,7 @@ const fetchData = async () => {
     {
       busquedaLocal();
       return;
-    }
+    }    
 
     const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
@@ -250,7 +254,7 @@ const fetchData = async () => {
         perPage: props.itemsPerPage,
         sortBy: sorting.value.prop,
         sortOrder: sorting.value.order,
-      }
+      }      
     });
 
     const resultados = response.data.data || [];
@@ -362,6 +366,8 @@ const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
+const abrirNomCom = () => emit('abrirNomComun')
+const abrirTipoDist = () => emit('abrirTipoDist')
 
 const cerrarModal = () => {
   emit('cerrar');
@@ -400,12 +406,17 @@ defineExpose({
             <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
             <BotonRegiones style="flex-shrink: 0; min-width: max-content;"
                            v-if="props.mostrarRegion"/>
+            <BotonNomComun v-if="props.mostrarNomComun" @click="abrirNomCom"
+                           style="flex-shrink: 0; min-width: max-content;" />
+            <BotonTipoDist v-if="props.mostrarTipoDist" @click="abrirTipoDist"
+                           style="flex-shrink: 0; min-width: max-content;" />
             <EditarButton :disabled="!selectedRow" @editar="onEditarInterno"
                           v-if="props.mostrarEditar" />
             <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
                            v-if="props.mostrarGuardar"/>
             <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
+            
             <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               Se agrego la propiedad accion -->
             <BotonSalir v-if="props.mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
