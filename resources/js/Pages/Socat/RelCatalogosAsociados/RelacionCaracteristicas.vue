@@ -5,18 +5,18 @@
                 <el-container style="height: 72vh;">
                     <el-header class="header">
                         <div class="header-content">
-                            <h1 class="titulo">Asociación Taxón-Nombre común-Región</h1>
+                            <h1 class="titulo">Asociación Taxón-Características-Región</h1>
                         </div>
                     </el-header>
-                    <el-main style="padding: 15px; background: #fff; overflow: hidden;">
+                    <el-main style="padding: 15px; background: #fff; overflow: auto;">
                         <div style=" margin-bottom: 20px;">
                             <el-row :gutter="21">
-                                <el-col :span="18">
+                                <el-col :span="16">
                                     <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
                                         {{ props.taxonActual.label }} 
                                     </span>
                                 </el-col>
-                                <el-col :span="5" >
+                                <el-col :span="8" >
                                     <div style="display: flex; gap: 5px; justify-content: flex-end;">                                
                                         <BotonTraspaso @traspasa="onCreaRelacion" />
                                                                 
@@ -25,48 +25,49 @@
                                     </div>
                                 </el-col>
                             </el-row>
+                            <el-row :gutter="21">
+                                <el-switch
+                                    v-model="georeferido"
+                                    class="ml-2"
+                                    inline-prompt
+                                    style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+                                    active-text="Georreferido"
+                                    inactive-text="No Georreferido"
+                                />
+                            </el-row>
                         </div>
-                    </br>
-                        <div style="height: 650px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
-                            <el-splitter lazy>
+                        <div style="height: 573px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                            <el-splitter>
                                 <el-splitter-panel min="50">
-                                    <div class="table-wrapper">
-                                        <TablaFiltrable 
-                                            v-model:datos = "tablaNomComun"
-                                            v-model:totalItems = "contRegNomCom"                                    
-                                            endpoint="/busca-nombre-comun" 
-                                            :columnas = "columnasDefinidasNomCom" 
-                                            :opciones-filtro = "opcionesFiltroNomComun"
-                                            :itemsPerPage = 100 
-                                            :mostrarAcci = "false"
-                                            :alturaTabla = 492
-                                            :highlight-current-row = "true"
-                                            :mostrarBiblio = "false"
-                                            :mostrarNuevo = "false"
-                                            :mostrarEditar = "false"
-                                            :mostrarBorrar = "false"
-                                            :mostrarSalir = "false"
-                                            :mostrarNomComun = "true"
-                                            @row-click="clickNomComun"
-                                            @abrirNomComun="abirNomCom">  
-                                            <template #expand-column>
-                                                <el-table-column type="expand">
-                                                    <template #default="{ row }">
-                                                        <div class="expand-content-detail">
-                                                            <p><strong>IdNomComun:</strong> {{ row.IdNomComun }}</p>
-                                                            <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
-                                                            <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
-                                                            <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
-                                                            <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
-                                                        </div>
-                                                    </template>
-                                                </el-table-column>
-                                            </template>                                              
-                                        </TablaFiltrable>
-                                    </div>
+                                    <el-card class="panel-card list-panel" shadow="never">
+                                        <template #header>
+                                            <div class="header-container">
+                                                <span class="details-header-title">Características</span>
+                                                <BotonCaract @click="abrirCaract"
+                                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                            </div>
+                                        </template>
+                                        <div class="demo-tree panel-nombre">
+                                            <el-tree
+                                                ref="treeCaracteristicas"
+                                                style="max-width: 600px"
+                                                :data="datosCaracteristicas"
+                                                :props="caractProps"
+                                                node-key="IdCatNombre"
+                                                highlight-current
+                                                @node-click="handleNodeClickCarac"
+                                                class="tree-caracteristicas">
+                                                <template #default="{ node }">
+                                                    <span class="nodo-texto">
+                                                        {{ node.label }}
+                                                    </span>
+                                                </template>
+                                            </el-tree>
+                                        </div>
+                                    </el-card>
                                 </el-splitter-panel>
-                                <el-splitter-panel min="50">
-                                    <div style="height: 650px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                <el-splitter-panel min="50" v-if="georeferido">
+                                    <div style="height: 573px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
                                         <el-splitter layout="vertical" style="height:100%;">
                                             <el-splitter-panel>
                                                 <el-card class="panel-card list-panel" shadow="never">
@@ -102,6 +103,10 @@
                                                     <template #header>
                                                         <div class="header-container">
                                                             <span class="details-header-title">Región</span>
+                                                            <div class="header-buscador">
+                                                                <el-input v-model="filterText"  placeholder="Escriba para buscar" clearable 
+                                                                          :disabled="buscadorDeshabilitado" @keyup.enter="irAlNodoBuscado" />
+                                                            </div>
                                                             <BotonRegiones @click="abrirReg"
                                                                 style="flex-shrink: 0; min-width: max-content;"/>
                                                         </div>
@@ -123,7 +128,50 @@
                                         </el-splitter>
                                     </div>
                                 </el-splitter-panel>
+                                <el-splitter-panel min="50" v-if="georeferido">
+                                    <el-card class="panel-card list-panel" shadow="never">
+                                        <template #header>
+                                            <div class="header-container">
+                                                <span class="details-header-title">Tipo de distribución</span>
+                                                 <BotonTipoDist @click="abrirTipoDist"
+                                                        style="flex-shrink: 0; min-width: max-content;" />
+                                            </div>
+                                        </template>
+                                        <div class="table-wrapper">
+                                            <TablaFiltrable 
+                                                v-model:datos = "tablaTipoDist"
+                                                v-model:totalItems = "contRegTipDist"                                    
+                                                endpoint="/busca-tipo-distribucion" 
+                                                :columnas = "columnasDefinidasTipoDist" 
+                                                :itemsPerPage = 100 
+                                                :mostrarAcci = "false"
+                                                :alturaTabla = 380
+                                                :highlight-current-row = "true"
+                                                :mostrarBiblio = "false"
+                                                :mostrarNuevo = "false"
+                                                :mostrarEditar = "false"
+                                                :mostrarBorrar = "false"
+                                                :mostrarSalir = "false"
+                                                :mostrarNomComun = "false"
+                                                :mostrarTipoDist = "false"
+                                                @row-click="clickTipDist"> 
+                                                <template #expand-column>
+                                                    <el-table-column type="expand">
+                                                        <template #default="{ row }">
+                                                            <div class="expand-content-detail">
+                                                                <p><strong>IdTipoDistribucion:</strong> {{ row.IdTipoDistribucion }}</p>
+                                                                <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                                                <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
+                                                            </div>
+                                                        </template>
+                                                    </el-table-column>
+                                                </template>                                           
+                                            </TablaFiltrable>
+                                        </div>
+                                    </el-card>
+                                </el-splitter-panel>
                             </el-splitter>
+                            
                         </div>
                     </el-main>
                 </el-container>
@@ -134,9 +182,6 @@
                 :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
                 @close="cerrarNotificacion" />
         </Teleport>
-        <DialogForm v-model="dialogFormVisibleNomCom" :botCerrar="true" :pressEsc="false" :width="'83%'">
-            <CuerpoNombreCom :modal="true" @cerrar="cerrarNomCom"/>
-        </DialogForm>
         <DialogForm v-model="esModalTipoRegionVisible" :bot-cerrar="true" :press-esc="true" width="90%">
             <CuerpoTipoRegion :treeDataProp="tiposRegionTreeData" :flatTreeDataProp="todosLosTiposDeRegion"
                     :isModal="true" @cerrar-modal="cerrarModalTipoRegion" />
@@ -147,6 +192,15 @@
                 :tiposDeRegionTreeProp = "tiposRegionTreeData"
                 :tiposDeRegionProp = "todosLosTiposDeRegionTree"
             />
+        </DialogForm>
+        <DialogForm v-model="dialogFormVisibleCaract" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <CuerpoCaracteristicas :modal="true" @cerrar="cerrarCarac"
+                :treeDataProp="treeDataProp"
+                :flatTreeDataProp="flatTreeDataProp"
+            />
+        </DialogForm>
+        <DialogForm v-model="dialogFormVisibleTiposDist" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <CuerpoTipos :modal="true" @cerrar="cerrarTipDist"/>
         </DialogForm>
     </div>
 </template>
@@ -163,8 +217,34 @@
     import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
     import CuerpoRegion from '@/Pages/Socat/Regiones/CuerpoRegion.vue';
     import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
+    import BotonCaract from '@/Components/Biotica/BtnCaracteristicas.vue';
+    import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+    import CuerpoCaracteristicas from '@/Pages/Socat/Caracteristicas/CuerpoCaracteristicas.vue';
+    import CuerpoTipos from '@/Pages/Socat/TiposDistribucion/CuerpoTipoDistribucion.vue';
 
     const emit = defineEmits(['cerrar']);
+    const georeferido = ref(true);
+
+    //Variables declaradas para Tipo de distribucion 
+    const tablaTipoDist = ref([]);
+    const contRegTipDist = ref(0);
+    const columnasDefinidasTipoDist = ref([
+            { prop: 'Descripcion', label: 'Descripción', minWidth: '120', sortable: true, filtrable: true, align: 'left' }
+        ]);
+    const dialogFormVisibleTiposDist = ref(false); 
+    const idTipoDist = ref(0);
+
+    //Variables declaradas para caracteristicas 
+    const datosCaracteristicas = ref ([]);
+    const caractProps = {
+        children: 'children',
+        label: 'Descripcion'
+    };
+    const treeCaracteristicas = ref(null);
+    const flatTreeDataProp = ref([]);
+    const treeDataProp = ref([]);
+    const dialogFormVisibleCaract = ref(false);
+    const idCaracteristica = ref(0);
 
     //Variables declaradas para region
     const tiposRegion = ref([]);
@@ -184,19 +264,7 @@
     const todosLosTiposDeRegionTree = ref([]);
     const dialogFormVisibleReg = ref(false);
 
-    //Variables declaradas para nombre comun
-    const tablaNomComun = ref ([]);
-    const contRegNomCom = ref(0);
-    const dialogFormVisibleNomCom = ref(false);
-
-    const opcionesFiltroNomComun = ref([
-        { label: 'NombreComun', value: 'NomComun' },
-        { label: 'Lengua', value: 'Lengua' },
-        { label: 'Observaciones', value: 'Observaciones' }
-    ]);
-
     //Variables para funcionalidad de asignacion de relaciones
-    const idNomComun = ref([0]);
     const idTipoReg = ref([0]);
     const idRegion = ref([0]);
     const idNombre = ref([0]);
@@ -205,7 +273,7 @@
         taxonActual: { type: Object, required: true, default: () => ({}) },
     });
 
-    //Varibles definidas para enviar mensajes 
+    //Variables definidas para enviar mensajes 
     const notificacionTitulo = ref("");
     const notificacionVisible = ref(false);
     const notificacionMensaje = ref("");
@@ -421,7 +489,76 @@
         }
     }
 
+    const buscadorDeshabilitado = computed(() => {
+        if (!selectedTipoRegionNode.value) return true;
+        const esNivelRaiz = selectedTipoRegionNode.value.Descripcion.toUpperCase() === 'PAÍS';
+        if (!esNivelRaiz && !selectedNode.value) {
+            return true;
+        }
+        return false;
+    });
+
+    const irAlNodoBuscado = () => {
+
+        if (!filterText.value || !treeRef.value) return;
+
+        const textoBusqueda = filterText.value.toLowerCase();
+        const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
+        const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
+
+        const encontrarEnArbol = (nodos) => {
+            for (const nodo of nodos) {
+                const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+                const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
+
+                if (coincideNombre && coincideTipo) return nodo;
+
+                if (nodo.children?.length) {
+                    const encontrado = encontrarEnArbol(nodo.children);
+                    if (encontrado) return encontrado;
+                }
+            }
+            return null;
+        };
+
+        let match = null;
+        let ambitoBusquedaNombre = "el catálogo";
+        if (selectedNode.value) {
+            ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
+            const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
+            if (nodoActual && nodoActual.data.children) {
+                match = encontrarEnArbol(nodoActual.data.children);
+            }
+        } else {
+            match = encontrarEnArbol(filteredRegionsTree.value);
+        }
+        if (match) {
+            selectedNode.value = match;
+            treeRef.value.setCurrentKey(match.IdRegion);
+            let nodeInTree = treeRef.value.getNode(match.IdRegion);
+            if (nodeInTree) {
+                let parent = nodeInTree.parent;
+                while (parent) {
+                    parent.expanded = true;
+                    parent = parent.parent;
+                }
+            }
+
+            nextTick(() => {
+                const el = document.getElementById('region-node-' + match.IdRegion);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        } else {
+            mostrarNotificacion(
+                "Aviso",
+                `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+                "warning"
+            );
+        }
+    };
+
     const abrirReg = async () => {
+        console.log("Esta es la funcion de abrir regiones");
         dialogFormVisibleReg.value = true;
     }
 
@@ -438,53 +575,40 @@
             }
         });
     }, { immediate: true });
-    //Funciones definidas para nombre comun
-    //******************************************************************************************** */
-    const columnasDefinidasNomCom = ref([
-        { prop: 'NomComun', label: 'Nombre común', minWidth: '120', 
-          sortable: true, filtrable: true, align: 'left' },
-        { prop: 'Lengua', label: 'Lengua', minWidth: '150', 
-          sortable: true, filtrable: true, align: 'left' },
-        { prop: 'Observaciones', label: 'Observaciones', minWidth: '150', 
-          sortable: true, filtrable: true, align: 'left' },
-    ]);
-
-    const clickNomComun = (row) => {
-
-        idNomComun.value = row.IdNomComun;
-
-        if (!props.taxonActual) {
-            return;
-        }
-
-        idNombre.value = props.taxonActual.id
-    }    
-    
-    const cerrarNomCom= () => {
-        cargaNomComun();
-        dialogFormVisibleNomCom.value = false;
-    }
-
-    const abirNomCom = () =>{
-        dialogFormVisibleNomCom.value = true;
-    }
-
-    const cargaNomComun = async() =>{
-        const respNomCom = await axios.get('/cargaCatNomComun');
-
-        if(respNomCom.status === 200)
-        {
-            tablaNomComun.value = respNomCom.data.data;
-            contRegNomCom.value = respNomCom.data.total;
-        }
-
-    }
 
     //Funciones en general del traslado de datos
     //******************************************************************************************** */
     const onCreaRelacion = async () => {        
 
-        if(idTipoReg.value != idRegion.value['IdRegion'])
+        let response;
+
+        if(georeferido.value){
+            if(idCaracteristica <= 0 || idTipoReg.value.IdTipoRegion <= 0 
+                || idTipoReg.value.IdRegion || idTipoDist.value <= 0){
+                mostrarNotificacionError(
+                    "Error",
+                    "Cuando la característica a relacionar es georreferida, se debe seleccionar tipo de región, la región y el tipo de distribución para continuar.",
+                    "Error",
+                    5000
+                );
+            } else {
+                console.log("Aqui se debe de hacer el llamado para guardar los cambios ");
+            }
+        } else {
+            console.log("No se va a georeferir");  
+            if(idCaracteristica <= 0){
+                mostrarNotificacionError(
+                        "Error",
+                        "Se debe de seleccionar una caracteristica para continuar",
+                        "Error",
+                        5000
+                    );
+            } else {
+                console.log("Aqui se debe de hacer el llamado para guardar los cambios ");
+            }         
+        }
+
+        /*if(idTipoReg.value != idRegion.value['IdRegion'])
         {
             mostrarNotificacionError(
                         "Error",
@@ -493,7 +617,7 @@
                         5000
                     );
         }
-        else if(idNomComun.value <= 0 || idTipoReg.value <= 0 || idRegion.value <= 0){
+        else if(idTipoReg.value <= 0 || idRegion.value <= 0){
             mostrarNotificacionError(
                         "Error",
                         "La selección de nombre común, tipo de región y región debe ser seleccionada de manera forzosa.",
@@ -503,7 +627,6 @@
         }
 
          const params = { idNombre: idNombre.value,
-                          idNomComun: idNomComun.value,
                           idTipoReg: idTipoReg.value.IdTipoRegion,
                           idRegion: idTipoReg.value.IdRegion
           }
@@ -529,7 +652,7 @@
                     );
                 });
             }
-        }
+        }*/
     }
 
     const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -557,24 +680,106 @@
         emit('cerrar');
     };
 
+    //Funciones para las caracteristicas 
 
+    const cargaCaracteristicas = async() =>{
 
+        const respCaract = await axios.get('/cargar-caracteristicas');
+
+        if(respCaract.status === 200)
+        {
+            datosCaracteristicas.value = respCaract.data.treeDataProp;
+            treeCaracteristicas.value.setCurrentKey(datosCaracteristicas.value[0].IdCatNombre);
+            handleNodeClickCarac(datosCaracteristicas.value[0])
+        }
+    }
+
+    const abrirCaract = async () => {
+        const respCarac = await axios.get('/cargar-caracteristicas');
+
+        if(respCarac.status === 200){
+
+            flatTreeDataProp.value = respCarac.data.flatTreeDataProp;
+            treeDataProp.value = respCarac.data.treeDataProp;
+        }
+
+        dialogFormVisibleCaract.value = true;
+    }
+
+    const cerrarCarac = () => {
+        cargaCaracteristicas();
+        dialogFormVisibleCaract.value = false;
+    }
+
+    const handleNodeClickCarac = (row) =>{
+        idCaracteristica.value = row.IdCatNombre;
+    }
+
+    watch(datosCaracteristicas, async (nuevoValor) => {
+        if (nuevoValor.length > 0) {
+            await nextTick()
+
+            treeCaracteristicas.value.setCurrentKey(nuevoValor[0].IdCatNombre)
+
+            handleNodeClickCarac(nuevoValor[0])
+        }
+    })
+
+    //Funciones para el tipo de distribucion 
+    const cargaTiposDistribucion = async() =>{
+
+        const respTipDist = await axios.get('/carga-tipos-distribucion', {
+                params: {
+                    origen: 'caracteristicas'
+                }
+            });
+
+        if(respTipDist.status === 200){
+            
+            tablaTipoDist.value = respTipDist.data;
+            contRegTipDist.value = respTipDist.data.length;
+        }
+
+    }
+
+    const abrirTipoDist = () =>{
+        dialogFormVisibleTiposDist.value = true;
+    }
+
+    const clickTipDist = (row) =>{
+        idTipoDist.value = row.IdTipoDistribucion;
+        console.log("Este es el valor del row seleccionado: ", row.IdTipoDistribucion);
+    }
+
+    const cerrarTipDist = () =>{
+        cargaTiposDistribucion();
+        dialogFormVisibleTiposDist.value = false;
+    }
+
+    //Funciones al montado del componente 
     onMounted( async () => {
 
-        cargaNomComun();
-
         cargaRegiones();
+
+        cargaCaracteristicas();
+
+        cargaTiposDistribucion();
         
     })
 </script>
 
 <style scoped>
+  
+    .table-wrapper :deep(.el-table__body tr.current-row > td) {
+      background-color: #ddf6dd !important;
+      color: #0d6efd !important;
+      font-weight: bold;
+    }
 
     .details-header-title {
         font-weight: 600;
         color: #303133;
     }
-
 
     .panel-nombre {
         flex: 1;
@@ -582,10 +787,30 @@
         overflow: auto;
     }
 
+    .panel-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tree-caracteristicas {
+        height: 100%;
+    }
+
+    .list-panel {
+        flex: 1;
+        min-width: 300px;
+    }
+
     .header-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        height: 8px;
+    }
+
+    :deep(.el-splitter__bar) {
+        width: 2px !important;
     }
 
     :deep(.el-card__body) {
@@ -600,6 +825,7 @@
         flex: 1;
         overflow: auto;
         min-height: 0;
+        margin-right: 6px;
     }
 
     .tree-card {

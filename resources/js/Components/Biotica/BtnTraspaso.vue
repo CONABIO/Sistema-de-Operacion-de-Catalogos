@@ -25,7 +25,7 @@
 </script>
 
 <template>
-        <el-tooltip class="item" effect="dark" content="Asociar catálogo" :placement= "toolPosicion">
+    <el-tooltip class="item" effect="dark" content="Asociar catálogo" :placement= "toolPosicion">
         <el-button  @click.prevent="traspasaDatos"
                     circle
                     type="primary"

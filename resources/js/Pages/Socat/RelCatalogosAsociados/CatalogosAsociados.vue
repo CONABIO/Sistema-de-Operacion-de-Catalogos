@@ -716,20 +716,20 @@ const cargarBibliografiasRelCaractSolo = async () => {
     }
 };
 
-const claseOrigen = (data) => {
-    console.log("Esto es claseOrigen: ", data.origen);
-    switch (data.origen) {
+    const claseOrigen = (data) => {
+        console.log("Esto es claseOrigen: ", data.origen);
+        switch (data.origen) {
 
-        case 'nombre':
-            return 'origen-rojo';
+            case 'nombre':
+                return 'origen-rojo';
 
-        case 'caracteristica':
-            return 'origen-verde';
+            case 'caracteristica':
+                return 'origen-verde';
 
-        case 'nomComun':
-            return 'origen-amarillo';
+            case 'nomComun':
+                return 'origen-amarillo';
+        }
     }
-}
 
 const idsBibliografiasActuales = computed(() => {
     return tablaBibliografiasRel.value.map(b => b.IdBibliografia || b.id);
