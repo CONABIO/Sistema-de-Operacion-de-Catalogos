@@ -11,8 +11,10 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
+import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
 import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
 import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -63,121 +65,120 @@ const props = defineProps({
 const onBiblio = () => emit('abrir-Biblio');
 
 const handleVisibleChange = (visible, prop) => {
-  if (visible) {
-    nextTick(() => {
-      const inputRef = inputsFiltro.value[prop];
-      if (inputRef) {
-        inputRef.focus();
-      }
-    });
-  }
+    if (visible) {
+        nextTick(() => {
+            const inputRef = inputsFiltro.value[prop];
+            if (inputRef) {
+                inputRef.focus();
+            }
+        });
+    }
 };
 
 
 const limpiarTodosLosFiltros = () => {
-  Object.keys(filtros.value).forEach(key => {
-    filtros.value[key] = '';
-  });
+    Object.keys(filtros.value).forEach(key => {
+        filtros.value[key] = '';
+    });
 };
 
 const irAPagina = async (numeroPagina) => {
-  currentPage.value = numeroPagina;
-  await fetchData();
+    currentPage.value = numeroPagina;
+    await fetchData();
 };
 
 const selectedRow = ref(null);
 
 
 const handleRowClickInterno = (row) => {
-  selectedRow.value = row;
-  emit('row-click', row);
+    selectedRow.value = row;
+    emit('row-click', row);
 };
 
 const onEditarInterno = () => {
-  if (selectedRow.value) {
-    emit('editar-item', selectedRow.value);
-  }
+    if (selectedRow.value) {
+        emit('editar-item', selectedRow.value);
+    }
 };
 
 const onEliminarInterno = () => {
-  if (selectedRow.value[props.idKey]) {
-    emit('eliminar-item', selectedRow.value[props.idKey]);
-  }else{
-     emit('eliminar-item', selectedRow.value);
-  }
+    if (selectedRow.value[props.idKey]) {
+        emit('eliminar-item', selectedRow.value[props.idKey]);
+    } else {
+        emit('eliminar-item', selectedRow.value);
+    }
 };
 
 
 const rowClassNameInterno = ({ row }) => {
-  if (props.rowClassName) return props.rowClassName({ row });
-  const idFila = row[props.idKey];
-  const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-  if (idFila == null || idSeleccionado == null) return '';
-  return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
+    if (props.rowClassName) return props.rowClassName({ row });
+    const idFila = row[props.idKey];
+    const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+    if (idFila == null || idSeleccionado == null) return '';
+    return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
 };
 
 const tableRefInterna = ref(null);
 
 const forzarFocoFilaVerde = async () => {
-  await nextTick();
-  setTimeout(() => {
-    if (!tableRefInterna.value) return;
+    await nextTick();
+    setTimeout(() => {
+        if (!tableRefInterna.value) return;
 
-    const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
+        const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
 
-    if (filaVerde) {
-      filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
-    }
-  }, 300);
+        if (filaVerde) {
+            filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
+        }
+    }, 300);
 };
 
 const setFiltroExterno = (campo, valor) => {
-  filtros.value[campo] = valor;
-  onFiltroInput();
+    filtros.value[campo] = valor;
+    onFiltroInput();
 };
 
 const setCurrentRow = (row) => {
-  selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
-  tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
+    selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
+    tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
 }
 
 
 const emit = defineEmits([
-  'update:datos',
-  'update:totalItems',
-  'editar-item',
-  'eliminar-item',
-  'nuevo-item',
-  'row-dblclick',
-  'row-click',
-  'traspasaBiblio',
-  'traspasaSeleccionado',
-  'cerrar',
-  'abrir-Biblio'
+    'update:datos',
+    'update:totalItems',
+    'editar-item',
+    'eliminar-item',
+    'nuevo-item',
+    'row-dblclick',
+    'row-click',
+    'traspasaBiblio',
+    'traspasaSeleccionado',
+    'cerrar',
+    'abrir-Biblio'
 ]);
 
 const onExpandChange = (row) => {
-  selectedRow.value = row
-  tableRefInterna.value?.setCurrentRow(row)
-  emit('row-click', row)
+    selectedRow.value = row
+    tableRefInterna.value?.setCurrentRow(row)
+    emit('row-click', row)
 }
 
 const accionModal = computed(() => {
-  return props.botCerrar ? "cerrar" : "salida"}
+    return props.botCerrar ? "cerrar" : "salida"
+}
 );
 
 const paginatedDatos = computed(() => {
-  if(props.endpoint === "")
-  {
-    const start = (currentPage.value - 1) * props.itemsPerPage;
-    const end = start + props.itemsPerPage;
-      return datosTabla.value.slice(start, end);
-  }else
-  {
-    return props.datos;
-  }
+    if (props.endpoint === "") {
+        const start = (currentPage.value - 1) * props.itemsPerPage;
+        const end = start + props.itemsPerPage;
+        return datosTabla.value.slice(start, end);
+    } else {
+        return props.datos;
+    }
 
 });
 
@@ -188,45 +189,47 @@ const tipoDeBusqueda = ref('inicia');
 
 
 watch(() => props.columnas, (nuevasColumnas) => {
-  const nuevosFiltros = {};
-  if (nuevasColumnas) {
-    nuevasColumnas.forEach(col => {
-      if (col.filtrable) {
-        nuevosFiltros[col.prop] = '';
-      }
-    });
-  }
-  filtros.value = nuevosFiltros;
+    const nuevosFiltros = {};
+    if (nuevasColumnas) {
+        nuevasColumnas.forEach(col => {
+            if (col.filtrable) {
+                nuevosFiltros[col.prop] = '';
+            }
+        });
+    }
+    filtros.value = nuevosFiltros;
 }, { immediate: true, deep: true });
 
 watch(tipoDeBusqueda, () => {
-  onFiltroInput();
+    onFiltroInput();
 });
 
 watch(
-  () => props.datos,
-  (newVal) => {
-    if (newVal && newVal.length > 0) {
-      datosTabla.value = props.datos;
-    }
-    else{
-      fetchData();
-    }
-  },
-   
+    () => props.datos,
+    (newVal) => {
+        if (newVal && newVal.length > 0) {
+            datosTabla.value = props.datos;
+        }
+        else {
+            fetchData();
+        }
+    },
+
 )
 
 const tableKey = ref(0);
 
-const busquedaLocal = async() =>{
+const busquedaLocal = async () => {
 
     // Verificar que filtros.value es un array
-  if (Array.isArray(filtros.value)) {
-    filtros.value.forEach(objeto => {
-      // Asegurar que objeto es un objeto (para evitar errores si hay null)
-      if (objeto && typeof objeto === 'object') {
-        Object.entries(objeto).forEach(([campo, valor]) => {
-          console.log("1", campo, valor);
+    if (Array.isArray(filtros.value)) {
+        filtros.value.forEach(objeto => {
+            // Asegurar que objeto es un objeto (para evitar errores si hay null)
+            if (objeto && typeof objeto === 'object') {
+                Object.entries(objeto).forEach(([campo, valor]) => {
+                    console.log("1", campo, valor);
+                });
+            }
         });
       }
     });
@@ -260,106 +263,130 @@ const fetchData = async () => {
     const resultados = response.data.data || [];
     const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
 
-    emit('update:datos', resultados);
-    emit('update:totalItems', total);
+const fetchData = async () => {
+    try {
+        if (props.endpoint === "") {
+            busquedaLocal();
+            return;
+        }
 
-    await nextTick();
+        const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
 
-    if (resultados.length > 0) {
-      const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
+        const response = await axios.get(props.endpoint, {
+            params: {
+                filtros: filtros.value,
+                tipo_busqueda: tipoDeBusqueda.value,
+                page: currentPage.value,
+                perPage: props.itemsPerPage,
+                sortBy: sorting.value.prop,
+                sortOrder: sorting.value.order,
+            }
+        });
 
-      if (coincidencia) {
-        selectedRow.value = coincidencia;
-        tableRefInterna.value?.setCurrentRow(coincidencia);
-        emit('row-click', coincidencia);
-      } else {
-        selectedRow.value = resultados[0];
-        tableRefInterna.value?.setCurrentRow(resultados[0]);
-        emit('row-click', resultados[0]);
-      }
-    } else {
-      selectedRow.value = null;
-      emit('row-click', null);
+        const resultados = response.data.data || [];
+        const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
+
+        emit('update:datos', resultados);
+        emit('update:totalItems', total);
+
+        await nextTick();
+
+        if (resultados.length > 0) {
+            const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
+
+            if (coincidencia) {
+                selectedRow.value = coincidencia;
+                tableRefInterna.value?.setCurrentRow(coincidencia);
+                emit('row-click', coincidencia);
+            } else {
+                selectedRow.value = resultados[0];
+                tableRefInterna.value?.setCurrentRow(resultados[0]);
+                emit('row-click', resultados[0]);
+            }
+        } else {
+            selectedRow.value = null;
+            emit('row-click', null);
+        }
+    } catch (error) {
+        console.error(`Error en fetchData:`, error);
     }
-  } catch (error) {
-    console.error(`Error en fetchData:`, error);
-  }
 };
 
 
 watch(
     () => props.datos,
     (newDatos) => {
-      if (!newDatos || newDatos.length === 0)
-      { datosTabla.value = []; 
-        return};
+        if (!newDatos || newDatos.length === 0) {
+            datosTabla.value = [];
+            return
+        };
 
-      datosTabla.value = newDatos;
+        datosTabla.value = newDatos;
 
-      nextTick(() => {
-        const firstRow = newDatos[0];
-        if (!selectedRow.value) {
-          selectedRow.value = firstRow;
-          tableRefInterna.value?.setCurrentRow(firstRow);
-          emit('row-click', firstRow);
-        }
-      });
+        nextTick(() => {
+            const firstRow = newDatos[0];
+            if (!selectedRow.value) {
+                selectedRow.value = firstRow;
+                tableRefInterna.value?.setCurrentRow(firstRow);
+                emit('row-click', firstRow);
+            }
+        });
     },
     { immediate: true }
-  );
+);
 
 // Watch para cuando cambian los datos paginados (después de fetch interno)
 watch(paginatedDatos, (newPaginated) => {
-  if (newPaginated && newPaginated.length > 0) {
-    // Verificar si la fila seleccionada actual ya no está en los datos paginados
-    const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
-    const existsInPaginated = newPaginated.some(row =>
-      String(row[props.idKey]) === String(currentSelectedId)
-    );
+    if (newPaginated && newPaginated.length > 0) {
+        // Verificar si la fila seleccionada actual ya no está en los datos paginados
+        const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+        const existsInPaginated = newPaginated.some(row =>
+            String(row[props.idKey]) === String(currentSelectedId)
+        );
 
-    // Si no existe o no hay selección, seleccionar la primera
-    if (!existsInPaginated || !selectedRow.value) {
-      nextTick(() => {
-        selectedRow.value = newPaginated[0];
-        if (tableRefInterna.value) {
-          tableRefInterna.value.setCurrentRow(newPaginated[0]);
+        // Si no existe o no hay selección, seleccionar la primera
+        if (!existsInPaginated || !selectedRow.value) {
+            nextTick(() => {
+                selectedRow.value = newPaginated[0];
+                if (tableRefInterna.value) {
+                    tableRefInterna.value.setCurrentRow(newPaginated[0]);
+                }
+                emit('row-click', newPaginated[0]);
+            });
         }
-        emit('row-click', newPaginated[0]);
-      });
     }
-  }
 }, { immediate: true });
 /* hasta aqui se agrego juan carlos 13/02/2026*/
 
 let debounceTimer;
 
 const onFiltroInput = () => {
-  currentPage.value = 1;
-  fetchData();
+    currentPage.value = 1;
+    fetchData();
 };
 
 const limpiarFiltro = (campo) => {
-  if (filtros.value[campo]) {
-    filtros.value[campo] = '';
-    currentPage.value = 1;
-    fetchData();
-  }
+    if (filtros.value[campo]) {
+        filtros.value[campo] = '';
+        currentPage.value = 1;
+        fetchData();
+    }
 };
 
 const handleSortChange = ({ prop, order }) => {
-  sorting.value.prop = prop;
-  sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-  currentPage.value = 1;
-  fetchData();
+    sorting.value.prop = prop;
+    sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
+    currentPage.value = 1;
+    fetchData();
 };
 
 const handlePageChange = (page) => {
-  currentPage.value = page;
-  fetchData();
+    currentPage.value = page;
+    fetchData();
 };
 
 const cambioLista = (row) => {
-  console.log("Este es el row seleccionado de la lista: ", row);
+    console.log("Este es el row seleccionado de la lista: ", row);
 }
 
 const onEditar = (item) => emit('editar-item', item);
@@ -370,375 +397,355 @@ const abrirNomCom = () => emit('abrirNomComun')
 const abrirTipoDist = () => emit('abrirTipoDist')
 
 const cerrarModal = () => {
-  emit('cerrar');
+    emit('cerrar');
 };
 
 onMounted(fetchData);
 
 defineExpose({
-  fetchData,
-  forzarFocoFilaVerde,
-  setFiltroExterno,
-  irAPagina,
-  limpiarTodosLosFiltros,
-  sorting,
-  selectedRow,
-  setCurrentRow
+    fetchData,
+    forzarFocoFilaVerde,
+    setFiltroExterno,
+    irAPagina,
+    limpiarTodosLosFiltros,
+    sorting,
+    selectedRow,
+    setCurrentRow
 });
 
 </script>
 
 <template>
-  <el-card class="box-card-inner-table">
-    <template #header>
-      <div class="header-container" style="flex-grow: 1;">
-        <div class="right">
-          <slot name="header-title">
-            <TipoBusqueda v-model="tipoDeBusqueda" />
-          </slot>
-        </div>
-        <div class="left">
-          <div class="botonera-biotica">
-             <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    <el-card class="box-card-inner-table">
+        <template #header>
+            <div class="header-container" style="flex-grow: 1; margin-top: -12px; margin-bottom: -12px;">
+                <div class="right">
+                    <slot name="header-title">
+                        <!-- <TipoBusqueda v-model="tipoDeBusqueda" /> -->
+                        <SwitchBusqueda v-model="tipoDeBusqueda" />
+                    </slot>
+                </div>
+                <div class="left">
+                    <div class="botonera-biotica">
+                        <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
                 Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
-            <BotonTraspaso :icono="props.asignaTrasp"
-                            v-if="props.mostrarTraspaso" @traspasa="onRecuperaMarcado" />
-            <NuevoButton @crear="onNuevo"  v-if="props.mostrarNuevo" />
-            <BotonRegiones style="flex-shrink: 0; min-width: max-content;"
-                           v-if="props.mostrarRegion"/>
-            <BotonNomComun v-if="props.mostrarNomComun" @click="abrirNomCom"
-                           style="flex-shrink: 0; min-width: max-content;" />
-            <BotonTipoDist v-if="props.mostrarTipoDist" @click="abrirTipoDist"
-                           style="flex-shrink: 0; min-width: max-content;" />
-            <EditarButton :disabled="!selectedRow" @editar="onEditarInterno"
-                          v-if="props.mostrarEditar" />
-            <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                           v-if="props.mostrarGuardar"/>
-            <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
+
+                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
+                            @traspasa="onRecuperaMarcado" />
+                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
+                        <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
+                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
+                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
+                            v-if="props.mostrarGuardar" />
+                        <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
-            
-            <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                        <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+
               Se agrego la propiedad accion -->
-            <BotonSalir v-if="props.mostrarSalir" :accion = "accionModal" @salir="cerrarModal"/>
-            <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+                        <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
+                        <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               se agrega el boton de acceso a bibliografia para la tabla filtrable-->
 
 
-            <!--NuevoButton @crear="onNuevo" /-->
-            <div v-if = "props.mostrarBiblio">
-              <el-tooltip class="item" effect="dark" content="Bibliografia">
-                <el-button @click="onBiblio" circle style="flex-shrink: 0;
+                        <!--NuevoButton @crear="onNuevo" /-->
+                        <div v-if="props.mostrarBiblio">
+                            <el-tooltip class="item" effect="dark" content="Bibliografia">
+                                <el-button @click="onBiblio" circle style="flex-shrink: 0;
                             background-color: #509165; color: white;">
-                    <el-icon><Management /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </div>
+                                    <el-icon>
+                                        <Management />
+                                    </el-icon>
+                                </el-button>
+                            </el-tooltip>
+                        </div>
 
-          </div>
-        </div>
-      </div>
-    </template>
-    <div class="table-responsive ">
-      <!--Juan carlos 09/02/2026
+                    </div>
+                </div>
+            </div>
+        </template>
+        <div class="table-responsive ">
+            <!--Juan carlos 09/02/2026
           Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
-      <el-table :key="tableKey"
-                ref="tableRefInterna"
-                style="width: 100%"
-                :highlight-current-row="props.highlightCurrentRow"
-                :data="paginatedDatos"
-                :row-key="props.idKey"
-                :row-class-name="props.rowClassName || rowClassNameInterno"
-                @row-click="handleRowClickInterno"
-                @expand-change ="onExpandChange"
-                :border="true" 
-                :height="props.alturaTabla" 
-
+            <el-table :key="tableKey" ref="tableRefInterna" style="width: 100%;"  size="small"
+                :highlight-current-row="props.highlightCurrentRow" :data="paginatedDatos" :row-key="props.idKey"
+                :row-class-name="props.rowClassName || rowClassNameInterno" @row-click="handleRowClickInterno"
+                @expand-change="onExpandChange" :border="true" :height="props.alturaTabla"
                 @sort-change="handleSortChange">
-        <slot name="expand-column"></slot>
+                <slot name="expand-column"></slot>
 
-        <el-table-column
-                v-for="col in props.columnas"
-                :key="col.prop"
-                :prop="col.prop"
-                :min-width="col.minWidth || '150'"
-                :sortable="col.sortable ? 'custom' : false"
-                :align="col.align || 'left'">
-          <template #header>
-            <div class="custom-header">
-              <span>{{ col.label }}</span>
-              <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false"
-                @visible-change="(visible) => handleVisibleChange(visible, col.prop)">
-                <el-button @click.stop circle size="small" class="header-filter-button"
-                  :type="filtros[col.prop] ? 'primary' : ''" style="margin-left: 10px;">
-                  <el-icon>
-                    <Search />
-                  </el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item class="filter-dropdown-item">
-                      <div @click.stop>
-                        <el-input :ref="el => { if (el) inputsFiltro[col.prop] = el }" v-model="filtros[col.prop]"
-                          :placeholder="`Filtrar por ${col.label}`" @keyup.enter="onFiltroInput" clearable
-                          @clear="onFiltroInput">
-                        </el-input>
-                      </div>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-          </template>
+                <el-table-column v-for="col in props.columnas" :key="col.prop" :prop="col.prop"
+                    :min-width="col.minWidth || '150'" :sortable="col.sortable ? 'custom' : false"
+                    :align="col.align || 'left'">
+                    <template #header>
+                        <div class="custom-header">
+                            <span>{{ col.label }}</span>
+                            <el-dropdown v-if="col.filtrable" trigger="click" :hide-on-click="false"
+                                @visible-change="(visible) => handleVisibleChange(visible, col.prop)">
+                                <el-button @click.stop circle size="small" class="header-filter-button"
+                                    :type="filtros[col.prop] ? 'primary' : ''" style="margin-left: 10px;">
+                                    <el-icon>
+                                        <Search />
+                                    </el-icon>
+                                </el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item class="filter-dropdown-item">
+                                            <div @click.stop>
+                                                <el-input :ref="el => { if (el) inputsFiltro[col.prop] = el }"
+                                                    v-model="filtros[col.prop]"
+                                                    :placeholder="`Filtrar por ${col.label}`"
+                                                    @keyup.enter="onFiltroInput" clearable @clear="onFiltroInput">
+                                                </el-input>
+                                            </div>
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </template>
 
-          <template #default="{ row }">
-            <template v-if="col.tipo === 'imagenTexto'">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span v-if="row[col.prop]?.svg" v-html="row[col.prop].svg" style="height: 25px; width: 25px;"></span>
-                <img
-                          v-else-if="row[col.prop]?.url"
-                          :src="row[col.prop].url"
-                          alt="icono"
-                          style="height: 25px; width: 25px;"
-                      />
-                <span>{{ row[col.prop]?.texto }}</span>
-              </div>
-            </template>
+                    <template #default="{ row }">
+                        <template v-if="col.tipo === 'imagenTexto'">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span v-if="row[col.prop]?.svg" v-html="row[col.prop].svg"
+                                    style="height: 25px; width: 25px;"></span>
+                                <img v-else-if="row[col.prop]?.url" :src="row[col.prop].url" alt="icono"
+                                    style="height: 25px; width: 25px;" />
+                                <span>{{ row[col.prop]?.texto }}</span>
+                            </div>
+                        </template>
 
-            <template v-else-if="col.tipo === 'textarea'">
-              <el-input
-                      v-model="row[col.prop]"
-                      style="width: 100%;"
-                      :rows="2"
-                      type="textarea"
-                      readonly
-                    />
-            </template>
+                        <template v-else-if="col.tipo === 'textarea'">
+                            <el-input v-model="row[col.prop]" style="width: 100%;" :rows="2" type="textarea" readonly />
+                        </template>
 
-            <template v-else-if="col.tipo === 'lista'">
-              
-              <el-select 
-                      v-if="row[col.prop]"
-                      v-model="row[col.prop].id"
-                      placeholder="Seleccione"
-                      @change="cambioLista($event, row)"
-                      :disabled = props.habOpciones>
-                <el-option
-                        v-for="item in valoresOpcion"
-                          :key="item.id"
-                          :label="item.descripcion"
-                          :value="item.id"
-                />    
-              </el-select>
-            </template>
+                        <template v-else-if="col.tipo === 'lista'">
 
-            <template v-else>
-              <span>{{ row[col.prop] }}</span>
-            </template>
+                            <el-select v-if="row[col.prop]" v-model="row[col.prop].id" placeholder="Seleccione"
+                                @change="cambioLista($event, row)" :disabled=props.habOpciones>
+                                <el-option v-for="item in valoresOpcion" :key="item.id" :label="item.descripcion"
+                                    :value="item.id" />
+                            </el-select>
+                        </template>
 
-          </template>
+                        <template v-else>
+                            <span>{{ row[col.prop] }}</span>
+                        </template>
 
-        </el-table-column>
-      </el-table>
-    </div>
+                    </template>
 
-    <div v-if="totalItems > 0" class="pagination-container-wrapper">
-      <el-pagination :current-page="currentPage" :page-size="props.itemsPerPage" :total="props.totalItems"
-        @current-change="handlePageChange" layout="prev, pager, next, total" background class="main-pagination-style">
-      </el-pagination>
-    </div>
-  </el-card>
+                </el-table-column>
+            </el-table>
+        </div>
+
+        <div v-if="totalItems > 0" class="pagination-container-wrapper">
+            <el-pagination :current-page="currentPage" :page-size="props.itemsPerPage" :total="props.totalItems"
+                @current-change="handlePageChange" layout="prev, pager, next, total" background
+                class="main-pagination-style">
+            </el-pagination>
+        </div>
+    </el-card>
 </template>
 
 <style>
 .filter-dropdown-item.el-dropdown-menu__item {
-  padding: 5px 10px !important;
-  background-color: transparent !important;
-  cursor: default !important;
+    padding: 5px 10px !important;
+    background-color: transparent !important;
+    cursor: default !important;
 }
 
 .filter-dropdown-item.el-dropdown-menu__item:hover {
-  background-color: transparent !important;
+    background-color: transparent !important;
 }
 
 .el-input-group__append .el-button {
-  border-radius: 0 var(--el-border-radius-base) var(--el-border-radius-base) 0;
+    border-radius: 0 var(--el-border-radius-base) var(--el-border-radius-base) 0;
 }
 </style>
 
 
 <style scoped>
 .box-card-inner-table {
-  border: 1px solid #e4e7ed !important;
-  box-shadow: none !important;
-  border-radius: 6px !important;
-  overflow: hidden;
+    border: 1px solid #e4e7ed !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    overflow: hidden;
 }
 
 :deep(.el-card__header) {
-  padding: 15px 20px !important;
-  border-bottom: 1px solid #e4e7ed !important;
-  background-color: #fff;
+    padding: 15px 20px !important;
+    border-bottom: 1px solid #e4e7ed !important;
+    background-color: #fff;
 }
 
 .header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .card-header-title {
-  font-weight: 500;
-  color: #303133;
+    font-weight: 500;
+    color: #303133;
 }
 
 .table-responsive {
-  width: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  overflow: hidden; /* Evita scrolls dobles */
-  position: relative;
+    width: auto;
+    max-width: none;
+    margin-top: -15px;
+    margin-bottom: -15px;
+    margin-left: -15px;
+    margin-right: -15px;
+    overflow: hidden;
+    position: relative;
 }
 
 .action-buttons-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
 .pagination-container-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  padding-top: 20px;
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 20px;
+    margin-bottom: -15px;
 }
 
 :deep(.el-table) {
-  border-radius: 0 !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-bottom: 1px solid #ebeef5 !important;
-  box-shadow: none !important;
+    border-radius: 0 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid #ebeef5 !important;
+    box-shadow: none !important;
 }
 
 :deep(.el-table th.el-table__cell) {
-  background-color: #fafafa !important;
-  color: #606266 !important;
-  font-weight: 500 !important;
-  text-align: center !important;
-  padding: 10px 10px !important;
-  font-size: 13px !important;
-  border-bottom: 1px solid #ebeef5 !important;
+    background-color: #fafafa !important;
+    color: #606266 !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+    padding: 4px 10px !important;
+    font-size: 14px !important;
+    border-bottom: 1px solid #ebeef5 !important;
 }
 
 :deep(.el-table td.el-table__cell) {
-  padding: 10px 10px !important;
-  font-size: 13px !important;
-  color: #303133;
-  border-bottom: 1px solid #ebeef5 !important;
+    padding: 4px 10px !important;
+    font-size: 14px !important;
+    color: #303133;
+    border-bottom: 1px solid #ebeef5 !important;
 }
 
 :deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
-  background-color: #ddf6dd !important;
+    background-color: #ddf6dd !important;
 }
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
-  background-color: #fff !important;
-  border: 1px solid #dcdfe6 !important;
-  border-radius: 4px !important;
-  font-size: 13px !important;
-  min-width: 30px !important;
-  height: 30px !important;
-  line-height: 28px !important;
+    background-color: #fff !important;
+    border: 1px solid #dcdfe6 !important;
+    border-radius: 4px !important;
+    font-size: 13px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    line-height: 28px !important;
 }
 
 :deep(.main-pagination-style .el-pager li.is-active) {
-  background-color: #409eff !important;
-  color: white !important;
-  border-color: #409eff !important;
+    background-color: #409eff !important;
+    color: white !important;
+    border-color: #409eff !important;
 }
 
 :deep(.el-table th.is-sortable .cell) {
-  position: relative;
-  padding-left: 20px;
+    position: relative;
+    padding-left: 20px;
 }
 
 :deep(.el-table th.is-sortable .caret-wrapper) {
-  position: absolute;
-  left: 2px;
-  top: 50%;
-  transform: translateY(-50%);
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .custom-header {
-  align-items: center;
-  width: 100%;
-  gap: 8px;
-  margin-left: 20px;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    margin-left: 20px;
 }
 
 .custom-header>span {
-  flex-grow: 1;
-  text-align: left;
+    flex-grow: 1;
+    text-align: left;
 }
 
 .header-filter-button {
-  flex-shrink: 0;
+    flex-shrink: 0;
 }
 
 .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
-  margin-right: 35px;
-  gap: 4px;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+    margin-right: 35px;
+    gap: 4px;
 }
 
 .botonera-biotica {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
 }
 
 .right-header-content {
-  display: flex;
-  justify-content: flex-end;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .form-actions {
-  display: flex;
-  gap: 30px;
-  justify-content: flex-end;
-  margin-bottom: 15px;
+    display: flex;
+    gap: 30px;
+    justify-content: flex-end;
+    margin-bottom: 15px;
 }
 
 
 
 :deep(.el-table__inner-wrapper) {
-  overflow-x: auto !important; /* Permite el flujo horizontal */
+    overflow-x: auto !important;
+    /* Permite el flujo horizontal */
 }
 
 :deep(.el-table__body-wrapper) {
-  overflow-x: auto !important; /* Asegura scroll en el cuerpo */
+    overflow-x: auto !important;
+    /* Asegura scroll en el cuerpo */
 }
 
 /* Estilo para la barra de scroll (opcional pero recomendado para visibilidad) */
 :deep(.el-scrollbar__bar.is-horizontal) {
-  height: 12px !important;
-  opacity: 1 !important; /* Que siempre sea visible si hay desborde */
-  background: rgba(0, 0, 0, 0.05);
-  bottom: 0;
-  z-index: 10;
+    height: 12px !important;
+    opacity: 1 !important;
+    /* Que siempre sea visible si hay desborde */
+    background: rgba(0, 0, 0, 0.05);
+    bottom: 0;
+    z-index: 10;
 }
 
 :deep(.el-scrollbar__thumb) {
-  background-color: #909399 !important; /* Color gris oscuro */
-  border-radius: 10px;
+    background-color: #909399 !important;
+    /* Color gris oscuro */
+    border-radius: 10px;
 }
 
 /* Ajuste para que el encabezado no se rompa al hacer scroll */
 :deep(.el-table__header-wrapper) {
-  overflow: hidden !important;
+    overflow: hidden !important;
 }
 </style>
