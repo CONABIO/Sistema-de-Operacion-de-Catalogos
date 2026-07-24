@@ -20,8 +20,8 @@ use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\RelNombresController;
-use App\Http\Controllers\RelNombreNomComunController;
-use App\Http\Controllers\RelNombreCaracteristicasController;
+use App\Http\Controllers\RelNomNomComunRegionBiblioController;
+use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
 use App\Models\Mime;
 
 
@@ -184,7 +184,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
         Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
     });
-    
     Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
 
@@ -261,10 +260,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('categorias-taxonomicas.updateIcon');
 
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
-    //------------------------------------------------------------------------------------------------------------------------------------------
-    //Rutas para alta y baja de relaciones de nombre comun 
-    Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
 
-    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
-    Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
+
+    Route::get('/obtener-biblio-nomcomun-region/{idNomComun}/{idRegion}/{idNombre}', [RelNomNomComunRegionBiblioController::class, 'obtenerBiblioNomComunRegion']);
+    Route::post('/asociar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'asociarBiblioNomComunRegion']);
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+
+
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+    Route::post('/asociar-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractRegion']);
+
+    Route::get('/obtener-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractSolo']);
+    Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
+
+    Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
+Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 });
