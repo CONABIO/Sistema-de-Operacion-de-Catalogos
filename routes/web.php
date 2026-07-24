@@ -20,7 +20,8 @@ use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\RelNombresController;
-use App\Http\Controllers\RelNombreNomComun;
+use App\Http\Controllers\RelNombreNomComunController;
+use App\Http\Controllers\RelNombreCaracteristicasController;
 use App\Models\Mime;
 
 
@@ -262,5 +263,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
     //------------------------------------------------------------------------------------------------------------------------------------------
     //Rutas para alta y baja de relaciones de nombre comun 
-    Route::post('alta-relNom-Nomcomun', [RelNombreNomComun::class, 'altaRelNomComun']);
+    Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
+
+    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
+    Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
 });
