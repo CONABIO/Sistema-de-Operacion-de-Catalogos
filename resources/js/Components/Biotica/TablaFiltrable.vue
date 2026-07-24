@@ -38,11 +38,11 @@ const props = defineProps({
   mostrarNomComun: { type: Boolean, default: false },
   mostrarTipoDist: { type: Boolean, default: false },
   rowClassName: { type: Function, default: null },
-  mostrarBiblio: { type:Boolean, default: false }, 
+  mostrarBiblio: { type:Boolean, default: false },
   valoresOpcion: { type:Array, required: false, default: []},
-  habOpciones: { type: Boolean, default: true }, 
+  habOpciones: { type: Boolean, default: true },
   alturaTabla: {
-    type: Number, 
+    type: Number,
     default: 550
   },
   mostrarBiblio: { type:Boolean, default: false },
@@ -231,37 +231,13 @@ const busquedaLocal = async () => {
                 });
             }
         });
-      }
-    });
-  } else {
+      }else {
     console.log('filtros.value no es un array:', filtros.value);
   }
-  
+
 }
 
-const fetchData = async () => {
-  try {
-    if(props.endpoint === "")
-    {
-      busquedaLocal();
-      return;
-    }    
 
-    const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-
-    const response = await axios.get(props.endpoint, {
-      params: {
-        filtros: filtros.value,
-        tipo_busqueda: tipoDeBusqueda.value,
-        page: currentPage.value,
-        perPage: props.itemsPerPage,
-        sortBy: sorting.value.prop,
-        sortOrder: sorting.value.order,
-      }      
-    });
-
-    const resultados = response.data.data || [];
-    const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
 
 const fetchData = async () => {
     try {

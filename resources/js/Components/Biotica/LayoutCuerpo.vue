@@ -39,7 +39,8 @@ defineProps({
 
 :deep(.el-collapse-item__content) {
     padding-bottom: 5px !important;
-}</style>
+}
+</style>
 
 <template>
     <AppLayout v-if="usarAppLayout" :title="tituloPag">
@@ -48,7 +49,7 @@ defineProps({
                 <Titulo :titulo="tituloArea" />
                 <br>
                 <div class="bg-white shadow-md sm:rounded-lg w-full flex flex-col" style="">
-                    <div class="p-4 w-full h-full overflow=auto">
+                    <div class="p-1 w-full h-full overflow=auto">
                         <el-card class="box-card w-full h-full flex flex-col">
                             <div class="w-full h-full flex flex-col flex-grow">
                                 <slot></slot>
