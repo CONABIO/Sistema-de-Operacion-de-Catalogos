@@ -139,6 +139,7 @@
                                         </template>
                                         <div class="table-wrapper">
                                             <TablaFiltrable 
+                                                ref="tablaTipoDistRef"
                                                 v-model:datos = "tablaTipoDist"
                                                 v-model:totalItems = "contRegTipDist"                                    
                                                 endpoint="/busca-tipo-distribucion" 
@@ -154,6 +155,7 @@
                                                 :mostrarSalir = "false"
                                                 :mostrarNomComun = "false"
                                                 :mostrarTipoDist = "false"
+                                                :permitirSinSeleccion = "true"
                                                 @row-click="clickTipDist"> 
                                                 <template #expand-column>
                                                     <el-table-column type="expand">
@@ -224,6 +226,8 @@
 
     const emit = defineEmits(['cerrar']);
     const georeferido = ref(true);
+
+    const tablaTipoDistRef = ref(null);
 
     //Variables declaradas para Tipo de distribucion 
     const tablaTipoDist = ref([]);
@@ -608,6 +612,34 @@
                                  idTipoDistribucion: idTipoDist.value,
                         };
                 console.log("Estos son los parametros a pasar: ", params);
+
+                try{
+
+                    response = await axios.post(`/alta-relTaxon-Caract-Reg`, params);
+
+                    if(response.status === 200)
+                    {  
+                        mostrarNotificacion('Aviso', response.data.message, 'success');
+                        idTipoDist.value = 0;
+                        tablaTipoDistRef.value?.clearCurrentRow();
+
+                        idCaracteristica.value = 0;
+                        treeCaracteristicas.value.setCurrentKey(null);
+                    }
+                }
+                catch(error){
+                    if (error.response.status === 422) {
+                        const errorMessages = Object.values(error.response.data.errors).flat();
+                        errorMessages.forEach(msg => {
+                            mostrarNotificacionError(
+                                "Error",
+                                msg,
+                                "Error",
+                                5000
+                            );
+                        });
+                    }
+                }       
             }
         } else {
             
@@ -735,6 +767,11 @@
     }
 
     const clickTipDist = (row) =>{
+        if (!row) {
+            idTipoDist.value = 0;
+            return;
+        }
+
         idTipoDist.value = row.IdTipoDistribucion;
         console.log("Este es el valor del row seleccionado: ", row.IdTipoDistribucion);
     }
