@@ -18,6 +18,9 @@ class RelNombreCatalogoRegion extends Model
     //Se asigna el nombre de la Tabla 
     protected $table = 'RelNombreCatalogoRegion';
 
+    //Se asignan los campos que podran ser actualizados 
+    protected $guarded = [];
+
     //Se asigna el nombre del campo llave primaria
     protected $primaryKey=['IdNombre', 'IdCatNombre', 'IdRegion', 'IdTipoDistribucion'];
 }

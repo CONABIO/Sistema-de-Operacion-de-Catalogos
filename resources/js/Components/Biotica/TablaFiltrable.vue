@@ -41,11 +41,11 @@ const props = defineProps({
   mostrarBiblio: { type:Boolean, default: false },
   valoresOpcion: { type:Array, required: false, default: []},
   habOpciones: { type: Boolean, default: true },
+  permitirSinSeleccion: { type: Boolean, default:false },
   alturaTabla: {
     type: Number,
     default: 550
   },
-  mostrarBiblio: { type:Boolean, default: false },
   highlightCurrentRow: {
     type: Boolean,
     default: false
@@ -102,6 +102,8 @@ const onEditarInterno = () => {
 };
 
 const onEliminarInterno = () => {
+    if (!selectedRow.value) return;
+
     if (selectedRow.value[props.idKey]) {
         emit('eliminar-item', selectedRow.value[props.idKey]);
     } else {
@@ -145,6 +147,11 @@ const setCurrentRow = (row) => {
     tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
 }
 
+const clearCurrentRow = () => {
+    selectedRow.value = null;
+    tableRefInterna.value?.setCurrentRow(null);
+    emit('row-click', null);
+}
 
 const emit = defineEmits([
     'update:datos',
@@ -157,7 +164,8 @@ const emit = defineEmits([
     'traspasaBiblio',
     'traspasaSeleccionado',
     'cerrar',
-    'abrir-Biblio'
+    'abrir-Biblio',
+    'guardar'
 ]);
 
 const onExpandChange = (row) => {
@@ -237,7 +245,9 @@ const busquedaLocal = async () => {
 
 }
 
-
+const Guardar = () =>{
+    emit('guardar', 'guardar');
+}
 
 const fetchData = async () => {
     try {
@@ -274,10 +284,14 @@ const fetchData = async () => {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
                 emit('row-click', coincidencia);
-            } else {
+            } else if (!props.permitirSinSeleccion) {
                 selectedRow.value = resultados[0];
                 tableRefInterna.value?.setCurrentRow(resultados[0]);
                 emit('row-click', resultados[0]);
+            } else {
+                selectedRow.value = null;
+                tableRefInterna.value?.setCurrentRow(null);
+                emit('row-click', null);
             }
         } else {
             selectedRow.value = null;
@@ -301,7 +315,7 @@ watch(
 
         nextTick(() => {
             const firstRow = newDatos[0];
-            if (!selectedRow.value) {
+            if (!selectedRow.value && !props.permitirSinSeleccion) {
                 selectedRow.value = firstRow;
                 tableRefInterna.value?.setCurrentRow(firstRow);
                 emit('row-click', firstRow);
@@ -321,7 +335,7 @@ watch(paginatedDatos, (newPaginated) => {
         );
 
         // Si no existe o no hay selección, seleccionar la primera
-        if (!existsInPaginated || !selectedRow.value) {
+        if ((!existsInPaginated || !selectedRow.value) && !props.permitirSinSeleccion) {
             nextTick(() => {
                 selectedRow.value = newPaginated[0];
                 if (tableRefInterna.value) {
@@ -386,7 +400,8 @@ defineExpose({
     limpiarTodosLosFiltros,
     sorting,
     selectedRow,
-    setCurrentRow
+    setCurrentRow,
+    clearCurrentRow
 });
 
 </script>
