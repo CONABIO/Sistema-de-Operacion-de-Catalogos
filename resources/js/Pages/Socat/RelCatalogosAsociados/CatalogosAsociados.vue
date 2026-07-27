@@ -322,7 +322,7 @@
 
 
         <DialogForm v-model="dialogResumenRegionesVisible" :botCerrar="true" :pressEsc="true" :width="'85%'">
-            <div style="height: 850px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
+            <div style="height: 720px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
 
                 <el-header class="header">
                     <div class="header-content">
@@ -348,7 +348,7 @@
 
                 <div style="flex: 1; min-height: 0;">
                     <el-splitter style="height: 110%; border: 1px solid #ddd; border-radius: 8px;">
-                        <el-splitter-panel :min="20" :size="'20%'">
+                        <el-splitter-panel :min="20" :size="'24%'">
                             <div
                                 style="height: 100%; display: flex; flex-direction: column; border-right: 1px solid #eee;">
                                 <div
@@ -366,7 +366,7 @@
 
                         <el-splitter-panel>
                             <el-splitter>
-                                <el-splitter-panel :min="20" :size="'25%'">
+                                <el-splitter-panel :min="20" :size="'31.5%'">
                                     <div
                                         style="height: 100%; display: flex; flex-direction: column; border-right: 1px solid #eee;">
                                         <div
@@ -385,7 +385,7 @@
 
                                 <el-splitter-panel>
                                     <el-splitter layout="vertical">
-                                        <el-splitter-panel :min="50" :size="'100%'">
+                                        <el-splitter-panel :min="25" :size="'34%'">
                                             <div style="height: 100%; display: flex; flex-direction: column;">
                                                 <div
                                                     style="background-color: #f4f4bf; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; position: relative;">
@@ -403,7 +403,7 @@
                                             </div>
                                         </el-splitter-panel>
 
-                                        <el-splitter-panel :size="'30%'">
+                                        <el-splitter-panel :size="'10%'">
                                             <div
                                                 style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
                                                 <p

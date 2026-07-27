@@ -9,6 +9,15 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
+const props = defineProps({
+    modal: {
+        type: Boolean,
+        default: false
+    },
+});
+
+const emit = defineEmits(['cerrar']);
+
 const selectedRowId = ref(null);
 
 const manejarClickFila = (row) => {
@@ -231,11 +240,13 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Tipos de Distribución"
         tituloArea="Catálogo de tipos de distribución">
-        <div class="h-full flex flex-col">
+        este es el tipo {{ props.modal }}
+        <div class="h-full flex flex-col">            
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
-                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila">
+                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila"
+                :botCerrar = "props.modal" @cerrar="emit('cerrar')">
                 <template #expand-column>
                     <el-table-column type="expand">
                         <template #default="{ row }">

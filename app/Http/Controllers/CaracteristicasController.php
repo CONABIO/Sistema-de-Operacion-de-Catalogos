@@ -40,14 +40,14 @@ class CaracteristicasController extends Controller
 
     private function cargaInicio(){
 
-        $todosLosNodosPlanos = CatalogoNombre::orderBy('Nivel1')
+        $todosLosNodosPlanos = CatalogoNombre::orderBy('Descripcion')
+            ->orderBy('Nivel1')
             ->orderBy('Nivel2')
             ->orderBy('Nivel3')
             ->orderBy('Nivel4')
             ->orderBy('Nivel5')
             ->orderBy('Nivel6')
             ->orderBy('Nivel7')
-            ->orderBy('Descripcion')
             ->get();
 
         $treeDataParaVisualizacion = $this->buildTreeOptimized($todosLosNodosPlanos);

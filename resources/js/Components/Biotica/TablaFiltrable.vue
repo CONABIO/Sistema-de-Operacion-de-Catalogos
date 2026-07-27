@@ -12,6 +12,9 @@ import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
 import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
+import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
+import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -19,42 +22,44 @@ const datosTabla = ref([]);
 /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
   Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
-    columnas: { type: Array, required: true },
-    datos: { type: Array, required: true, default: [] },
-    totalItems: { type: Number, required: true },
-    itemsPerPage: { type: Number, default: 100 },
-    endpoint: { type: String, required: false, default: "" },
-    idKey: { type: String, required: false },
-    botCerrar: { type: Boolean, default: false },
-    mostrarTraspaso: { type: Boolean, default: false },
-    mostrarNuevo: { type: Boolean, default: true },
-    mostrarEditar: { type: Boolean, default: true },
-    mostrarBorrar: { type: Boolean, default: true },
-    mostrarGuardar: { type: Boolean, default: false },
-    mostrarRegion: { type: Boolean, default: false },
-    rowClassName: { type: Function, default: null },
-    mostrarBiblio: { type: Boolean, default: false },
-    valoresOpcion: { type: Array, required: false, default: [] },
-    habOpciones: { type: Boolean, default: true },
-    alturaTabla: {
-        type: Number,
-        default: 550
-    },
-    mostrarBiblio: { type: Boolean, default: false },
-    highlightCurrentRow: {
-        type: Boolean,
-        default: false
-    },
-    asignaTrasp: {
-        type: String,
-        required: false,
-        default: "izq"
-    },
-    mostrarSalir: {
-        type: Boolean,
-        required: false,
-        default: true
-    }
+  columnas: { type: Array, required: true },
+  datos: { type: Array, required: true, default:[]},
+  totalItems: { type: Number, required: true },
+  itemsPerPage: { type: Number, default: 100 },
+  endpoint: { type: String, required: false, default: ""},
+  idKey: { type: String, required: false },
+  botCerrar: { type: Boolean, default: false },
+  mostrarTraspaso: { type: Boolean, default: false },
+  mostrarNuevo: { type: Boolean, default: true },
+  mostrarEditar: { type: Boolean, default: true },
+  mostrarBorrar: { type: Boolean, default: true },
+  mostrarGuardar: { type: Boolean, default: false },
+  mostrarRegion: { type: Boolean, default: false },
+  mostrarNomComun: { type: Boolean, default: false },
+  mostrarTipoDist: { type: Boolean, default: false },
+  rowClassName: { type: Function, default: null },
+  mostrarBiblio: { type:Boolean, default: false },
+  valoresOpcion: { type:Array, required: false, default: []},
+  habOpciones: { type: Boolean, default: true },
+  alturaTabla: {
+    type: Number,
+    default: 550
+  },
+  mostrarBiblio: { type:Boolean, default: false },
+  highlightCurrentRow: {
+    type: Boolean,
+    default: false
+  },
+  asignaTrasp: {
+    type: String,
+    required: false,
+    default: "izq"
+  },
+  mostrarSalir: {
+    type: Boolean,
+    required: false,
+    default: true
+  }
 });
 
 const onBiblio = () => emit('abrir-Biblio');
@@ -226,11 +231,13 @@ const busquedaLocal = async () => {
                 });
             }
         });
-    } else {
-        console.log('filtros.value no es un array:', filtros.value);
-    }
+      }else {
+    console.log('filtros.value no es un array:', filtros.value);
+  }
 
 }
+
+
 
 const fetchData = async () => {
     try {
@@ -362,6 +369,8 @@ const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
 const onRecuperaMarcado = () => emit('traspasaBiblio');
+const abrirNomCom = () => emit('abrirNomComun')
+const abrirTipoDist = () => emit('abrirTipoDist')
 
 const cerrarModal = () => {
     emit('cerrar');
@@ -396,6 +405,7 @@ defineExpose({
                     <div class="botonera-biotica">
                         <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
                 Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
+
                         <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
                             @traspasa="onRecuperaMarcado" />
                         <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
@@ -406,6 +416,7 @@ defineExpose({
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
                         <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+
               Se agrego la propiedad accion -->
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
                         <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
