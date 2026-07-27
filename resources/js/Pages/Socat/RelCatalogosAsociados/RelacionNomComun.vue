@@ -482,24 +482,16 @@
 
     //Funciones en general del traslado de datos
     //******************************************************************************************** */
-    const onCreaRelacion = async () => {        
+    const onCreaRelacion = async () => { 
+        if(idNomComun.value <= 0 || idTipoReg.value['IdTipoRegion'] <= 0 || idTipoReg.value['IdRegion'] <= 0){
 
-        if(idTipoReg.value != idRegion.value['IdRegion'])
-        {
-            mostrarNotificacionError(
-                        "Error",
-                        "El tipo de región seleccionado y la región seleccionada no coinciden; por favor, seleccione una región apropiada.",
-                        "Error",
-                        5000
-                    );
-        }
-        else if(idNomComun.value <= 0 || idTipoReg.value <= 0 || idRegion.value <= 0){
             mostrarNotificacionError(
                         "Error",
                         "La selección de nombre común, tipo de región y región debe ser seleccionada de manera forzosa.",
                         "Error",
                         5000
-                    );           
+                    ); 
+            return;          
         }
 
          const params = { idNombre: idNombre.value,

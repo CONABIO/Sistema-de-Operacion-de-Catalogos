@@ -562,7 +562,6 @@
     };
 
     const abrirReg = async () => {
-        console.log("Esta es la funcion de abrir regiones");
         dialogFormVisibleReg.value = true;
     }
 
@@ -589,10 +588,6 @@
         idNombre.value = props.taxonActual.id;
 
         if(georeferido.value){
-            console.log("Esto vale caracteristicas: ", idCaracteristica.value);
-            console.log("Esto vale idTipoRegion: ", idTipoReg.value.IdTipoRegion);
-            console.log("Esto vale Region: ", idTipoReg.value.IdRegion);
-            console.log("Esto vale tipo distribucion: ", idTipoDist.value);
 
             if(idCaracteristica.value <= 0 || idTipoReg.value.IdTipoRegion <= 0 
                 || idTipoReg.value.IdRegion <= 0 || idTipoDist.value <= 0){
@@ -603,7 +598,6 @@
                     5000
                 );
             } else {
-                console.log("Aqui se debe de hacer el llamado para guardar los cambios ");
 
                 const params = { idNombre: idNombre.value,
                                  idCaract: idCaracteristica.value,
@@ -611,7 +605,6 @@
                                  idRegion: idTipoReg.value.IdRegion,
                                  idTipoDistribucion: idTipoDist.value,
                         };
-                console.log("Estos son los parametros a pasar: ", params);
 
                 try{
 
@@ -668,7 +661,6 @@
                     }
                 }
                 catch(error){
-                    console.log("Este es el error: ", error);
                     if (error.response.status === 422) {
                         const errorMessages = Object.values(error.response.data.errors).flat();
                         errorMessages.forEach(msg => {
@@ -773,7 +765,7 @@
         }
 
         idTipoDist.value = row.IdTipoDistribucion;
-        console.log("Este es el valor del row seleccionado: ", row.IdTipoDistribucion);
+
     }
 
     const cerrarTipDist = () =>{

@@ -164,7 +164,8 @@ const emit = defineEmits([
     'traspasaBiblio',
     'traspasaSeleccionado',
     'cerrar',
-    'abrir-Biblio'
+    'abrir-Biblio',
+    'guardar'
 ]);
 
 const onExpandChange = (row) => {
@@ -244,7 +245,9 @@ const busquedaLocal = async () => {
 
 }
 
-
+const Guardar = () =>{
+    emit('guardar', 'guardar');
+}
 
 const fetchData = async () => {
     try {

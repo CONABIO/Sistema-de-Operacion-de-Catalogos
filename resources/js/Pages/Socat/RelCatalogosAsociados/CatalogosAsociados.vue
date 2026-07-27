@@ -318,7 +318,7 @@
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelNomCom" :botCerrar="true" :pressEsc="false" :width="'90%'">
-            <RelNomComun :modal="true" @cerrar="cerrarRelNomCom" />
+            <RelNomComun :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelNomCom" />
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelCaract" :botCerrar="true" :pressEsc="false" :width="'90%'">
@@ -652,6 +652,9 @@ const defaultProps = {
     children: 'children',
     label: 'Region',
 }
+
+const observacionesGeneral = ref('');
+const observacionesCaractGral = ref('');
 
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
