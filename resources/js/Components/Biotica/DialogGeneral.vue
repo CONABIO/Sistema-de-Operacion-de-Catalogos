@@ -11,7 +11,8 @@ const props = defineProps({
 
     pressEsc: {
         type: Boolean,
-        required: true,
+        required: false,
+        default: false
     },
 
 
