@@ -14,8 +14,8 @@ const routeMap = {
     '2-2': 'grupoTaxonomico.index',
     '2-3': 'nombresComunes.index',
     '2-4': 'tiposDistribucion.index',
-    '2-5': 'tipos-relacion.index', 
-    '2-6': 'categorias-taxonomicas.index', 
+    '2-5': 'tipos-relacion.index',
+    '2-6': 'categorias-taxonomicas.index',
     '2-7': 'caracteristicas-taxon.index',
     '2-8': 'tipos-region.index',
     '2-9': 'regiones.index',
@@ -95,13 +95,6 @@ watch(
             <el-sub-menu index="3" v-if="hasPermisos('MnuNomenclatura')">
                 <template #title>Nomenclatura</template>
                 <el-menu-item index="3-1" v-if="hasPermisos('MnuNomCientifico')">Nombre científico</el-menu-item>
-                <el-sub-menu index="3-2" v-if="hasPermisos('MnuAsociar')">
-                    <template #title>Asociar con</template>
-                    <el-menu-item index="3-2-1" v-if="hasPermisos('MnuAscNomComun')">Nombres comunes</el-menu-item>
-                    <el-menu-item index="3-2-2"
-                        v-if="hasPermisos('MnuAscCaracteristicas')">Características</el-menu-item>
-                    <el-menu-item index="3-2-3" v-if="hasPermisos('MnuAscRegion')">Regiones</el-menu-item>
-                </el-sub-menu>
             </el-sub-menu>
 
             <el-menu-item index="4" v-if="hasPermisos('MnuBibliografia')">

@@ -582,9 +582,16 @@
 
         let response;
 
+        idNombre.value = props.taxonActual.id;
+
         if(georeferido.value){
-            if(idCaracteristica <= 0 || idTipoReg.value.IdTipoRegion <= 0 
-                || idTipoReg.value.IdRegion || idTipoDist.value <= 0){
+            console.log("Esto vale caracteristicas: ", idCaracteristica.value);
+            console.log("Esto vale idTipoRegion: ", idTipoReg.value.IdTipoRegion);
+            console.log("Esto vale Region: ", idTipoReg.value.IdRegion);
+            console.log("Esto vale tipo distribucion: ", idTipoDist.value);
+
+            if(idCaracteristica.value <= 0 || idTipoReg.value.IdTipoRegion <= 0 
+                || idTipoReg.value.IdRegion <= 0 || idTipoDist.value <= 0){
                 mostrarNotificacionError(
                     "Error",
                     "Cuando la característica a relacionar es georreferida, se debe seleccionar tipo de región, la región y el tipo de distribución para continuar.",
@@ -593,10 +600,18 @@
                 );
             } else {
                 console.log("Aqui se debe de hacer el llamado para guardar los cambios ");
+
+                const params = { idNombre: idNombre.value,
+                                 idCaract: idCaracteristica.value,
+                                 idTipoRegion: idTipoReg.value.IdTipoRegion,
+                                 idRegion: idTipoReg.value.IdRegion,
+                                 idTipoDistribucion: idTipoDist.value,
+                        };
+                console.log("Estos son los parametros a pasar: ", params);
             }
         } else {
-            console.log("No se va a georeferir");  
-            if(idCaracteristica <= 0){
+            
+            if(idCaracteristica.value <= 0){
                 mostrarNotificacionError(
                         "Error",
                         "Se debe de seleccionar una caracteristica para continuar",
@@ -604,55 +619,38 @@
                         5000
                     );
             } else {
-                console.log("Aqui se debe de hacer el llamado para guardar los cambios ");
+
+                const params = { idNombre: idNombre.value,
+                                 idCaract: idCaracteristica.value,
+                    };
+
+                try{
+
+                    response = await axios.post(`/alta-relTaxon-Caract`, params);
+
+                    if(response.status === 200)
+                    {  
+                        mostrarNotificacion('Aviso', response.data.message, 'success');
+                        idCaracteristica.value = 0;
+                        treeCaracteristicas.value.setCurrentKey(null);
+                    }
+                }
+                catch(error){
+                    console.log("Este es el error: ", error);
+                    if (error.response.status === 422) {
+                        const errorMessages = Object.values(error.response.data.errors).flat();
+                        errorMessages.forEach(msg => {
+                            mostrarNotificacionError(
+                                "Error",
+                                msg,
+                                "Error",
+                                5000
+                            );
+                        });
+                    }
+                }
             }         
         }
-
-        /*if(idTipoReg.value != idRegion.value['IdRegion'])
-        {
-            mostrarNotificacionError(
-                        "Error",
-                        "El tipo de región seleccionado y la región seleccionada no coinciden; por favor, seleccione una región apropiada.",
-                        "Error",
-                        5000
-                    );
-        }
-        else if(idTipoReg.value <= 0 || idRegion.value <= 0){
-            mostrarNotificacionError(
-                        "Error",
-                        "La selección de nombre común, tipo de región y región debe ser seleccionada de manera forzosa.",
-                        "Error",
-                        5000
-                    );           
-        }
-
-         const params = { idNombre: idNombre.value,
-                          idTipoReg: idTipoReg.value.IdTipoRegion,
-                          idRegion: idTipoReg.value.IdRegion
-          }
-
-        try{
-            const response = await axios.post(`/alta-relNom-Nomcomun`, params);
-                  
-            if(response.status === 200)
-            {  
-                mostrarNotificacion('Aviso', response.data.message, 'success');
-            }
-
-        }
-        catch(error){
-            if (error.response.status === 422) {
-                const errorMessages = Object.values(error.response.data.errors).flat();
-                errorMessages.forEach(msg => {
-                    mostrarNotificacionError(
-                        "Error",
-                        msg,
-                        "Error",
-                        5000
-                    );
-                });
-            }
-        }*/
     }
 
     const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -689,8 +687,8 @@
         if(respCaract.status === 200)
         {
             datosCaracteristicas.value = respCaract.data.treeDataProp;
-            treeCaracteristicas.value.setCurrentKey(datosCaracteristicas.value[0].IdCatNombre);
-            handleNodeClickCarac(datosCaracteristicas.value[0])
+            //treeCaracteristicas.value.setCurrentKey(datosCaracteristicas.value[0].IdCatNombre);
+            //handleNodeClickCarac(datosCaracteristicas.value[0])
         }
     }
 
@@ -714,16 +712,6 @@
     const handleNodeClickCarac = (row) =>{
         idCaracteristica.value = row.IdCatNombre;
     }
-
-    watch(datosCaracteristicas, async (nuevoValor) => {
-        if (nuevoValor.length > 0) {
-            await nextTick()
-
-            treeCaracteristicas.value.setCurrentKey(nuevoValor[0].IdCatNombre)
-
-            handleNodeClickCarac(nuevoValor[0])
-        }
-    })
 
     //Funciones para el tipo de distribucion 
     const cargaTiposDistribucion = async() =>{

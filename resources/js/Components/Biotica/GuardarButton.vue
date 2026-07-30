@@ -2,7 +2,7 @@
   <div>
       <div v-if="accion === 'editar'">
         <el-tooltip effect="dark" :content="tooltipContent" placement="bottom">
-          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
+          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled="props.disabled">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-usb-drive"
                 viewBox="0 0 16 16">
@@ -15,7 +15,7 @@
       </div>
       <div v-else>
         <el-tooltip effect="dark" :content="tooltipContent" placement="bottom">
-          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled = "habilitar">
+          <el-button :size="size" :type="type" :circle="circle" @click="handleClick" :disabled="props.disabled">
             <slot name="icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-usb-drive"
                 viewBox="0 0 16 16">
@@ -55,7 +55,7 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
-  habilitar: {
+  disabled: {
     type: Boolean,
     default: false
   }
