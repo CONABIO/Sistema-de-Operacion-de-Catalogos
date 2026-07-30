@@ -121,4 +121,58 @@ public function eliminarBiblioNomComunRegion(Request $request)
 }
 
 
+public function actualizarObservacion(Request $request) {
+    try {
+        DB::connection('catcentral')
+            ->table('RelNomNomComunRegionBiblio')
+            ->where('IdNomComun', $request->IdNomComun)
+            ->where('IdRegion', $request->IdRegion)
+            ->where('IdNombre', $request->IdNombre)
+            ->where('IdBibliografia', $request->IdBibliografia)
+            ->update([
+                'Observaciones' => $request->Observaciones,
+                'FechaCaptura'  => now()
+            ]);
+
+        return response()->json(['message' => 'Observación actualizada con éxito'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+public function actualizarObsRelacionBase(Request $request) {
+    try {
+        DB::connection('catcentral')
+            ->table('RelNomNomComunRegion')
+            ->where('IdNomComun', $request->IdNomComun)
+            ->where('IdNombre', $request->IdNombre)
+            ->where('IdRegion', $request->IdRegion)
+            ->update([
+                'Observaciones' => $request->Observaciones,
+                'FechaModificacion' => now()
+            ]);
+
+        return response()->json(['message' => 'Observación de relación actualizada'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+public function actualizarObsNomComunBase(Request $request) {
+    try {
+        DB::connection('catcentral')
+            ->table('NomComun')
+            ->where('IdNomComun', $request->IdNomComun)
+            ->update([
+                'Observaciones' => $request->Observaciones,
+                'FechaModificacion' => now()
+            ]);
+
+        return response()->json(['message' => 'Observación actualizada'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
 }
