@@ -233,7 +233,7 @@ class NombreComunController extends Controller
     }
 
     public function cargaNombresComunes($IdNombre)
-    {        
+    {
         //En esta sentencia se maneja el control de los inner join manejados por medio de funciones
         $datos = RelNomNomComunRegion::from('RelNomNomComunRegion as rnncr')
                             ->join('RelNomNomComunRegionBiblio as rnncrb', function ($join){
@@ -242,16 +242,16 @@ class NombreComunController extends Controller
                                      ->on('rnncrb.IdRegion', 'rnncr.IdRegion');
                             })
                             ->join('NomComun as nc', 'nc.IdNomComun', 'rnncr.IdNomComun')
-                        ->select('rnncr.IdNomComun', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones AS ObsNomCom', 
+                        ->select('rnncr.IdNomComun', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones AS ObsNomCom',
                                  'rnncr.IdNombre', 'rnncr.IdRegion', 'rnncr.Observaciones AS ObsRel',
                                     DB::raw('COUNT(rnncrb.IdBibliografia) as Biblio')
                         )
                         ->where('rnncr.IdNombre', $IdNombre)
                         ->groupBy('rnncr.IdNomComun',
                                   'rnncr.IdNombre',
-                                  'rnncr.IdRegion', 
+                                  'rnncr.IdRegion',
                                   'nc.NomComun',
-                                  'nc.Lengua', 
+                                  'nc.Lengua',
                                   'nc.Observaciones',
                                   'rnncr.Observaciones')
                         ->get();
@@ -276,7 +276,7 @@ class NombreComunController extends Controller
                         'IdNomComun' => $valor -> IdNomComun,
                         'NombreComun' => $valor -> NomComun,
                         'Lengua' => $valor -> Lengua,
-                        'Observaciones' => $valor -> Observaciones,
+                        'Observaciones' => $valor->ObsNomCom,
                         'Regiones' => $registro->map(function ($item) use ($regionesIndexadas, $valor) {
                             if($valor->Biblio > 0){
                                     $biblio = '/storage/images/Libro_Verde.svg';
@@ -287,14 +287,14 @@ class NombreComunController extends Controller
                                 'IdRegion' => $item -> IdRegion,
                                 'Region' => $regionesIndexadas[$item->IdRegion]['Region'] ?? '',
                                 'Biblio' => ['texto'=> '',
-                                       'url'=>$biblio], 
+                                       'url'=>$biblio],
                                 'ObservacionesReg' => $item->ObsRel,
                             ];
                         }) -> values()
                     ];
                 })
                 -> values();
-        
-        return response()->json($agrupado);    
+
+        return response()->json($agrupado);
     }
 }
