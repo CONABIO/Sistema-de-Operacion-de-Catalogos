@@ -2,7 +2,7 @@
   import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
   import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
   import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
   import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
   import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
   import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
@@ -212,7 +212,7 @@
   }
 
   /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-    Se agrega la reasignacion de referencia para que cuando cierra 
+    Se agrega la reasignacion de referencia para que cuando cierra
       la ventana se actualice como si se ingresara de inicio*/
   const closeDialog = () => {
     taxonAct.value = { ...taxonAct.value };
@@ -278,7 +278,7 @@
     for (const node of data.value) {
       if (node.id === res.id) {
         Object.assign(node, res);
-        return true;  
+        return true;
       }
 
       if (node.children && node.children.length > 0) {
@@ -292,17 +292,17 @@
     for (const child of children) {
       if (child.id === res.id) {
         Object.assign(child, res);
-        return true; 
+        return true;
       }
       if (child.children && child.children.length > 0) {
         const found = await updateChildNode(child.children, res);
         if (found) return true;
       }
     }
-    return false; 
+    return false;
   };
 
-  //Función para recibir los nuevos taxones 
+  //Función para recibir los nuevos taxones
   const recibeTaxNuevo = async (res) => {
     const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
 
@@ -416,7 +416,7 @@
           spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
           backgroud: 'rgba(255,255,255,0.85)',
         });
-        
+
         //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
         const response = await axios.get('/cargar-nomArb', { params });
 
@@ -425,10 +425,10 @@
           totalItems.value = response.data[1].total;
           paginas.value = response.data[1].last_page;
 
-          if(response.data[3].length === 1 &&(response.data[0].length === 0 && 
-                                              (response.data[3][0].IdAscendente === 0 || 
+          if(response.data[3].length === 1 &&(response.data[0].length === 0 &&
+                                              (response.data[3][0].IdAscendente === 0 ||
                                                 response.data[3][0].IdAscendente === null))){
-            
+
             categoriaNuevoTax.value = response.data[3][0];
             mostrarNuevoTax.value = true;
           }else{
@@ -446,15 +446,15 @@
         {
           selectedNodeKey.value= data.value[0].id;
           tree.value.setCurrentKey(data.value[0].id);
-          
+
           let node = tree.value.getNode(data.value[0].id);
-          
+
           expande(node.data, node);
         }
       }
     }else
     {
-      catego.value = ''; 
+      catego.value = '';
       tablaNomenclatura.value = [];
       tablaReferencias.value = [];
       totalRegNom.value = 0;
@@ -485,7 +485,7 @@
 
       const response = await axios.get('/cargar-nomArb',
         { params });
-      
+
       if (response.status === 200) {
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
@@ -544,7 +544,7 @@
     }
 
     if (draggingNode.children.length === 0) {
-      
+
       const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
       if (response.status === 200) {
@@ -562,15 +562,15 @@
     }
     const params= {
                     taxAct: draggingNode.id
-                };  
-                
+                };
+
     const responseNom = await axios.get('/carga-RelacionesTax', { params });
 
     if(mostrarLoading.value)
     {
       loadingInstance.close();
     }
-    
+
     if(responseNom.data.length >0 )
     {
       tablaNomenclatura.value = responseNom.data;
@@ -584,7 +584,7 @@
     mostrarLoading.value = true
   }
 
-  //Función para mover un taxón y reasignarlo a otro 
+  //Función para mover un taxón y reasignarlo a otro
   const mover = async (node) => {
     if (taxMov.value.length === 0) {
       try {
@@ -820,16 +820,16 @@
     }
   }
 
-  const manejarEliminarRel = (item) => {  
-    
+  const manejarEliminarRel = (item) => {
+
     const procederConEliminacion = async () => {
 
       try {
         ElMessageBox.close();
 
-        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta,
                                                                                 taxAct: props.taxonAct.id}});
-        
+
         tablaNomenclatura.value = response.data;
 
         mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
@@ -844,7 +844,7 @@
     const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
 
     const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-    
+
     ElMessageBox({
       title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
@@ -861,15 +861,15 @@
   };
 
   const manejarEliminarRef = (item)=>{
-    
+
     const procederConEliminacion = async () => {
 
       try {
         ElMessageBox.close();
 
         const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
-                                                                                  taxAct: taxonAct.value.id}});     
-          
+                                                                                  taxAct: taxonAct.value.id}});
+
           tablaReferencias.value = response.data;
 
           totalRegRef.value = response.data.length;
@@ -885,7 +885,7 @@
 
 
     const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-    
+
     ElMessageBox({
       title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
@@ -904,9 +904,9 @@
   const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
     console.log("Entre a mover el taxon");
     console.log("Estos son los parametros recibidos taxMover: ", taxMover,
-                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov,
                 " nodoRecb: ", nodoRecb);
-                
+
     if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
       await mostrarNotificacion(
         "Error",
@@ -920,8 +920,8 @@
     try {
       const result = await showConfirmMessage({
         title: 'Atención',
-        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
-                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
+        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica}
+                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la)
                     ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
         icon: '!'
       });
@@ -999,7 +999,7 @@
       dialogFormVisibleBiblio.value = true;
 
     }else{
-      mostrarNotificacionError("Bibliografia", 
+      mostrarNotificacionError("Bibliografia",
                               "Se debe seleccionar un tipo de relación"),
                               "Error"
     }
@@ -1010,7 +1010,7 @@
     {
       dialogFormVisibleBiblioNom.value = true;
     }else{
-      mostrarNotificacionError("Bibliografia", 
+      mostrarNotificacionError("Bibliografia",
                               "Se debe seleccionar un taxón"),
                               "Error"
     }
@@ -1027,10 +1027,10 @@
 
       const params= {
                     taxAct: taxonAct.value.id
-                  };   
-      
+                  };
+
       const response = await axios.get('/carga-RelacionesTax', { params });
-      
+
       tablaNomenclatura.value = response.data;
 
       totalRegNom.value = response.data.length;
@@ -1038,7 +1038,7 @@
       dialogFormVisibleBiblio.value = false;
 
     loading.close();
-    
+
   };
 
   const cerrarRelNomBiblio = async() => {
@@ -1158,13 +1158,13 @@
       ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
       return;
     }
-  
+
     const loading = ElLoading.service({
       lock: true,
       text: 'Cargando ascendentes...',
       background: 'rgba(0, 0, 0, 0.7)',
     });
-  
+
     try {
       const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
       if (response.status === 200 && Array.isArray(response.data)) {
@@ -1179,7 +1179,7 @@
             currentNode = nextNode;
           }
         }
-  
+
         treeDataAscendentes.value = nestedTree;
         dialogFormVisibleAscendentes.value = true;
       } else {
@@ -1242,7 +1242,7 @@
               >
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="processIcon(data.RutaIcono)" 
+                    <img :src="processIcon(data.RutaIcono)"
                         style="width:16px; height:16px; margin-right:6px;" />
                     <span>{{ data.label }}</span>
                   </span>
@@ -1250,7 +1250,7 @@
               </el-cascader>
 
               <!-- Botón debajo -->
-              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;" 
+              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;"
                     v-if="mostrarNuevoTax">
                 <nuevoTax  @crear="openDialog"/>
               </div>
@@ -1371,10 +1371,10 @@
                             <span class="table-count">({{ totalRegNom }})</span>
                           </span>
                         </div>
-                      </template>                    
+                      </template>
                     <div class="table-wrapper">
-                      <TablaFiltrable 
-                        :columnas = "columnasDefinidas" 
+                      <TablaFiltrable
+                        :columnas = "columnasDefinidas"
                         :datos = "tablaNomenclatura"
                         :opciones-filtro = "opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
@@ -1388,7 +1388,7 @@
                         :mostrarNuevo = "false"
                         :mostrarEditar = "false"
                         :mostrarBorrar = "true"
-                        :mostrarSalir = "false" 
+                        :mostrarSalir = "false"
                       />
                     </div>
                     </el-collapse-item>
@@ -1402,11 +1402,11 @@
                         </div>
                       </template>
                       <div class="table-wrapper">
-                        <TablaFiltrable 
-                          :columnas = "columnasDefRef" 
+                        <TablaFiltrable
+                          :columnas = "columnasDefRef"
                           v-model:datos = "tablaReferencias"
-                          v-model:total-items = "totalRegRef" 
-                          :opciones-filtro = "opcionesFiltroRef" 
+                          v-model:total-items = "totalRegRef"
+                          :opciones-filtro = "opcionesFiltroRef"
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
@@ -1441,8 +1441,8 @@
               <span style="margin-left: auto;">
                 Taxa desc. : {{ numHijos }}
               </span>
-            </div>            
-          </div>          
+            </div>
+          </div>
         </el-footer>
       </el-header>
     </el-container>
@@ -1452,10 +1452,10 @@
       <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
+    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog"
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
-      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego" 
+      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego"
                   :catalogos="idsGrupos.value" :regNomenclatura= "totalRegNom"
                   :numHijos = "numHijos" :nuevoTax="mostrarNuevoTax" :catNuevoTax="categoriaNuevoTax"
                   :categoriasTax="categoriasTax"
@@ -1466,23 +1466,23 @@
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"
       custom-class="responsive-dialog relations-dialog">
       <DialogRelaciones v-if="dialogFormVisibleRel" :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
-        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" 
+        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos"
         @cerrar="closeDialogRel">
       </DialogRelaciones>
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
-      <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura" 
+      <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura"
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialogBiblio" />
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias" 
+      <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias"
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAsocCat" :botCerrar="true" :pressEsc="true" :width="'83%'">
-      <CatalogosAsociados :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" />
+      <CatalogosAsociados v-if="dialogFormVisibleAsocCat"  :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" />
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
@@ -1529,7 +1529,7 @@
     height: 350px;
     display: flex;
     flex-direction: column;/*height: 370px;*/
-    padding:10px;    
+    padding:10px;
     overflow: hidden;
   }
 
@@ -1983,11 +1983,11 @@
     .main-layout-container-fixed {
       height: 800px;
     }
-    
+
     .details-container {
       height: 520px;
     }
-    
+
     .table-wrapper {
       max-height: 350px;
     }
@@ -2023,25 +2023,25 @@
   :deep(.dialog-ascendentes-diseno .el-dialog__body) {
     padding: 0 !important;
   }
-  
+
   :deep(.dialog-ascendentes-diseno .el-dialog__header) {
     display: none;
   }
-  
+
   .dialog-header-custom {
     background-color: #f1f7ff;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
   }
-  
+
   .dialog-header-custom h3 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
     color: #303133;
   }
-  
+
   .dialog-header-custom {
     background-color: #f5f5f5;
     padding: 20px 24px;
@@ -2050,7 +2050,7 @@
     border-radius: 10px;
     margin-bottom: 10px;
   }
-  
+
   .content-wrapper-custom {
       background-color: #ffffff;
       padding: 24px;
