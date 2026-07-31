@@ -141,8 +141,8 @@ const setFiltroExterno = (campo, valor) => {
 };
 
 const setCurrentRow = (row) => {
-    selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
-    tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
+    selectedRow.value = row;
+    tableRefInterna.value?.setCurrentRow(row);
 }
 
 
@@ -206,25 +206,33 @@ watch(tipoDeBusqueda, () => {
 
 watch(
     () => props.datos,
-    (newVal) => {
-        if (newVal && newVal.length > 0) {
-            datosTabla.value = props.datos;
+    (newDatos) => {
+        if (!newDatos || newDatos.length === 0) {
+            datosTabla.value = [];
+            selectedRow.value = null;
+            return;
         }
-        else {
-            fetchData();
-        }
-    },
 
-)
+        datosTabla.value = newDatos;
+
+        nextTick(() => {
+            const firstRow = newDatos[0];
+            selectedRow.value = firstRow;
+            if (tableRefInterna.value) {
+                tableRefInterna.value.setCurrentRow(firstRow);
+            }
+            emit('row-click', firstRow);
+        });
+    },
+    { immediate: true, deep: true }
+);
 
 const tableKey = ref(0);
 
 const busquedaLocal = async () => {
 
-    // Verificar que filtros.value es un array
     if (Array.isArray(filtros.value)) {
         filtros.value.forEach(objeto => {
-            // Asegurar que objeto es un objeto (para evitar errores si hay null)
             if (objeto && typeof objeto === 'object') {
                 Object.entries(objeto).forEach(([campo, valor]) => {
                     console.log("1", campo, valor);
@@ -311,16 +319,13 @@ watch(
     { immediate: true }
 );
 
-// Watch para cuando cambian los datos paginados (después de fetch interno)
 watch(paginatedDatos, (newPaginated) => {
     if (newPaginated && newPaginated.length > 0) {
-        // Verificar si la fila seleccionada actual ya no está en los datos paginados
         const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
         const existsInPaginated = newPaginated.some(row =>
             String(row[props.idKey]) === String(currentSelectedId)
         );
 
-        // Si no existe o no hay selección, seleccionar la primera
         if (!existsInPaginated || !selectedRow.value) {
             nextTick(() => {
                 selectedRow.value = newPaginated[0];
@@ -332,7 +337,6 @@ watch(paginatedDatos, (newPaginated) => {
         }
     }
 }, { immediate: true });
-/* hasta aqui se agrego juan carlos 13/02/2026*/
 
 let debounceTimer;
 
