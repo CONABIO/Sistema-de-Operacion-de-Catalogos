@@ -187,10 +187,11 @@
                                                                 :totalItems="totalRegCaract" :itemsPerPage="9"
                                                                 :mostrarBiblio="true" :mostrarAcci="false"
                                                                 :alturaTabla="280" :highlight-current-row="true"
-                                                                :mostrarNuevo="false" :mostrarEditar="true"
+                                                                :mostrarNuevo="true" :mostrarEditar="true"
                                                                 :mostrarBorrar="true" :mostrarSalir="false"
                                                                 @row-click="clickCaract"
-                                                                @abrir-Biblio="abrirResumenCaractSolo" />
+                                                                @abrir-Biblio="abrirResumenCaractSolo"
+                                                                @nuevo-item="nuevoRelCaract"/>
                                                         </div>
                                                     </div>
                                                 </el-splitter-panel>
@@ -380,9 +381,12 @@
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelNomCom" :botCerrar="true" :pressEsc="false" :width="'90%'">
-            <RelNomComun :modal="true" @cerrar="cerrarRelNomCom" />
+            <RelNomComun :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelNomCom" />
         </DialogForm>
 
+        <DialogForm v-model="dialogFormVisibleRelCaract" :botCerrar="true" :pressEsc="false" :width="'90%'">
+            <RelCaract :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelCaract"/>
+        </DialogForm>
 
         <DialogForm v-model="dialogResumenRegionesVisible" :botCerrar="true" :pressEsc="true" :width="'85%'">
             <div style="height: 780px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
@@ -689,7 +693,11 @@ import { ElMessageBox } from 'element-plus';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+<<<<<<< HEAD
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
+=======
+import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
+>>>>>>> 504df032ced02d886bb2942ad4e39316bf14250c
 
 const cerrarModalesResumen = () => {
     dialogResumenRegionesVisible.value = false;
@@ -842,6 +850,9 @@ const defaultProps = {
     children: 'children',
     label: 'Region',
 }
+
+const observacionesGeneral = ref('');
+const observacionesCaractGral = ref('');
 
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -1101,6 +1112,7 @@ const dialogFormVisibleReg = ref(false);
 const dialogFormVisibleNomCom = ref(false);
 
 const dialogFormVisibleRelNomCom = ref(false);
+const dialogFormVisibleRelCaract = ref(false);
 
 const treeRegionDataProp = ref([]);
 const tiposDeRegionProp = ref([]);
@@ -1699,16 +1711,23 @@ const cerrarRelNomCom = () => {
     dialogFormVisibleRelNomCom.value = false;
 }
 
+const cerrarRelCaract = () => {
+    dialogFormVisibleRelCaract.value = false;
+}
+
 const nuevoRelNomComun = () => {
     console.log("le di click al boton de nuevo")
     dialogFormVisibleRelNomCom.value = true;
     console.log("Este es el valor de dialogRolNomComun: ", dialogFormVisibleRelNomCom.value);
 }
 
+const nuevoRelCaract = () => {
+    dialogFormVisibleRelCaract.value = true;
+}
+
 const Guardar = () => {
     console.log("Esta es la funcion de guardar");
 }
-
 
 onMounted(async () => {
     cargaRegionesCatalogos();

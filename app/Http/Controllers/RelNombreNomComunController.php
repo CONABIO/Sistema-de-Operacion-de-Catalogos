@@ -15,7 +15,7 @@ use App\Models\RelNomNomComunRegion;
 use Exception;
 
 
-class RelNombreNomComun extends Controller
+class RelNombreNomComunController extends Controller
 {
     //public function altaRelNomComun(RequestAltaNomNomComun $request){ 
     public function altaRelNomComun(RequestAltaNomNomComun $request){   
