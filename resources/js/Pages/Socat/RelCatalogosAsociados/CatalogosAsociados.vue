@@ -793,7 +793,7 @@ const defaultProps = {
     label: 'Region',
 }
 
-const observacionesGeneral = ref('');
+
 const observacionesCaractGral = ref('');
 
 const notificacionVisible = ref(false);

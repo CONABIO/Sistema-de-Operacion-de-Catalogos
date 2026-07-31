@@ -132,6 +132,37 @@
                                     <el-card class="panel-card list-panel" shadow="never">
                                         <template #header>
                                             <div class="header-container">
+                                                <span class="details-header-title">Características asociadas al taxón</span>                                                
+                                            </div>
+                                        </template>
+                                        <div class="demo-tree panel-nombre">
+                                            <el-tree :data = "datosTree"
+                                                     node-key ="id"
+                                                     :props="{ label: 'label', children: 'children' }">
+                                                <template #default="{ data }">
+                                                    <div class="tree-node">
+                                                        <span>{{ data.label }}</span>
+                                                        <el-select 
+                                                            v-if="data.tipo === 'region'"
+                                                            v-model="data.TipDistribucion.id"
+                                                            placeholder="Tipo distribucón"
+                                                            size="small"
+                                                            style="width:180px; margin-left:15px;"
+                                                        >
+                                                            <el-option
+                                                                v-for="item in tablaTipoDist"
+                                                                :key="item.IdTipoDistribucion"
+                                                                :label="item.Descripcion"
+                                                                :value="item.IdTipoDistribucion"
+                                                            />
+                                                        </el-select>
+                                                    </div>
+                                                </template>
+                                                
+                                            </el-tree>                                               
+                                        </div>
+                                        <!--template #header>
+                                            <div class="header-container">
                                                 <span class="details-header-title">Tipo de distribución</span>
                                                  <BotonTipoDist @click="abrirTipoDist"
                                                         style="flex-shrink: 0; min-width: max-content;" />
@@ -169,7 +200,7 @@
                                                     </el-table-column>
                                                 </template>                                           
                                             </TablaFiltrable>
-                                        </div>
+                                        </div-->
                                     </el-card>
                                 </el-splitter-panel>
                             </el-splitter>
@@ -249,6 +280,7 @@
     const treeDataProp = ref([]);
     const dialogFormVisibleCaract = ref(false);
     const idCaracteristica = ref(0);
+    const CaracteristicasTaxon = ref([]);
 
     //Variables declaradas para region
     const tiposRegion = ref([]);
@@ -579,6 +611,8 @@
         });
     }, { immediate: true });
 
+
+
     //Funciones en general del traslado de datos
     //******************************************************************************************** */
     const onCreaRelacion = async () => {        
@@ -711,8 +745,38 @@
         if(respCaract.status === 200)
         {
             datosCaracteristicas.value = respCaract.data.treeDataProp;
+
+            console.log("Tipos de distribucion :", tablaTipoDist.value)
             //treeCaracteristicas.value.setCurrentKey(datosCaracteristicas.value[0].IdCatNombre);
             //handleNodeClickCarac(datosCaracteristicas.value[0])
+        }
+    }
+
+    const datosTree = computed(()=>
+        CaracteristicasTaxon.value.map(caract => ({
+            id: `C-${caract.IdCatNombre}`,
+            tipo: 'caracteristica',
+            label: caract.Caracteristica,
+            biblio: caract.BiblioCaract.url,
+            observaciones: caract.Observaciones,
+            children: caract.Regiones.map(region => ({
+                id: `R-${region.IdRegion}`,
+                tipo: 'region',
+                label: region.Region,
+                biblio: region.Biblio.url,
+                observaciones: region.Observaciones,
+                tipDistribucion: region.TipDistribucion.id
+            }))
+        }))
+    );
+
+    const cargaCaractAsocTaxon = async() =>{
+        console.log("Este es el taxon actual: ", props.taxonActual.id);
+        const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonActual.id}`);
+        console.log("Esta es la lista de caracteristicas asociadas: ", listCaract);
+
+        if (listCaract.status === 200) {
+            CaracteristicasTaxon.value = listCaract.data;
         }
     }
 
@@ -776,11 +840,13 @@
     //Funciones al montado del componente 
     onMounted( async () => {
 
+        cargaTiposDistribucion();
+
         cargaRegiones();
 
         cargaCaracteristicas();
 
-        cargaTiposDistribucion();
+        cargaCaractAsocTaxon();
         
     })
 </script>
