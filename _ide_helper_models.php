@@ -454,6 +454,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorCaract($idNombre)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorNomComun($idNombre)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Region regionPorNombre($idNombre)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereAbreviado($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereCatalogo($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Region whereClaveRegion($value)
@@ -489,6 +492,31 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelBiblioGrupoSCAT whereObservaciones($value)
  */
 	class RelBiblioGrupoSCAT extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $IdNomComun Identificador del nombre común.
+ * @property int $IdNombre Identificador del taxón.
+ * @property int $IdRegion Identificador de la región en la cual el taxón recibe el nombre común.
+ * @property string|null $Observaciones Observaciones acerca de la relación.
+ * @property string $FechaCaptura Fecha de captura del registro.
+ * @property string|null $FechaModificacion Fecha de modificación del registro.
+ * @property string|null $Marca
+ * @property string|null $Subio
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereFechaCaptura($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereFechaModificacion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereIdNomComun($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereIdNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereIdRegion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereMarca($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereObservaciones($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNomNomComunRegion whereSubio($value)
+ */
+	class RelNomNomComunRegion extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -542,6 +570,7 @@ namespace App\Models{
  * @property string $FechaCaptura Fecha de captura del registro.
  * @property string|null $FechaModificacion Fecha de modificación del registro.
  * @property string|null $Marca
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo caracteristicasTaxon($idNombre)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogo query()
@@ -579,6 +608,33 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoBiblio whereUsuario($value)
  */
 	class RelNombreCatalogoBiblio extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $IdNombre Identificador del taxón.
+ * @property int $IdCatNombre Identificador del elemento del catálogo asociado al taxon.
+ * @property int $IdRegion Identificador de la region.
+ * @property int $IdTipoDistribucion Identificador del tipo de distribución (Original, Actual, etc).
+ * @property string|null $Observaciones Observaciones referentes a la relación.
+ * @property string $usuario
+ * @property string $FechaCaptura Fecha de captura del registro.
+ * @property string|null $FechaModificacion Fecha de modificación del registro.
+ * @property string|null $Marca
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereFechaCaptura($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereFechaModificacion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereIdCatNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereIdNombre($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereIdRegion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereIdTipoDistribucion($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereMarca($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereObservaciones($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|RelNombreCatalogoRegion whereUsuario($value)
+ */
+	class RelNombreCatalogoRegion extends \Eloquent {}
 }
 
 namespace App\Models{

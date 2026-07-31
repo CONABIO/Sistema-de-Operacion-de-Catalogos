@@ -12,18 +12,44 @@ use Illuminate\Support\Facades\DB;
 
 class RegionController extends Controller
 {
+    /*Juan Carlos Mora 10/06/2026 
+    Se modifica la funcion para que funcione por medio de axios y inertia en la carga de datos*/
     public function index()
     {
-        $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->all();
-        $treeData = $this->buildRegionTree($todosLosNodosRegiones);
-        $todosLosTiposDeRegion = TipoRegion::orderBy('Nivel1')->orderBy('Nivel2')->orderBy('Nivel3')->orderBy('Nivel4')->orderBy('Nivel5')->get();
-        $tiposDeRegionTree = $this->buildTipoRegionTree($todosLosTiposDeRegion);
+        $data = $this->cargaInicio();
+
         return Inertia::render('Socat/Regiones/indexRegion', [
-            'treeDataProp' => $treeData,
-            'tiposDeRegionProp' => $todosLosTiposDeRegion,
-            'tiposDeRegionTreeProp' => $tiposDeRegionTree,
+            'treeDataProp' => $data['treeData'],
+            'tiposDeRegionProp' => $data['todosLosTiposDeRegion'],
+            'tiposDeRegionTreeProp' => $data['tiposDeRegionTree'],
         ]);
     }
+
+    private function cargaInicio(){
+
+        $todosLosNodosRegiones = Region::orderBy('NombreRegion')
+                                       ->get()
+                                       ->all();
+        $treeData = $this->buildRegionTree($todosLosNodosRegiones);
+        $todosLosTiposDeRegion = TipoRegion::orderBy('Nivel1')
+                                           ->orderBy('Nivel2')
+                                           ->orderBy('Nivel3')
+                                           ->orderBy('Nivel4')
+                                           ->orderBy('Nivel5')
+                                           ->get();
+        $tiposDeRegionTree = $this->buildTipoRegionTree($todosLosTiposDeRegion);
+
+        return ['todosLosNodosRegiones' => $todosLosNodosRegiones,
+                'treeData' => $treeData,
+                'todosLosTiposDeRegion' => $todosLosTiposDeRegion,
+                'tiposDeRegionTree' => $tiposDeRegionTree];
+    }
+
+    public function cargaRegiones() {
+        return response()->json($this->cargaInicio());
+    }
+              
+     /*Juan Carlos Mora 10/06/2026*/
 
     private function buildRegionTree(array $elements): array
     {
@@ -182,7 +208,7 @@ class RegionController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == "23000") {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un nombre común o a alguna característica asociada al taxón.'
+                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un taxón.'
                 ]);
             }
             throw $e;

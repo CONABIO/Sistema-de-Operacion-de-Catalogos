@@ -1,8 +1,6 @@
 <script setup>
-import { ref, h, computed, onMounted, onUnmounted, nextTick  } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { ElMessage, ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
-import AppLayout from '@/Layouts/AppLayout.vue';
+import { ref, h, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
@@ -19,9 +17,72 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
 const selectedRowId = ref(null);
 
+const selectedGrupoId = ref(null);
+const selectedGrupoRow = ref(null);
+const selectedObjetoRow = ref(null);
+const tieneGrupoSeleccionado = computed(() => {
+  return datosGrupos.value.length > 0 && selectedObjetoRow.value !== null;
+});
+
+
+
+const cerrarBiblio = async (bibliografiasSeleccionadas) => {
+    dialogFormVisibleBiblio.value = false;
+
+    if (!bibliografiasSeleccionadas || bibliografiasSeleccionadas.length === 0) return;
+    if (!idNomComunSeleccionado.value || !idRegionSeleccionada.value) {
+        alert("Por favor seleccione un nombre común y una región primero");
+        return;
+    }
+
+    try {
+        const response = await axios.post('/asociar-biblio-nomcomun-region', {
+            IdNomComun: idNomComunSeleccionado.value,
+            IdRegion: idRegionSeleccionada.value,
+            idsBibliografias: bibliografiasSeleccionadas
+        });
+
+        if (response.status === 200) {
+            await cargarBibliografiasRelacionadas();
+            console.log("Asociación exitosa");
+        }
+    } catch (error) {
+        console.error("Error al asociar bibliografía:", error);
+        alert("Error al guardar la asociación");
+    }
+};
+
+
+const tieneObjetoSeleccionado = computed(() => {
+  return datosObjetos.value.length > 0 && selectedGrupoRow.value !== null;
+});
+
+
+const handleGrupoRowClick = (row) => {
+  selectedGrupoId.value = row.IdGrupoSCAT;
+  selectedGrupoRow.value = row;
+};
+
+const rowGrupoClassName = ({ row }) => {
+  if (row.IdGrupoSCAT === selectedGrupoId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
+const agregarGrupo = () => {
+  if (!selectedBibliografia.value) {
+    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
+    return;
+  }
+  esModalGruposVisible.value = true;
+};
+
 const manejarClickFila = (row) => {
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
   selectedRowId.value = row.IdBibliografia;
-  handleRowClick(row); 
+  handleRowClick(row);
 };
 
 const tableRowClassName = ({ row }) => {
@@ -46,16 +107,16 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     const paginaDestino = resPagina.data.page;
     if (tablaRef.value) {
       await tablaRef.value.irAPagina(paginaDestino);
-      await nextTick(); 
+      await nextTick();
       const fila = localTableData.value.find(d => String(d.IdBibliografia) === String(idEncontrado));
       if (fila) {
-          selectedRowId.value = idEncontrado;
-          tablaRef.value.selectedRow = fila; 
-          handleRowClick(fila); 
-          
-          setTimeout(() => {
-              tablaRef.value.forzarFocoFilaVerde();
-          }, 200);
+        selectedRowId.value = idEncontrado;
+        tablaRef.value.selectedRow = fila;
+        handleRowClick(fila);
+
+        setTimeout(() => {
+          tablaRef.value.forzarFocoFilaVerde();
+        }, 200);
       }
     }
   } catch (err) {
@@ -89,19 +150,18 @@ const grupoParaEditar = ref({
   observaciones: ''
 });
 
-const emit = defineEmits(['cerrar',
-  'formSubmited',
-  'cerrarBiblio']);
+const emit = defineEmits(['cerrarBiblio','asociar']);
 
 const columnasDefinidas = ref([
-  { prop: "Autor", label: "Autor", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "Anio", label: "Año", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "TituloPublicacion", label: "Titulo de la publicacion", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "TituloSubPublicacion", label: "Titulo de la subpublicacion", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
-  { prop: "EditorialPaisPagina", label: "Editorial, Pais, Pagina", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "NumeroVolumenAnio", label: "Número, Volumen, Año", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "EditoresCompiladores", label: "Editores / Compiladores", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
-  { prop: "ISBNISSN", label: "ISBN / ISSN", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
+  { prop: "Autor", label: "Autor(es)", minWidth: 160, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "Anio", label: "Año(s)", minWidth: 150, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloSubPublicacion", label: "Título de la sub publicación", minWidth: 300, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "TituloPublicacion", label: "Título de la publicación", minWidth: 250, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "EditoresCompiladores", label: "Editor(es) / compilador(es)", minWidth: 250, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "NumeroVolumenAnio", label: "Número, volumen, año, mes(es)", minWidth: 260, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "EditorialPaisPagina", label: "Editorial, país, lugar, páginas", minWidth: 300, sortable: 'custom', filtrable: false, align: 'left' },
+  { prop: "ISBNISSN", label: "ISBN / ISSN / DOI", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' },
+  { prop: "Observaciones", label: "Observaciones", minWidth: 200, sortable: 'custom', filtrable: true, align: 'left' }
 ]);
 
 const notificacionVisible = ref(false);
@@ -118,18 +178,26 @@ const props = defineProps({
   traspaso: {
     type: Boolean,
     default: false
+  },
+  biblioAct: {
+    type: Array,
+     default: () => []
   }
 });
 
 
 const abrirModalEditar = (filaGrupo) => {
-  grupoParaEditar.value = { ...filaGrupo };
+  if (!filaGrupo) return;
+  grupoParaEditar.value = {
+    ...filaGrupo,
+    IdBibliografia: filaGrupo.IdBibliografia || selectedBibliografia.value?.IdBibliografia
+  };
   esModalEditarGrupoVisible.value = true;
 };
 
 const guardarObservaciones = async () => {
   if (!grupoParaEditar.value?.IdBibliografia || !grupoParaEditar.value?.IdGrupoSCAT) {
-    mostrarNotificacion('Error', 'Faltan datos para actualizar el grupo.', 'error');
+    mostrarNotificacion('Aviso', 'Faltan datos para actualizar el grupo.', 'warning');
     return;
   }
 
@@ -140,35 +208,28 @@ const guardarObservaciones = async () => {
       Observaciones: grupoParaEditar.value.observaciones
     });
 
-    mostrarNotificacion('Éxito', 'Observaciones actualizadas.', 'success');
+    mostrarNotificacion('Modificación', 'Las observaciones han sido actualizadas exitosamente.', 'success');
     esModalEditarGrupoVisible.value = false;
     handleRowClick(selectedBibliografia.value);
 
   } catch (error) {
     const mensajeError = error.response?.data?.message || 'No se pudieron guardar los cambios.';
-    mostrarNotificacion('Error', mensajeError, 'error');
+    mostrarNotificacion('Aviso', mensajeError, 'warning');
     console.error("Error al guardar observaciones:", error.response);
   }
 };
 
-const confirmarEliminacionGrupo = (filaGrupo) => {
 
-  console.log("Este es el grupo selccionado:", filaGrupo);
+const confirmarEliminacionGrupo = (filaGrupo) => {
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
-    mostrarNotificacion('Error', 'Faltan datos para eliminar la asociación.', 'error');
+    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación.', 'warning');
     return;
   }
 
-  ElMessageBox.confirm(
-    `¿Estás seguro de que quieres desasociar el grupo "${filaGrupo.grupo}" de esta bibliografía?`,
-    'Confirmar eliminación',
-    {
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      type: 'warning',
-    }
-  ).then(async () => {
+  const procederConEliminacion = async () => {
     try {
+      ElMessageBox.close();
+
       await axios.delete(route('bibliografias.asociarGrupo.eliminar'), {
         data: {
           IdBibliografia: filaGrupo.IdBibliografia,
@@ -176,18 +237,46 @@ const confirmarEliminacionGrupo = (filaGrupo) => {
         }
       });
 
-      mostrarNotificacion('Éxito', 'Grupo desasociado correctamente.', 'success');
+      mostrarNotificacion('Eliminación', 'El grupo taxonómico ha sido desasociado correctamente.', 'success');
+
       handleRowClick(selectedBibliografia.value);
+      selectedGrupoId.value = null;
+      selectedGrupoRow.value = null;
+
     } catch (error) {
       const mensajeError = error.response?.data?.message || 'No se pudo desasociar el grupo.';
-      mostrarNotificacion('Error', mensajeError, 'error');
+      mostrarNotificacion('Aviso', mensajeError, 'warning');
       console.error("Error al eliminar asociación:", error.response);
     }
+  };
+
+  const mensaje = `¿Estás seguro de que quieres desasociar el grupo taxonómico seleccionado de esta referencia bibliográfica? Esta acción no se puede revertir.`;
+
+  ElMessageBox({
+    title: "Confirmar eliminación",
+    showConfirmButton: false,
+    showCancelButton: false,
+    customClass: "message-box-diseno-limpio",
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [
+          h('div', { class: 'custom-warning-circle' }, '!')
+        ]),
+        h('div', { class: 'text-container' }, [
+          h('p', null, mensaje)
+        ])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+        h(BotonAceptar, {
+          texto: "Sí, Eliminar",
+          onClick: procederConEliminacion
+        }),
+      ]),
+    ]),
   }).catch(() => {
-    ElMessage({ type: 'info', message: 'Eliminación cancelada' });
   });
 };
-
 
 
 
@@ -222,12 +311,11 @@ const editar = (row) => {
 };
 const cerrarDialogo = () => { dialogFormVisible.value = false; };
 
-const cerrarDialogo2 = () => {
-  emit('cerrar');
-};
 
 const handleRowClick = async (row) => {
   selectedBibliografia.value = row;
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
   citaCompleta(row);
   const idBibliografia = row.IdBibliografia;
   if (!idBibliografia) return;
@@ -237,9 +325,15 @@ const handleRowClick = async (row) => {
   try {
     const responseGrupos = await axios.get(`/api/bibliografias/${idBibliografia}/grupos-taxonomicos`);
     datosGrupos.value = responseGrupos.data;
+    if (datosGrupos.value.length > 0 && !selectedGrupoId.value) {
+      handleGrupoRowClick(datosGrupos.value[0]);
+    } else if (selectedGrupoId.value) {
+      const actual = datosGrupos.value.find(g => g.IdGrupoSCAT === selectedGrupoId.value);
+      if (actual) handleGrupoRowClick(actual);
+    }
   } catch (error) {
     console.error("Error al cargar los grupos taxonómicos:", error);
-    mostrarNotificacion("Error", "No se pudieron cargar los grupos taxonómicos asociados.", "error");
+    mostrarNotificacion("Aviso", "No se pudieron cargar los grupos taxonómicos asociados.", "warning");
   } finally {
     loadingGrupos.value = false;
   }
@@ -251,7 +345,7 @@ const handleRowClick = async (row) => {
     datosObjetos.value = responseObjetos.data;
   } catch (error) {
     console.error("Error al cargar los objetos externos:", error);
-    mostrarNotificacion("Error", "No se pudieron cargar los objetos externos asociados.", "error");
+    mostrarNotificacion("Aviso", "No se pudieron cargar los objetos externos asociados.", "warning");
   } finally {
     loadingObjetos.value = false;
   }
@@ -259,9 +353,9 @@ const handleRowClick = async (row) => {
 
 
 const citaCompleta = (row) => {
-  let orden = row.OrdenCitaCompleta || '1243765';
+  let orden = (row.OrdenCitaCompleta && row.OrdenCitaCompleta.includes('8')) ? row.OrdenCitaCompleta : (row.OrdenCitaCompleta || '') + '8';
   let citaComp = '';
-  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'ISBNISSN'];
+  const campos = ['', 'Autor', 'Anio', 'TituloSubPublicacion', 'TituloPublicacion', 'EditoresCompiladores', 'NumeroVolumenAnio', 'EditorialPaisPagina'];
   const myArray = orden.split("");
   for (let i = 0; i < myArray.length; i++) {
     const campoActual = campos[myArray[i]];
@@ -272,13 +366,6 @@ const citaCompleta = (row) => {
   cita.value = citaComp;
 };
 
-const agregarGrupo = () => {
-  if (!selectedBibliografia.value) {
-    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
-    return;
-  }
-  esModalGruposVisible.value = true;
-};
 
 const cerrarModalGrupos = () => {
   esModalGruposVisible.value = false;
@@ -288,28 +375,31 @@ const cerrarModalGrupos = () => {
 };
 
 const traspasaBiblio = () => {
-
   const id = selectedBibliografia.value.IdBibliografia;
-
-  if (!biblioRelacion.value.includes(id)) {
-    biblioRelacion.value.push(id);
-    mostrarNotificacion("Bibliografia", "Se asignara la bibliografia seleccionada.", "info");
+  if (!props.biblioAct.includes(id)) {
+    emit('asociar', id);
+    mostrarNotificacion("Aviso", "Se ha enviado la asociación correctamente.", "success");
+  } else {
+    mostrarNotificacion("Error", "La referencia bibliográfica ya se encuentra relacionada.", "error");
   }
-
 };
 
 const cerrarModal = () => {
-  emit('cerrarBiblio', biblioRelacion.value);
+  if (biblioRelacion.value.length === 0) {
+      emit('cerrarBiblio', []);
+  } else {
+      emit('cerrarBiblio', biblioRelacion.value);
+  }
   biblioRelacion.value = [];
 }
 
 const handleFormSubmited = (datosDelFormulario) => {
   cerrarDialogo();
   const esEdicion = accBiblio.value === 'editar';
-  const mensajeDuplicado = esEdicion 
-    ? "La bibliografía que desea modificar ya existe, las modificaciones no se realizaron." 
-    : "La bibliografía que desea ingresar ya existe.";
-  const duplicadoLocal = localTableData.value.find(b => 
+  const mensajeDuplicado = esEdicion
+    ? "La referencia bibliográfica que desea modificar ya existe, las modificaciones no se realizaron."
+    : "La referencia bibliográfica que desea ingresar ya existe.";
+  const duplicadoLocal = localTableData.value.find(b =>
     b.Autor.trim().toLowerCase() === datosDelFormulario.Autor.trim().toLowerCase() &&
     b.Anio.toString() === datosDelFormulario.Anio.toString() &&
     b.TituloPublicacion.trim().toLowerCase() === datosDelFormulario.TituloPublicacion.trim().toLowerCase() &&
@@ -347,7 +437,7 @@ const handleFormSubmited = (datosDelFormulario) => {
         let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
         mostrarNotificacion("Error", errorMsg, "error", 0, true);
       } else {
-        mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
+        mostrarNotificacion("Aviso", "No se pudo procesar la solicitud.", "warning");
       }
     }
   };
@@ -355,7 +445,7 @@ const handleFormSubmited = (datosDelFormulario) => {
   if (!esEdicion) {
     procederConGuardado();
   } else {
-    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la bibliografía de "${datosDelFormulario.Autor}"?`;
+    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la referencia bibliográfica seleccionada?`;
     ElMessageBox({
       title: 'Confirmar modificación',
       showConfirmButton: false,
@@ -367,12 +457,12 @@ const handleFormSubmited = (datosDelFormulario) => {
           h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
         ]),
         h('div', { class: 'footer-buttons' }, [
-          h(BotonCancelar, { onClick: () => ElMessageBox.close() }), 
-          h(BotonAceptar, { 
-            onClick: () => { 
-              ElMessageBox.close(); 
-              procederConGuardado(); 
-            } 
+          h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+          h(BotonAceptar, {
+            onClick: () => {
+              ElMessageBox.close();
+              procederConGuardado();
+            }
           }),
         ])
       ])
@@ -394,21 +484,21 @@ const borrarDatos = (idBibliografia) => {
       if (tablaRef.value) {
         await tablaRef.value.fetchData();
       }
-      mostrarNotificacion("Eliminación", "El registro fue eliminado correctamente.", "success");
+      mostrarNotificacion("Eliminación", "La referencia bibliográfica ha sido eliminada correctamente.", "success");
     } catch (apiError) {
       console.error(apiError);
-      mostrarNotificacion("Error al Eliminar", apiError.response?.data?.message || 'Ocurrió un error.', "error");
+      mostrarNotificacion("Aviso", apiError.response?.data?.message || 'Ocurrió un error.', "warning");
     }
   };
 
   const cancelarEliminacion = () => { ElMessageBox.close(); };
-  
-  const mensaje = `¿Está seguro de eliminar la bibliografía de "${itemAEliminar?.Autor || 'este registro'}"? Esta acción no se puede revertir.`;
-  
+
+  const mensaje = `¿Está seguro de eliminar la referencia bibliográfica seleccionada? Esta acción no se puede revertir.`;
+
   ElMessageBox({
-    title: 'Confirmar eliminación', 
-    showConfirmButton: false, 
-    showCancelButton: false, 
+    title: 'Confirmar eliminación',
+    showConfirmButton: false,
+    showCancelButton: false,
     customClass: 'message-box-diseno-limpio',
     message: h('div', { class: 'custom-message-content' }, [
       h('div', { class: 'body-content' }, [
@@ -416,7 +506,7 @@ const borrarDatos = (idBibliografia) => {
         h('div', { class: 'text-container' }, [h('p', null, mensaje)])
       ]),
       h('div', { class: 'footer-buttons' }, [
-        h(BotonCancelar, { onClick: cancelarEliminacion }), 
+        h(BotonCancelar, { onClick: cancelarEliminacion }),
         h(BotonAceptar, { onClick: procederConEliminacion }),
       ])
     ])
@@ -429,31 +519,30 @@ onMounted(() => {
     if (event.data && event.data.type === 'grupoTaxonomicoSeleccionado') {
       const grupoSeleccionado = event.data.payload;
       if (!selectedBibliografia.value) {
-        mostrarNotificacion("Error", "No hay una bibliografía seleccionada.", "error");
+        mostrarNotificacion("Aviso", "No hay una bibliografía seleccionada.", "warning");
         return;
       }
       axios.post(route('bibliografias.asociarGrupo'), {
         IdBibliografia: selectedBibliografia.value.IdBibliografia,
         IdGrupoSCAT: grupoSeleccionado.id,
       })
-        .then((response) => {
-          mostrarNotificacion("Éxito", response.data.message, "success");
+        .then(async (response) => {
+          mostrarNotificacion("Ingreso", response.data.message, "success");
           esModalGruposVisible.value = false;
-          const nuevoGrupo = response.data.grupo;
-          if (nuevoGrupo && !datosGrupos.value.some(g => g.grupo === nuevoGrupo.grupo)) {
-            datosGrupos.value.push(nuevoGrupo);
-          } else {
-            handleRowClick(selectedBibliografia.value);
+          await handleRowClick(selectedBibliografia.value);
+          const nuevoId = grupoSeleccionado.id;
+          const filaRecienAgregada = datosGrupos.value.find(g => g.IdGrupoSCAT === nuevoId);
+          if (filaRecienAgregada) {
+            handleGrupoRowClick(filaRecienAgregada);
           }
-
         })
         .catch(error => {
           const errorMessage = error.response?.data?.message || 'No se pudo asociar el grupo.';
           mostrarNotificacionError("Aviso", errorMessage, "error");
         });
     }
-     if (event.data && event.data.type === 'cerrarModal') {
-        esModalGruposVisible.value = false;
+    if (event.data && event.data.type === 'cerrarModal') {
+      esModalGruposVisible.value = false;
     }
   };
   window.addEventListener('message', handleMessageFromIframe);
@@ -462,17 +551,16 @@ onMounted(() => {
   });
 });
 
-
-
-
 </script>
+
 
 <template>
   <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
 
-    <div class="layout-dos-columnas">
-      <div class="columna-principal">
-        <TablaFiltrable class="flex-grow tabla-bibliografia-chica" ref="tablaRef" :columnas="columnasDefinidas"
+    <div class="layout-vertical">
+
+      <div class="seccion-tabla-completa">
+        <TablaFiltrable class="flex-grow tabla-bibliografia-ancha" ref="tablaRef" :columnas="columnasDefinidas"
           v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
           id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
           @row-click="handleRowClick" @traspasaBiblio="traspasaBiblio" @cerrar="cerrarModal" :botCerrar="props.isModal"
@@ -482,7 +570,6 @@ onMounted(() => {
               <template #default="{ row }">
                 <div class="expand-content-detail">
                   <p><strong>IdBibliografia:</strong> {{ row.IdBibliografia }}</p>
-                  <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
                   <p><strong>OrdenCitaCompleta:</strong> {{ row.OrdenCitaCompleta }}</p>
                   <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
                   <p><strong>FechaModificacion:</strong> {{ row.FechaModificacion }}</p>
@@ -496,54 +583,51 @@ onMounted(() => {
             </el-table-column>
           </template>
         </TablaFiltrable>
+
         <div class="cita-container">
-          <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
+          <el-input type="textarea" :rows="3" v-model="cita" readonly disabled resize="none"
             placeholder="Haga clic en una fila para ver la cita completa..." />
         </div>
       </div>
-      <div class="columna-lateral">
-        <div class="widget-card" v-loading="loadingGrupos">
+
+      <div class="contenedor-widgets-inferiores">
+        <div class="widget-card-inferior" v-loading="loadingGrupos">
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
-            <NuevoButton @crear="agregarGrupo" />
+            <div class="botones">
+              <NuevoButton @crear="agregarGrupo" />
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" />
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
+            </div>
           </div>
           <div class="widget-table-container">
-            <el-table :data="datosGrupos" border style="width: 100%"
+            <el-table :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName"
+              @row-click="handleGrupoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
               <el-table-column prop="observaciones" label="Observaciones" />
-              <el-table-column label="Acciones" width="100" align="center">
-                <template #default="{ row }">
-                  <div class="action-buttons-container">
-                    <EditarButton @editar="abrirModalEditar(row)" />
-                    <EliminarButton @eliminar="confirmarEliminacionGrupo(row)" />
-                  </div>
-                </template>
-              </el-table-column>
-
             </el-table>
           </div>
         </div>
-        <div class="widget-card">
+
+        <div class="widget-card-inferior">
           <div class="widget-header">
             <h3>Objeto externo</h3>
+            <div class="botones">
+              <NuevoButton />
+              <EditarButton :disabled="!tieneObjetoSeleccionado"/>
+              <EliminarButton  :disabled="!tieneObjetoSeleccionado"/>
+            </div>
           </div>
           <div class="widget-table-container">
             <el-table :data="datosObjetos" border style="width: 100%" empty-text="Sin Datos">
               <el-table-column prop="objeto" label="Objeto externo" />
               <el-table-column prop="observaciones" label="Observaciones" />
-              <el-table-column label="Acciones" width="100" align="center">
-                <template #default="{ }">
-                  <div class="action-buttons-container">
-                    <EditarButton />
-                    <EliminarButton />
-                  </div>
-                </template>
-              </el-table-column>
             </el-table>
           </div>
         </div>
       </div>
+
     </div>
   </LayoutCuerpo>
 
@@ -558,30 +642,35 @@ onMounted(() => {
     <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :pressEsc="true" width="100%"
       @close="cerrarModalGrupos" :draggable="true">
 
-      <div class="dialog-body-iframe-container" style="padding: 0; border: none; display: flex; flex-direction: column;">
+      <div class="dialog-body-iframe-container"
+        style="padding: 0; border: none; display: flex; flex-direction: column;">
         <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full"
           frameborder="0">
         </iframe>
       </div>
     </DialogGeneral>
-    <DialogGeneral v-model="esModalEditarGrupoVisible" title="Editar Observaciones" width="500px" :pressEsc="false" :bot-cerrar="true">
-      <div v-if="grupoParaEditar" class="edit-observaciones-modal-content">
-        <div class="form-actions" style="margin-top: 10px;">
+    <DialogGeneral v-model="esModalEditarGrupoVisible" :bot-cerrar="true" :press-esc="true" width="1000px">
+      <div class="dialog-header">
+        <h3>Modificar las observaciones de grupo taxonómico</h3>
+      </div>
+      <div class="header">
+        <div class="form-actions">
           <GuardarButton @click="guardarObservaciones" />
-          <BotonSalir accion="cerrar" @salir="cerrarDialogo2" />
+          <BotonSalir accion="cerrar" @salir="esModalEditarGrupoVisible = false" />
         </div>
+        <div class="dialog-body">
+          <el-form label-position="top">
+            <el-form-item label="Nombre del grupo">
+              <el-input type="textarea" v-model="grupoParaEditar.grupo" readonly :autosize="{ minRows: 1, maxRows: 2 }"
+                resize="none" class="input-solo-lectura" />
+            </el-form-item>
+            <el-form-item label="Observaciones">
+              <el-input type="textarea" v-model="grupoParaEditar.observaciones" :autosize="{ minRows: 1, maxRows: 3 }"
+                resize="none" placeholder="Añade tus observaciones aquí" maxlength="255" show-word-limit />
+            </el-form-item>
 
-        <div class="info-grupo">
-          <span class="info-label">Grupo:</span>
-          <span class="info-valor" style="color: red; font-weight: bold;">{{ grupoParaEditar.grupo }}</span>
+          </el-form>
         </div>
-
-        <el-form label-position="top" class="form-observaciones">
-          <el-form-item label="Observaciones">
-            <el-input type="textarea" v-model="grupoParaEditar.observaciones" :rows="4"
-              placeholder="Añade tus observaciones aquí" />
-          </el-form-item>
-        </el-form>
       </div>
     </DialogGeneral>
 
@@ -640,10 +729,10 @@ onMounted(() => {
 }
 
 
-.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
-  color: #007bff !important; 
-  font-weight: bold; 
+  color: #007bff !important;
+  font-weight: bold;
 }
 </style>
 
@@ -663,11 +752,6 @@ onMounted(() => {
   max-height: 500px;
 }
 
-.layout-dos-columnas {
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
-}
 
 .columna-principal {
   display: flex;
@@ -712,6 +796,13 @@ onMounted(() => {
   margin: 0;
 }
 
+.botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-right: 30px;
+}
+
 .widget-actions {
   display: flex;
   justify-content: flex-end;
@@ -719,12 +810,6 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-.action-buttons-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-}
 
 :deep(.el-dialog .dialog-body-iframe-container) {
   height: 700px;
@@ -757,42 +842,6 @@ onMounted(() => {
   gap: 10px;
 }
 
-
-.edit-observaciones-modal-content {
-  padding: 10px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.info-grupo {
-  background-color: #f5f7fa;
-  padding: 10px 15px;
-  border-radius: 6px;
-  border: 1px solid #e9e9eb;
-  font-size: 14px;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #606266;
-  margin-right: 8px;
-}
-
-.info-valor {
-  color: #303133;
-}
-
-.form-observaciones .el-form-item {
-  margin-bottom: 0;
-}
-
-.form-observaciones :deep(.el-form-item__label) {
-  font-weight: 600;
-  color: #606266;
-  padding-bottom: 5px !important;
-}
-
 .dialog-footer-custom {
   display: flex;
   justify-content: flex-end;
@@ -807,5 +856,201 @@ onMounted(() => {
 }
 
 
+.layout-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  width: 100%;
+  height: auto;
+}
 
+.seccion-tabla-completa {
+  width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabla-bibliografia-ancha {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper) {
+  max-height: 500px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-horizontal) {
+  height: 12px !important;
+  opacity: 1 !important;
+  background: rgba(241, 241, 241, 0.9) !important;
+  border-radius: 10px;
+  bottom: 0 !important;
+  display: block !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-vertical) {
+  width: 14px !important;
+  opacity: 1 !important;
+  background: rgba(241, 241, 241, 0.9) !important;
+  border-radius: 10px;
+  display: block !important;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-scrollbar__thumb) {
+  background-color: #909399 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  height: 20px !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper::-webkit-scrollbar:horizontal) {
+  height: 12px !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb:horizontal) {
+  background-color: #909399 !important;
+  border-radius: 10px !important;
+  border: 2px solid #ffffff !important;
+}
+
+.tabla-bibliografia-ancha :deep(::-webkit-scrollbar-button) {
+  display: none !important;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-table__inner-wrapper::before) {
+  display: none;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table__append-wrapper) {
+  display: none;
+}
+
+
+.tabla-bibliografia-ancha :deep(.el-table) {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+}
+
+.tabla-bibliografia-ancha :deep(.el-pagination) {
+  margin-top: 5px !important;
+  padding: 5px 0 !important;
+  background-color: transparent;
+}
+
+.contenedor-widgets-inferiores {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  width: 100%;
+  margin-top: 0;
+}
+
+.widget-card-inferior {
+  flex: 1;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+}
+
+.widget-table-container {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.widget-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cita-container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+
+:deep(.el-dialog__body) {
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+
+.dialog-header {
+  background-color: #f5f5f5;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  text-align: left;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header {
+  background-color: #ffffff;
+  padding: 20px 24px;
+  text-align: left;
+  border-radius: 10px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+}
+
+.dialog-body {
+  padding: 30px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  margin-right: 35px;
+  gap: 30px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 4px;
+  line-height: normal;
+  font-size: 0.9em;
+  color: #606266;
+  font-weight: 600;
+}
+
+.input-solo-lectura :deep(.el-textarea__inner) {
+  background-color: #f8f9fa;
+  cursor: default;
+  color: #909399;
+}
 </style>

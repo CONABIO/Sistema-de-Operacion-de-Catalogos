@@ -28,6 +28,19 @@ class TiposDistribucionController extends Controller
         ]);
     }
 
+    public function cargaTiposDist(Request $request){
+        
+        if($request->origen === 'caracteristicas'){
+            $tipoDistrib = TipoDistribucion::orderBy('Descripcion')
+                                        ->get();
+        }
+        else {
+            $tipoDistrib = TipoDistribucion::orderBy('Descripcion')
+                                        ->select('IdTipoDistribucion as id', 'Descripcion as descripcion')
+                                        ->get();
+        }
+        return response()->json($tipoDistrib);
+    }
 
     public function create()
     {

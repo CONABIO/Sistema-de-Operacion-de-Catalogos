@@ -16,6 +16,22 @@ const manejarClickFila = (row) => {
     selectedRowId.value = row ? row.IdNomComun : null;
 };
 
+/*Juan Carlos Mora Morquecho 11/06/2026
+    Se agregan las funciones y elementos necesarios para aplicar el cerrado del moda*/
+
+const emit = defineEmits(['cerrar']);
+
+const props = defineProps({
+        modal: { type:Boolean, required:false, default:false }
+    });
+
+const cerrarDialogo = () => {
+    console.log("Esta es la funcion para cerrar el modal disparado desde la tabla")
+    emit('cerrar');
+}
+
+/*Juan Carlos Mora Morquecho*/
+
 const tableRowClassName = ({ row }) => {
     if (row.IdNomComun === selectedRowId.value) {
         return 'fila-seleccionada-verde';
@@ -85,7 +101,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = 5000;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -185,25 +201,42 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarNombreComun = (idNomComun) => {
     const procederConEliminacion = async () => {
-        const nombreItem = itemAEliminar ? `"${itemAEliminar.NomComun}"` : 'el registro';
         try {
             ElMessageBox.close();
-            const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
             await axios.delete(`/nombres-comunes/${idNomComun}`);
             if (tablaRef.value) {
-                tablaRef.value.fetchData();
+                await tablaRef.value.fetchData(); 
+                await nextTick(); 
+                if (currentData.value.length > 0) {
+                    const primerRegistro = currentData.value[0];
+                    selectedRowId.value = primerRegistro.IdNomComun;
+                    tablaRef.value.selectedRow = primerRegistro;
+                    setTimeout(() => {
+                        if (tablaRef.value && typeof tablaRef.value.forzarFocoFilaVerde === 'function') {
+                            tablaRef.value.forzarFocoFilaVerde();
+                        }
+                    }, 300); 
+                } else {
+                    selectedRowId.value = null;
+                }
             }
+            
             mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común esta asociado.`, 'success');
-
+            console.error(apiError);
+            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común está asociado.`, 'warning');
         }
     };
+
     const cancelarEliminacion = () => { ElMessageBox.close(); };
     const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
     const mensaje = `¿Está seguro de eliminar el nombre común seleccionado? Esta acción no se puede revertir.`;
+
     ElMessageBox({
-        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+        title: 'Confirmar eliminación', 
+        showConfirmButton: false, 
+        showCancelButton: false, 
+        customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
             h('div', { class: 'body-content' }, [
                 h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -221,9 +254,20 @@ const eliminarNombreComun = (idNomComun) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
         <div class="h-full flex flex-col">
-            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :row-class-name="tableRowClassName"
-                v-model:total-items="totalItems" endpoint="/busca-nombre-comun" id-key="IdNomComun" @row-click="manejarClickFila"  :highlight-current-row="false"  
-                @editar-item="editarNombreComun" @eliminar-item="eliminarNombreComun" @nuevo-item="nuevoNombreComun">
+            <TablaFiltrable ref="tablaRef" class="flex-grow" 
+                :columnas="columnasDefinidas" 
+                v-model:datos="currentData" 
+                :row-class-name="tableRowClassName"
+                :botCerrar = props.modal           
+                v-model:total-items="totalItems" 
+                endpoint="/busca-nombre-comun" 
+                id-key="IdNomComun" 
+                @row-click="manejarClickFila"  
+                :highlight-current-row="false"  
+                @editar-item="editarNombreComun" 
+                @eliminar-item="eliminarNombreComun" 
+                @nuevo-item="nuevoNombreComun"
+                @cerrar="cerrarDialogo">
 
                 <template #expand-column>
                     <el-table-column type="expand">

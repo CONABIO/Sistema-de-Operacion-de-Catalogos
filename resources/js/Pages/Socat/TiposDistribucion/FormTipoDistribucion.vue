@@ -27,7 +27,12 @@ const rules = {
     Descripcion: [
         { required: true, message: 'La descripción es un dato obligatorio, por lo que no puede quedar en blanco', trigger: 'blur' },
         { whitespace: true, message: 'La descripción no puede contener solo espacios en blanco', trigger: 'blur' },
-        { min: 1, max: 100, message: 'La longitud debe estar entre 1 y 100', trigger: 'blur' }
+        { min: 1, max: 100, message: 'La longitud debe estar entre 1 y 100', trigger: 'blur' },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 

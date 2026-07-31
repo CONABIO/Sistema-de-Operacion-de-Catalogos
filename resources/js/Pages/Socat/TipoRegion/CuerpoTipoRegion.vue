@@ -114,7 +114,12 @@ const modalTitle = computed(() => modalMode.value === "editar" ? "Modificar el t
 const modalRules = {
     Descripcion: [
         { required: true, message: "La descripción es un dato obligatorio.", trigger: "blur" },
-        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" }
+        { whitespace: true, message: "La descripción no puede contener solo espacios.", trigger: "blur" },
+        {
+            pattern: /^(?!.*  ).+$/,
+            message: "No se permite ingresar más de un espacio seguido.",
+            trigger: ["blur", "change"],
+        },
     ],
 };
 
@@ -183,7 +188,7 @@ const guardarDesdeModal = async () => {
 
     const descripcionABuscar = formModal.value.Descripcion.trim();
     if (descripcionABuscar.length === 0) {
-        return; 
+        return;
     }
     const modoAlGuardar = modalMode.value;
     const opcionSeleccionada = opcionNivel.value;
@@ -527,9 +532,9 @@ const handleNodeDoubleClick = (data) => {
                         </div>
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
-                            <el-input ref="descripcionInputRef" v-model="formModal.Descripcion"
-                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit
-                                @keydown.enter.prevent />
+                            <el-input  type="textarea" ref="descripcionInputRef" v-model="formModal.Descripcion"
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit 
+                                @keydown.enter.prevent :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                         </el-form-item>
 
                     </el-form>

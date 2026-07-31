@@ -20,6 +20,10 @@ use App\Http\Controllers\TipoRelacionController;
 use App\Http\Controllers\TiposDistribucionController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\RelNombresController;
+use App\Http\Controllers\RelNomNomComunRegionBiblioController;
+use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
+use App\Http\Controllers\RelNombreNomComunController;
+use App\Http\Controllers\RelNombreCaracteristicasController;
 use App\Models\Mime;
 
 
@@ -81,6 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tipos-distribucion/obtener-pagina', [TiposDistribucionController::class, 'obtenerPaginaDeTipoDistribucion']);
 
     Route::get('/busca-tipo-distribucion', [TiposDistribucionController::class, 'buscaTipoDistribucion'])->name('buscaTipoDistribucion');
+    Route::get('/carga-tipos-distribucion', [TiposDistribucionController::class, 'cargaTiposDist']);
 
     Route::get('/nombres-comunes', [NombreComunController::class, 'index'])->name('nombresComunes.index');
     Route::get('/nombres-comunes/create', [NombreComunController::class, 'create'])->name('nombresComunes.create');
@@ -91,6 +96,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/nombres-comunes/obtener-pagina', [NombreComunController::class, 'obtenerPaginaDeNombreComun']);
 
     Route::get('/busca-nombre-comun', [NombreComunController::class, 'buscaNombreComun'])->name('buscaNombreComun');
+
+    Route::get('/cargaCatNomComun', [NombreComunController::class, 'cargaNomComun']);
+
+    //Juan Carlos Mora cargo solo los nombres comunes por taxón
+    Route::get('cargar-nomcomun-taxon/{id}', [NombreComunController::class, 'cargaNombresComunes']);
 
     Route::get('/arbol', [GraficasController::class, 'getData'])->name('grafica.arbol');
 
@@ -133,7 +143,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/bibliografiasIndex', [BibliografiaController::class, 'index'])->name('bibliografias.index');
     Route::post('/bibliografias', [BibliografiaController::class, 'store'])->name('bibliografias.store');
     Route::post('/bibliografias/obtener-pagina', [BibliografiaController::class, 'obtenerPaginaDeBiblio']);
-    
+
 
     Route::delete('/caracteristicas-taxon/{id}', [CaracteristicasController::class, 'destroy'])
         ->name('caracteristicasTaxon.destroy');
@@ -147,9 +157,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/caracteristicas-taxon', [CaracteristicasController::class, 'index'])
         ->name('caracteristicas-taxon.index');
 
+    Route::get('/cargar-caracteristicas',[CaracteristicasController::class, 'cargaCaracteristicas']);
+
+    Route::get('/cargaCaracTaxon/{id}', [CaracteristicasController::class, 'cargaCaracteristicasTaxon']);
+
+    Route::get('/cargaRegionesTaxon/{id}', [CaracteristicasController::class, 'cargaRegionesNombre']);
+
 
     Route::prefix('tipos-relacion')->name('tipos-relacion.')->group(function () {
         Route::get('/', [TipoRelacionController::class, 'index'])->name('index');
+        Route::get('/cargaInicial',[TipoRelacionController::class, 'cargaTipoRelacion'])->name('carga-Inicial');
         Route::post('/', [TipoRelacionController::class, 'store'])->name('store');
         Route::put('/{tipoRelacion}', [TipoRelacionController::class, 'update'])->name('update');
         Route::delete('/{tipoRelacion}', [TipoRelacionController::class, 'destroy'])->name('destroy');
@@ -169,6 +186,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{region}', [RegionController::class, 'update'])->name('update');
         Route::delete('/{region}', [RegionController::class, 'destroy'])->name('destroy');
     });
+    Route::get('/carga-regiones',[RegionController::class, 'cargaRegiones']);
 
 
     Route::get('/api/bibliografias/{bibliografia}/grupos-taxonomicos', [BibliografiaController::class, 'getGruposTaxonomicos']);
@@ -201,6 +219,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Mime::orderBy('Extension')->get();
     });
 
+    Route::post('/objetos-externos/obtener-pagina', [ObjetoExternoController::class, 'obtenerPaginaDeObjeto']);
+    Route::get('/busca-objeto-externo', [ObjetoExternoController::class, 'buscaObjetoExterno']);
+
+
     //________________________________________________________________________________________________
 
 
@@ -221,8 +243,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
-    
-    Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
+
+    //Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');
@@ -240,4 +262,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('categorias-taxonomicas.updateIcon');
 
     Route::put('/tipos-relacion/{tipo_relacion}/update-icon', [TipoRelacionController::class, 'updateIcon'])->name('tipos-relacion.updateIcon');
+
+
+    Route::get('/obtener-biblio-nomcomun-region/{idNomComun}/{idRegion}/{idNombre}', [RelNomNomComunRegionBiblioController::class, 'obtenerBiblioNomComunRegion']);
+    Route::post('/asociar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'asociarBiblioNomComunRegion']);
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+
+
+    Route::get('/obtener-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractRegion']);
+    Route::post('/asociar-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractRegion']);
+
+    Route::get('/obtener-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractSolo']);
+    Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
+
+    Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
+
+Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+
+
+Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
+Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
+Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
+
+    Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+    Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+    //Rutas para alta y baja de relaciones de nombre comun 
+    Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
+
+    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
+    Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
+    Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
+
+    Route::put('actualiza-Caract-Taxon', [RelNombreCaracteristicasController::class, 'actCaractTaxon']);
+    Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
+    Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
+    Route::delete('eliminar-Caract-Taxon', [RelNombreCaracteristicasController::class, 'eliminaRegCaract']);
 });

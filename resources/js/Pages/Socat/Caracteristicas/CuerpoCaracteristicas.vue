@@ -38,6 +38,8 @@ const nodeDataForDeleteConfirmation = ref(null);
 
 const nodeIdToScrollToAfterNotification = ref(null);
 
+const emit = defineEmits(['cerrar']);
+
 const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 
 const handleNodeExpand = (data, node) => {
@@ -49,6 +51,15 @@ const handleNodeCollapse = (data, node) => {
   expandedNodeIds.value.delete(data.IdCatNombre);
   handleNodeSelected(data, node);
 };
+
+/*Juan Carlos Mora 10/06/2026
+  Se agrega la función para el cerrado del modal*/
+
+const cerrarDialogo = () => {
+        emit('cerrar');
+    };
+
+/*Juan Carlos Mora Morquecho*/
 
 const scrollToNode = (nodeId) => {
   nextTick(() => {
@@ -86,7 +97,9 @@ const findNodeInTree = (nodes, nodeIdToFind) => {
 const props = defineProps({
   treeDataProp: { type: Array, required: true, default: () => [] },
   flatTreeDataProp: { type: Array, required: true, default: () => [] },
+  modal: { type: Boolean, required: false, default: false }
 });
+
 const mostrarNotificacion = (
   titulo,
   mensaje,
@@ -211,6 +224,11 @@ const modalRules = {
       trigger: "blur",
     },
     {
+      pattern: /^(?!.*  ).+$/, 
+      message: "No se permite ingresar más de un espacio seguido.",
+      trigger: ["blur", "change"],
+    },
+    {
       min: 1,
       max: 255,
       message: "La longitud debe estar entre 1 y 255 caracteres.",
@@ -272,7 +290,7 @@ const guardarDesdeModal = async () => {
   const isValid = await formModalRef.value.validate();
   if (!isValid) return;
   const proceedWithSave = () => {
-    const nuevaDesc = formModal.value.Descripcion.trim();
+    const nuevaDesc = formModal.value.Descripcion.trim().replace(/\s+/g, ' ');
     if (nuevaDesc.length === 0) return;
     const nuevaDescLower = nuevaDesc.toLowerCase();
     if (modalMode.value === "editar") {
@@ -288,7 +306,7 @@ const guardarDesdeModal = async () => {
         nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
-          `Ya existe una característica llamada "${nuevaDesc}" en este nivel.`,
+          `Ya existe una característica con el mismo nombre en este nivel.`,
           "warning"
         );
       }
@@ -331,7 +349,7 @@ const guardarDesdeModal = async () => {
         nodeIdToScrollToAfterNotification.value = nodoDuplicado.IdCatNombre;
         return mostrarNotificacion(
           "Aviso",
-          `No se puede crear la característica "${nuevaDesc}" porque ya existe en el nivel seleccionado.`,
+          `La caracteristica que desea ingresar ya existe.`,
           "warning"
         );
       }
@@ -643,7 +661,7 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
               <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
                 :disabled="isAccionDependienteDeNodoDeshabilitada" />
-              <BotonSalir />
+              <BotonSalir :accion="modal ? 'cerrar' : 'salida'" @salir="cerrarDialogo"/>
             </div>
           </div>
         </div>
@@ -692,8 +710,8 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
             <template #label>
               {{ modalMode === "editar" ? "Nueva descripción:" : "Descripción de la característica:" }}
             </template>
-            <el-input ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
-              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent />
+            <el-input type="textarea" ref="descripcionInputRef" id="descripcionModalInput" v-model="formModal.Descripcion"
+              placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit @keydown.enter.prevent :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
           </el-form-item>
 
         </el-form>

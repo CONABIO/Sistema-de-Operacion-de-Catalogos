@@ -35,7 +35,7 @@ class ObjetoExterno extends Model
         'Institucion',
         'Fecha',
         'Observaciones',
-        'FechaCaptura', 
+        'FechaCaptura',
         'FechaModificacion',
     ];
 
@@ -49,5 +49,35 @@ class ObjetoExterno extends Model
     public function mime()
     {
         return $this->belongsTo(Mime::class, 'IdMime');
+    }
+
+    public function bibliografias()
+    {
+        return $this->hasMany(RelObjetoExternoBiblio::class, 'IdObjetoExterno');
+    }
+
+    public function ejemplares()
+    {
+        return $this->hasMany(RelObjetoExternoEjemplar::class, 'IdObjetoExterno');
+    }
+
+    public function nombres()
+    {
+        return $this->hasMany(RelObjetoExternoNombre::class, 'IdObjetoExterno');
+    }
+
+    public function sitios()
+    {
+        return $this->hasMany(RelObjetoExternoSitio::class, 'IdObjetoExterno');
+    }
+
+    public function estudios()
+    {
+        return $this->hasMany(RelEstudioObjetoExterno::class, 'IdObjetoExterno');
+    }
+
+    public function estudiosCateCol()
+    {
+        return $this->hasMany(RelEstudioCateColObjetoExterno::class, 'IdObjetoExterno');
     }
 }

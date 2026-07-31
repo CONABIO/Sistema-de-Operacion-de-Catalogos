@@ -2,12 +2,12 @@
   import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
   import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
   import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
-  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue'; 
+  import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
   import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
   import DialogRelaciones from '@/Pages/Socat/Relaciones/CuerpoRelacionesTaxonomicas.vue';
   import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
-  //import BibliografiaNombre from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
   import BibliografiaNombre from '@/Pages/Socat/NombreTaxonomico/NombreBibliografia.vue';
+  import CatalogosAsociados from '@/Pages/Socat/RelCatalogosAsociados/CatalogosAsociados.vue'
   import CuerpoGen from '@/Components/Biotica/LayoutCuerpo.vue';
   import EditarButton from '@/Components/Biotica/EditarButton.vue';
   import { ElMessageBox } from 'element-plus';
@@ -21,7 +21,6 @@
   import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
   import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
   import { showConfirmMessage } from '@/Composables/mensajeConfirm';
-  //import TablaFiltrable from "@/Components/Biotica/TablaFiltrableImg.vue";
   import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
   import { processIcon, getSafeIconPath } from '@/Composables/iconos';
   import salir from '@/Components/Biotica/SalirButton.vue';
@@ -133,6 +132,7 @@
   const taxActBiblio = ref([]);
   const dialogFormVisibleBiblio = ref(false);
   const dialogFormVisibleBiblioNom = ref(false);
+  const dialogFormVisibleAsocCat = ref(false);
 
   const scrollbarHeight = ref('550px');
   const dialogWidth = ref('35%');
@@ -212,7 +212,7 @@
   }
 
   /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-    Se agrega la reasignacion de referencia para que cuando cierra 
+    Se agrega la reasignacion de referencia para que cuando cierra
       la ventana se actualice como si se ingresara de inicio*/
   const closeDialog = () => {
     taxonAct.value = { ...taxonAct.value };
@@ -278,7 +278,7 @@
     for (const node of data.value) {
       if (node.id === res.id) {
         Object.assign(node, res);
-        return true;  
+        return true;
       }
 
       if (node.children && node.children.length > 0) {
@@ -292,17 +292,17 @@
     for (const child of children) {
       if (child.id === res.id) {
         Object.assign(child, res);
-        return true; 
+        return true;
       }
       if (child.children && child.children.length > 0) {
         const found = await updateChildNode(child.children, res);
         if (found) return true;
       }
     }
-    return false; 
+    return false;
   };
 
-  //Función para recibir los nuevos taxones 
+  //Función para recibir los nuevos taxones
   const recibeTaxNuevo = async (res) => {
     const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
 
@@ -416,18 +416,19 @@
           spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
           backgroud: 'rgba(255,255,255,0.85)',
         });
-        
+
         //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
         const response = await axios.get('/cargar-nomArb', { params });
+
         if (response.status === 200) {
           data.value = response.data[0];
           totalItems.value = response.data[1].total;
           paginas.value = response.data[1].last_page;
 
-          if(response.data[3].length === 1 &&(response.data[0].length === 0 && 
-                                              (response.data[3][0].IdAscendente === 0 || 
+          if(response.data[3].length === 1 &&(response.data[0].length === 0 &&
+                                              (response.data[3][0].IdAscendente === 0 ||
                                                 response.data[3][0].IdAscendente === null))){
-            
+
             categoriaNuevoTax.value = response.data[3][0];
             mostrarNuevoTax.value = true;
           }else{
@@ -445,15 +446,15 @@
         {
           selectedNodeKey.value= data.value[0].id;
           tree.value.setCurrentKey(data.value[0].id);
-          
+
           let node = tree.value.getNode(data.value[0].id);
-          
+
           expande(node.data, node);
         }
       }
     }else
     {
-      catego.value = ''; 
+      catego.value = '';
       tablaNomenclatura.value = [];
       tablaReferencias.value = [];
       totalRegNom.value = 0;
@@ -484,7 +485,7 @@
 
       const response = await axios.get('/cargar-nomArb',
         { params });
-      
+
       if (response.status === 200) {
         data.value = response.data[0];
         totalItems.value = response.data[1].total;
@@ -543,7 +544,7 @@
     }
 
     if (draggingNode.children.length === 0) {
-      
+
       const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
       if (response.status === 200) {
@@ -561,15 +562,15 @@
     }
     const params= {
                     taxAct: draggingNode.id
-                };  
-                
+                };
+
     const responseNom = await axios.get('/carga-RelacionesTax', { params });
 
     if(mostrarLoading.value)
     {
       loadingInstance.close();
     }
-    
+
     if(responseNom.data.length >0 )
     {
       tablaNomenclatura.value = responseNom.data;
@@ -583,7 +584,7 @@
     mostrarLoading.value = true
   }
 
-  //Función para mover un taxón y reasignarlo a otro 
+  //Función para mover un taxón y reasignarlo a otro
   const mover = async (node) => {
     if (taxMov.value.length === 0) {
       try {
@@ -819,16 +820,16 @@
     }
   }
 
-  const manejarEliminarRel = (item) => {  
-    
+  const manejarEliminarRel = (item) => {
+
     const procederConEliminacion = async () => {
 
       try {
         ElMessageBox.close();
 
-        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta, 
+        const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta,
                                                                                 taxAct: props.taxonAct.id}});
-        
+
         tablaNomenclatura.value = response.data;
 
         mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
@@ -843,7 +844,7 @@
     const contBiblio = item?.Biblio && item.Biblio.contBiblio ? item.Biblio.contBiblio : 0;
 
     const mensaje = ` La relación de: ${item.TipoRelacion.texto}, que quiere eliminar tiene ${contBiblio} referencia(s) asociadas(s). ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-    
+
     ElMessageBox({
       title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
@@ -860,15 +861,15 @@
   };
 
   const manejarEliminarRef = (item)=>{
-    
+
     const procederConEliminacion = async () => {
 
       try {
         ElMessageBox.close();
 
         const response = await axios.delete('/elimina-RelBiblioNombre', { data: {idBiblio: item.IdBibliografia,
-                                                                                  taxAct: taxonAct.value.id}});     
-          
+                                                                                  taxAct: taxonAct.value.id}});
+
           tablaReferencias.value = response.data;
 
           totalRegRef.value = response.data.length;
@@ -884,7 +885,7 @@
 
 
     const mensaje = ` Se realizara la eliminación de la relación entre el taxón: ${taxonAct.value.completo.Nombre} y la referencia ${item.Titulo}. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
-    
+
     ElMessageBox({
       title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
       message: h('div', { class: 'custom-message-content' }, [
@@ -903,9 +904,9 @@
   const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
     console.log("Entre a mover el taxon");
     console.log("Estos son los parametros recibidos taxMover: ", taxMover,
-                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov, 
+                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov,
                 " nodoRecb: ", nodoRecb);
-                
+
     if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
       await mostrarNotificacion(
         "Error",
@@ -919,8 +920,8 @@
     try {
       const result = await showConfirmMessage({
         title: 'Atención',
-        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica} 
-                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la) 
+        message: `¿Está seguro de mover el(la) ${nodoMov.data.completo.NombreCategoriaTaxonomica}
+                    ${nodoMov.data.completo.NombreCompleto} y que sea asignado a el(la)
                     ${nodoRecb.data.completo.NombreCategoriaTaxonomica} ${nodoRecb.data.completo.NombreCompleto}?`,
         icon: '!'
       });
@@ -998,7 +999,7 @@
       dialogFormVisibleBiblio.value = true;
 
     }else{
-      mostrarNotificacionError("Bibliografia", 
+      mostrarNotificacionError("Bibliografia",
                               "Se debe seleccionar un tipo de relación"),
                               "Error"
     }
@@ -1009,7 +1010,7 @@
     {
       dialogFormVisibleBiblioNom.value = true;
     }else{
-      mostrarNotificacionError("Bibliografia", 
+      mostrarNotificacionError("Bibliografia",
                               "Se debe seleccionar un taxón"),
                               "Error"
     }
@@ -1026,10 +1027,10 @@
 
       const params= {
                     taxAct: taxonAct.value.id
-                  };   
-      
+                  };
+
       const response = await axios.get('/carga-RelacionesTax', { params });
-      
+
       tablaNomenclatura.value = response.data;
 
       totalRegNom.value = response.data.length;
@@ -1037,7 +1038,7 @@
       dialogFormVisibleBiblio.value = false;
 
     loading.close();
-    
+
   };
 
   const cerrarRelNomBiblio = async() => {
@@ -1054,6 +1055,10 @@
       totalRegRef.value = response.data.length;
     }
     dialogFormVisibleBiblioNom.value = false;
+  }
+
+  const cerrarRelCatAsoc = async() => {
+    dialogFormVisibleAsocCat.value = false;
   }
 
   const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -1138,6 +1143,10 @@
     dialogFormVisibleRel.value = true;
   }
 
+  const abre_CatalogosAsociados = () => {
+        dialogFormVisibleAsocCat.value = true;
+  }
+
   const showAscendants = async () => {
     if (!taxonAct.value?.completo?.Ascendentes) {
       ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
@@ -1149,13 +1158,13 @@
       ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
       return;
     }
-  
+
     const loading = ElLoading.service({
       lock: true,
       text: 'Cargando ascendentes...',
       background: 'rgba(0, 0, 0, 0.7)',
     });
-  
+
     try {
       const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
       if (response.status === 200 && Array.isArray(response.data)) {
@@ -1170,7 +1179,7 @@
             currentNode = nextNode;
           }
         }
-  
+
         treeDataAscendentes.value = nestedTree;
         dialogFormVisibleAscendentes.value = true;
       } else {
@@ -1188,7 +1197,7 @@
 <template>
   <CuerpoGen :tituloPag="'Nombre_Taxón'" :tituloArea="'Catálogo de nombres taxonómicos'">
     <el-container >
-      <div style="display: flex; justify-content: flex-end; gap: 50px;"> <!--background: blue"-->
+      <div style="display: flex; justify-content: flex-end; gap: 50px;">
         <div style="display: flex; align-items: center; justify-content: center;">
           <el-tooltip effect="dark"
             content="Selección Catálogo de Grupos taxonómicos"
@@ -1233,7 +1242,7 @@
               >
                 <template #default="{ data }">
                   <span style="display: inline-flex; align-items: center;">
-                    <img :src="processIcon(data.RutaIcono)" 
+                    <img :src="processIcon(data.RutaIcono)"
                         style="width:16px; height:16px; margin-right:6px;" />
                     <span>{{ data.label }}</span>
                   </span>
@@ -1241,7 +1250,7 @@
               </el-cascader>
 
               <!-- Botón debajo -->
-              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;" 
+              <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;"
                     v-if="mostrarNuevoTax">
                 <nuevoTax  @crear="openDialog"/>
               </div>
@@ -1321,7 +1330,7 @@
                     </el-icon>
                     <span>Relaciones taxonómicas</span>
                   </el-menu-item>
-                  <el-menu-item class="item">
+                  <el-menu-item class="item" @click="abre_CatalogosAsociados">
                     <el-icon>
                       <Grid />
                     </el-icon>
@@ -1352,7 +1361,7 @@
               <el-main class="details-main">
                 <!--Prueba colapse-->
                 <div>
-                   <el-collapse accordion expand-icon-position="left"
+                  <el-collapse accordion expand-icon-position="left"
                                  v-model="activeNames">
                     <el-collapse-item name="1">
                       <template #title="{ isActive}">
@@ -1362,23 +1371,24 @@
                             <span class="table-count">({{ totalRegNom }})</span>
                           </span>
                         </div>
-                      </template>                    
+                      </template>
                     <div class="table-wrapper">
-                      <TablaFiltrable 
-                        :columnas = "columnasDefinidas" 
+                      <TablaFiltrable
+                        :columnas = "columnasDefinidas"
                         :datos = "tablaNomenclatura"
                         :opciones-filtro = "opcionesFiltroNomenclatura"
                         :totalItems = "totalRegNom"
                         :itemsPerPage = 2
                         :mostrarBiblio = "true"
                         :mostrarAcci = "true"
+                        :alturaTabla = 170
                         @eliminar-item = "manejarEliminarRel"
                         @abrir-Biblio = "abrirBiblio"
                         :highlight-current-row = "true"
                         :mostrarNuevo = "false"
                         :mostrarEditar = "false"
                         :mostrarBorrar = "true"
-                        :mostrarSalir = "false" 
+                        :mostrarSalir = "false"
                       />
                     </div>
                     </el-collapse-item>
@@ -1392,15 +1402,16 @@
                         </div>
                       </template>
                       <div class="table-wrapper">
-                        <TablaFiltrable 
-                          :columnas = "columnasDefRef" 
+                        <TablaFiltrable
+                          :columnas = "columnasDefRef"
                           v-model:datos = "tablaReferencias"
-                          v-model:total-items = "totalRegRef" 
-                          :opciones-filtro = "opcionesFiltroRef" 
+                          v-model:total-items = "totalRegRef"
+                          :opciones-filtro = "opcionesFiltroRef"
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :alturaTabla = 170
                           @abrir-Biblio = "abrirBiblioNombre"
                           @eliminar-item = "manejarEliminarRef"
                           :highlight-current-row = "true"
@@ -1430,8 +1441,8 @@
               <span style="margin-left: auto;">
                 Taxa desc. : {{ numHijos }}
               </span>
-            </div>            
-          </div>          
+            </div>
+          </div>
         </el-footer>
       </el-header>
     </el-container>
@@ -1441,10 +1452,10 @@
       <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog" 
+    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog"
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
-      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego" 
+      <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego"
                   :catalogos="idsGrupos.value" :regNomenclatura= "totalRegNom"
                   :numHijos = "numHijos" :nuevoTax="mostrarNuevoTax" :catNuevoTax="categoriaNuevoTax"
                   :categoriasTax="categoriasTax"
@@ -1454,23 +1465,28 @@
 
     <DialogForm v-model="dialogFormVisibleRel" :botCerrar="true" :pressEsc="true" :width="'83%'"
       custom-class="responsive-dialog relations-dialog">
-      <DialogRelaciones :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
-        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos" 
+      <DialogRelaciones v-if="dialogFormVisibleRel" :taxonAct="taxonAct" :gruposTax="gruposTax" :categoriasTax="categoriasTax"
+        :catalogPadre="catalogos" :gruposPadre="grupos" :idsGruposPadre="idsGrupos"
         @cerrar="closeDialogRel">
       </DialogRelaciones>
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'83%'">
-      <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura" 
+      <Bibliografia :taxonAct="taxonAct" :relaciones="tablaNomenclatura"
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialogBiblio" />
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleBiblioNom" :botCerrar="false" :pressEsc="false" :width="'83%'">
-      <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias" 
+      <BibliografiaNombre :taxonAct="taxonAct"  :referencias="tablaReferencias"
                           :totalRegistros=totalRegRef @cerrarBiblio = "cerrarRelNomBiblio" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="true" :pressEsc="true"
+    <DialogForm v-model="dialogFormVisibleAsocCat" :botCerrar="true" :pressEsc="true" :width="'74%'"  >
+      <CatalogosAsociados v-if="dialogFormVisibleAsocCat"  :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" style="height: 825px; margin-top: -40px;"/>
+
+    </DialogForm>
+
+    <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
         <h3>Ascendentes del taxón</h3>
@@ -1502,538 +1518,560 @@
 </template>
 
 <style scoped>
-:deep(.z-index-fix) {
-  z-index: 3000 !important;
-}
-
-.tree-container {
-  flex: 1;
-  overflow: auto;
-  min-height: 0;
-}
-
-.el-tree {
-  min-width: fit-content;
-  width: 100%;
-  padding-bottom: 25px;
-}
-
-.tree-node-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  font-size: 14px;
-}
-
-.tree-node-logo {
-  width: 25px;
-  height: 25px;
-  flex-shrink: 0;
-}
-
-.context-menu {
-  position: absolute;
-  z-index: 1000;
-  background-color: white;
-  border: 1px solid #dcdfe6;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 5px 0;
-  border-radius: 8px;
-  min-width: 160px;
-  max-width: 200px;
-}
-
-
-:deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: rgb(203, 233, 200);
-  color: #0d6efd !important;
-  font-weight: bold;
-}
-
-:deep(.highlight-node) {
-  color: #a52f2f !important;
-}
-
-.form-item-col {
-  margin-bottom: 10px;
-}
-
-.icono {
-  margin-right: 8px;
-}
-
-.pagination-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  /*flex-wrap: wrap;*/
-  width: 45%;
-  padding-top: 15px;
-  flex-shrink: 0;
-}
-
-.pagination-right {
-  margin-left: auto;  /*empuja el texto al extremo derecho*/
-  font-weight: 500;
-  /*white-space: nowrap;*/
-}
-
-.main-header-override {
-  height: 100% !important;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
-
-.main-layout-container-fixed {
-  height: 250px;
-}
-
-.content-wrapper {
-  flex-grow: 1;
-  margin-top: 1px;
-  overflow: hidden;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content-container {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Estilos para pantallas grandes (desktop) */
-@media (min-width: 992px) {
-  .content-wrapper {
-    max-height: 500px;
+  :deep(.z-index-fix) {
+    z-index: 3000 !important;
   }
 
-  .main-content-container {
-    flex-direction: row;
+  :deep(.el-collapse-item__header){
+    min-height:40px;
   }
 
-  .aside-tree {
-    width: 600px !important;
-    background-color: rgb(238, 241, 246);
-    height: 500px;
-    overflow: auto;
+  :deep(.el-collapse-item__content){
+    height: 350px;
     display: flex;
-    flex-direction: column;
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
-  }
-
-  .details-container {
-    flex-grow: 1;
-    padding-left: 10px;
-    display: flex;
-    flex-direction: column;
-    height: 470px;
+    flex-direction: column;/*height: 370px;*/
+    padding:10px;
     overflow: hidden;
   }
 
-  .details-main {
+  .table-wrapper{
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    overflow: hidden;
-    padding-top: 1px;
-    padding-bottom: 20px;
-  }
-
-  /* Sección de cada tabla */
-  .table-section {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
+    /*height: 360px !important;*/
     min-height: 0;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
-    overflow: hidden;
+    overflow: auto;
   }
 
-  /* Cabecera de la tabla */
-  .table-header {
+  :deep(.el-collapse-item__wrap){
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
+
+  .tree-container {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .el-tree {
+    min-width: fit-content;
+    width: 100%;
+    padding-bottom: 25px;
+  }
+
+  .tree-node-wrapper {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 1px 16px;
-    background: #d9e1eb;
-    border-bottom: 1px solid #f5ebeb;
-  }
-
-  .table-title {
+    gap: 8px;
+    white-space: nowrap;
     font-size: 14px;
-    font-weight: 600;
-    color: #303133;
   }
 
-  .table-count {
-    font-size: 14px;
-    font-weight: bold;
-    font-weight: normal;
-    color: #67746b;
-    margin-left: 4px;
+  .tree-node-logo {
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
   }
 
-  .table-action-button {
-    height: 28px;
-    font-size: 12px;
+  .context-menu {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #dcdfe6;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 5px 0;
+    border-radius: 8px;
+    min-width: 160px;
+    max-width: 200px;
   }
 
-  /* Contenedor de la tabla con scroll propio */
-  .table-wrapper {
-    flex: 1;
-    overflow: auto;
-    min-height: 0;
-    max-height: 300px !important;
-  }
 
-  .table-wrapper :deep(.el-table__body tr.current-row > td) {
-    background-color: #ddf6dd !important;
+  :deep(.el-tree-node.is-current > .el-tree-node__content) {
+    background-color: rgb(203, 233, 200);
     color: #0d6efd !important;
     font-weight: bold;
   }
 
-  /* Para que las tablas internas ocupen todo el espacio */
-  .table-wrapper :deep(.el-table) {
-    height: 100%;
+  :deep(.highlight-node) {
+    color: #a52f2f !important;
   }
 
-  /* Paginación */
-  .table-pagination {
-    padding: 12px 16px;
-    border-top: 1px solid #ebeef5;
-    background: #f8f9fa;
+  .form-item-col {
+    margin-bottom: 10px;
+  }
+
+  .icono {
+    margin-right: 8px;
+  }
+
+  .pagination-footer {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 45%;
+    padding-top: 15px;
+    flex-shrink: 0;
   }
-}
 
-/* Estilos para pantallas pequeñas (mobile/tablet) */
-@media (max-width: 991px) {
+  .pagination-right {
+    margin-left: auto;  /*empuja el texto al extremo derecho*/
+    font-weight: 500;
+  }
+
   .main-header-override {
     height: 100% !important;
-    overflow-y: auto !important;
-    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .main-layout-container-fixed {
+    height: 250px;
   }
 
   .content-wrapper {
-    flex-grow: 0;
-    min-height: auto;
+    flex-grow: 1;
+    margin-top: 1px;
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .main-content-container {
-    height: 100%;
-    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
-  .aside-tree {
-    width: 100% !important;
-    background-color: rgb(238, 241, 246);
-    margin-bottom: 20px;
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
-    height: 400px;
+  /* Estilos para pantallas grandes (desktop) */
+  @media (min-width: 992px) {
+    .content-wrapper {
+      max-height: 500px;
+    }
+
+    .main-content-container {
+      flex-direction: row;
+    }
+
+    .aside-tree {
+      width: 600px !important;
+      background-color: rgb(238, 241, 246);
+      height: 500px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+    }
+
+    .details-container {
+      flex-grow: 1;
+      padding-left: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 500px;
+      overflow: hidden;
+    }
+
+    .details-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: hidden;
+      padding-top: 1px;
+      padding-bottom: 20px;
+    }
+
+    /* Sección de cada tabla */
+    .table-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      border: 1px solid #ebeef5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    /* Cabecera de la tabla */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1px 16px;
+      background: #d9e1eb;
+      border-bottom: 1px solid #f5ebeb;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    .table-count {
+      font-size: 14px;
+      font-weight: bold;
+      font-weight: normal;
+      color: #67746b;
+      margin-left: 4px;
+    }
+
+    .table-action-button {
+      height: 28px;
+      font-size: 12px;
+    }
+
+    /* Contenedor de la tabla con scroll propio */
+    .table-wrapper {
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .table-wrapper :deep(.el-table__body tr.current-row > td) {
+      background-color: #ddf6dd !important;
+      color: #0d6efd !important;
+      font-weight: bold;
+    }
+
+    /* Para que las tablas internas ocupen todo el espacio */
+    .table-wrapper :deep(.el-table) {
+      height: 100%;
+    }
+
+    /* Paginación */
+    .table-pagination {
+      padding: 12px 16px;
+      border-top: 1px solid #ebeef5;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+    }
   }
 
-  .details-container {
-    width: 100%;
-    padding-left: 0;
-    height: auto;
+  /* Estilos para pantallas pequeñas (mobile/tablet) */
+  @media (max-width: 991px) {
+    .main-header-override {
+      height: 100% !important;
+      overflow-y: auto !important;
+      padding-bottom: 20px;
+    }
+
+    .content-wrapper {
+      flex-grow: 0;
+      min-height: auto;
+    }
+
+    .main-content-container {
+      height: 100%;
+      flex-direction: column;
+    }
+
+    .aside-tree {
+      width: 100% !important;
+      background-color: rgb(238, 241, 246);
+      margin-bottom: 20px;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+      height: 400px;
+    }
+
+    .details-container {
+      width: 100%;
+      padding-left: 0;
+      height: auto;
+    }
+
+    .details-main {
+      overflow-y: visible;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .aside-tree .el-scrollbar {
+      height: 350px !important;
+    }
+
+    .details-container .el-scrollbar {
+      height: auto !important;
+    }
+
+    .details-header,
+    .details-main {
+      padding: 0 !important;
+      text-align: left;
+    }
+
+    :deep(.responsive-dialog .el-dialog) {
+      width: 95% !important;
+    }
+
+    :deep(.responsive-dialog .el-dialog__body) {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    :deep(.relations-dialog .el-dialog__body .form-item-col) {
+      display: none !important;
+    }
+
+    :deep(.context-menu) {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 280px;
+    }
+
+    .table-section {
+      flex: none;
+      margin-bottom: 20px;
+      border: 1px solid #ebeef5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #ebeef5;
+    }
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    .table-count {
+      font-weight: normal;
+      color: #909399;
+      margin-left: 4px;
+    }
+
+    .table-action-button {
+      height: 28px;
+      font-size: 12px;
+    }
+
+    .table-wrapper {
+      max-height: 250px;
+      overflow: auto;
+    }
+
+    .table-pagination {
+      padding: 12px 16px;
+      border-top: 1px solid #ebeef5;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+    }
   }
 
-  .details-main {
-    overflow-y: visible;
-    flex-direction: column;
-    gap: 20px;
+  .main-layout-container-fixed {
+    min-height: 700px;
   }
 
-  .aside-tree .el-scrollbar {
-    height: 350px !important;
+  .context-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 999;
   }
 
-  .details-container .el-scrollbar {
+  .context-menu .el-menu-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+    padding: 8px 12px !important;
+    min-height: 36px !important; /* Altura reducida */
+    width: auto !important; /* No ocupar todo el ancho */
+    margin: 0 4px !important; /* Margen lateral */
+    border-radius: 4px !important; /* Bordes redondeados */
+  }
+
+  .context-menu .el-menu-item span {
+    white-space: nowrap;
+    font-size: 13px !important; /* Texto más pequeño */
+  }
+
+  /* Ajustar íconos */
+  .context-menu .el-icon {
+    font-size: 16px !important; /* Íconos más pequeños */
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* SVG personalizado */
+  .context-menu svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .details-header {
     height: auto !important;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
-  .details-header,
-  .details-main {
+  .details-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .details-title-icon {
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+  }
+
+  .details-title-text {
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  /* Ajustes para pantallas de 1440px */
+  @media (max-width: 1440px) and (min-width: 992px) {
+    .aside-tree {
+      width: 500px !important;
+    }
+
+    .content-wrapper {
+      max-height: 450px;
+    }
+
+    .table-wrapper {
+      max-height: 250px;
+    }
+  }
+
+  /* Ajustes para pantallas de 1280px */
+  @media (max-width: 1280px) and (min-width: 992px) {
+    .aside-tree {
+      width: 450px !important;
+    }
+
+    .content-wrapper {
+      max-height: 400px;
+    }
+
+    .table-wrapper {
+      max-height: 200px;
+    }
+  }
+
+  /* Para pantallas altas */
+  @media (min-height: 800px) {
+    .main-layout-container-fixed {
+      height: 800px;
+    }
+
+    .details-container {
+      height: 520px;
+    }
+
+    .table-wrapper {
+      max-height: 350px;
+    }
+  }
+
+  /* Para que el árbol no se haga demasiado pequeño */
+  .aside-tree {
+    min-width: 350px;
+  }
+
+  /* Asegurar que el árbol también tenga altura fija */
+  .tree-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Quitar márgenes y padding innecesarios */
+  :deep(.el-table__body-wrapper) {
+    scrollbar-width: thin;
+  }
+
+  :deep(.el-table__body-wrapper::-webkit-scrollbar) {
+    width: 6px;
+    height: 6px;
+  }
+
+  :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
+    background: #c0c4cc;
+    border-radius: 3px;
+  }
+
+  :deep(.dialog-ascendentes-diseno .el-dialog__body) {
     padding: 0 !important;
+  }
+
+  :deep(.dialog-ascendentes-diseno .el-dialog__header) {
+    display: none;
+  }
+
+  .dialog-header-custom {
+    background-color: #f1f7ff;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
     text-align: left;
   }
 
-  :deep(.responsive-dialog .el-dialog) {
-    width: 95% !important;
-  }
-
-  :deep(.responsive-dialog .el-dialog__body) {
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-
-  :deep(.relations-dialog .el-dialog__body .form-item-col) {
-    display: none !important;
-  }
-
-  :deep(.context-menu) {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 280px;
-  }
-
-  .table-section {
-    flex: none;
-    margin-bottom: 20px;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-  }
-
-  .table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #ebeef5;
-  }
-
-  .table-title {
-    font-size: 14px;
+  .dialog-header-custom h3 {
+    margin: 0;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #303133;
   }
 
-  .table-count {
-    font-weight: normal;
-    color: #909399;
-    margin-left: 4px;
-  }
-
-  .table-action-button {
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .table-wrapper {
-    max-height: 250px;
-    overflow: auto;
-  }
-
-  .table-pagination {
-    padding: 12px 16px;
-    border-top: 1px solid #ebeef5;
-    background: #f8f9fa;
-    display: flex;
-    justify-content: center;
-  }
-}
-
-.main-layout-container-fixed {
-  min-height: 700px;
-}
-
-.context-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 999;
-}
-
-.context-menu .el-menu-item {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px;
-  padding: 8px 12px !important;
-  min-height: 36px !important; /* Altura reducida */
-  width: auto !important; /* No ocupar todo el ancho */
-  margin: 0 4px !important; /* Margen lateral */
-  border-radius: 4px !important; /* Bordes redondeados */
-}
-
-.context-menu .el-menu-item span {
-  white-space: nowrap;
-  font-size: 13px !important; /* Texto más pequeño */
-}
-
-/* Ajustar íconos */
-.context-menu .el-icon {
-  font-size: 16px !important; /* Íconos más pequeños */
-  width: 16px !important;
-  height: 16px !important;
-}
-
-/* SVG personalizado */
-.context-menu svg {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.details-header {
-  height: auto !important;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.details-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.details-title-icon {
-  width: 25px;
-  height: 25px;
-  flex-shrink: 0;
-}
-
-.details-title-text {
-  word-break: break-word;
-  line-height: 1.4;
-}
-
-/* Ajustes para pantallas de 1440px */
-@media (max-width: 1440px) and (min-width: 992px) {
-  .aside-tree {
-    width: 500px !important;
-  }
-
-  .content-wrapper {
-    max-height: 450px;
-  }
-
-  .table-wrapper {
-    max-height: 250px;
-  }
-}
-
-/* Ajustes para pantallas de 1280px */
-@media (max-width: 1280px) and (min-width: 992px) {
-  .aside-tree {
-    width: 450px !important;
-  }
-
-  .content-wrapper {
-    max-height: 400px;
-  }
-
-  .table-wrapper {
-    max-height: 200px;
-  }
-}
-
-/* Para pantallas altas */
-@media (min-height: 800px) {
-  .main-layout-container-fixed {
-    height: 800px;
-  }
-  
-  .details-container {
-    height: 520px;
-  }
-  
-  .table-wrapper {
-    max-height: 350px;
-  }
-}
-
-/* Para que el árbol no se haga demasiado pequeño */
-.aside-tree {
-  min-width: 350px;
-}
-
-/* Asegurar que el árbol también tenga altura fija */
-.tree-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Quitar márgenes y padding innecesarios */
-:deep(.el-table__body-wrapper) {
-  scrollbar-width: thin;
-}
-
-:deep(.el-table__body-wrapper::-webkit-scrollbar) {
-  width: 6px;
-  height: 6px;
-}
-
-:deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
-  background: #c0c4cc;
-  border-radius: 3px;
-}
-
-:deep(.dialog-ascendentes-diseno .el-dialog__body) {
-  padding: 0 !important;
-}
- 
-:deep(.dialog-ascendentes-diseno .el-dialog__header) {
-  display: none;
-}
- 
-.dialog-header-custom {
-  background-color: #f1f7ff;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  text-align: left;
-}
- 
-.dialog-header-custom h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #303133;
-}
- 
-.dialog-header-custom {
-  background-color: #f5f5f5;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
-  text-align: left;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
- 
-.content-wrapper-custom {
-    background-color: #ffffff;
-    padding: 24px;
+  .dialog-header-custom {
+    background-color: #f5f5f5;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
+    text-align: left;
     border-radius: 10px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-    max-height: 65vh;
-    overflow-y: auto;
-}
+    margin-bottom: 10px;
+  }
+
+  .content-wrapper-custom {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+      max-height: 65vh;
+      overflow-y: auto;
+  }
 
 
-/* ===== CASCADER VERDE ===== */
+  /* ===== CASCADER VERDE ===== */
 
-.cascader-verde-dropdown .el-cascader-node.is-active,
-.cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
-  background-color: rgb(203, 233, 200) !important;
-  color: #0d6efd !important;
-  font-weight: bold;
-}
+  .cascader-verde-dropdown .el-cascader-node.is-active,
+  .cascader-verde-dropdown .el-cascader-node.is-selectable.is-active {
+    background-color: rgb(203, 233, 200) !important;
+    color: #0d6efd !important;
+    font-weight: bold;
+  }
 
-.cascader-verde-dropdown .el-cascader-node:hover {
-  background-color: rgb(240, 245, 239) !important;
-}
+  .cascader-verde-dropdown .el-cascader-node:hover {
+    background-color: rgb(240, 245, 239) !important;
+  }
 </style>
