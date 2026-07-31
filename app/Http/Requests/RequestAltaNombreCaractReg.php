@@ -7,13 +7,14 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use App\Models\Nombre;
-use App\Models\NomComun;
+use App\Models\CatalogoNombre;
+use App\Models\RelNombreCatalogoRegion;
 use App\Models\TipoRegion;
 use App\Models\Region;
-use App\Models\RelNomNomComunRegion;
+use App\Models\TipoDistribucion;
 use Illuminate\Support\Facades\DB;
 
-class RequestAltaNomNomComun extends FormRequest
+class RequestAltaNombreCaractReg extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -37,13 +38,13 @@ class RequestAltaNomNomComun extends FormRequest
                                                 $fail("El $attribute no existe en la base de datos.");
                                             }
                                         }],
-            'idNomComun' => ['required', 'integer', 
+            'idCaract' => ['required', 'integer', 
                                         function ($attribute, $value, $fail) {                                            
-                                            if (!NomComun::where('IdNomComun', $value)->exists()) {
+                                            if (!CatalogoNombre::where('IdCatNombre', $value)->exists()) {
                                                 $fail("El $attribute no existe en la base de datos.");
                                             }
                                         }],
-            'idTipoReg' => ['required', 'integer', 
+            'idTipoRegion' => ['required', 'integer', 
                                         function ($attribute, $value, $fail) {                                            
                                             if (!TipoRegion::where('IdTipoRegion', $value)->exists()) {
                                                 $fail("El $attribute no existe en la base de datos.");
@@ -51,7 +52,13 @@ class RequestAltaNomNomComun extends FormRequest
                                         }],
             'idRegion' => ['required', 'integer', 
                                         function ($attribute, $value, $fail) {                                            
-                                            if (!Region::where('idRegion', $value)->exists()) {
+                                            if (!Region::where('IdRegion', $value)->exists()) {
+                                                $fail("El $attribute no existe en la base de datos.");
+                                            }
+                                        }],
+            'idTipoDistribucion' => ['required', 'integer', 
+                                        function ($attribute, $value, $fail) {                                            
+                                            if (!TipoDistribucion::where('IdTipoDistribucion', $value)->exists()) {
                                                 $fail("El $attribute no existe en la base de datos.");
                                             }
                                         }],
@@ -62,14 +69,14 @@ class RequestAltaNomNomComun extends FormRequest
 
         $validator->after(function ($validator){
            
-            $exists = RelNomNomComunRegion::where('IdNombre', $this->idNombre)
-                                          ->where('IdNomComun', $this->idNomComun)
-                                          ->where('IdRegion', $this->idRegion)
-                                          ->exists();
+            $exists = RelNombreCatalogoRegion::where('IdNombre', $this->idNombre)
+                                             ->where('IdCatNombre', $this->idCaract)
+                                             ->where('IdRegion', $this->idRegion)
+                                             ->where('IdTipoDistribucion', $this->idTipoDistribucion)
+                                             ->exists();
 
             if($exists){
-                log::info("La relación que intenta crear ya existe");
-                $validator->errors()->add('relacion', 'La relación entre taxón, nombre común y región ya existe.');
+                $validator->errors()->add('relacion', 'La relación entre taxón, catalogo nombre y region ya existe.');
             }
         });
     }

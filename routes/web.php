@@ -22,6 +22,8 @@ use App\Http\Controllers\TokenController;
 use App\Http\Controllers\RelNombresController;
 use App\Http\Controllers\RelNomNomComunRegionBiblioController;
 use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
+use App\Http\Controllers\RelNombreNomComunController;
+use App\Http\Controllers\RelNombreCaracteristicasController;
 use App\Models\Mime;
 
 
@@ -281,4 +283,18 @@ Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioContr
 Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
 Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
 Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
+    Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+    Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+    //Rutas para alta y baja de relaciones de nombre comun 
+    Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
+
+    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
+    Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
+    Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
+    Route::put('actualiza-Caract-Taxon', [RelNombreCaracteristicasController::class, 'actCaractTaxon']);
+    Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
+    Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
+    Route::delete('eliminar-Caract-Taxon', [RelNombreCaracteristicasController::class, 'eliminaRegCaract']);
 });

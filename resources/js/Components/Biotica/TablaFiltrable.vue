@@ -1,394 +1,416 @@
 <script setup>
-import { ref, watch, onMounted, computed, nextTick, reactive } from 'vue';
-import axios from 'axios';
-import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
-import { Search, CircleClose, Management } from '@element-plus/icons-vue';
-import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
-import EditarButton from '@/Components/Biotica/EditarButton.vue';
-import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
-import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
-import BotonSalir from '@/Components/Biotica/SalirButton.vue';
-import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
-import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
-import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
-import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
-import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
-import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+    import { ref, watch, onMounted, computed, nextTick, reactive } from 'vue';
+    import axios from 'axios';
+    import { ElTable, ElTableColumn, ElPagination, ElCard, ElIcon, ElButton, ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput } from 'element-plus';
+    import { Search, CircleClose, Management } from '@element-plus/icons-vue';
+    import NuevoButton from '@/Components/Biotica/NuevoButton.vue';
+    import EditarButton from '@/Components/Biotica/EditarButton.vue';
+    import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
+    import TipoBusqueda from '@/Components/Biotica/TipoBusqueda.vue';
+    import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+    import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
+    import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+    import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
+    import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
+    import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
+    import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
 
 
-const inputsFiltro = ref({});
-const datosTabla = ref([]);
+    const inputsFiltro = ref({});
+    const datosTabla = ref([]);
+    const editarSelect = ref(null);
+    const selectedRow = ref(null);
 
-/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-  Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
-const props = defineProps({
-  columnas: { type: Array, required: true },
-  datos: { type: Array, required: true, default:[]},
-  totalItems: { type: Number, required: true },
-  itemsPerPage: { type: Number, default: 100 },
-  endpoint: { type: String, required: false, default: ""},
-  idKey: { type: String, required: false },
-  botCerrar: { type: Boolean, default: false },
-  mostrarTraspaso: { type: Boolean, default: false },
-  mostrarNuevo: { type: Boolean, default: true },
-  mostrarEditar: { type: Boolean, default: true },
-  mostrarBorrar: { type: Boolean, default: true },
-  mostrarGuardar: { type: Boolean, default: false },
-  mostrarRegion: { type: Boolean, default: false },
-  mostrarNomComun: { type: Boolean, default: false },
-  mostrarTipoDist: { type: Boolean, default: false },
-  rowClassName: { type: Function, default: null },
-  mostrarBiblio: { type:Boolean, default: false },
-  valoresOpcion: { type:Array, required: false, default: []},
-  habOpciones: { type: Boolean, default: true },
-  alturaTabla: {
-    type: Number,
-    default: 550
-  },
-  mostrarBiblio: { type:Boolean, default: false },
-  highlightCurrentRow: {
-    type: Boolean,
-    default: false
-  },
-  asignaTrasp: {
-    type: String,
-    required: false,
-    default: "izq"
-  },
-  mostrarSalir: {
-    type: Boolean,
-    required: false,
-    default: true
-  }
-});
-
-const onBiblio = () => emit('abrir-Biblio');
-
-const handleVisibleChange = (visible, prop) => {
-    if (visible) {
-        nextTick(() => {
-            const inputRef = inputsFiltro.value[prop];
-            if (inputRef) {
-                inputRef.focus();
-            }
-        });
-    }
-};
-
-
-const limpiarTodosLosFiltros = () => {
-    Object.keys(filtros.value).forEach(key => {
-        filtros.value[key] = '';
+    /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
+    Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
+    const props = defineProps({
+        columnas: { type: Array, required: true },
+        datos: { type: Array, required: true, default:[]},
+        totalItems: { type: Number, required: true },
+        itemsPerPage: { type: Number, default: 100 },
+        endpoint: { type: String, required: false, default: ""},
+        idKey: { type: String, required: false },
+        botCerrar: { type: Boolean, default: false },
+        mostrarTraspaso: { type: Boolean, default: false },
+        mostrarNuevo: { type: Boolean, default: true },
+        mostrarEditar: { type: Boolean, default: true },
+        mostrarBorrar: { type: Boolean, default: true },
+        mostrarGuardar: { type: Boolean, default: false },
+        mostrarRegion: { type: Boolean, default: false },
+        mostrarNomComun: { type: Boolean, default: false },
+        mostrarTipoDist: { type: Boolean, default: false },
+        rowClassName: { type: Function, default: null },
+        mostrarBiblio: { type:Boolean, default: false },
+        valoresOpcion: { type:Array, required: false, default: []},
+        habOpciones: { type: Boolean, default: true },
+        permitirSinSeleccion: { type: Boolean, default:false },
+        alturaTabla: {
+            type: Number,
+            default: 550
+        },
+        highlightCurrentRow: {
+            type: Boolean,
+            default: false
+        },
+        asignaTrasp: {
+            type: String,
+            required: false,
+            default: "izq"
+        },
+        mostrarSalir: {
+            type: Boolean,
+            required: false,
+            default: true
+        }
     });
-};
 
-const irAPagina = async (numeroPagina) => {
-    currentPage.value = numeroPagina;
-    await fetchData();
-};
+    const onBiblio = () => emit('abrir-Biblio');
 
-const selectedRow = ref(null);
-
-
-const handleRowClickInterno = (row) => {
-    selectedRow.value = row;
-    emit('row-click', row);
-};
-
-const onEditarInterno = () => {
-    if (selectedRow.value) {
-        emit('editar-item', selectedRow.value);
-    }
-};
-
-const onEliminarInterno = () => {
-    if (selectedRow.value[props.idKey]) {
-        emit('eliminar-item', selectedRow.value[props.idKey]);
-    } else {
-        emit('eliminar-item', selectedRow.value);
-    }
-};
-
-
-const rowClassNameInterno = ({ row }) => {
-    if (props.rowClassName) return props.rowClassName({ row });
-    const idFila = row[props.idKey];
-    const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-    if (idFila == null || idSeleccionado == null) return '';
-    return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
-};
-
-const tableRefInterna = ref(null);
-
-const forzarFocoFilaVerde = async () => {
-    await nextTick();
-    setTimeout(() => {
-        if (!tableRefInterna.value) return;
-
-        const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
-
-        if (filaVerde) {
-            filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
+    const handleVisibleChange = (visible, prop) => {
+        if (visible) {
+            nextTick(() => {
+                const inputRef = inputsFiltro.value[prop];
+                if (inputRef) {
+                    inputRef.focus();
+                }
+            });
         }
-    }, 300);
-};
-
-const setFiltroExterno = (campo, valor) => {
-    filtros.value[campo] = valor;
-    onFiltroInput();
-};
-
-const setCurrentRow = (row) => {
-    selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
-    tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
-}
+    };
 
 
-const emit = defineEmits([
-    'update:datos',
-    'update:totalItems',
-    'editar-item',
-    'eliminar-item',
-    'nuevo-item',
-    'row-dblclick',
-    'row-click',
-    'traspasaBiblio',
-    'traspasaSeleccionado',
-    'cerrar',
-    'abrir-Biblio'
-]);
-
-const onExpandChange = (row) => {
-    selectedRow.value = row
-    tableRefInterna.value?.setCurrentRow(row)
-    emit('row-click', row)
-}
-
-const accionModal = computed(() => {
-    return props.botCerrar ? "cerrar" : "salida"
-}
-);
-
-const paginatedDatos = computed(() => {
-    if (props.endpoint === "") {
-        const start = (currentPage.value - 1) * props.itemsPerPage;
-        const end = start + props.itemsPerPage;
-        return datosTabla.value.slice(start, end);
-    } else {
-        return props.datos;
-    }
-
-});
-
-const currentPage = ref(1);
-const filtros = ref({});
-const sorting = ref({ prop: null, order: null });
-const tipoDeBusqueda = ref('inicia');
-
-
-watch(() => props.columnas, (nuevasColumnas) => {
-    const nuevosFiltros = {};
-    if (nuevasColumnas) {
-        nuevasColumnas.forEach(col => {
-            if (col.filtrable) {
-                nuevosFiltros[col.prop] = '';
-            }
+    const limpiarTodosLosFiltros = () => {
+        Object.keys(filtros.value).forEach(key => {
+            filtros.value[key] = '';
         });
-    }
-    filtros.value = nuevosFiltros;
-}, { immediate: true, deep: true });
+    };
 
-watch(tipoDeBusqueda, () => {
-    onFiltroInput();
-});
+    const irAPagina = async (numeroPagina) => {
+        currentPage.value = numeroPagina;
+        await fetchData();
+    };
 
-watch(
-    () => props.datos,
-    (newVal) => {
-        if (newVal && newVal.length > 0) {
-            datosTabla.value = props.datos;
-        }
-        else {
-            fetchData();
-        }
-    },
+    const handleRowClickInterno = (row) => {
+        if (editarSelect.value !== null &&
+            editarSelect.value !== row) {
 
-)
-
-const tableKey = ref(0);
-
-const busquedaLocal = async () => {
-
-    // Verificar que filtros.value es un array
-    if (Array.isArray(filtros.value)) {
-        filtros.value.forEach(objeto => {
-            // Asegurar que objeto es un objeto (para evitar errores si hay null)
-            if (objeto && typeof objeto === 'object') {
-                Object.entries(objeto).forEach(([campo, valor]) => {
-                    console.log("1", campo, valor);
-                });
-            }
-        });
-      }else {
-    console.log('filtros.value no es un array:', filtros.value);
-  }
-
-}
-
-
-
-const fetchData = async () => {
-    try {
-        if (props.endpoint === "") {
-            busquedaLocal();
             return;
         }
 
-        const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+        selectedRow.value = row;
+        emit('row-click', row);
+    };
 
-        const response = await axios.get(props.endpoint, {
-            params: {
-                filtros: filtros.value,
-                tipo_busqueda: tipoDeBusqueda.value,
-                page: currentPage.value,
-                perPage: props.itemsPerPage,
-                sortBy: sorting.value.prop,
-                sortOrder: sorting.value.order,
-            }
-        });
-
-        const resultados = response.data.data || [];
-        const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
-
-        emit('update:datos', resultados);
-        emit('update:totalItems', total);
-
-        await nextTick();
-
-        if (resultados.length > 0) {
-            const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
-
-            if (coincidencia) {
-                selectedRow.value = coincidencia;
-                tableRefInterna.value?.setCurrentRow(coincidencia);
-                emit('row-click', coincidencia);
-            } else {
-                selectedRow.value = resultados[0];
-                tableRefInterna.value?.setCurrentRow(resultados[0]);
-                emit('row-click', resultados[0]);
-            }
-        } else {
-            selectedRow.value = null;
-            emit('row-click', null);
+    const onEditarInterno = () => {
+        if (selectedRow.value) {            
+            editarSelect.value = selectedRow.value;            
+            emit('editar-item', selectedRow.value);
         }
-    } catch (error) {
-        console.error(`Error en fetchData:`, error);
-    }
-};
+    };
+
+    const onEliminarInterno = () => {
+        if (!selectedRow.value) return;
+
+        if (selectedRow.value[props.idKey]) {
+            emit('eliminar-item', selectedRow.value[props.idKey]);
+        } else {
+            emit('eliminar-item', selectedRow.value);
+        }
+    };
 
 
-watch(
-    () => props.datos,
-    (newDatos) => {
-        if (!newDatos || newDatos.length === 0) {
-            datosTabla.value = [];
-            return
-        };
+    const rowClassNameInterno = ({ row }) => {
+        if (props.rowClassName) return props.rowClassName({ row });
+        const idFila = row[props.idKey];
+        const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+        if (idFila == null || idSeleccionado == null) return '';
+        return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
+    };
 
-        datosTabla.value = newDatos;
+    const tableRefInterna = ref(null);
 
-        nextTick(() => {
-            const firstRow = newDatos[0];
-            if (!selectedRow.value) {
-                selectedRow.value = firstRow;
-                tableRefInterna.value?.setCurrentRow(firstRow);
-                emit('row-click', firstRow);
+    const forzarFocoFilaVerde = async () => {
+        await nextTick();
+        setTimeout(() => {
+            if (!tableRefInterna.value) return;
+
+            const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
+
+            if (filaVerde) {
+                filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
             }
-        });
-    },
-    { immediate: true }
-);
+        }, 300);
+    };
 
-// Watch para cuando cambian los datos paginados (después de fetch interno)
-watch(paginatedDatos, (newPaginated) => {
-    if (newPaginated && newPaginated.length > 0) {
-        // Verificar si la fila seleccionada actual ya no está en los datos paginados
-        const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
-        const existsInPaginated = newPaginated.some(row =>
-            String(row[props.idKey]) === String(currentSelectedId)
-        );
+    const setFiltroExterno = (campo, valor) => {
+        filtros.value[campo] = valor;
+        onFiltroInput();
+    };
 
-        // Si no existe o no hay selección, seleccionar la primera
-        if (!existsInPaginated || !selectedRow.value) {
-            nextTick(() => {
-                selectedRow.value = newPaginated[0];
-                if (tableRefInterna.value) {
-                    tableRefInterna.value.setCurrentRow(newPaginated[0]);
+    const setCurrentRow = (row) => {
+        selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
+        tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
+    }
+
+    const clearCurrentRow = () => {
+        selectedRow.value = null;
+        tableRefInterna.value?.setCurrentRow(null);
+        emit('row-click', null);
+    }
+
+    const emit = defineEmits([
+        'update:datos',
+        'update:totalItems',
+        'editar-item',
+        'eliminar-item',
+        'nuevo-item',
+        'row-dblclick',
+        'row-click',
+        'traspasaBiblio',
+        'traspasaSeleccionado',
+        'cerrar',
+        'abrir-Biblio',
+        'guardar',
+        'lista-Actual'
+    ]);
+
+    const onExpandChange = (row) => {
+        selectedRow.value = row
+        tableRefInterna.value?.setCurrentRow(row)
+        emit('row-click', row)
+    }
+
+    const accionModal = computed(() => {
+        return props.botCerrar ? "cerrar" : "salida"
+    }
+    );
+
+    const paginatedDatos = computed(() => {
+        if (props.endpoint === "") {
+            const start = (currentPage.value - 1) * props.itemsPerPage;
+            const end = start + props.itemsPerPage;
+            return datosTabla.value.slice(start, end);
+        } else {
+            return props.datos;
+        }
+
+    });
+
+    const currentPage = ref(1);
+    const filtros = ref({});
+    const sorting = ref({ prop: null, order: null });
+    const tipoDeBusqueda = ref('inicia');
+
+
+    watch(() => props.columnas, (nuevasColumnas) => {
+        const nuevosFiltros = {};
+        if (nuevasColumnas) {
+            nuevasColumnas.forEach(col => {
+                if (col.filtrable) {
+                    nuevosFiltros[col.prop] = '';
                 }
-                emit('row-click', newPaginated[0]);
             });
         }
+        filtros.value = nuevosFiltros;
+    }, { immediate: true, deep: true });
+
+    watch(tipoDeBusqueda, () => {
+        onFiltroInput();
+    });
+
+    watch(
+        () => props.datos,
+        (newVal) => {
+            if (newVal && newVal.length > 0) {
+                datosTabla.value = props.datos;
+            }
+            else {
+                fetchData();
+            }
+        },
+
+    )
+
+    const tableKey = ref(0);
+
+    const busquedaLocal = async () => {
+
+        // Verificar que filtros.value es un array
+        if (Array.isArray(filtros.value)) {
+            filtros.value.forEach(objeto => {
+                // Asegurar que objeto es un objeto (para evitar errores si hay null)
+                if (objeto && typeof objeto === 'object') {
+                    Object.entries(objeto).forEach(([campo, valor]) => {
+                        console.log("1", campo, valor);
+                    });
+                }
+            });
+        }else {
+        console.log('filtros.value no es un array:', filtros.value);
     }
-}, { immediate: true });
-/* hasta aqui se agrego juan carlos 13/02/2026*/
 
-let debounceTimer;
+    }
 
-const onFiltroInput = () => {
-    currentPage.value = 1;
-    fetchData();
-};
+    const Guardar = () =>{
+        emit('guardar', 'guardar');
+        editarSelect.value = null;
+    }
 
-const limpiarFiltro = (campo) => {
-    if (filtros.value[campo]) {
-        filtros.value[campo] = '';
+    const fetchData = async () => {
+        try {
+            if (props.endpoint === "") {
+                busquedaLocal();
+                return;
+            }
+
+            const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
+
+            const response = await axios.get(props.endpoint, {
+                params: {
+                    filtros: filtros.value,
+                    tipo_busqueda: tipoDeBusqueda.value,
+                    page: currentPage.value,
+                    perPage: props.itemsPerPage,
+                    sortBy: sorting.value.prop,
+                    sortOrder: sorting.value.order,
+                }
+            });
+
+            const resultados = response.data.data || [];
+            const total = response.data.total !== undefined ? response.data.total : (response.data.totalItems || 0);
+
+            emit('update:datos', resultados);
+            emit('update:totalItems', total);
+
+            await nextTick();
+
+            if (resultados.length > 0) {
+                const coincidencia = resultados.find(r => String(r[props.idKey]) === String(idPreviamenteSeleccionado));
+
+                if (coincidencia) {
+                    selectedRow.value = coincidencia;
+                    tableRefInterna.value?.setCurrentRow(coincidencia);
+                    emit('row-click', coincidencia);
+                } else if (!props.permitirSinSeleccion) {
+                    selectedRow.value = resultados[0];
+                    tableRefInterna.value?.setCurrentRow(resultados[0]);
+                    emit('row-click', resultados[0]);
+                } else {
+                    selectedRow.value = null;
+                    tableRefInterna.value?.setCurrentRow(null);
+                    emit('row-click', null);
+                }
+            } else {
+                selectedRow.value = null;
+                emit('row-click', null);
+            }
+        } catch (error) {
+            console.error(`Error en fetchData:`, error);
+        }
+    };
+
+
+    watch(
+        () => props.datos,
+        (newDatos) => {
+            if (!newDatos || newDatos.length === 0) {
+                datosTabla.value = [];
+                return
+            };
+
+            datosTabla.value = newDatos;
+
+            nextTick(() => {
+                const firstRow = newDatos[0];
+                if (!selectedRow.value && !props.permitirSinSeleccion) {
+                    selectedRow.value = firstRow;
+                    tableRefInterna.value?.setCurrentRow(firstRow);
+                    emit('row-click', firstRow);
+                }
+            });
+        },
+        { immediate: true }
+    );
+
+    // Watch para cuando cambian los datos paginados (después de fetch interno)
+    watch(paginatedDatos, (newPaginated) => {
+        if (newPaginated && newPaginated.length > 0) {
+            // Verificar si la fila seleccionada actual ya no está en los datos paginados
+            const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+            const existsInPaginated = newPaginated.some(row =>
+                String(row[props.idKey]) === String(currentSelectedId)
+            );
+
+            // Si no existe o no hay selección, seleccionar la primera
+            if ((!existsInPaginated || !selectedRow.value) && !props.permitirSinSeleccion) {
+                nextTick(() => {
+                    selectedRow.value = newPaginated[0];
+                    if (tableRefInterna.value) {
+                        tableRefInterna.value.setCurrentRow(newPaginated[0]);
+                    }
+                    emit('row-click', newPaginated[0]);
+                });
+            }
+        }
+    }, { immediate: true });
+    /* hasta aqui se agrego juan carlos 13/02/2026*/
+
+    let debounceTimer;
+
+    const onFiltroInput = () => {
         currentPage.value = 1;
         fetchData();
+    };
+
+    const limpiarFiltro = (campo) => {
+        if (filtros.value[campo]) {
+            filtros.value[campo] = '';
+            currentPage.value = 1;
+            fetchData();
+        }
+    };
+
+    const handleSortChange = ({ prop, order }) => {
+        sorting.value.prop = prop;
+        sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
+        currentPage.value = 1;
+        fetchData();
+    };
+
+    const handlePageChange = (page) => {
+        currentPage.value = page;
+        fetchData();
+    };
+
+    const cambioLista = (valor, row) => {
+        emit('lista-Actual', valor);
     }
-};
 
-const handleSortChange = ({ prop, order }) => {
-    sorting.value.prop = prop;
-    sorting.value.order = order === 'ascending' ? 'asc' : 'desc';
-    currentPage.value = 1;
-    fetchData();
-};
+    const onEditar = (item) => emit('editar-item', item);
+    const onEliminar = (id) => emit('eliminar-item', id);
+    const onNuevo = () => emit('nuevo-item');
+    const onRecuperaMarcado = () => emit('traspasaBiblio');
+    const abrirNomCom = () => emit('abrirNomComun')
+    const abrirTipoDist = () => emit('abrirTipoDist')
 
-const handlePageChange = (page) => {
-    currentPage.value = page;
-    fetchData();
-};
+    const cerrarModal = () => {
+        emit('cerrar');
+    };
 
-const cambioLista = (row) => {
-    console.log("Este es el row seleccionado de la lista: ", row);
-}
+    onMounted(fetchData);
 
-const onEditar = (item) => emit('editar-item', item);
-const onEliminar = (id) => emit('eliminar-item', id);
-const onNuevo = () => emit('nuevo-item');
-const onRecuperaMarcado = () => emit('traspasaBiblio');
-const abrirNomCom = () => emit('abrirNomComun')
-const abrirTipoDist = () => emit('abrirTipoDist')
-
-const cerrarModal = () => {
-    emit('cerrar');
-};
-
-onMounted(fetchData);
-
-defineExpose({
-    fetchData,
-    forzarFocoFilaVerde,
-    setFiltroExterno,
-    irAPagina,
-    limpiarTodosLosFiltros,
-    sorting,
-    selectedRow,
-    setCurrentRow
-});
-
+    defineExpose({
+        fetchData,
+        forzarFocoFilaVerde,
+        setFiltroExterno,
+        irAPagina,
+        limpiarTodosLosFiltros,
+        sorting,
+        selectedRow,
+        setCurrentRow,
+        clearCurrentRow
+    });
 </script>
 
 <template>
@@ -496,9 +518,8 @@ defineExpose({
                         </template>
 
                         <template v-else-if="col.tipo === 'lista'">
-
                             <el-select v-if="row[col.prop]" v-model="row[col.prop].id" placeholder="Seleccione"
-                                @change="cambioLista($event, row)" :disabled=props.habOpciones>
+                                @change="cambioLista($event, row)" :disabled="editarSelect !== row">
                                 <el-option v-for="item in valoresOpcion" :key="item.id" :label="item.descripcion"
                                     :value="item.id" />
                             </el-select>

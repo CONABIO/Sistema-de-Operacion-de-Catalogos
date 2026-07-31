@@ -17,7 +17,7 @@ trait HasCompositePrimaryKey
     protected function setKeysForSaveQuery($query)
     {
         foreach ($this->getKeyName() as $keyField) {
-            $query->where($keyField, '=', $this->getAttribute($keyField));
+            $query->where($keyField, '=', $this->getOriginal($keyField));
         }
 
         return $query;
