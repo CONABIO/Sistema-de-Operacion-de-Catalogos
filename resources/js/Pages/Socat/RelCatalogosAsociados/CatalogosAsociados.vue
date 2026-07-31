@@ -1,14 +1,14 @@
 <template>
     <div>
-        <el-card class="box-card">
+        <el-card class="box-card" style="width: 1540px; margin: 20px auto; border-radius: 12px;">
             <div class="common-layout">
-                <el-container style="height: 72vh;">
+                <el-container style="height: auto;">
                     <el-header class="header">
                         <div class="header-content">
                             <h1 class="titulo">Asociación de catalogos</h1>
                         </div>
                     </el-header>
-                    <el-main style="padding: 15px; background: #fff; overflow: hidden;">
+                    <el-main style="padding: 10px; background: #fff; overflow: hidden;">
                         <el-row :gutter="21">
                             <el-col :span="18">
                                 <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
@@ -16,7 +16,7 @@
                                 </span>
                             </el-col>
                             <el-col :span="5">
-                                <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                                <div style="display: flex; gap: 5px; ">
                                     <BotonCaract @click="abrirCaract" style="flex-shrink: 0; min-width: max-content;" />
 
                                     <BotonRegiones @click="abrirReg" style="flex-shrink: 0; min-width: max-content;" />
@@ -31,90 +31,145 @@
                         </el-row>
                         <el-tabs type="card" v-model="tabInicial">
                             <el-tab-pane label="Nombre(s) común(es)" name="NomComun">
-                                <el-container>
-                                    <el-aside width="680px">
-                                        <div
-                                            style="height: 580px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff;">
-                                            <el-splitter layout="vertical">
-                                                <el-splitter-panel :size="'40%'">
-                                                    <div class="table-wrapper"
-                                                        style="height: 100%; display: flex; flex-direction: column; padding: 10px; overflow: auto;">
-                                                        <TablaFiltrable :columnas="columnasDefinidas"
-                                                            :datos="tablaNomComun"
-                                                            :opciones-filtro="opcionesFiltroNomComun"
-                                                            :totalItems="totalRegNomComun" :itemsPerPage="9"
-                                                            :mostrarBiblio="false" :mostrarAcci="false"
-                                                            :alturaTabla="280" :highlight-current-row="true"
-                                                            :mostrarNuevo="true" :mostrarEditar="true"
-                                                            :mostrarBorrar="true" :mostrarSalir="false"
-                                                            @row-click="clickNomCom" @nuevo-item="nuevoRelNomComun"
-                                                            @editar-item="habilitarEdicionObsGeneral" />
-                                                    </div>
-                                                </el-splitter-panel>
+                                <div style="height: 560px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                    <el-splitter lazy>
+                                        <el-splitter-panel :size="'30%'">
+                                            <div class="table-wrapper" style="height: 100%; padding: 5px;">
+                                                <TablaFiltrable
+                                                    v-model:datos="tablaNomComun"
+                                                    v-model:totalItems="contRegNomCom"
+                                                    endpoint="/busca-nombre-comun"
+                                                    :columnas="columnasDefinidasNomCom"
+                                                    :opciones-filtro="opcionesFiltroNomComun"
+                                                    :itemsPerPage="100"
+                                                    :mostrarAcci="false"
+                                                    :alturaTabla="452"
+                                                    :highlight-current-row="true"
+                                                    :mostrarBiblio="false"
+                                                    :mostrarNuevo="false"
+                                                    :mostrarEditar="false"
+                                                    :mostrarBorrar="false"
+                                                    :mostrarSalir="false"
+                                                    :mostrarNomComun="true"
+                                                    @row-click="clickNomComun"
+                                                    @abrirNomComun="abrirNomCom">
+                                                    <template #expand-column>
+                                                        <el-table-column type="expand">
+                                                            <template #default="{ row }">
+                                                                <div class="expand-content-detail" style="padding: 15px;">
+                                                                    <p><strong>IdNomComun:</strong> {{ row.IdNomComun }}</p>
+                                                                    <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                                                                    <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
+                                                                    <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                                                    <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
+                                                                </div>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </template>
+                                                </TablaFiltrable>
+                                            </div>
+                                        </el-splitter-panel>
 
-                                                <el-splitter-panel :size="'20%'">
-                                                    <div
-                                                        style="padding: 15px; background: #fff; border-top: 1px solid #eee; height: 100%;">
-                                                        <p
-                                                            style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
-                                                            Observaciones de nombre común
-                                                        </p>
-                                                        <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                                            <el-input v-model="observacionesGeneral" type="textarea"
-                                                                :disabled="!editandoObsGeneral" :rows="3"
-                                                                placeholder="Observaciones del nombre común..."
-                                                                style="flex: 1;" />
-                                                            <GuardarButton @confirmar="guardarCambiosObsGeneral"
-                                                                :disabled="!editandoObsGeneral" />
-                                                        </div>
-                                                    </div>
-                                                </el-splitter-panel>
-                                            </el-splitter>
-                                        </div>
-                                    </el-aside>
-                                    <el-aside width="10px" />
-                                    <el-aside width="680px">
-                                        <div
-                                            style="height: 580px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff;">
-                                            <el-splitter layout="vertical">
-                                                <el-splitter-panel :min="50" :size="'60%'">
-                                                    <div class="table-wrapper"
-                                                        style="height: 100%; display: flex; flex-direction: column; padding: 10px; overflow: auto;">
-                                                        <TablaFiltrable :columnas="columnasDefinidasRegNomCom"
-                                                            :datos="tablaNomComunReg"
-                                                            :opciones-filtro="opcionesFiltroRegNomComun"
-                                                            :totalItems="totalRegionNomComun" :itemsPerPage="9"
-                                                            :mostrarBiblio="true" :mostrarAcci="false"
-                                                            :alturaTabla="280" :highlight-current-row="true"
-                                                            :mostrarNuevo="false" :mostrarEditar="true"
-                                                            :mostrarBorrar="true" :mostrarSalir="false"
-                                                            @row-click="clickRegNomCom"
-                                                            @abrir-Biblio="abrirResumenRegiones"
-                                                            @editar-item="habilitarEdicionObsReg" />
-                                                    </div>
-                                                </el-splitter-panel>
+                                        <el-splitter-panel :size="'30%'">
+                                            <div style="height: 100%;">
+                                                <el-splitter layout="vertical" style="height:100%;">
+                                                    <el-splitter-panel>
+                                                        <el-card class="panel-card list-panel" shadow="never">
+                                                            <template #header>
+                                                                <div class="header-container">
+                                                                    <span class="details-header-title">Tipo de región</span>
+                                                                    <el-button style="background-color: springgreen; margin-left:auto;" circle @click="handleManageTiposRegion">
+                                                                        <IconoMundo />
+                                                                    </el-button>
+                                                                </div>
+                                                            </template>
+                                                            <div class="demo-tree panel-nombre">
+                                                                <el-tree v-if="tiposRegionTreeData.length"
+                                                                    ref="tiposRegionTreeRef" :key="treeKey"
+                                                                    :data="tiposRegionTreeData"
+                                                                    :props="{ children: 'children', label: 'Descripcion' }"
+                                                                    node-key="IdTipoRegion" :highlight-current="true"
+                                                                    :expand-on-click-node="true"
+                                                                    :default-expanded-keys="expandedTipoRegionKeys"
+                                                                    @node-click="handleTipoRegionSelected">
+                                                                    <template #default="{ data }">
+                                                                        <span :class="['nodo-tipo-region', { 'is-active-path': activePathIds.includes(data.IdTipoRegion) }]">
+                                                                            {{ data.Descripcion }}
+                                                                        </span>
+                                                                    </template>
+                                                                </el-tree>
+                                                            </div>
+                                                        </el-card>
+                                                    </el-splitter-panel>
+                                                    <el-splitter-panel>
+                                                        <el-card class="panel-card list-panel" shadow="never">
+                                                            <template #header>
+                                                                <div class="header-container">
+                                                                    <span class="details-header-title">Región</span>
+                                                                     <el-button style="margin-left: auto;" circle  >
+                                                                        <BotonRegiones @click="abrirReg"/>
+                                                                    </el-button>
 
-                                                <el-splitter-panel :size="'20%'">
-                                                    <div
-                                                        style="padding: 15px; background: #fff; border-top: 1px solid #eee; height: 100%;">
-                                                        <p
-                                                            style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
-                                                            Observaciones de nombre común - región
-                                                        </p>
-                                                        <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                                            <el-input v-model="observacionesRegTab" type="textarea"
-                                                                :rows="3" :disabled="!editandoObsReg"
-                                                                placeholder="Seleccione una región para ver observaciones..."
-                                                                style="flex: 1;" />
-                                                            <GuardarButton @confirmar="guardarCambiosObsReg"
-                                                                :disabled="!editandoObsReg" />
-                                                        </div>
-                                                    </div>
-                                                </el-splitter-panel>
-                                            </el-splitter>
-                                        </div>
-                                    </el-aside>
-                                </el-container>
+                                                                </div>
+                                                            </template>
+                                                            <div class="demo-tree panel-nombre">
+                                                                <el-tree v-show="filteredRegionsTree.length" ref="treeRef"
+                                                                    :key="treeKey" :data="filteredRegionsTree"
+                                                                    :props="{ children: 'children', label: 'NombreRegion' }"
+                                                                    node-key="IdRegion"
+                                                                    :highlight-current="true" :expand-on-click-node="true"
+                                                                    @node-click="handleNodeSelected">
+                                                                    <template #default="{ node, data }">
+                                                                        <span :id="'region-node-' + data.IdRegion" class="nodo-texto">
+                                                                            {{ node.label }}
+                                                                        </span>
+                                                                    </template>
+                                                                </el-tree>
+                                                            </div>
+                                                        </el-card>
+                                                    </el-splitter-panel>
+                                                </el-splitter>
+                                            </div>
+                                        </el-splitter-panel>
+                                        <el-splitter-panel :size="'30%'">
+                                            <div class="table-wrapper" style="height: 100%; padding: 5px;">
+                                                <TablaFiltrable
+                                                    v-model:datos="tablaNomComun"
+                                                    v-model:totalItems="contRegNomCom"
+                                                    endpoint="/busca-nombre-comun"
+                                                    :columnas="columnasDefinidasNomCom"
+                                                    :opciones-filtro="opcionesFiltroNomComun"
+                                                    :itemsPerPage="100"
+                                                    :mostrarAcci="false"
+                                                    :alturaTabla="452"
+                                                    :highlight-current-row="true"
+                                                    :mostrarBiblio="false"
+                                                    :mostrarNuevo="false"
+                                                    :mostrarEditar="false"
+                                                    :mostrarBorrar="false"
+                                                    :mostrarSalir="false"
+                                                    :mostrarNomComun="true"
+                                                    @row-click="clickNomComun"
+                                                    @abrirNomComun="abrirNomCom">
+                                                    <template #expand-column>
+                                                        <el-table-column type="expand">
+                                                            <template #default="{ row }">
+                                                                <div class="expand-content-detail" style="padding: 15px;">
+                                                                    <p><strong>Observaciones:</strong> {{ row.Observaciones }}</p>
+                                                                    <p><strong>IdNomComun:</strong> {{ row.IdNomComun }}</p>
+                                                                    <p><strong>IdOriginal:</strong> {{ row.IdOriginal }}</p>
+                                                                    <p><strong>Catalogo:</strong> {{ row.Catalogo }}</p>
+                                                                    <p><strong>FechaCaptura:</strong> {{ row.FechaCaptura }}</p>
+                                                                </div>
+                                                            </template>
+                                                        </el-table-column>
+                                                    </template>
+                                                </TablaFiltrable>
+                                            </div>
+                                        </el-splitter-panel>
+                                    </el-splitter>
+                                </div>
+
                             </el-tab-pane>
 
                             <el-tab-pane label="Características" name="Caracteristicas">
@@ -361,7 +416,7 @@
                         </el-col>
                         <el-col :span="5">
                             <div style="display: flex; gap: 5px; justify-content: flex-end; margin-left: 380px;">
-                                <BotonSalir accion="cerrar" @salir="closeDialog"
+                                <BotonSalir accion="cerrar" @salir="cerrarModalesResumen"
                                     style="flex-shrink: 0; min-width: max-content;" />
                             </div>
                         </el-col>
@@ -627,6 +682,7 @@
 
     </div>
 </template>
+
 <script setup>
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import BotonCaract from '@/Components/Biotica/BtnCaracteristicas.vue';
@@ -637,16 +693,159 @@ import CuerpoCaracteristicas from '@/Pages/Socat/Caracteristicas/CuerpoCaracteri
 import CuerpoRegion from '@/Pages/Socat/Regiones/CuerpoRegion.vue';
 import RelNomComun from '@/Pages/Socat/RelCatalogosAsociados/RelacionNomComun.vue';
 import CuerpoNombreCom from '@/Pages/Socat/Nombres/CuerpoNombreComun.vue';
+import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import CuerpoBibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
-import { onMounted, ref, watch, computed, h } from 'vue';
+import { onMounted, ref, watch, computed, h, nextTick } from 'vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import { ElMessageBox } from 'element-plus';
 import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
+import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
+
+const cerrarModalesResumen = () => {
+    dialogResumenRegionesVisible.value = false;
+    dialogResumenCaractVisible.value = false;
+    dialogResumenCaractSoloVisible.value = false;
+    idBiblioSeleccionada.value = null;
+    editandoObs.value = false;
+};
+
+const editandoObs = ref(false);
+const idBiblioSeleccionada = ref(null);
+
+const botonGuardarDeshabilitado = computed(() => {
+    return !editandoObs.value || !idBiblioSeleccionada.value;
+});
+
+const editandoObsGeneral = ref(false);
+
+const habilitarEdicionObsGeneral = (row) => {
+    clickNomCom(row);
+    editandoObsGeneral.value = true;
+};
+
+const guardarCambiosObsGeneral = async () => {
+    console.log("Intentando guardar... ID:", idNomComunSeleccionado.value);
+
+    if (!idNomComunSeleccionado.value) {
+        console.error("ERROR: No hay ID seleccionado");
+        return;
+    }
+
+    const proceder = async () => {
+        console.log("Entró a proceder con el guardado");
+        ElMessageBox.close();
+        try {
+            const payload = {
+                IdNomComun: idNomComunSeleccionado.value,
+                Observaciones: observacionesGeneral.value
+            };
+            await axios.put('/actualizar-obs-nomcomun-base', payload);
+            mostrarNotificacion("Éxito", "Observación actualizada", "success");
+            editandoObsGeneral.value = false;
+            const index = tablaNomComun.value.findIndex(n => (n.IdNomComun || n.id) === idNomComunSeleccionado.value);
+            if (index !== -1) {
+                tablaNomComun.value[index].Observaciones = observacionesGeneral.value;
+            }
+        } catch (error) {
+            console.error("Error en la petición axios:", error);
+            mostrarNotificacion("Error", "No se pudo actualizar", "error");
+        }
+    };
+
+    ElMessageBox({
+        title: 'Confirmar modificación',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                h('div', { class: 'text-container' }, [
+                    h('p', null, "¿Deseas guardar los cambios en las observaciones generales de este nombre común?")
+                ])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, {
+                    onClick: () => ElMessageBox.close(),
+                    onConfirmar: () => ElMessageBox.close()
+                }),
+                h(BotonAceptar, {
+                    onClick: proceder,
+                    onConfirmar: proceder
+                }),
+            ])
+        ])
+    }).catch(() => { });
+};
+
+
+const editandoObsReg = ref(false);
+
+const habilitarEdicionObsReg = (row) => {
+    clickRegNomCom(row);
+    editandoObsReg.value = true;
+};
+
+const guardarCambiosObsReg = async () => {
+    if (!idNomComunSeleccionado.value || !idRegionSeleccionada.value) return;
+
+    const proceder = async () => {
+        ElMessageBox.close();
+        try {
+            const payload = {
+                IdNomComun: idNomComunSeleccionado.value,
+                IdNombre: props.taxonAct.id,
+                IdRegion: idRegionSeleccionada.value,
+                Observaciones: observacionesRegTab.value
+            };
+
+            await axios.put('/actualizar-obs-relacion-base', payload);
+
+            mostrarNotificacion("Éxito", "Observación actualizada", "success");
+            editandoObsReg.value = false;
+
+            const index = tablaNomComunReg.value.findIndex(r => (r.IdRegion || r.id) === idRegionSeleccionada.value);
+            if (index !== -1) {
+                tablaNomComunReg.value[index].ObservacionesReg = observacionesRegTab.value;
+                tablaNomComunReg.value[index].Observaciones = observacionesRegTab.value;
+            }
+        } catch (error) {
+            mostrarNotificacion("Error", "No se pudo actualizar", "error");
+        }
+    };
+
+    ElMessageBox({
+        title: 'Confirmar modificación',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                h('div', { class: 'text-container' }, [
+                    h('p', null, "¿Deseas guardar los cambios en las observaciones de esta región?")
+                ])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                h(BotonAceptar, { onClick: proceder }),
+            ])
+        ])
+    }).catch(() => { });
+};
+
+
+
+
+const habilitarEdicionObs = (row) => {
+    clickBiblioRel(row);
+    editandoObs.value = true;
+};
 
 
 const editandoObs = ref(false);
@@ -1087,6 +1286,22 @@ const totalRegionesNom = ref(0);
 const totalRegionesCaract = ref(0);
 const totalRegionesNomCom = ref(0);
 const idNomComunSeleccionado = ref(null);
+const tablaRegionesNomComRef = ref(null);
+
+const tiposRegionTreeData = ref([]);
+const localTreeDataReg = ref([]);
+const selectedTipoRegionNode = ref(null);
+const activePathIds = ref([]);
+const tiposRegionTreeRef = ref(null);
+const treeRef = ref(null);
+const treeKey = ref(0);
+const expandedTipoRegionKeys = ref([]);
+const selectedNode = ref(null);
+const esModalTipoRegionVisible = ref(false);
+const todosLosTiposDeRegion = ref([]);
+const todosLosTiposDeRegionTree = ref([]);
+let ultimoEventoExpandTime = 0;
+const contRegNomCom = ref(0);
 
 const deepCopy = (data) => JSON.parse(JSON.stringify(data));
 
@@ -1190,6 +1405,18 @@ const closeDialog = () => {
     emit('cerrar');
 };
 
+const columnasDefinidasNomCom = ref([
+    {
+        prop: 'NomComun', label: 'Nombre común', minWidth: '80',
+        sortable: true, filtrable: true, align: 'left'
+    },
+    {
+        prop: 'Lengua', label: 'Lengua', minWidth: '70',
+        sortable: true, filtrable: true, align: 'left'
+    },
+
+]);
+
 const columnasDefinidas = ref([
     {
         prop: 'NombreComun', label: 'Nombre comun', minWidth: '120',
@@ -1217,8 +1444,9 @@ const columnasDefinidasRegNomCom = ref([
 ]);
 
 const opcionesFiltroNomComun = ref([
-    { label: 'Nombre comun', value: 'NombreComun' },
-    { label: 'Lengua', value: 'Lengua' }
+    { label: 'Nombre común', value: 'NomComun' },
+    { label: 'Lengua', value: 'Lengua' },
+    { label: 'Observaciones', value: 'Observaciones' }
 ]);
 
 const opcionesFiltroRegNomComun = ref([
@@ -1326,6 +1554,140 @@ const totalBibliografiasRel = ref(0);
 const totalRegNomComun = ref(0);
 const totalRegionNomComun = ref(0);
 
+const seleccionarPrimeroPorDefault = () => {
+    if (tiposRegionTreeData.value && tiposRegionTreeData.value.length > 0) {
+        const primerNodo = tiposRegionTreeData.value[0];
+        seleccionarTipoRegionBase(primerNodo);
+    }
+}
+
+const seleccionarTipoRegionBase = (data) => {
+    if (!data) return;
+    selectedTipoRegionNode.value = data;
+    activePathIds.value = findPathInTree(tiposRegionTreeData.value, data.IdTipoRegion) || [];
+
+    nextTick(() => {
+        tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
+        if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
+            const primerNodo = filteredRegionsTree.value[0];
+            handleNodeSelected(primerNodo);
+        } else {
+            selectedNode.value = null;
+            if (treeRef.value) treeRef.value.setCurrentKey(null);
+        }
+    });
+};
+
+const findPathInTree = (nodes, targetId, path = []) => {
+    for (const node of nodes) {
+        const currentPath = [...path, node.IdTipoRegion];
+        if (node.IdTipoRegion === targetId) return currentPath;
+        if (node.children && node.children.length > 0) {
+            const found = findPathInTree(node.children, targetId, currentPath);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+const filteredRegionsTree = computed(() => {
+    if (!selectedTipoRegionNode.value) return [];
+    const targetTypeId = selectedTipoRegionNode.value.IdTipoRegion;
+
+    const filterAndPruneTree = (nodes) => {
+        return nodes.reduce((accumulator, node) => {
+            if (node.IdTipoRegion === targetTypeId) {
+                accumulator.push({ ...node, children: [] });
+            } else if (node.children && node.children.length > 0) {
+                const filteredChildren = filterAndPruneTree(node.children);
+                if (filteredChildren.length > 0) {
+                    accumulator.push({ ...node, children: filteredChildren });
+                }
+            }
+            return accumulator;
+        }, []);
+    };
+    return filterAndPruneTree(JSON.parse(JSON.stringify(localTreeDataReg.value)));
+});
+
+
+const handleManageTiposRegion = () => { esModalTipoRegionVisible.value = true; };
+const cerrarModalTipoRegion = () => { cargaRegionesCatalogos(); esModalTipoRegionVisible.value = false; }
+
+const handleNodeSelected = (data) => {
+    selectedNode.value = data;
+    idRegionSeleccionada.value = data.IdRegion;
+    nextTick(() => {
+        treeRef.value?.setCurrentKey(data.IdRegion);
+    });
+};
+
+const getTipoRegionNodeClass = (data) => {
+    return activePathIds.value.includes(data.IdTipoRegion) ? 'fila-activa-completa' : '';
+};
+
+const handleTipoRegionSelected = (data) => seleccionarTipoRegionBase(data);
+
+const handleTipoRegionExpand = (data) => {
+    ultimoEventoExpandTime = Date.now();
+    if (!expandedTipoRegionKeys.value.includes(data.IdTipoRegion)) expandedTipoRegionKeys.value.push(data.IdTipoRegion);
+    seleccionarTipoRegionBase(data);
+};
+
+const handleTipoRegionCollapse = (data) => {
+    ultimoEventoExpandTime = Date.now();
+    expandedTipoRegionKeys.value = expandedTipoRegionKeys.value.filter(key => key !== data.IdTipoRegion);
+    seleccionarTipoRegionBase(data);
+};
+
+function findNodeInTipoRegionTree(nodes, id) {
+    for (const node of nodes) {
+        if (node.IdTipoRegion === id) return node;
+        if (node.children) {
+            const found = findNodeInTipoRegionTree(node.children, id);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+const cargaRegionesCatalogos = async () => {
+    const respRegiones = await axios.get('/carga-regiones');
+    if (respRegiones.status === 200) {
+        todosLosTiposDeRegion.value = respRegiones.data.treeData;
+        todosLosTiposDeRegionTree.value = respRegiones.data.todosLosTiposDeRegion;
+        tiposRegionTreeData.value = JSON.parse(JSON.stringify(respRegiones.data.tiposDeRegionTree));
+        localTreeDataReg.value = JSON.parse(JSON.stringify(respRegiones.data.treeData));
+        treeKey.value++;
+        if (tiposRegionTreeData.value.length > 0 && !selectedTipoRegionNode.value) seleccionarPrimeroPorDefault();
+    }
+}
+
+const onCreaRelacion = async () => {
+    if (!idNomComunSeleccionado.value || !selectedNode.value) {
+        mostrarNotificacion("Error", "La selección de nombre común y región es obligatoria.", "error");
+        return;
+    }
+    const params = {
+        idNombre: props.taxonAct.id,
+        idNomComun: idNomComunSeleccionado.value,
+        idTipoReg: selectedNode.value.IdTipoRegion,
+        idRegion: selectedNode.value.IdRegion
+    };
+    try {
+        const response = await axios.post(`/alta-relNom-Nomcomun`, params);
+        if (response.status === 200) mostrarNotificacion('Aviso', response.data.message, 'success');
+    } catch (error) { console.error(error); }
+};
+
+const cargaNomComunGlobal = async () => {
+    const respNomCom = await axios.get('/cargaCatNomComun');
+    if (respNomCom.status === 200) {
+        tablaNomComun.value = respNomCom.data.data;
+        contRegNomCom.value = respNomCom.data.total;
+    }
+};
+
 watch(
     () => props.taxonAct,
     async (nuevoValor, valorAnterior) => {
@@ -1389,18 +1751,16 @@ const abrirReg = async () => {
     dialogFormVisibleReg.value = true;
 }
 
-const clickNomCom = (row) => {
-    editandoObsGeneral.value = false;
+const clickNomComunOriginal = (row) => {
     idNomComunSeleccionado.value = row.IdNomComun || row.id;
     observacionesGeneral.value = row.Observaciones || row.observaciones || row.ObsNomCom || "";
-    console.log("Dato cargado en la caja:", observacionesGeneral.value);
     tablaNomComunReg.value = row.Regiones || [];
-    if (row.Regiones != undefined) {
-        totalRegionNomComun.value = row.Regiones.length;
-    }
-    observacionesRegTab.value = "";
-    idBiblioSeleccionada.value = null;
-}
+    totalRegionNomComun.value = tablaNomComunReg.value.length;
+    editandoObsGeneral.value = false;
+
+
+const clickNomComun = (row) => clickNomComunOriginal(row);
+const clickNomCom = (row) => clickNomComunOriginal(row);
 
 const clickCaract = (row) => {
     idCaractSeleccionada.value = row.IdCatNombre || row.id;
@@ -1412,8 +1772,9 @@ const clickCaract = (row) => {
     rowCaract.value = row;
     observacionesCaractGral.value = row.Observaciones
 
+
     cargarBibliografiasRelCaractSolo();
-};
+
 
 const clickRegCaract = async (row) => {
     rowCaractReg.value = row;
@@ -1425,7 +1786,7 @@ const clickRegCaract = async (row) => {
     } else {
         idTipoDistSeleccionada.value = row.IdTipoDistribucion;
     }
-    
+
     console.log("ID Región:", idRegionCaractSeleccionada.value);
     console.log("ID Tipo Distribución:", idTipoDistSeleccionada.value);
     if (idCaractSeleccionada.value && idRegionCaractSeleccionada.value && idTipoDistSeleccionada.value) {
@@ -1712,63 +2073,60 @@ const Guardar = () => {
 }
 
 onMounted(async () => {
-    const respCarac = await axios.get('/cargar-caracteristicas');
+    cargaRegionesCatalogos();
+    cargaNomComunGlobal();
 
+    const respCarac = await axios.get('/cargar-caracteristicas');
     if (respCarac.status === 200) {
         flatTreeDataProp.value = respCarac.data.flatTreeDataProp;
         treeDataProp.value = respCarac.data.treeDataProp;
-
-        const copiedData = deepCopy(respCarac.data.treeDataProp);
-        sortNodesAlphabetically(copiedData);
-        localTreeData.value = copiedData;
-    }
-
-
-    const respNomCom = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
-
-    if (respNomCom.status === 200) {
-        tablaNomComun.value = respNomCom.data;
-        totalRegNomComun.value = respNomCom.data.length;
-    }
-
-    const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
-
-    if (listCaract.status === 200) {
-        console.log("Estas son las caracteristicas: ", listCaract);
-        tablaCaracteristicas.value = listCaract.data;
-        totalRegCaract.value = listCaract.data.length;
     }
 
     const tiposDistrib = await axios.get('/carga-tipos-distribucion');
-
-    if (tiposDistrib.status === 200) {
-        tiposDistribucion.value = tiposDistrib.data;
-    }
-
-    const regionTaxon = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
-
-    if (regionTaxon.status === 200) {
-
-        regionesNombre.value = regionTaxon.data.regPorNombre;
-        totalRegionesNom.value = regionTaxon.data.regPorNombre.length;
-
-        regionesCaract.value = regionTaxon.data.regPorCaract;
-        totalRegionesCaract.value = regionTaxon.data.regPorCaract.length;
-
-        regionesNomCom.value = regionTaxon.data.regPorNomCom;
-        totalRegionesNomCom.value = regionTaxon.data.regPorCaract.length;
-
-        todasRegiones.value = regionTaxon.data.todas;
-        totalRegiones.value = regionTaxon.data.todas.length;
-
-        console.log("Estas son todas las regiones: ", todasRegiones.value);
-    }
+    if (tiposDistrib.status === 200) tiposDistribucion.value = tiposDistrib.data;
 
 });
-
 </script>
 
 <style scoped>
+.demo-tree {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    display: block;
+}
+
+:deep(.el-tree-node__content) {
+    height: auto !important;
+    min-height: 26px;
+    align-items: flex-start;
+    padding: 4px 0;
+}
+
+.nodo-texto, .nodo-tipo-region {
+    white-space: normal !important;
+    word-break: break-all;
+    font-size: 13px;
+    line-height: 1.3;
+    display: inline-block;
+    width: 90%;
+    margin-left: 5px;
+}
+
+.container-arbol {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: none !important;
+}
+
+:deep(.container-arbol .el-card__body) {
+    flex: 1;
+    overflow: auto;
+    padding: 10px;
+}
+
 .tree-card {
     width: 0%;
     max-width: 100px;
@@ -1800,13 +2158,6 @@ onMounted(async () => {
 
 .demo-panel {
     width: 100%;
-    height: 100%;
-}
-
-.demo-tree {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     height: 100%;
 }
 
@@ -1846,25 +2197,47 @@ onMounted(async () => {
     font-weight: bold;
 }
 
-
 .table-wrapper :deep(.el-table__row.current-row) > td {
     background-color: #ddf6dd !important;
 }
 
 .table-wrapper :deep(.el-table__row.current-row) .cell {
-    color: #ddf6dd !important;
-    font-weight: bold !important;
+
     color: #007bff !important;
     font-weight: bold;
 }
 
 .table-wrapper :deep(.el-table__body tr:hover > td) {
     background-color: #ddf6dd !important;
-
 }
 
 .table-wrapper :deep(.el-table__row:not(.current-row)) {
     background-color: transparent !important;
+
+}
+
+.box-card {
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.el-main {
+    padding: 20px !important;
+    overflow-y: auto !important;
+}
+
+.el-aside {
+    transition: width 0.3s ease;
+}
+
+.el-tabs {
+    width: 100%;
+}
+
+.fila-activa-completa {
+    color: #007bff !important;
+    font-weight: bold !important;
 
 }
 </style>
