@@ -118,6 +118,11 @@
     };
 
 
+const setCurrentRow = (row) => {
+    selectedRow.value = row;
+    tableRefInterna.value?.setCurrentRow(row);
+}
+
     const rowClassNameInterno = ({ row }) => {
         if (props.rowClassName) return props.rowClassName({ row });
         const idFila = row[props.idKey];
@@ -158,6 +163,36 @@
         tableRefInterna.value?.setCurrentRow(null);
         emit('row-click', null);
     }
+    filtros.value = nuevosFiltros;
+}, { immediate: true, deep: true });
+
+watch(tipoDeBusqueda, () => {
+    onFiltroInput();
+});
+
+watch(
+    () => props.datos,
+    (newDatos) => {
+        if (!newDatos || newDatos.length === 0) {
+            datosTabla.value = [];
+            selectedRow.value = null;
+            return;
+        }
+
+        datosTabla.value = newDatos;
+
+        nextTick(() => {
+            const firstRow = newDatos[0];
+            selectedRow.value = firstRow;
+            if (tableRefInterna.value) {
+                tableRefInterna.value.setCurrentRow(firstRow);
+            }
+            emit('row-click', firstRow);
+        });
+    },
+    { immediate: true, deep: true }
+);
+
 
     const emit = defineEmits([
         'update:datos',
@@ -181,6 +216,7 @@
         emit('row-click', row)
     }
 
+
     const accionModal = computed(() => {
         return props.botCerrar ? "cerrar" : "salida"
     }
@@ -194,6 +230,18 @@
         } else {
             return props.datos;
         }
+
+    if (Array.isArray(filtros.value)) {
+        filtros.value.forEach(objeto => {
+            if (objeto && typeof objeto === 'object') {
+                Object.entries(objeto).forEach(([campo, valor]) => {
+                    console.log("1", campo, valor);
+                });
+            }
+        });
+      }else {
+    console.log('filtros.value no es un array:', filtros.value);
+  }
 
     });
 
@@ -321,6 +369,29 @@
 
             datosTabla.value = newDatos;
 
+        nextTick(() => {
+            const firstRow = newDatos[0];
+            if (!selectedRow.value && !props.permitirSinSeleccion) {
+                selectedRow.value = firstRow;
+                tableRefInterna.value?.setCurrentRow(firstRow);
+                emit('row-click', firstRow);
+            }
+        });
+    },
+    { immediate: true }
+);
+
+watch(paginatedDatos, (newPaginated) => {
+    if (newPaginated && newPaginated.length > 0) {
+        const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+        const existsInPaginated = newPaginated.some(row =>
+            String(row[props.idKey]) === String(currentSelectedId)
+        );
+
+
+        // Si no existe o no hay selección, seleccionar la primera
+        if ((!existsInPaginated || !selectedRow.value) && !props.permitirSinSeleccion) {
+
             nextTick(() => {
                 const firstRow = newDatos[0];
                 if (!selectedRow.value && !props.permitirSinSeleccion) {
@@ -353,8 +424,9 @@
                 });
             }
         }
-    }, { immediate: true });
-    /* hasta aqui se agrego juan carlos 13/02/2026*/
+    }
+}, { immediate: true });
+
 
     let debounceTimer;
 
