@@ -1483,6 +1483,7 @@
 
     <DialogForm v-model="dialogFormVisibleAsocCat" :botCerrar="true" :pressEsc="true" :width="'74%'"  >
       <CatalogosAsociados v-if="dialogFormVisibleAsocCat"  :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" style="height: 825px; margin-top: -40px;"/>
+
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
