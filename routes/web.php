@@ -276,6 +276,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
 
     Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
+
 Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
 Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
@@ -283,6 +284,7 @@ Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioContr
 Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
 Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
 Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
+
     Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
@@ -293,6 +295,7 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
     Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
     Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
+
     Route::put('actualiza-Caract-Taxon', [RelNombreCaracteristicasController::class, 'actCaractTaxon']);
     Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
     Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
