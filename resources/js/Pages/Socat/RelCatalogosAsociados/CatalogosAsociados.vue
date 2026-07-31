@@ -135,9 +135,13 @@
                                                                 :alturaTabla="280" :highlight-current-row="true"
                                                                 :mostrarNuevo="true" :mostrarEditar="true"
                                                                 :mostrarBorrar="true" :mostrarSalir="false"
+                                                                :mostrarGuardar="true"
                                                                 @row-click="clickCaract"
                                                                 @abrir-Biblio="abrirResumenCaractSolo"
-                                                                @nuevo-item="nuevoRelCaract"/>
+                                                                @nuevo-item="nuevoRelCaract"
+                                                                @editar-item="editarCarct"
+                                                                @eliminar-item = "eliminarCaract"
+                                                                @guardar="guardarCaract"/>
                                                         </div>
                                                     </div>
                                                 </el-splitter-panel>
@@ -150,7 +154,7 @@
                                                             Observaciones taxon - característica</p>
                                                         <div style="display: flex; align-items: flex-start; gap: 10px;">
                                                             <el-input v-model="observacionesCaractGral" type="textarea"
-                                                                disabled :rows="3"
+                                                                :disabled = "actObsCaract" :rows="3"
                                                                 placeholder="Observaciones de la característica..."
                                                                 style="flex: 1;" />
                                                         </div>
@@ -179,8 +183,13 @@
                                                                 :alturaTabla="280" :highlight-current-row="true"
                                                                 :mostrarNuevo="false" :mostrarEditar="true"
                                                                 :mostrarBorrar="true" :mostrarSalir="false"
-                                                                @row-click="clickRegCaract"
-                                                                @abrir-Biblio="abrirResumenCaract" />
+                                                                :mostrarGuardar="true"
+                                                                @row-click = "clickRegCaract"
+                                                                @abrir-Biblio = "abrirResumenCaract"
+                                                                @guardar = "guardarCaractReg" 
+                                                                @editar-item = "editarCaractReg"
+                                                                @eliminar-item = "eliminarCaractReg"
+                                                                @lista-Actual = "actValorLista"/>
                                                         </div>
                                                     </div>
                                                 </el-splitter-panel>
@@ -192,8 +201,8 @@
                                                             style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
                                                             Observaciones de características - region</p>
                                                         <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                                            <el-input v-model="observaciones" type="textarea" :rows="3"
-                                                                disabled placeholder="Observaciones de la región..."
+                                                            <el-input v-model="obsCaractReg" type="textarea" :rows="3"
+                                                                :disabled = "actObsCaractReg" placeholder="Observaciones de la región..."
                                                                 style="flex: 1;" />
                                                         </div>
                                                     </div>
@@ -327,7 +336,7 @@
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelNomCom" :botCerrar="true" :pressEsc="false" :width="'90%'">
-            <RelNomComun :modal="true" @cerrar="cerrarRelNomCom" />
+            <RelNomComun :modal="true" :taxonActual = props.taxonAct @cerrar="cerrarRelNomCom" />
         </DialogForm>
 
         <DialogForm v-model="dialogFormVisibleRelCaract" :botCerrar="true" :pressEsc="false" :width="'90%'">
@@ -783,6 +792,9 @@ const defaultProps = {
     children: 'children',
     label: 'Region',
 }
+
+const observacionesGeneral = ref('');
+const observacionesCaractGral = ref('');
 
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -1244,6 +1256,14 @@ const columnasDefinidasRegCaract = ref([
     },
 ]);
 
+const actObsCaract = ref(true);
+const rowCaract = ref([]);
+const actObsCaractReg = ref(true);
+const idTipoDistMod = ref(0);
+const rowCaractReg = ref([]);
+const obsCaractReg = ref("");
+const tipDistAct = ref(0);
+
 const colDefRegionNombre = ref([
     {
         prop: 'Region', label: 'Región', minWidth: '120',
@@ -1388,17 +1408,24 @@ const clickCaract = (row) => {
     totalRegionCaract.value = (row.Regiones || []).length;
     idRegionCaractSeleccionada.value = null;
     idTipoDistSeleccionada.value = null;
+    actObsCaract.value = true;
+    rowCaract.value = row;
+    observacionesCaractGral.value = row.Observaciones
+
     cargarBibliografiasRelCaractSolo();
 };
 
 const clickRegCaract = async (row) => {
-    console.log("Datos crudos de la región recibidos:", row);
+    rowCaractReg.value = row;
+    obsCaractReg.value = row.Observaciones;
+
     idRegionCaractSeleccionada.value = row.IdRegion;
     if (row.TipDistribucion && typeof row.TipDistribucion === 'object') {
         idTipoDistSeleccionada.value = row.TipDistribucion.IdTipoDistribucion || row.TipDistribucion.id;
     } else {
         idTipoDistSeleccionada.value = row.IdTipoDistribucion;
     }
+    
     console.log("ID Región:", idRegionCaractSeleccionada.value);
     console.log("ID Tipo Distribución:", idTipoDistSeleccionada.value);
     if (idCaractSeleccionada.value && idRegionCaractSeleccionada.value && idTipoDistSeleccionada.value) {
@@ -1412,6 +1439,192 @@ const clickRegCaract = async (row) => {
     }
 };
 
+const editarCarct = () =>{
+    actObsCaract.value = false;
+}
+
+const guardarCaract = async() =>{
+    const params = {
+        idNombre: props.taxonAct.id,
+        idCatNombre: rowCaract.value.IdCatNombre,
+        observaciones: observacionesCaractGral.value,
+    };
+
+    try{
+        const response = await axios.put(`/actualiza-Caract-Taxon`, params);
+
+        if(response.status === 200)
+        {
+            mostrarNotificacion('Aviso', response.data.message, 'success');
+            rowCaract.value.Observaciones = observacionesCaractGral.value;
+            actObsCaract.value = true;
+
+        }
+    }catch(error){
+        if (error.response.status === 422) {
+            const errorMessages = Object.values(error.response.data.errors).flat();
+            errorMessages.forEach(msg => {
+                mostrarNotificacionError(
+                    "Error",
+                    msg,
+                    "Error",
+                    5000
+                );
+            });
+        }
+    }  
+}
+
+const editarCaractReg = () =>{
+    actObsCaractReg.value = false;
+    tipDistAct.value = rowCaractReg.value.TipDistribucion.id;
+}
+
+const actValorLista = (idAct) =>{
+    //console.log("Este es el valor del select actual ***: ", idAct);
+    idTipoDistMod.value = idAct;
+}
+
+const guardarCaractReg = async() =>{
+    let idTipDist;
+    let response;
+
+    if(idTipoDistMod.value !=  0){
+        console.log("Entre a 1");
+        idTipDist = idTipoDistMod.value;
+    }else{
+        console.log("Entre a 2, tipDistAct: ", tipDistAct.value);
+        idTipDist = tipDistAct.value;
+    }
+
+    const params = {
+        idNombre: props.taxonAct.id,
+        idCatNombre: rowCaract.value.IdCatNombre,
+        idRegion: rowCaractReg.value.IdRegion,
+        idTipoDistAct: tipDistAct.value, 
+        idTipoDistNue: idTipDist, 
+        observaciones: obsCaractReg.value,
+    };
+
+    try{
+        response = await axios.put(`/actualiza-Caract-Taxon-Reg`, params);
+
+        if(response.status === 200)
+        {
+            mostrarNotificacion('Aviso', response.data.message, 'success');
+            rowCaractReg.value.Observaciones = obsCaractReg.value;
+            rowCaractReg.value.TipDistribucion.id = idTipDist
+            actObsCaractReg.value = true;
+        }
+    }catch(error){
+        if (error.response.status === 422) {
+            const errorMessages = Object.values(error.response.data.errors).flat();
+            errorMessages.forEach(msg => {
+                mostrarNotificacionError(
+                    "Error",
+                    msg,
+                    "Error",
+                    5000
+                );
+            });
+        }
+    }
+}
+
+const eliminarCaract = async(row) =>{
+    console.log(row.Caracteristica);
+    const procederConEliminacion = async () => {
+        console.log("Procede con la eliminacion");
+        try {
+            ElMessageBox.close();
+            
+            await axios.delete(`/eliminar-Caract-Taxon`, {
+                params : {
+                    idNombre: props.taxonAct.id,
+                    idCatNombre: rowCaract.value.IdCatNombre,
+                }
+            });
+
+            const index = tablaCaracteristicas.value.indexOf(row);
+
+            if (index !== -1) {
+                tablaCaracteristicas.value.splice(index, 1);
+                tablaCaractReg.value = null;
+            }
+
+            mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
+        } catch (apiError) {
+            mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
+        }
+    };
+    
+    const cancelarEliminacion = () => {
+        ElMessageBox.close();
+    };
+
+    const mensaje = `¿Está seguro de eliminar la característica "${row.Caracteristica}" con sus regiones y su bibliografía relacionada? Esta acción no se puede revertir.`;
+
+    ElMessageBox({
+        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, { onClick: cancelarEliminacion }),
+                h(BotonAceptar, { onClick: procederConEliminacion }),
+            ])
+        ])
+    }).catch(() => { });
+}
+
+const eliminarCaractReg = async(row) =>{
+    const procederConEliminacion = async () => {
+        console.log("Procede con la eliminacion");
+        try {
+            ElMessageBox.close();
+
+            await axios.delete(`/eliminar-Caract-Taxon-Reg`, {
+                params : {
+                    idNombre: props.taxonAct.id,
+                    idCatNombre: rowCaract.value.IdCatNombre,
+                    idRegion: row.IdRegion,
+                    idTipoDist: row.TipDistribucion.id
+                }
+            });
+
+            const index = tablaCaractReg.value.indexOf(row);
+
+            if (index !== -1) {
+                tablaCaractReg.value.splice(index, 1);
+            }
+
+            mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
+        } catch (apiError) {
+            mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
+        }
+    };
+    const cancelarEliminacion = () => {
+        ElMessageBox.close();
+    };
+
+    const mensaje = `¿Está seguro de eliminar la región "${row.Region}" y su bibliografía relacionada? Esta acción no se puede revertir.`;
+
+    ElMessageBox({
+        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, { onClick: cancelarEliminacion }),
+                h(BotonAceptar, { onClick: procederConEliminacion }),
+            ])
+        ])
+    }).catch(() => { });
+}
 
 const clickRegNomCom = async (row) => {
     console.log("Datos de la región seleccionada:", row);
