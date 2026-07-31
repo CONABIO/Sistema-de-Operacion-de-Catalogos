@@ -286,4 +286,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
     Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
     Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
+    Route::put('actualiza-Caract-Taxon', [RelNombreCaracteristicasController::class, 'actCaractTaxon']);
+    Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
+    Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
+    Route::delete('eliminar-Caract-Taxon', [RelNombreCaracteristicasController::class, 'eliminaRegCaract']);
 });
