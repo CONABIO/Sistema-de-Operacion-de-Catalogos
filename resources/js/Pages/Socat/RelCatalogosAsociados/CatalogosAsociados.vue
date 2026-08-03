@@ -241,7 +241,7 @@
                                                                 :mostrarGuardar="true"
                                                                 @row-click = "clickRegCaract"
                                                                 @abrir-Biblio = "abrirResumenCaract"
-                                                                @guardar = "guardarCaractReg" 
+                                                                @guardar = "guardarCaractReg"
                                                                 @editar-item = "editarCaractReg"
                                                                 @eliminar-item = "eliminarCaractReg"
                                                                 @lista-Actual = "actValorLista"/>
@@ -847,140 +847,6 @@ const habilitarEdicionObs = (row) => {
     editandoObs.value = true;
 };
 
-
-const editandoObs = ref(false);
-const idBiblioSeleccionada = ref(null);
-
-const botonGuardarDeshabilitado = computed(() => {
-    return !editandoObs.value || !idBiblioSeleccionada.value;
-});
-
-const editandoObsGeneral = ref(false);
-
-const habilitarEdicionObsGeneral = (row) => {
-    clickNomCom(row);
-    editandoObsGeneral.value = true;
-};
-
-const guardarCambiosObsGeneral = async () => {
-    console.log("Intentando guardar... ID:", idNomComunSeleccionado.value);
-
-    if (!idNomComunSeleccionado.value) {
-        console.error("ERROR: No hay ID seleccionado");
-        return;
-    }
-
-    const proceder = async () => {
-        console.log("Entró a proceder con el guardado");
-        ElMessageBox.close();
-        try {
-            const payload = {
-                IdNomComun: idNomComunSeleccionado.value,
-                Observaciones: observacionesGeneral.value
-            };
-            await axios.put('/actualizar-obs-nomcomun-base', payload);
-            mostrarNotificacion("Éxito", "Observación actualizada", "success");
-            editandoObsGeneral.value = false;
-            const index = tablaNomComun.value.findIndex(n => (n.IdNomComun || n.id) === idNomComunSeleccionado.value);
-            if (index !== -1) {
-                tablaNomComun.value[index].Observaciones = observacionesGeneral.value;
-            }
-        } catch (error) {
-            console.error("Error en la petición axios:", error);
-            mostrarNotificacion("Error", "No se pudo actualizar", "error");
-        }
-    };
-
-    ElMessageBox({
-        title: 'Confirmar modificación',
-        showConfirmButton: false,
-        showCancelButton: false,
-        customClass: 'message-box-diseno-limpio',
-        message: h('div', { class: 'custom-message-content' }, [
-            h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Deseas guardar los cambios en las observaciones generales de este nombre común?")
-                ])
-            ]),
-            h('div', { class: 'footer-buttons' }, [
-                h(BotonCancelar, {
-                    onClick: () => ElMessageBox.close(),
-                    onConfirmar: () => ElMessageBox.close()
-                }),
-                h(BotonAceptar, {
-                    onClick: proceder,
-                    onConfirmar: proceder
-                }),
-            ])
-        ])
-    }).catch(() => { });
-};
-
-
-const editandoObsReg = ref(false);
-
-const habilitarEdicionObsReg = (row) => {
-    clickRegNomCom(row);
-    editandoObsReg.value = true;
-};
-
-const guardarCambiosObsReg = async () => {
-    if (!idNomComunSeleccionado.value || !idRegionSeleccionada.value) return;
-
-    const proceder = async () => {
-        ElMessageBox.close();
-        try {
-            const payload = {
-                IdNomComun: idNomComunSeleccionado.value,
-                IdNombre: props.taxonAct.id,
-                IdRegion: idRegionSeleccionada.value,
-                Observaciones: observacionesRegTab.value
-            };
-
-            await axios.put('/actualizar-obs-relacion-base', payload);
-
-            mostrarNotificacion("Éxito", "Observación actualizada", "success");
-            editandoObsReg.value = false;
-
-            const index = tablaNomComunReg.value.findIndex(r => (r.IdRegion || r.id) === idRegionSeleccionada.value);
-            if (index !== -1) {
-                tablaNomComunReg.value[index].ObservacionesReg = observacionesRegTab.value;
-                tablaNomComunReg.value[index].Observaciones = observacionesRegTab.value;
-            }
-        } catch (error) {
-            mostrarNotificacion("Error", "No se pudo actualizar", "error");
-        }
-    };
-
-    ElMessageBox({
-        title: 'Confirmar modificación',
-        showConfirmButton: false,
-        showCancelButton: false,
-        customClass: 'message-box-diseno-limpio',
-        message: h('div', { class: 'custom-message-content' }, [
-            h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Deseas guardar los cambios en las observaciones de esta región?")
-                ])
-            ]),
-            h('div', { class: 'footer-buttons' }, [
-                h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                h(BotonAceptar, { onClick: proceder }),
-            ])
-        ])
-    }).catch(() => { });
-};
-
-
-
-
-const habilitarEdicionObs = (row) => {
-    clickBiblioRel(row);
-    editandoObs.value = true;
-};
-
 const props = defineProps({
     taxonAct: {
         type: Object
@@ -1260,7 +1126,6 @@ const tiposDeRegionProp = ref([]);
 const tiposDeRegionTreeProp = ref([]);
 const etiquetaObs = ref('');
 
-const observacionesGeneral = ref('');
 const observacionesRegTab = ref('');
 const observaciones = ref('');
 
@@ -1757,6 +1622,7 @@ const clickNomComunOriginal = (row) => {
     tablaNomComunReg.value = row.Regiones || [];
     totalRegionNomComun.value = tablaNomComunReg.value.length;
     editandoObsGeneral.value = false;
+}
 
 
 const clickNomComun = (row) => clickNomComunOriginal(row);
@@ -1774,7 +1640,7 @@ const clickCaract = (row) => {
 
 
     cargarBibliografiasRelCaractSolo();
-
+}
 
 const clickRegCaract = async (row) => {
     rowCaractReg.value = row;
@@ -1833,7 +1699,7 @@ const guardarCaract = async() =>{
                 );
             });
         }
-    }  
+    }
 }
 
 const editarCaractReg = () =>{
@@ -1862,8 +1728,8 @@ const guardarCaractReg = async() =>{
         idNombre: props.taxonAct.id,
         idCatNombre: rowCaract.value.IdCatNombre,
         idRegion: rowCaractReg.value.IdRegion,
-        idTipoDistAct: tipDistAct.value, 
-        idTipoDistNue: idTipDist, 
+        idTipoDistAct: tipDistAct.value,
+        idTipoDistNue: idTipDist,
         observaciones: obsCaractReg.value,
     };
 
@@ -1898,7 +1764,7 @@ const eliminarCaract = async(row) =>{
         console.log("Procede con la eliminacion");
         try {
             ElMessageBox.close();
-            
+
             await axios.delete(`/eliminar-Caract-Taxon`, {
                 params : {
                     idNombre: props.taxonAct.id,
@@ -1918,7 +1784,7 @@ const eliminarCaract = async(row) =>{
             mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
         }
     };
-    
+
     const cancelarEliminacion = () => {
         ElMessageBox.close();
     };
