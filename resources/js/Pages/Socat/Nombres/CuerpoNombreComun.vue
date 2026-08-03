@@ -33,7 +33,7 @@ const cerrarDialogo = () => {
 /*Juan Carlos Mora Morquecho*/
 
 const tableRowClassName = ({ row }) => {
-    if (row.IdNomComun === selectedRowId.value) {
+    if (selectedRowId.value && String(row.IdNomComun) === String(selectedRowId.value)) {
         return 'fila-seleccionada-verde';
     }
     return '';
@@ -48,7 +48,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
         }
         const currentSort = tablaRef.value?.sorting || { prop: 'NomComun', order: 'asc' };
         const resPagina = await axios.post('/nombres-comunes/obtener-pagina', {
-            id: idEncontrado, 
+            id: idEncontrado,
             perPage: 100,
             sortBy: currentSort.prop || 'NomComun',
             sortOrder: currentSort.order || 'asc'
@@ -59,7 +59,7 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
             await nextTick();
             const fila = currentData.value.find(d => d.IdNomComun === idEncontrado);
             if (fila) {
-                selectedRowId.value = idEncontrado; 
+                selectedRowId.value = idEncontrado;
                 tablaRef.value.selectedRow = fila;
                 setTimeout(() => {
                     tablaRef.value.forzarFocoFilaVerde();
@@ -123,16 +123,16 @@ const cerrarModal = () => {
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
-    const mensajeDuplicado = esEdicion 
-        ? "El nombre común que desea modificar ya existe, las modificaciones no se realizaron." 
+    const mensajeDuplicado = esEdicion
+        ? "El nombre común que desea modificar ya existe, las modificaciones no se realizaron."
         : "El nombre común que desea ingresar ya existe.";
 
-    const registroExistenteLocal = currentData.value.find(item => {  
+    const registroExistenteLocal = currentData.value.find(item => {
         const mismoNombre = item.NomComun.trim().toLowerCase() === datosDelFormulario.NomComun.trim().toLowerCase();
         const mismaLengua = item.Lengua.trim().toLowerCase() === datosDelFormulario.Lengua.trim().toLowerCase();
-        
-        return esEdicion 
-            ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar) 
+
+        return esEdicion
+            ? (mismoNombre && mismaLengua && item.IdNomComun !== datosDelFormulario.idParaEditar)
             : (mismoNombre && mismaLengua);
     });
 
@@ -143,7 +143,7 @@ const handleFormSubmited = (datosDelFormulario) => {
             tablaRef.value.forzarFocoFilaVerde();
         }
         mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
-        return; 
+        return;
     }
 
     const procederConGuardado = async () => {
@@ -205,8 +205,8 @@ const eliminarNombreComun = (idNomComun) => {
             ElMessageBox.close();
             await axios.delete(`/nombres-comunes/${idNomComun}`);
             if (tablaRef.value) {
-                await tablaRef.value.fetchData(); 
-                await nextTick(); 
+                await tablaRef.value.fetchData();
+                await nextTick();
                 if (currentData.value.length > 0) {
                     const primerRegistro = currentData.value[0];
                     selectedRowId.value = primerRegistro.IdNomComun;
@@ -215,12 +215,12 @@ const eliminarNombreComun = (idNomComun) => {
                         if (tablaRef.value && typeof tablaRef.value.forzarFocoFilaVerde === 'function') {
                             tablaRef.value.forzarFocoFilaVerde();
                         }
-                    }, 300); 
+                    }, 300);
                 } else {
                     selectedRowId.value = null;
                 }
             }
-            
+
             mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             console.error(apiError);
@@ -233,9 +233,9 @@ const eliminarNombreComun = (idNomComun) => {
     const mensaje = `¿Está seguro de eliminar el nombre común seleccionado? Esta acción no se puede revertir.`;
 
     ElMessageBox({
-        title: 'Confirmar eliminación', 
-        showConfirmButton: false, 
-        showCancelButton: false, 
+        title: 'Confirmar eliminación',
+        showConfirmButton: false,
+        showCancelButton: false,
         customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
             h('div', { class: 'body-content' }, [
@@ -254,18 +254,18 @@ const eliminarNombreComun = (idNomComun) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Nombres Comunes" tituloArea="Catálogo de nombres comunes">
         <div class="h-full flex flex-col">
-            <TablaFiltrable ref="tablaRef" class="flex-grow" 
-                :columnas="columnasDefinidas" 
-                v-model:datos="currentData" 
+            <TablaFiltrable ref="tablaRef" class="flex-grow"
+                :columnas="columnasDefinidas"
+                v-model:datos="currentData"
                 :row-class-name="tableRowClassName"
-                :botCerrar = props.modal           
-                v-model:total-items="totalItems" 
-                endpoint="/busca-nombre-comun" 
-                id-key="IdNomComun" 
-                @row-click="manejarClickFila"  
-                :highlight-current-row="false"  
-                @editar-item="editarNombreComun" 
-                @eliminar-item="eliminarNombreComun" 
+                :botCerrar = props.modal
+                v-model:total-items="totalItems"
+                endpoint="/busca-nombre-comun"
+                id-key="IdNomComun"
+                @row-click="manejarClickFila"
+                :highlight-current-row="false"
+                @editar-item="editarNombreComun"
+                @eliminar-item="eliminarNombreComun"
                 @nuevo-item="nuevoNombreComun"
                 @cerrar="cerrarDialogo">
 
@@ -352,10 +352,10 @@ const eliminarNombreComun = (idNomComun) => {
     background-color: #ddf6dd !important;
 }
 
-.el-table .fila-seleccionada-verde .cell, 
+.el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
-  color: #007bff !important; 
-  font-weight: bold; 
+  color: #007bff !important;
+  font-weight: bold;
 }
 
 
