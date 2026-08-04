@@ -240,8 +240,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
 <template>
     <LayoutCuerpo :usar-app-layout="false" tituloPag="Tipos de Distribución"
         tituloArea="Catálogo de tipos de distribución">
-        este es el tipo {{ props.modal }}
-        <div class="h-full flex flex-col">            
+        <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
