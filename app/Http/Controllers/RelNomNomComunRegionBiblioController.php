@@ -175,4 +175,78 @@ public function actualizarObsNomComunBase(Request $request) {
 }
 
 
+public function cargaNombresComunes($id) {
+    try {
+        $nombres = DB::connection('catcentral')
+            ->table('NomComun as nc')
+            ->join('RelNomNomComunRegion as rel', 'nc.IdNomComun', '=', 'rel.IdNomComun')
+            ->join('Region as r', 'rel.IdRegion', '=', 'r.IdRegion')
+            ->where('rel.IdNombre', $id)
+            ->select(
+                'nc.IdNomComun',
+                'nc.NomComun as NombreComun',
+                'nc.Lengua',
+                'nc.Observaciones as ObsGeneral',
+                'r.IdRegion',
+                'r.NombreRegion as Region',
+                'rel.Observaciones as ObsRelacion'
+            )
+            ->get();
+
+        $nombresFormateados = $nombres->groupBy('IdNomComun')->map(function ($group) {
+            $primer = $group->first();
+            return [
+                'id' => $primer->IdNomComun,
+                'IdNomComun' => $primer->IdNomComun,
+                'NombreComun' => $primer->NombreComun,
+                'Lengua' => $primer->Lengua,
+                'Observaciones' => $primer->ObsGeneral ?? '',
+                'Regiones' => $group->map(function ($item) {
+                    return [
+                        'id' => 'reg-' . $item->IdRegion . '-' . $item->IdNomComun,
+                        'Region' => $item->Region,
+                        'IdRegion' => $item->IdRegion,
+                        'IdNomComun' => $item->IdNomComun,
+                        'Observaciones' => $item->ObsRelacion ?? ''
+                    ];
+                })->values()
+            ];
+        })->values();
+
+        return response()->json($nombresFormateados);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
+public function altaRelNomComun(Request $request) {
+    try {
+        $idNombre = $request->idNombre;
+        $idNomComun = $request->idNomComun;
+        $idRegion = $request->idRegion;
+        $existe = DB::connection('catcentral')
+            ->table('RelNomNomComunRegion')
+            ->where('IdNombre', $idNombre)
+            ->where('IdNomComun', $idNomComun)
+            ->where('IdRegion', $idRegion)
+            ->exists();
+        if (!$existe) {
+            DB::connection('catcentral')
+                ->table('RelNomNomComunRegion')
+                ->insert([
+                    'IdNombre'     => $idNombre,
+                    'IdNomComun'   => $idNomComun,
+                    'IdRegion'     => $idRegion,
+                    'FechaCaptura' => now(),
+                ]);
+            return response()->json(['message' => 'Relación creada en la base de datos'], 200);
+        }
+        return response()->json(['message' => 'Esta relación ya existe'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
 }
