@@ -249,4 +249,47 @@ public function altaRelNomComun(Request $request) {
 }
 
 
+
+public function eliminarRelacionNomComun(Request $request)
+{
+    $conn = DB::connection('catcentral');
+    try {
+        $conn->beginTransaction();
+        $v_idNombre = $request->input('idNombre');
+        $v_idNomComun = $request->input('idNomComun');
+        $v_idRegion = $request->input('idRegion');
+
+        if ($v_idRegion) {
+            $conn->table('RelNomNomComunRegionBiblio')
+                ->where('IdNombre', $v_idNombre)
+                ->where('IdNomComun', $v_idNomComun)
+                ->where('IdRegion', $v_idRegion)
+                ->delete();
+            $conn->table('RelNomNomComunRegion')
+                ->where('IdNombre', $v_idNombre)
+                ->where('IdNomComun', $v_idNomComun)
+                ->where('IdRegion', $v_idRegion)
+                ->delete();
+            $mensaje = "La región y su bibliografía asociada se han eliminado correctamente.";
+        } else {
+            $conn->table('RelNomNomComunRegionBiblio')
+                ->where('IdNombre', $v_idNombre)
+                ->where('IdNomComun', $v_idNomComun)
+                ->delete();
+            $conn->table('RelNomNomComunRegion')
+                ->where('IdNombre', $v_idNombre)
+                ->where('IdNomComun', $v_idNomComun)
+                ->delete();
+            $mensaje = "El nombre común y todas sus relaciones asociadas se han eliminado.";
+        }
+        $conn->commit();
+        return response()->json(['message' => $mensaje], 200);
+    } catch (\Exception $e) {
+        $conn->rollBack();
+        return response()->json([
+            'message' => "Error al eliminar en catcentral: " . $e->getMessage()
+        ], 500);
+    }
+}
+
 }

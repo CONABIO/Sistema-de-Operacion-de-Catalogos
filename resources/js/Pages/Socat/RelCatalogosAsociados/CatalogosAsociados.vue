@@ -128,6 +128,7 @@
                                                         <span>Nombres asociados ({{ nombresAsociadosTaxon.length }})</span>
                                                         <div style="display: flex; gap: 8px; align-items: center;">
                                                             <EditarButton @editar="activarEdicionGeneral" />
+                                                            <EliminarButton @eliminar="confirmarEliminarAsociacion" />
                                                             <GuardarButton @confirmar="guardarCambiosObsGeneral"
                                                                 :disabled="!editandoObsGeneral"
                                                                 style="margin-right: 12px; margin-left: 12px;" />
@@ -731,6 +732,7 @@
     import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
     import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
     import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
+import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 
     const cerrarModalesResumen = async () => {
         dialogResumenRegionesVisible.value = false;
@@ -1164,6 +1166,8 @@
         editandoObsGeneral.value = true;
     };
 
+
+    const nodoSeleccionadoArbol = ref(null);
     const tablaNomComunPrincipalRef = ref(null);
     const tipoSeleccion = ref('');
     const tablaNomComunAsociados = ref([]);
@@ -1813,9 +1817,75 @@ const refTablaBiblioModal = ref(null);
 };
 
 
+const confirmarEliminarAsociacion = () => {
+    if (!nodoSeleccionadoArbol.value) {
+        mostrarNotificacion("Aviso", "Por favor seleccione un elemento del árbol para eliminar", "warning");
+        return;
+    }
+
+    const esRegion = !!nodoSeleccionadoArbol.value.Region;
+    const nombreElemento = esRegion ? nodoSeleccionadoArbol.value.Region : nodoSeleccionadoArbol.value.NombreComun;
+
+    const mensaje = esRegion
+        ? `¿Estás seguro de eliminar la región "${nombreElemento}" y su bibliografía asociada?`
+        : `¿Estás seguro de eliminar el nombre común "${nombreElemento}" y TODAS sus regiones y bibliografías?`;
+
+    ElMessageBox({
+        title: 'Confirmar eliminación',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                h(BotonAceptar, { onClick: ejecutarEliminacion }),
+            ])
+        ])
+    }).catch(() => { });
+};
+
+const ejecutarEliminacion = async () => {
+    ElMessageBox.close();
+    try {
+        const payload = {
+            idNombre: props.taxonAct.id,
+            idNomComun: idNomComunSeleccionado.value,
+            idRegion: idRegionSeleccionada.value
+        };
+        const response = await axios.delete('/eliminar-asociacion-nomcomun', { data: payload });
+        if (response.status === 200) {
+            mostrarNotificacion("Eliminación", response.data.message, "success");
+            await recargarNombresAsociados();
+            nodoSeleccionadoArbol.value = null;
+            idRegionSeleccionada.value = null;
+        }
+    } catch (error) {
+        console.error("Error al eliminar:", error.response);
+        mostrarNotificacion("Error", "No se pudo eliminar la relación. Revisa la consola.", "error");
+    }
+};
+
+
 
     const clickNomComun = (row) => clickNomComunOriginal(row);
-    const clickNomCom = (row) => clickNomComunOriginal(row);
+    const clickNomCom = (data) => {
+    nodoSeleccionadoArbol.value = data;
+    if (data.NombreComun) {
+        idNomComunSeleccionado.value = data.IdNomComun || data.id;
+        idRegionSeleccionada.value = null;
+        tipoSeleccion.value = 'comun';
+    } else {
+        idRegionSeleccionada.value = data.IdRegion;
+        idNomComunSeleccionado.value = data.IdNomComun;
+        tipoSeleccion.value = 'region';
+    }
+    observacionesGeneral.value = data.Observaciones || "";
+};
+
 
     const clickCaract = (row) => {
         idCaractSeleccionada.value = row.IdCatNombre || row.id;
