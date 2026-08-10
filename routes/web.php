@@ -289,10 +289,10 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
     //------------------------------------------------------------------------------------------------------------------------------------------
-    //Rutas para alta y baja de relaciones de nombre comun 
+    //Rutas para alta y baja de relaciones de nombre comun
     Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
 
-    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
+    //Rutas para alta y bajas de relaciones de taxon a caracteristicas
     Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
     Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
 
@@ -300,4 +300,7 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
     Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
     Route::delete('eliminar-Caract-Taxon', [RelNombreCaracteristicasController::class, 'eliminaRegCaract']);
+
+
+    Route::delete('/eliminar-asociacion-nomcomun', [RelNomNomComunRegionBiblioController::class, 'eliminarRelacionNomComun']);
 });

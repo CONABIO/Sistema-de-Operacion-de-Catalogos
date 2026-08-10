@@ -25,8 +25,6 @@ const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
 const tipoDeBusqueda = ref('inicia');
 
-/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
     columnas: { type: Array, required: true },
     datos: { type: Array, required: true, default: [] },
@@ -213,13 +211,16 @@ watch(
             const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
             const coincidencia = newDatos.find(r => String(r[props.idKey]) === String(currentSelectedId));
             if (coincidencia) {
-                selectedRow.value = coincidencia;
-                tableRefInterna.value?.setCurrentRow(coincidencia);
-            } else if (!props.permitirSinSeleccion) {
-                selectedRow.value = newDatos[0];
-                tableRefInterna.value?.setCurrentRow(newDatos[0]);
-                emit('row-click', newDatos[0]);
-            }
+    selectedRow.value = coincidencia;
+    tableRefInterna.value?.setCurrentRow(coincidencia);
+    emit('row-click', coincidencia);
+} else {
+    if (!props.permitirSinSeleccion) {
+        selectedRow.value = resultados[0];
+        tableRefInterna.value?.setCurrentRow(resultados[0]);
+        emit('row-click', resultados[0]);
+    }
+}
         });
     },
     { immediate: true, deep: true }
