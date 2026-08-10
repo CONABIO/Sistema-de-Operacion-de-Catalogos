@@ -34,14 +34,13 @@
                                     <div
                                         style="height: 560px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: var(--el-border-color-light) 0px 0px 10px">
                                         <el-splitter lazy>
-                                            <!-- PANEL 1: BUSCADOR GLOBAL (IZQUIERDA) -->
                                             <el-splitter-panel :size="'30%'">
                                                 <div class="table-wrapper" style="height: 100%; padding: 5px;">
                                                     <TablaFiltrable ref="tablaNomComunPrincipalRef"  v-model:datos="tablaNomComun"
                                                         v-model:totalItems="contRegNomCom" endpoint="/busca-nombre-comun"
                                                         :columnas="columnasDefinidasNomCom"
                                                         :opciones-filtro="opcionesFiltroNomComun" :itemsPerPage="100"
-                                                        :mostrarAcci="false" :alturaTabla="452"
+                                                        :mostrarAcci="false" :alturaTabla="452" :permitirSinSeleccion="true"
                                                         :highlight-current-row="true" :mostrarBiblio="false"
                                                         :mostrarNuevo="false" :mostrarEditar="false" :mostrarBorrar="false"
                                                         :mostrarSalir="false" :mostrarNomComun="true"
@@ -50,7 +49,6 @@
                                                 </div>
                                             </el-splitter-panel>
 
-                                            <!-- PANEL 2: SELECCIÓN DE REGIÓN (CENTRO) -->
                                             <el-splitter-panel :size="'30%'">
                                                 <div style="height: 100%;">
                                                     <el-splitter layout="vertical" style="height:100%;">
@@ -971,15 +969,8 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 
     const clickBiblioRel = (row) => {
         editandoObs.value = false;
-        console.log("======= DATOS SELECCIONADOS =======");
-        console.log("IdNombre (Taxón):", props.taxonAct.id);
-        console.log("IdNomComun:", idNomComunSeleccionado.value);
-        console.log("IdRegion:", idRegionSeleccionada.value);
-        console.log("IdBibliografia:", row.IdBibliografia || row.id);
         idBiblioSeleccionada.value = row.IdBibliografia || row.id;
         observaciones.value = row.Observaciones || row.observaciones || "";
-        console.log("Observación cargada:", observaciones.value);
-        console.log("====================================");
     };
 
     const dialogResumenRegionesVisible = ref(false);
@@ -1044,7 +1035,6 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
     };
 
     const claseOrigen = (data) => {
-        console.log("Esto es claseOrigen: ", data.origen);
         switch (data.origen) {
 
             case 'nombre':
@@ -1127,8 +1117,22 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
     const dialogFormVisibleBiblio = ref(false);
 
     const abrirBiblio = () => {
-        dialogFormVisibleBiblio.value = true;
-    };
+    if (tabInicial.value === 'NomComun') {
+        if (tablaNomComunAsociados.value.length === 0) {
+            mostrarNotificacion("Aviso", "Primero debe asociar nombres comunes junto sus regiones para asociar bibliografías", "warning");
+            return;
+        }
+        if (!idNomComunSeleccionado.value) {
+            mostrarNotificacion("Aviso", "Por favor selecciona un nombre común", "warning");
+            return;
+        }
+        if (!idRegionSeleccionada.value) {
+            mostrarNotificacion("Aviso", "Por favor selecciona una región para agregar bibliografía", "warning");
+            return;
+        }
+    }
+    dialogFormVisibleBiblio.value = true;
+};
 
     const cerrarBiblio = async (idsSeleccionados) => {
         dialogFormVisibleBiblio.value = false;
@@ -1638,24 +1642,16 @@ const refTablaBiblioModal = ref(null);
         const v_idNomComun = idNomComunSeleccionado.value;
         const v_idRegion = selectedNode.value ? selectedNode.value.IdRegion : 'NULO';
         const v_idTipoRegion = selectedTipoRegionNode.value ? selectedTipoRegionNode.value.IdTipoRegion : 'NULO';
-
-        console.log("%c--- DATOS DE ASOCIACIÓN ---", "color: white; background: #8A2815; padding: 4px;");
-        console.log("idNombre (Taxón):", v_idNombre);
-        console.log("idNomComun (Nombre):", v_idNomComun);
-        console.log("IdRegion (Dato):", v_idRegion);
-        console.log("IdTipoRegion (Nivel):", v_idTipoRegion);
-        console.log("---------------------------");
-
         if (!v_idNomComun) {
             mostrarNotificacion("Aviso", "No has seleccionado un Nombre Común de la tabla izquierda", "warning");
             return;
         }
         if (v_idTipoRegion === 'NULO') {
-            mostrarNotificacion("Aviso", "No has seleccionado un tipo de region", "warning");
+            mostrarNotificacion("Aviso", "Selecciona un tipo de region", "warning");
             return;
         }
         if (v_idRegion === 'NULO') {
-            mostrarNotificacion("Aviso", "No has seleccionado una región ", "warning");
+            mostrarNotificacion("Aviso", "Selecciona una región ", "warning");
             return;
         }
 
@@ -1710,7 +1706,7 @@ const refTablaBiblioModal = ref(null);
 
    watch(
     () => props.taxonAct,
-    async (nuevoValor, valorAnterior) => {
+    async (nuevoValor) => {
         idNomComunSeleccionado.value = null;
         idRegionSeleccionada.value = null;
         idBiblioSeleccionada.value = null;
@@ -1723,48 +1719,62 @@ const refTablaBiblioModal = ref(null);
         observaciones.value = "";
         editandoObsGeneral.value = false;
         editandoObs.value = false;
+        tablaNomComun.value = [];
+        tablaCaracteristicas.value = [];
+        if (!nuevoValor?.id) return;
+        try {
+            const [respNomCom, respCaract, respRegion] = await Promise.allSettled([
+                axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
+                axios.get(`/cargaCaracTaxon/${nuevoValor.id}`),
+                axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`)
+            ]);
+            if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
+                const data = respNomCom.value.data;
+                tablaNomComun.value = data;
+                tablaNomComunAsociados.value = data;
+                nombresAsociadosTaxon.value = data;
+                totalRegNomComun.value = data.length;
+            }
+            if (respCaract.status === 'fulfilled' && respCaract.value.status === 200) {
+                tablaCaracteristicas.value = respCaract.value.data;
+                totalRegCaract.value = respCaract.value.data.length;
+            } else {
+                console.error("Error al cargar características:", respCaract.reason || "Error 500");
+            }
 
-        const respNomCom = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
-        if (respNomCom.status === 200) {
-            tablaNomComun.value = respNomCom.data;
-            tablaNomComunAsociados.value = respNomCom.data;
-            nombresAsociadosTaxon.value = respNomCom.data;
-            totalRegNomComun.value = respNomCom.data.length;
+            if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
+                const data = respRegion.value.data;
+                regionesNombre.value = data.regPorNombre;
+                totalRegionesNom.value = data.regPorNombre.length;
+                regionesCaract.value = data.regPorCaract;
+                totalRegionesCaract.value = data.regPorCaract.length;
+                regionesNomCom.value = data.regPorNomCom;
+                totalRegionesNomCom.value = data.regPorNomCom.length;
+            }
+
+        } catch (error) {
+            console.error("Error crítico en el watcher:", error);
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion("Error", "No se pudo obtener toda la información del taxón", "error");
+            }
+        } finally {
+            nextTick(() => {
+                if (tablaNomComunPrincipalRef.value?.$refs.tableRef) {
+                    tablaNomComunPrincipalRef.value.$refs.tableRef.setCurrentRow(null);
+                }
+                if (refTablaNomComunModal.value?.$refs.tableRef) {
+                    refTablaNomComunModal.value.$refs.tableRef.setCurrentRow(null);
+                }
+                if (refTablaRegionesModal.value?.$refs.tableRef) {
+                    refTablaRegionesModal.value.$refs.tableRef.setCurrentRow(null);
+                }
+                if (refTablaBiblioModal.value?.$refs.tableRef) {
+                    refTablaBiblioModal.value.$refs.tableRef.setCurrentRow(null);
+                }
+                if (tiposRegionTreeRef.value) tiposRegionTreeRef.value.setCurrentKey(null);
+                if (treeRef.value) treeRef.value.setCurrentKey(null);
+            });
         }
-
-        const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
-        if (listCaract.status === 200) {
-            console.log("Estas son las caracteristicas: ", listCaract);
-            tablaCaracteristicas.value = listCaract.data;
-            totalRegCaract.value = listCaract.data.length;
-        }
-
-        const regionTaxon = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
-        if (regionTaxon.status === 200) {
-            regionesNombre.value = regionTaxon.data.regPorNombre;
-            totalRegionesNom.value = regionTaxon.data.regPorNombre.length;
-            regionesCaract.value = regionTaxon.data.regPorCaract;
-            totalRegionesCaract.value = regionTaxon.data.regPorCaract.length;
-            regionesNomCom.value = regionTaxon.data.regPorNomCom;
-            totalRegionesNomCom.value = regionTaxon.data.regPorNomCom.length;
-        }
-
-        nextTick(() => {
-            if (tablaNomComunPrincipalRef.value && tablaNomComunPrincipalRef.value.$refs.tableRef) {
-                tablaNomComunPrincipalRef.value.$refs.tableRef.setCurrentRow(null);
-            }
-            if (refTablaNomComunModal.value?.$refs.tableRef) {
-                refTablaNomComunModal.value.$refs.tableRef.setCurrentRow(null);
-            }
-            if (refTablaRegionesModal.value?.$refs.tableRef) {
-                refTablaRegionesModal.value.$refs.tableRef.setCurrentRow(null);
-            }
-            if (refTablaBiblioModal.value?.$refs.tableRef) {
-                refTablaBiblioModal.value.$refs.tableRef.setCurrentRow(null);
-            }
-            if (tiposRegionTreeRef.value) tiposRegionTreeRef.value.setCurrentKey(null);
-            if (treeRef.value) treeRef.value.setCurrentKey(null);
-        });
     },
     { immediate: true }
 );
@@ -1827,8 +1837,8 @@ const confirmarEliminarAsociacion = () => {
     const nombreElemento = esRegion ? nodoSeleccionadoArbol.value.Region : nodoSeleccionadoArbol.value.NombreComun;
 
     const mensaje = esRegion
-        ? `¿Estás seguro de eliminar la región "${nombreElemento}" y su bibliografía asociada?`
-        : `¿Estás seguro de eliminar el nombre común "${nombreElemento}" y TODAS sus regiones y bibliografías?`;
+        ? `¿Estás seguro de eliminar la región seleccionada y su bibliografía asociada?`
+        : `¿Estás seguro de eliminar el nombre común seleccionado y sus regiones y bibliografías?`;
 
     ElMessageBox({
         title: 'Confirmar eliminación',
@@ -1865,7 +1875,7 @@ const ejecutarEliminacion = async () => {
         }
     } catch (error) {
         console.error("Error al eliminar:", error.response);
-        mostrarNotificacion("Error", "No se pudo eliminar la relación. Revisa la consola.", "error");
+        mostrarNotificacion("Error", "No se pudo eliminar la relación.", "error");
     }
 };
 
@@ -1878,6 +1888,7 @@ const ejecutarEliminacion = async () => {
         idNomComunSeleccionado.value = data.IdNomComun || data.id;
         idRegionSeleccionada.value = null;
         tipoSeleccion.value = 'comun';
+        tablaNomComunReg.value = data.Regiones || [];
     } else {
         idRegionSeleccionada.value = data.IdRegion;
         idNomComunSeleccionado.value = data.IdNomComun;
@@ -1911,9 +1922,6 @@ const ejecutarEliminacion = async () => {
         } else {
             idTipoDistSeleccionada.value = row.IdTipoDistribucion;
         }
-
-        console.log("ID Región:", idRegionCaractSeleccionada.value);
-        console.log("ID Tipo Distribución:", idTipoDistSeleccionada.value);
         if (idCaractSeleccionada.value && idRegionCaractSeleccionada.value && idTipoDistSeleccionada.value) {
             await cargarBibliografiasRelCaract();
         } else {
@@ -1974,10 +1982,8 @@ const ejecutarEliminacion = async () => {
         let response;
 
         if (idTipoDistMod.value != 0) {
-            console.log("Entre a 1");
             idTipDist = idTipoDistMod.value;
         } else {
-            console.log("Entre a 2, tipDistAct: ", tipDistAct.value);
             idTipDist = tipDistAct.value;
         }
 
@@ -2015,9 +2021,7 @@ const ejecutarEliminacion = async () => {
     }
 
     const eliminarCaract = async (row) => {
-        console.log(row.Caracteristica);
         const procederConEliminacion = async () => {
-            console.log("Procede con la eliminacion");
             try {
                 ElMessageBox.close();
 
@@ -2064,7 +2068,6 @@ const ejecutarEliminacion = async () => {
 
     const eliminarCaractReg = async (row) => {
         const procederConEliminacion = async () => {
-            console.log("Procede con la eliminacion");
             try {
                 ElMessageBox.close();
 
@@ -2185,9 +2188,7 @@ const ejecutarEliminacion = async () => {
     }
 
     const nuevoRelNomComun = () => {
-        console.log("le di click al boton de nuevo")
         dialogFormVisibleRelNomCom.value = true;
-        console.log("Este es el valor de dialogRolNomComun: ", dialogFormVisibleRelNomCom.value);
     }
 
     const nuevoRelCaract = () => {
@@ -2195,7 +2196,7 @@ const ejecutarEliminacion = async () => {
     }
 
     const Guardar = () => {
-        console.log("Esta es la funcion de guardar");
+
     }
 
     onMounted(async () => {
