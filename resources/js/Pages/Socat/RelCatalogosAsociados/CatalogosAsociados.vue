@@ -1898,11 +1898,21 @@ const confirmarEliminarAsociacion = () => {
     }
 
     const esRegion = !!nodoSeleccionadoArbol.value.Region;
-    const nombreElemento = esRegion ? nodoSeleccionadoArbol.value.Region : nodoSeleccionadoArbol.value.NombreComun;
+    let mensaje = "";
 
-    const mensaje = esRegion
-        ? `¿Estás seguro de eliminar la región seleccionada y su bibliografía asociada?`
-        : `¿Estás seguro de eliminar el nombre común seleccionado y sus regiones y bibliografías?`;
+    if (esRegion) {
+        const nombreComunPadre = nombresAsociadosTaxon.value.find(nc =>
+            (nc.IdNomComun || nc.id) === nodoSeleccionadoArbol.value.IdNomComun
+        );
+
+        if (nombreComunPadre && nombreComunPadre.Regiones && nombreComunPadre.Regiones.length === 1) {
+            mensaje = "¿Estás seguro de borrar la región y la asociación del nombre común con el taxón?";
+        } else {
+            mensaje = "¿Estás seguro de eliminar la región seleccionada y su bibliografía asociada?";
+        }
+    } else {
+        mensaje = `¿Estás seguro de eliminar el nombre común seleccionado y sus regiones y bibliografías?`;
+    }
 
     ElMessageBox({
         title: 'Confirmar eliminación',
@@ -1911,8 +1921,12 @@ const confirmarEliminarAsociacion = () => {
         customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
             h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+                h('div', { class: 'custom-warning-icon-container' }, [
+                    h('div', { class: 'custom-warning-circle' }, '!')
+                ]),
+                h('div', { class: 'text-container' }, [
+                    h('p', null, mensaje)
+                ])
             ]),
             h('div', { class: 'footer-buttons' }, [
                 h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
