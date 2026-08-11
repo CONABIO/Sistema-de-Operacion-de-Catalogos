@@ -63,7 +63,8 @@ const props = defineProps({
         type: Boolean,
         required: false,
         default: true
-    }
+    },
+    deshabilitarGuardar: { type: Boolean, default: false },
 });
 
 const onBiblio = () => emit('abrir-Biblio');
@@ -161,6 +162,7 @@ const setCurrentRow = (row) => {
 
 const clearCurrentRow = () => {
     selectedRow.value = null;
+    editarSelect.value = null;
     tableRefInterna.value?.setCurrentRow(null);
     emit('row-click', null);
 }
@@ -210,17 +212,17 @@ watch(
         nextTick(() => {
             const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
             const coincidencia = newDatos.find(r => String(r[props.idKey]) === String(currentSelectedId));
+
             if (coincidencia) {
-    selectedRow.value = coincidencia;
-    tableRefInterna.value?.setCurrentRow(coincidencia);
-    emit('row-click', coincidencia);
-} else {
-    if (!props.permitirSinSeleccion) {
-        selectedRow.value = resultados[0];
-        tableRefInterna.value?.setCurrentRow(resultados[0]);
-        emit('row-click', resultados[0]);
-    }
-}
+                selectedRow.value = coincidencia;
+                tableRefInterna.value?.setCurrentRow(coincidencia);
+            } else {
+                if (!props.permitirSinSeleccion && newDatos.length > 0) {
+                    selectedRow.value = newDatos[0];
+                    tableRefInterna.value?.setCurrentRow(newDatos[0]);
+                    emit('row-click', newDatos[0]);
+                }
+            }
         });
     },
     { immediate: true, deep: true }
@@ -263,6 +265,7 @@ const busquedaLocal = async () => {
 }
 
 const Guardar = () => {
+    if (props.deshabilitarGuardar) return;
     emit('guardar', 'guardar');
     editarSelect.value = null;
 }
@@ -326,7 +329,7 @@ watch(paginatedDatos, (newPaginated) => {
         if (!existsInPaginated || !selectedRow.value) {
             nextTick(() => {
                 if (!props.permitirSinSeleccion) {
-                   selectedRow.value = newPaginated[0];
+                    selectedRow.value = newPaginated[0];
                     if (tableRefInterna.value) {
                         tableRefInterna.value.setCurrentRow(newPaginated[0]);
                     }
@@ -412,7 +415,7 @@ defineExpose({
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
                         <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
                         <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" />
+                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
