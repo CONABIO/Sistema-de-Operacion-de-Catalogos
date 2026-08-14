@@ -144,7 +144,7 @@
                                                             <EliminarButton @eliminar="onEliminar" :habActTax = "habEdiBorr" />
                                                             <div>
                                                                 <el-tooltip class="item" effect="dark" content="Bibliografia">
-                                                                    <el-button @click="abrirResumenCaract" circle style="flex-shrink: 0;
+                                                                    <el-button @click="abrirBiblioCaract" circle style="flex-shrink: 0;
                                                                 background-color: #509165; color: white;">
                                                                         <el-icon>
                                                                             <Management />
@@ -240,8 +240,8 @@
         </DialogForm>
 
         <!--Aqui van las funciones de bibliografia-->
-        <DialogForm v-model="dialogResumenCaractSoloVisible" :botCerrar="true" :width="'80%'">
-            
+        <DialogForm v-model="dialogFormVisibleBiblioCaract" :botCerrar="true" :pressEsc="false" :width="'83%'">
+            <BiblioCaract :taxonActual = "props.taxonActual", :cargarCaract = "dialogFormVisibleBiblioCaract"/>
         </DialogForm>
 
     </div>
@@ -271,11 +271,14 @@
     import { ElMessageBox } from 'element-plus';
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+    import BiblioCaract from '@/Pages/Socat/RelCatalogosAsociados/BiblioRelacionCaracteristicas.vue';
 
     const emit = defineEmits(['cerrar']);
     const georeferido = ref(true);
 
     const tablaTipoDistRef = ref(null);
+
+    const dialogFormVisibleBiblioCaract = ref(false);
 
     //Varibles declaradas para para caracteristicas asocidas al taxón
     const modoEdicion = ref(false);
@@ -1390,6 +1393,11 @@
     const cerrarTipDist = () =>{
         cargaTiposDistribucion();
         dialogFormVisibleTiposDist.value = false;
+    }
+
+    const abrirBiblioCaract = () =>{
+        console.log("Voy a entrar a bibliografia para hacer los cambios");
+        dialogFormVisibleBiblioCaract.value = true
     }
 
     onMounted(() => {

@@ -123,15 +123,18 @@ class RelNombreCaracteristicasController extends Controller
         try{
             DB::beginTransaction();
 
+            $relBiblio = RelNombreCatalogoRegionBiblio::where('IdNombre', $request['idNombre'])
+                                                      ->where('IdCatNombre', $request['idCatNombre'])
+                                                      ->where('IdRegion', $request['idRegion'])
+                                                      ->where('IdTipoDistribucion', $request['idTipoDistAct'])
+                                                      ->update(['IdTipoDistribucion' => $request['idTipoDistNue']]);
+
             $relacion = RelNombreCatalogoRegion::where('IdNombre', $request['idNombre'])
                                                ->where('IdCatNombre', $request['idCatNombre'])
                                                ->where('IdRegion', $request['idRegion'])
                                                ->where('IdTipoDistribucion', $request['idTipoDistAct'])
-                                               ->first();   
-            log::info("Relacion antes de actualizar");                                        
-            log::info($relacion);
-            $relacion->update(['IdTipoDistribucion' => $request['idTipoDistNue'],
-                               'Observaciones' => $request['observaciones']]);                            
+                                               ->update(['IdTipoDistribucion' => $request['idTipoDistNue'],
+                                                         'Observaciones' => $request['observaciones']]);   
 
             DB::commit();
             log::info("Relacion despues de actualizar");  

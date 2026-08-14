@@ -19,7 +19,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                 ->where('pivot.IdCatNombre', $request->query('IdCatNombre'))
                 ->where('pivot.IdRegion', $request->query('IdRegion'))
                 ->where('pivot.IdTipoDistribucion', $request->query('IdTipoDistribucion'))
-                ->select('b.IdBibliografia', 'b.Autor', 'b.Anio', 'b.CitaCompleta')
+                ->select('b.IdBibliografia', 'b.Autor', 'b.Anio', 'b.CitaCompleta', 'pivot.Observaciones')
                 ->get();
             return response()->json($bibliografias);
         } catch (\Exception $e) {
@@ -38,7 +38,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                 ->join('Bibliografia as b', 'pivot.IdBibliografia', '=', 'b.IdBibliografia')
                 ->where('pivot.IdNombre', $request->query('IdNombre'))
                 ->where('pivot.IdCatNombre', $request->query('IdCatNombre'))
-                ->select('b.IdBibliografia', 'b.Autor', 'b.Anio', 'b.CitaCompleta')
+                ->select('b.IdBibliografia', 'b.Autor', 'b.Anio', 'b.CitaCompleta', 'pivot.Observaciones')
                 ->get();
 
             return response()->json($bibliografias);
