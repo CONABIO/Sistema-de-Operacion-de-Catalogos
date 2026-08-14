@@ -18,48 +18,53 @@ import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
+const editarSelect = ref(null);
+const selectedRow = ref(null);
+const currentPage = ref(1);
+const filtros = ref({});
+const sorting = ref({ prop: null, order: null });
+const tipoDeBusqueda = ref('inicia');
 
-/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-  Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
-  columnas: { type: Array, required: true },
-  datos: { type: Array, required: true, default:[]},
-  totalItems: { type: Number, required: true },
-  itemsPerPage: { type: Number, default: 100 },
-  endpoint: { type: String, required: false, default: ""},
-  idKey: { type: String, required: false },
-  botCerrar: { type: Boolean, default: false },
-  mostrarTraspaso: { type: Boolean, default: false },
-  mostrarNuevo: { type: Boolean, default: true },
-  mostrarEditar: { type: Boolean, default: true },
-  mostrarBorrar: { type: Boolean, default: true },
-  mostrarGuardar: { type: Boolean, default: false },
-  mostrarRegion: { type: Boolean, default: false },
-  mostrarNomComun: { type: Boolean, default: false },
-  mostrarTipoDist: { type: Boolean, default: false },
-  rowClassName: { type: Function, default: null },
-  mostrarBiblio: { type:Boolean, default: false },
-  valoresOpcion: { type:Array, required: false, default: []},
-  habOpciones: { type: Boolean, default: true },
-  permitirSinSeleccion: { type: Boolean, default:false },
-  alturaTabla: {
-    type: Number,
-    default: 550
-  },
-  highlightCurrentRow: {
-    type: Boolean,
-    default: false
-  },
-  asignaTrasp: {
-    type: String,
-    required: false,
-    default: "izq"
-  },
-  mostrarSalir: {
-    type: Boolean,
-    required: false,
-    default: true
-  }
+    columnas: { type: Array, required: true },
+    datos: { type: Array, required: true, default: [] },
+    totalItems: { type: Number, required: true },
+    itemsPerPage: { type: Number, default: 100 },
+    endpoint: { type: String, required: false, default: "" },
+    idKey: { type: String, required: false },
+    botCerrar: { type: Boolean, default: false },
+    mostrarTraspaso: { type: Boolean, default: false },
+    mostrarNuevo: { type: Boolean, default: true },
+    mostrarEditar: { type: Boolean, default: true },
+    mostrarBorrar: { type: Boolean, default: true },
+    mostrarGuardar: { type: Boolean, default: false },
+    mostrarRegion: { type: Boolean, default: false },
+    mostrarNomComun: { type: Boolean, default: false },
+    mostrarTipoDist: { type: Boolean, default: false },
+    rowClassName: { type: Function, default: null },
+    mostrarBiblio: { type: Boolean, default: false },
+    valoresOpcion: { type: Array, required: false, default: [] },
+    habOpciones: { type: Boolean, default: true },
+    permitirSinSeleccion: { type: Boolean, default: false },
+    alturaTabla: {
+        type: Number,
+        default: 550
+    },
+    highlightCurrentRow: {
+        type: Boolean,
+        default: false
+    },
+    asignaTrasp: {
+        type: String,
+        required: false,
+        default: "izq"
+    },
+    mostrarSalir: {
+        type: Boolean,
+        required: false,
+        default: true
+    },
+    deshabilitarGuardar: { type: Boolean, default: false },
 });
 
 const onBiblio = () => emit('abrir-Biblio');
@@ -87,16 +92,20 @@ const irAPagina = async (numeroPagina) => {
     await fetchData();
 };
 
-const selectedRow = ref(null);
-
-
 const handleRowClickInterno = (row) => {
+    if (editarSelect.value !== null &&
+        editarSelect.value !== row) {
+
+        return;
+    }
+
     selectedRow.value = row;
     emit('row-click', row);
 };
 
 const onEditarInterno = () => {
     if (selectedRow.value) {
+        editarSelect.value = selectedRow.value;
         emit('editar-item', selectedRow.value);
     }
 };
@@ -112,6 +121,8 @@ const onEliminarInterno = () => {
 };
 
 
+
+
 const rowClassNameInterno = ({ row }) => {
     if (props.rowClassName) return props.rowClassName({ row });
     const idFila = row[props.idKey];
@@ -119,6 +130,7 @@ const rowClassNameInterno = ({ row }) => {
     if (idFila == null || idSeleccionado == null) return '';
     return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
 };
+
 
 const tableRefInterna = ref(null);
 
@@ -143,12 +155,14 @@ const setFiltroExterno = (campo, valor) => {
 };
 
 const setCurrentRow = (row) => {
-    selectedRow.value = row; // Actualizamos la selección interna para habilitar botones
-    tableRefInterna.value?.setCurrentRow(row); // Usamos la ref correcta: tableRefInterna
+    selectedRow.value = row;
+    tableRefInterna.value?.setCurrentRow(row);
 }
+
 
 const clearCurrentRow = () => {
     selectedRow.value = null;
+    editarSelect.value = null;
     tableRefInterna.value?.setCurrentRow(null);
     emit('row-click', null);
 }
@@ -165,35 +179,9 @@ const emit = defineEmits([
     'traspasaSeleccionado',
     'cerrar',
     'abrir-Biblio',
-    'guardar'
+    'guardar',
+    'lista-Actual'
 ]);
-
-const onExpandChange = (row) => {
-    selectedRow.value = row
-    tableRefInterna.value?.setCurrentRow(row)
-    emit('row-click', row)
-}
-
-const accionModal = computed(() => {
-    return props.botCerrar ? "cerrar" : "salida"
-}
-);
-
-const paginatedDatos = computed(() => {
-    if (props.endpoint === "") {
-        const start = (currentPage.value - 1) * props.itemsPerPage;
-        const end = start + props.itemsPerPage;
-        return datosTabla.value.slice(start, end);
-    } else {
-        return props.datos;
-    }
-
-});
-
-const currentPage = ref(1);
-const filtros = ref({});
-const sorting = ref({ prop: null, order: null });
-const tipoDeBusqueda = ref('inicia');
 
 
 watch(() => props.columnas, (nuevasColumnas) => {
@@ -214,39 +202,72 @@ watch(tipoDeBusqueda, () => {
 
 watch(
     () => props.datos,
-    (newVal) => {
-        if (newVal && newVal.length > 0) {
-            datosTabla.value = props.datos;
+    (newDatos) => {
+        if (!newDatos || newDatos.length === 0) {
+            datosTabla.value = [];
+            selectedRow.value = null;
+            return;
         }
-        else {
-            fetchData();
-        }
-    },
+        datosTabla.value = newDatos;
+        nextTick(() => {
+            const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
+            const coincidencia = newDatos.find(r => String(r[props.idKey]) === String(currentSelectedId));
 
-)
+            if (coincidencia) {
+                selectedRow.value = coincidencia;
+                tableRefInterna.value?.setCurrentRow(coincidencia);
+            } else {
+                if (!props.permitirSinSeleccion && newDatos.length > 0) {
+                    selectedRow.value = newDatos[0];
+                    tableRefInterna.value?.setCurrentRow(newDatos[0]);
+                    emit('row-click', newDatos[0]);
+                }
+            }
+        });
+    },
+    { immediate: true, deep: true }
+);
+
+const onExpandChange = (row) => {
+    selectedRow.value = row
+    tableRefInterna.value?.setCurrentRow(row)
+    emit('row-click', row)
+}
+
+
+const accionModal = computed(() => {
+    return props.botCerrar ? "cerrar" : "salida"
+}
+);
+
+const paginatedDatos = computed(() => {
+    if (props.endpoint === "") {
+        const start = (currentPage.value - 1) * props.itemsPerPage;
+        const end = start + props.itemsPerPage;
+        return datosTabla.value.slice(start, end);
+    } else {
+        return props.datos;
+    }
+});
 
 const tableKey = ref(0);
 
 const busquedaLocal = async () => {
-
-    // Verificar que filtros.value es un array
     if (Array.isArray(filtros.value)) {
         filtros.value.forEach(objeto => {
-            // Asegurar que objeto es un objeto (para evitar errores si hay null)
             if (objeto && typeof objeto === 'object') {
                 Object.entries(objeto).forEach(([campo, valor]) => {
                     console.log("1", campo, valor);
                 });
             }
         });
-      }else {
-    console.log('filtros.value no es un array:', filtros.value);
-  }
-
+    }
 }
 
-const Guardar = () =>{
+const Guardar = () => {
+    if (props.deshabilitarGuardar) return;
     emit('guardar', 'guardar');
+    editarSelect.value = null;
 }
 
 const fetchData = async () => {
@@ -284,14 +305,10 @@ const fetchData = async () => {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
                 emit('row-click', coincidencia);
-            } else if (!props.permitirSinSeleccion) {
+            } else {
                 selectedRow.value = resultados[0];
                 tableRefInterna.value?.setCurrentRow(resultados[0]);
                 emit('row-click', resultados[0]);
-            } else {
-                selectedRow.value = null;
-                tableRefInterna.value?.setCurrentRow(null);
-                emit('row-click', null);
             }
         } else {
             selectedRow.value = null;
@@ -302,51 +319,27 @@ const fetchData = async () => {
     }
 };
 
-
-watch(
-    () => props.datos,
-    (newDatos) => {
-        if (!newDatos || newDatos.length === 0) {
-            datosTabla.value = [];
-            return
-        };
-
-        datosTabla.value = newDatos;
-
-        nextTick(() => {
-            const firstRow = newDatos[0];
-            if (!selectedRow.value && !props.permitirSinSeleccion) {
-                selectedRow.value = firstRow;
-                tableRefInterna.value?.setCurrentRow(firstRow);
-                emit('row-click', firstRow);
-            }
-        });
-    },
-    { immediate: true }
-);
-
-// Watch para cuando cambian los datos paginados (después de fetch interno)
 watch(paginatedDatos, (newPaginated) => {
     if (newPaginated && newPaginated.length > 0) {
-        // Verificar si la fila seleccionada actual ya no está en los datos paginados
         const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
         const existsInPaginated = newPaginated.some(row =>
             String(row[props.idKey]) === String(currentSelectedId)
         );
 
-        // Si no existe o no hay selección, seleccionar la primera
-        if ((!existsInPaginated || !selectedRow.value) && !props.permitirSinSeleccion) {
+        if (!existsInPaginated || !selectedRow.value) {
             nextTick(() => {
-                selectedRow.value = newPaginated[0];
-                if (tableRefInterna.value) {
-                    tableRefInterna.value.setCurrentRow(newPaginated[0]);
+                if (!props.permitirSinSeleccion) {
+                    selectedRow.value = newPaginated[0];
+                    if (tableRefInterna.value) {
+                        tableRefInterna.value.setCurrentRow(newPaginated[0]);
+                    }
+                    emit('row-click', newPaginated[0]);
                 }
-                emit('row-click', newPaginated[0]);
             });
         }
     }
 }, { immediate: true });
-/* hasta aqui se agrego juan carlos 13/02/2026*/
+
 
 let debounceTimer;
 
@@ -375,8 +368,8 @@ const handlePageChange = (page) => {
     fetchData();
 };
 
-const cambioLista = (row) => {
-    console.log("Este es el row seleccionado de la lista: ", row);
+const cambioLista = (valor, row) => {
+    emit('lista-Actual', valor);
 }
 
 const onEditar = (item) => emit('editar-item', item);
@@ -403,7 +396,6 @@ defineExpose({
     setCurrentRow,
     clearCurrentRow
 });
-
 </script>
 
 <template>
@@ -412,33 +404,21 @@ defineExpose({
             <div class="header-container" style="flex-grow: 1; margin-top: -12px; margin-bottom: -12px;">
                 <div class="right">
                     <slot name="header-title">
-                        <!-- <TipoBusqueda v-model="tipoDeBusqueda" /> -->
                         <SwitchBusqueda v-model="tipoDeBusqueda" />
                     </slot>
                 </div>
                 <div class="left">
                     <div class="botonera-biotica">
-                        <!--Juan Carlos - 27/01/2026 https://ecoinformatica.atlassian.net/browse/SOCAT-6
-                Se agrega la funcionalidad para mostrar o ocultar los botones de acciones-->
-
                         <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
                             @traspasa="onRecuperaMarcado" />
                         <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
                         <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
                         <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" />
+                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
-                        <!-- Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-
-              Se agrego la propiedad accion -->
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
-                        <!--Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-              se agrega el boton de acceso a bibliografia para la tabla filtrable-->
-
-
-                        <!--NuevoButton @crear="onNuevo" /-->
                         <div v-if="props.mostrarBiblio">
                             <el-tooltip class="item" effect="dark" content="Bibliografia">
                                 <el-button @click="onBiblio" circle style="flex-shrink: 0;
@@ -455,9 +435,7 @@ defineExpose({
             </div>
         </template>
         <div class="table-responsive ">
-            <!--Juan carlos 09/02/2026
-          Se agrega la funcion @expand-change ="onExpandChange" para que detecte cuando se expande la columna y por lo tanto se seleccione-->
-            <el-table :key="tableKey" ref="tableRefInterna" style="width: 100%;"  size="small"
+            <el-table :key="tableKey" ref="tableRefInterna" style="width: 100%;" size="small"
                 :highlight-current-row="props.highlightCurrentRow" :data="paginatedDatos" :row-key="props.idKey"
                 :row-class-name="props.rowClassName || rowClassNameInterno" @row-click="handleRowClickInterno"
                 @expand-change="onExpandChange" :border="true" :height="props.alturaTabla"
@@ -511,9 +489,8 @@ defineExpose({
                         </template>
 
                         <template v-else-if="col.tipo === 'lista'">
-
                             <el-select v-if="row[col.prop]" v-model="row[col.prop].id" placeholder="Seleccione"
-                                @change="cambioLista($event, row)" :disabled=props.habOpciones>
+                                @change="cambioLista($event, row)" :disabled="editarSelect !== row">
                                 <el-option v-for="item in valoresOpcion" :key="item.id" :label="item.descripcion"
                                     :value="item.id" />
                             </el-select>
@@ -635,6 +612,12 @@ defineExpose({
     background-color: #ddf6dd !important;
 }
 
+:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
+    background-color: #ddf6dd !important;
+    color: #007bff !important;
+    font-weight: bold;
+}
+
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
     background-color: #fff !important;
@@ -711,19 +694,15 @@ defineExpose({
 
 :deep(.el-table__inner-wrapper) {
     overflow-x: auto !important;
-    /* Permite el flujo horizontal */
 }
 
 :deep(.el-table__body-wrapper) {
     overflow-x: auto !important;
-    /* Asegura scroll en el cuerpo */
 }
 
-/* Estilo para la barra de scroll (opcional pero recomendado para visibilidad) */
 :deep(.el-scrollbar__bar.is-horizontal) {
     height: 12px !important;
     opacity: 1 !important;
-    /* Que siempre sea visible si hay desborde */
     background: rgba(0, 0, 0, 0.05);
     bottom: 0;
     z-index: 10;
@@ -731,11 +710,9 @@ defineExpose({
 
 :deep(.el-scrollbar__thumb) {
     background-color: #909399 !important;
-    /* Color gris oscuro */
     border-radius: 10px;
 }
 
-/* Ajuste para que el encabezado no se rompa al hacer scroll */
 :deep(.el-table__header-wrapper) {
     overflow: hidden !important;
 }

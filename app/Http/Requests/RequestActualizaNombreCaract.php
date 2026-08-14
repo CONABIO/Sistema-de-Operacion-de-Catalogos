@@ -11,7 +11,7 @@ use App\Models\CatalogoNombre;
 use App\Models\RelNombreCatalogo;
 use Illuminate\Support\Facades\DB;
 
-class RequestAltaNombreCaract extends FormRequest
+class RequestActualizaNombreCaract extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -35,12 +35,14 @@ class RequestAltaNombreCaract extends FormRequest
                                                 $fail("El $attribute no existe en la base de datos.");
                                             }
                                         }],
-            'idCaract' => ['required', 'integer', 
+            'idCatNombre' => ['required', 'integer', 
                                         function ($attribute, $value, $fail) {                                            
                                             if (!CatalogoNombre::where('IdCatNombre', $value)->exists()) {
                                                 $fail("El $attribute no existe en la base de datos.");
                                             }
                                         }],
+            'observaciones' =>['nullable',
+                               'string']
         ];
     }
 
@@ -49,11 +51,11 @@ class RequestAltaNombreCaract extends FormRequest
         $validator->after(function ($validator){
            
             $exists = RelNombreCatalogo::where('IdNombre', $this->idNombre)
-                                          ->where('IdCatNombre', $this->idCaract)
+                                          ->where('IdCatNombre', $this->idCatNombre)
                                           ->exists();
 
-            if($exists){
-                $validator->errors()->add('relacion', 'La relación entre taxón, y catalogo nombre ya existe.');
+            if(!$exists){
+                $validator->errors()->add('relacion', 'La relación que intenta actualizar no existe.');
             }
         });
     }
