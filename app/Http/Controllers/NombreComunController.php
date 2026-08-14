@@ -232,69 +232,62 @@ class NombreComunController extends Controller
         ]);
     }
 
-    public function cargaNombresComunes($IdNombre)
-    {
-        //En esta sentencia se maneja el control de los inner join manejados por medio de funciones
-        $datos = RelNomNomComunRegion::from('RelNomNomComunRegion as rnncr')
-                            ->join('RelNomNomComunRegionBiblio as rnncrb', function ($join){
-                                $join->on('rnncrb.IdNomComun', 'rnncr.IdNomComun')
-                                     ->on('rnncrb.IdNombre', 'rnncr.IdNombre')
-                                     ->on('rnncrb.IdRegion', 'rnncr.IdRegion');
-                            })
-                            ->join('NomComun as nc', 'nc.IdNomComun', 'rnncr.IdNomComun')
-                        ->select('rnncr.IdNomComun', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones AS ObsNomCom',
-                                 'rnncr.IdNombre', 'rnncr.IdRegion', 'rnncr.Observaciones AS ObsRel',
-                                    DB::raw('COUNT(rnncrb.IdBibliografia) as Biblio')
-                        )
-                        ->where('rnncr.IdNombre', $IdNombre)
-                        ->groupBy('rnncr.IdNomComun',
-                                  'rnncr.IdNombre',
-                                  'rnncr.IdRegion',
-                                  'nc.NomComun',
-                                  'nc.Lengua',
-                                  'nc.Observaciones',
-                                  'rnncr.Observaciones')
-                        ->get();
+public function cargaNombresComunes($IdNombre)
+{
+    $datos = RelNomNomComunRegion::from('RelNomNomComunRegion as rnncr')
+        ->leftJoin('RelNomNomComunRegionBiblio as rnncrb', function ($join){
+            $join->on('rnncrb.IdNomComun', 'rnncr.IdNomComun')
+                 ->on('rnncrb.IdNombre', 'rnncr.IdNombre')
+                 ->on('rnncrb.IdRegion', 'rnncr.IdRegion');
+        })
+        ->join('NomComun as nc', 'nc.IdNomComun', 'rnncr.IdNomComun')
+        ->select('rnncr.IdNomComun', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones AS ObsNomCom',
+                 'rnncr.IdNombre', 'rnncr.IdRegion', 'rnncr.Observaciones AS ObsRel',
+                DB::raw('COUNT(rnncrb.IdBibliografia) as BiblioCount')
+        )
+        ->where('rnncr.IdNombre', $IdNombre)
+        ->groupBy('rnncr.IdNomComun', 'rnncr.IdNombre', 'rnncr.IdRegion', 'nc.NomComun', 'nc.Lengua', 'nc.Observaciones', 'rnncr.Observaciones')
+        ->orderBy('nc.NomComun', 'asc')
+        ->get();
 
-        $idsRegiones = $datos->pluck('IdRegion')->unique();
+    $idsRegiones = $datos->pluck('IdRegion')->unique();
+    $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
+    $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+    $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
 
-        $todosLosNodosRegiones = Region::orderBy('NombreRegion')
-                                       ->get()
-                                       ->keyBy('IdRegion')
-                                       ->all();
+    $agrupado = $datos->groupBy('IdNomComun')->map(function ($registro) use ($regionesIndexadas){
+        $valor = $registro->first();
 
-        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+        $totalBiblioPadre = $registro->sum('BiblioCount');
+        $urlBiblioPadre = $totalBiblioPadre > 0 ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg';
 
-        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
+        return [
+            'id' => $valor->IdNomComun,
+            'IdNomComun' => $valor->IdNomComun,
+            'NombreComun' => $valor->NomComun,
+            'Lengua' => $valor->Lengua,
+            'Observaciones' => $valor->ObsNomCom,
+            'Biblio' => ['texto' => '', 'url' => $urlBiblioPadre],
+            'Regiones' => $registro->map(function ($item) use ($regionesIndexadas) {
+                $urlBiblio = $item->BiblioCount > 0 ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg';
 
-        $agrupado = $datos
-                ->groupBy('IdNomComun')
-                ->map(function ($registro) use ($regionesIndexadas){
-                    $valor = $registro->first();
+                return [
+                    'id' => 'reg-' . $item->IdRegion . '-' . $item->IdNomComun,
+                    'IdRegion' => $item->IdRegion,
+                    'IdNomComun' => $item->IdNomComun,
+                    'Region' => $regionesIndexadas[$item->IdRegion]['Region'] ?? '',
+                    'Biblio' => ['texto'=> '', 'url' => $urlBiblio],
+                    'Observaciones' => $item->ObsRel,
+                    'ObservacionesReg' => $item->ObsRel,
+                ];
+            })
+            ->sortBy('Region')
+            ->values()
+        ];
+    });
 
-                    return[
-                        'IdNomComun' => $valor -> IdNomComun,
-                        'NombreComun' => $valor -> NomComun,
-                        'Lengua' => $valor -> Lengua,
-                        'Observaciones' => $valor->ObsNomCom,
-                        'Regiones' => $registro->map(function ($item) use ($regionesIndexadas, $valor) {
-                            if($valor->Biblio > 0){
-                                    $biblio = '/storage/images/Libro_Verde.svg';
-                            }else{
-                                    $biblio = '/storage/images/Libro_Rojo.svg';
-                            }
-                            return[
-                                'IdRegion' => $item -> IdRegion,
-                                'Region' => $regionesIndexadas[$item->IdRegion]['Region'] ?? '',
-                                'Biblio' => ['texto'=> '',
-                                       'url'=>$biblio],
-                                'ObservacionesReg' => $item->ObsRel,
-                            ];
-                        }) -> values()
-                    ];
-                })
-                -> values();
+    $resultadoFinal = $agrupado->sortBy('NombreComun')->values();
 
-        return response()->json($agrupado);
-    }
+    return response()->json($resultadoFinal);
+}
 }
