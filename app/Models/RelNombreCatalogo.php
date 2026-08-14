@@ -8,6 +8,7 @@ use App\Models\Traits\HasCompositePrimaryKey;
 use App\Models\RelNombreCatalogoBiblio;
 use App\Models\RelNombreCatalogoRegion;
 use App\Models\RelNombreCatalogoRegionBiblio;
+use Illuminate\Support\Facades\DB;
 
 
 class RelNombreCatalogo extends Model
@@ -43,24 +44,31 @@ class RelNombreCatalogo extends Model
     public function scopeCaracteristicasTaxon($query, $idNombre)
     {
 
-        $consultaSinReg = $query->from('RelNombreCatalogo as rnc')
-                            ->join('RelNombreCatalogoBiblio as rncb', function ($join){
-                                $join->on('rncb.IdNombre', 'rnc.IdNombre')
-                                     ->on('rncb.IdCatNombre', 'rnc.IdCatNombre');
-                            })
-                            ->selectRaw("rnc.IdNombre,
-                                         rnc.IdCatNombre,
-                                         rnc.Observaciones AS RelNomCat,
-                                         '' AS RelNomCatReg,
-                                         0 AS IdRegion, 
-                                         0 AS IdTipoDistribucion,
-                                         '' AS Descripcion,
-                                         COUNT(rncb.IdBibliografia) AS contBiblio,
-                                         0 AS contBiblioRegion")
-                            ->where('rnc.IdNombre', $idNombre)
-                            ->groupBy('rnc.IdNombre', 
-                                      'rnc.IdCatNombre', 
-                                      'rnc.Observaciones');
+        $consultaSinReg = RelNombreCatalogo::query()
+            ->from('RelNombreCatalogo as rnc')
+            ->select([
+                'rnc.IdNombre',
+                'rnc.IdCatNombre',
+                DB::raw('rnc.Observaciones AS RelNomCat'),
+                DB::raw("'' AS RelNomCatReg"),
+                DB::raw('0 AS IdRegion'),
+                DB::raw('0 AS IdTipoDistribucion'),
+                DB::raw("'' AS Descripcion"),
+            ])
+            ->selectSub(
+                RelNombreCatalogoBiblio::query()
+                    ->selectRaw('COUNT(IdBibliografia)')
+                    ->whereColumn('RelNombreCatalogoBiblio.IdNombre', 'rnc.IdNombre')
+                    ->whereColumn('RelNombreCatalogoBiblio.IdCatNombre', 'rnc.IdCatNombre'),
+                'contBiblio'
+            )
+            ->selectRaw('0 AS contBiblioRegion')
+            ->where('rnc.IdNombre', $idNombre)
+            ->groupBy(
+                'rnc.IdNombre',
+                'rnc.IdCatNombre',
+                'rnc.Observaciones'
+            );
         
         $consultaConReg = RelNombreCatalogoRegion::from('RelNombreCatalogoRegion AS rncr')
                             ->join('TipoDistribucion as td', 'td.IdTipoDistribucion', 'rncr.IdTipoDistribucion')
