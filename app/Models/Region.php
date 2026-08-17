@@ -46,20 +46,18 @@ class Region extends Model
     public function scopeRegionPorNombre($query, $idNombre)
     {
         return $query->from('RelNombreRegion as r')
-                     ->join('RelNombreRegionBiblio as rb', function($join){
+                     ->leftJoin('RelNombreRegionBiblio as rb', function($join){
                         $join->on('rb.IdNombre', 'r.IdNombre')
                              ->on('rb.IdRegion', 'r.IdRegion')
                              ->on('rb.IdTipoDistribucion', 'r.IdTipoDistribucion');
                      })
-                     ->join('TipoDistribucion as td', function($join){
-                        $join->on('td.IdTipoDistribucion', 'rb.IdTipoDistribucion');
-                     })
-                     ->select('r.IdNombre', 'r.IdRegion', 'r.IdTipoDistribucion', 'td.Descripcion AS TipoDist')
+                     ->join('TipoDistribucion as td', 'td.IdTipoDistribucion', '=', 'r.IdTipoDistribucion')
+                     ->select('r.IdNombre', 'r.IdRegion', 'r.IdTipoDistribucion', 'r.Observaciones', 'td.Descripcion AS TipoDist')
                      ->selectRaw('COUNT(rb.IdBibliografia) AS Biblio')
                      ->where('r.IdNombre', $idNombre)
-                     ->groupBy('r.IdNombre', 'r.IdRegion', 'r.IdTipoDistribucion', 'td.Descripcion')
+                     ->groupBy('r.IdNombre', 'r.IdRegion', 'r.IdTipoDistribucion', 'r.Observaciones', 'td.Descripcion')
                      ->orderBy('r.IdNombre')
-                     ->orderBy('r.IdRegion');
+                     ->orderBy('r.IdRegion', 'ASC');
     }
     /*Este es el SCOPE de regiones asociadas a nombre comun*/
     public function scopeRegionPorCaract($query, $idNombre)
