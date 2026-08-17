@@ -17,6 +17,7 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import { Plus, Download } from '@element-plus/icons-vue';
+import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 
 const tipoBusqueda = ref('inicia');
 
@@ -34,7 +35,7 @@ const handleCerrarNotificacion = async () => {
             if (nodoTipo) seleccionarTipoRegionBase(nodoTipo);
         }
         filterText.value = '';
-        treeKey.value++; 
+        treeKey.value++;
         await nextTick();
         await new Promise(resolve => setTimeout(resolve, 200));
         const tree = treeRef.value;
@@ -175,14 +176,27 @@ const props = defineProps({
 });
 
 /*Juan carlos Mora 11/06/2026
-Se agregan las funciones para que al presionar el boton de salir cierre 
+Se agregan las funciones para que al presionar el boton de salir cierre
     el modal y no salga al menu principal*/
 
-const emit = defineEmits(['cerrar']);
+const emit = defineEmits(['cerrar', 'traspasar']);
+
 
 const cerrarDialogo = () => {
     emit('cerrar');
-} 
+}
+
+
+const onTraspasarRegion = () => {
+    if (!selectedNode.value) {
+        mostrarNotificacion("Aviso", "Por favor, seleccione una región de la lista para traspasar.", "warning");
+        return;
+    }
+
+    // Emitimos el nodo completo al padre
+    emit('traspasar', selectedNode.value);
+};
+
 
 /*Juan Carlos Mora Morquecho */
 
@@ -394,8 +408,8 @@ watch(() => props.tiposDeRegionTreeProp, (newVal) => {
     }
 }, { immediate: true, deep: true });
 
-watch(() => props.tiposDeRegionProp, (newVal) => { 
-    listaTiposDeRegion.value = newVal; 
+watch(() => props.tiposDeRegionProp, (newVal) => {
+    listaTiposDeRegion.value = newVal;
 }, { immediate: true, deep: true });
 
 
@@ -758,7 +772,7 @@ const guardarDesdeModal = async () => {
     try {
         await formModalRef.value.validate();
     } catch (error) {
-        return; 
+        return;
     }
 
     const nombreNuevo = (formModal.value.NombreRegion || "").trim().toUpperCase();
@@ -771,7 +785,7 @@ const guardarDesdeModal = async () => {
         } else if (opcionNivel.value === "inferior" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegion;
         } else {
-            idPadreFinal = 0; 
+            idPadreFinal = 0;
         }
     } else {
         idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
@@ -779,7 +793,7 @@ const guardarDesdeModal = async () => {
 
     let listaHermanos = [];
     if (idPadreFinal === 0) {
-        listaHermanos = localTreeData.value; 
+        listaHermanos = localTreeData.value;
     } else {
         const nodoPadre = findNodeById(localTreeData.value, idPadreFinal);
         listaHermanos = nodoPadre?.children || [];
@@ -796,12 +810,12 @@ const guardarDesdeModal = async () => {
     if (duplicado) {
         nodoDuplicadoParaSeleccionar.value = duplicado;
 
-        cerrarModalOperacion(); 
+        cerrarModalOperacion();
 
         const mensajeAviso = nombreNuevo === 'ND'
             ? `La región ingresada ya existe en este nivel.`
             : `La región ingresada ya existe en este nivel.`;
-            
+
 
         mostrarNotificacion("Aviso", mensajeAviso, "warning");
         return;
@@ -815,7 +829,7 @@ const guardarDesdeModal = async () => {
             : "La región ha sido ingresada con éxito.";
 
         mostrarNotificacion(titulo, mensaje, "success");
-        router.reload({ only: ['treeDataProp'] }); 
+        router.reload({ only: ['treeDataProp'] });
     };
 
     const onError = (errors) => {
@@ -958,6 +972,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <span class="details-header-title"></span>
                         <div class="right-header-content">
                             <div class="action-group">
+
+                                <BotonTraspaso v-if="modal" @traspasa="onTraspasarRegion" />
+
                                 <el-tooltip class="item" effect="dark" content="Ingresar">
                                     <el-button type="primary" circle @click="intentarAbrirModalInsertar"
                                         :disabled="botonNuevoDeshabilitado" title="Nuevo">
