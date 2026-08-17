@@ -46,6 +46,8 @@ const props = defineProps({
     valoresOpcion: { type: Array, required: false, default: [] },
     habOpciones: { type: Boolean, default: true },
     permitirSinSeleccion: { type: Boolean, default: false },
+    tipoBusquedaExterno: { type: String, default: '' },
+    mostrarSwitchLocal: { type: Boolean, default: true },
     alturaTabla: {
         type: Number,
         default: 550
@@ -67,6 +69,12 @@ const props = defineProps({
     deshabilitarGuardar: { type: Boolean, default: false },
 });
 
+watch(() => props.tipoBusquedaExterno, (nuevoValor) => {
+    if (nuevoValor && nuevoValor !== tipoDeBusqueda.value) {
+        tipoDeBusqueda.value = nuevoValor;
+    }
+}, { immediate: true });
+
 const onBiblio = () => emit('abrir-Biblio');
 
 const handleVisibleChange = (visible, prop) => {
@@ -78,6 +86,13 @@ const handleVisibleChange = (visible, prop) => {
             }
         });
     }
+};
+
+
+const buscarExterno = async (columna, valor) => {
+    filtros.value[columna] = valor;
+    currentPage.value = 1;
+    await fetchData();
 };
 
 
@@ -93,12 +108,19 @@ const irAPagina = async (numeroPagina) => {
 };
 
 const handleRowClickInterno = (row) => {
-    if (editarSelect.value !== null &&
-        editarSelect.value !== row) {
+    if (!row) return;
+    if (editarSelect.value !== null) {
+        const key = props.idKey || 'id'; 
+        const idActual = String(editarSelect.value[key]);
+        const idNuevo = String(row[key]);
 
-        return;
+        if (idActual !== idNuevo) {
+            nextTick(() => {
+                tableRefInterna.value?.setCurrentRow(editarSelect.value);
+            });
+            return; 
+        }
     }
-
     selectedRow.value = row;
     emit('row-click', row);
 };
@@ -138,15 +160,20 @@ const forzarFocoFilaVerde = async () => {
     await nextTick();
     setTimeout(() => {
         if (!tableRefInterna.value) return;
-
         const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
 
         if (filaVerde) {
-            filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            filaVerde.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center'     
+            });
         } else {
-            console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
+            const filaCurrent = tableRefInterna.value.$el.querySelector('.current-row');
+            if (filaCurrent) {
+                filaCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
-    }, 300);
+    }, 400); 
 };
 
 const setFiltroExterno = (campo, valor) => {
@@ -216,13 +243,7 @@ watch(
             if (coincidencia) {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
-            } else {
-                if (!props.permitirSinSeleccion && newDatos.length > 0) {
-                    selectedRow.value = newDatos[0];
-                    tableRefInterna.value?.setCurrentRow(newDatos[0]);
-                    emit('row-click', newDatos[0]);
-                }
-            }
+            } 
         });
     },
     { immediate: true, deep: true }
@@ -273,12 +294,28 @@ const Guardar = () => {
 const fetchData = async () => {
     try {
         if (props.endpoint === "") {
-            busquedaLocal();
+            let resultado = [...props.datos];
+            Object.keys(filtros.value).forEach(campo => {
+                const valorFiltro = filtros.value[campo]?.toString().toLowerCase();
+                if (valorFiltro) {
+                    resultado = resultado.filter(item => {
+                        const valorItem = item[campo]?.toString().toLowerCase() || '';
+                        if (tipoDeBusqueda.value === 'inicia') {
+                            return valorItem.startsWith(valorFiltro);
+                        } else if (tipoDeBusqueda.value === 'contiene') {
+                            return valorItem.includes(valorFiltro);
+                        } else if (tipoDeBusqueda.value === 'termina') {
+                            return valorItem.endsWith(valorFiltro);
+                        }
+                        return true;
+                    });
+                }
+            });
+            datosTabla.value = resultado;
+            emit('update:totalItems', resultado.length);
             return;
         }
-
         const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-
         const response = await axios.get(props.endpoint, {
             params: {
                 filtros: filtros.value,
@@ -305,14 +342,7 @@ const fetchData = async () => {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
                 emit('row-click', coincidencia);
-            } else {
-                selectedRow.value = resultados[0];
-                tableRefInterna.value?.setCurrentRow(resultados[0]);
-                emit('row-click', resultados[0]);
             }
-        } else {
-            selectedRow.value = null;
-            emit('row-click', null);
         }
     } catch (error) {
         console.error(`Error en fetchData:`, error);
@@ -372,6 +402,11 @@ const cambioLista = (valor, row) => {
     emit('lista-Actual', valor);
 }
 
+const activarEdicionDesdePadre = (row) => {
+    selectedRow.value = row;
+    editarSelect.value = row;
+};
+
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
@@ -379,9 +414,11 @@ const onRecuperaMarcado = () => emit('traspasaBiblio');
 const abrirNomCom = () => emit('abrirNomComun')
 const abrirTipoDist = () => emit('abrirTipoDist')
 
+
 const cerrarModal = () => {
     emit('cerrar');
 };
+
 
 onMounted(fetchData);
 
@@ -394,7 +431,9 @@ defineExpose({
     sorting,
     selectedRow,
     setCurrentRow,
-    clearCurrentRow
+    clearCurrentRow,
+    activarEdicionDesdePadre,
+    buscarExterno
 });
 </script>
 
@@ -404,7 +443,7 @@ defineExpose({
             <div class="header-container" style="flex-grow: 1; margin-top: -12px; margin-bottom: -12px;">
                 <div class="right">
                     <slot name="header-title">
-                        <SwitchBusqueda v-model="tipoDeBusqueda" />
+                        <SwitchBusqueda v-if="props.mostrarSwitchLocal" v-model="tipoDeBusqueda" />
                     </slot>
                 </div>
                 <div class="left">
@@ -429,6 +468,7 @@ defineExpose({
                                 </el-button>
                             </el-tooltip>
                         </div>
+                        <BotonTipoDist v-if="props.mostrarTipoDist" @click="abrirTipoDist" />
 
                     </div>
                 </div>
