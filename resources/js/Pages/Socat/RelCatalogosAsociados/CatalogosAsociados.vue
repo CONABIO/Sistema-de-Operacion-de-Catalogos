@@ -204,101 +204,8 @@
                                 </el-tab-pane>
 
                                 <el-tab-pane label="Características" name="Caracteristicas">
-                                    <el-container>
-                                        <el-aside width="710px">
-                                            <div
-                                                style="height: 680px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #fff;">
-                                                <el-splitter layout="vertical">
-                                                    <el-splitter-panel :min="50" :size="'79%'">
-                                                        <div class="table-wrapper"
-                                                            style="height: 100%; display: flex; flex-direction: column;">
-
-                                                            <div style="flex: 1; padding: 10px; overflow: auto;">
-                                                                <TablaFiltrable :columnas="columnasDefinidasCaract"
-                                                                    :datos="tablaCaracteristicas"
-                                                                    :opciones-filtro="opcionesFiltroCaract"
-                                                                    :totalItems="totalRegCaract" :itemsPerPage="9"
-                                                                    :mostrarBiblio="true" :mostrarAcci="false"
-                                                                    :alturaTabla="280" :highlight-current-row="true"
-                                                                    :mostrarNuevo="true" :mostrarEditar="true"
-                                                                    :mostrarBorrar="true" :mostrarSalir="false"
-                                                                    :mostrarGuardar="true" @row-click="clickCaract"
-                                                                    @abrir-Biblio="abrirResumenCaractSolo"
-                                                                    @nuevo-item="nuevoRelCaract"
-                                                                    @editar-item="editarCarct"
-                                                                    @eliminar-item="eliminarCaract"
-                                                                    @guardar="guardarCaract" />
-                                                            </div>
-                                                        </div>
-                                                    </el-splitter-panel>
-
-                                                    <el-splitter-panel :size="'30%'">
-                                                        <div
-                                                            style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
-                                                            <p
-                                                                style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
-                                                                Observaciones taxon - característica</p>
-                                                            <div
-                                                                style="display: flex; align-items: flex-start; gap: 10px;">
-                                                                <el-input v-model="observacionesCaractGral"
-                                                                    type="textarea" :disabled="actObsCaract" :rows="3"
-                                                                    placeholder="Observaciones de la característica..."
-                                                                    style="flex: 1;" />
-                                                            </div>
-                                                        </div>
-                                                    </el-splitter-panel>
-                                                </el-splitter>
-                                            </div>
-                                        </el-aside>
-
-                                        <el-aside width="30px" />
-
-                                        <el-aside width="710px">
-                                            <div
-                                                style="height: 630px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #fff;">
-                                                <el-splitter layout="vertical">
-                                                    <el-splitter-panel :min="50" :size="'79%'">
-                                                        <div class="table-wrapper"
-                                                            style="height: 100%; display: flex; flex-direction: column;">
-                                                            <div style="flex: 1; padding: 10px; overflow: auto;">
-                                                                <TablaFiltrable :columnas="columnasDefinidasRegCaract"
-                                                                    :datos="tablaCaractReg"
-                                                                    :opciones-filtro="opcionesFiltroRegCaract"
-                                                                    :totalItems="totalRegionCaract"
-                                                                    :valoresOpcion="tiposDistribucion"
-                                                                    :habOpciones="habOpciones" :itemsPerPage="9"
-                                                                    :mostrarBiblio="true" :mostrarAcci="false"
-                                                                    :alturaTabla="280" :highlight-current-row="true"
-                                                                    :mostrarNuevo="false" :mostrarEditar="true"
-                                                                    :mostrarBorrar="true" :mostrarSalir="false"
-                                                                    :mostrarGuardar="true" @row-click="clickRegCaract"
-                                                                    @abrir-Biblio="abrirResumenCaract"
-                                                                    @guardar="guardarCaractReg"
-                                                                    @editar-item="editarCaractReg"
-                                                                    @eliminar-item="eliminarCaractReg"
-                                                                    @lista-Actual="actValorLista" />
-                                                            </div>
-                                                        </div>
-                                                    </el-splitter-panel>
-
-                                                    <el-splitter-panel :size="'30%'">
-                                                        <div
-                                                            style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
-                                                            <p
-                                                                style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
-                                                                Observaciones de características - region</p>
-                                                            <div
-                                                                style="display: flex; align-items: flex-start; gap: 10px;">
-                                                                <el-input v-model="obsCaractReg" type="textarea"
-                                                                    :rows="3" :disabled="actObsCaractReg"
-                                                                    placeholder="Observaciones de la región..."
-                                                                    style="flex: 1;" />
-                                                            </div>
-                                                        </div>
-                                                    </el-splitter-panel>
-                                                </el-splitter>
-                                            </div>
-                                        </el-aside>
+                                    <el-container class="contenedor-rel-caract">
+                                        <RelCaract :taxonActual=props.taxonAct @cerrar="cerrarRelCaract" />
                                     </el-container>
                                 </el-tab-pane>
                                 <el-tab-pane label="Regiones" name="Region">
@@ -871,6 +778,8 @@ import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristic
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 
 
+
+
 let backupFilaRegion = null;
 
 const cancelarEdicionRegion = () => {
@@ -1288,14 +1197,6 @@ const abrirResumenCaract = () => {
 
 const dialogResumenCaractSoloVisible = ref(false);
 
-const abrirResumenCaractSolo = () => {
-    dialogResumenCaractSoloVisible.value = true;
-    if (idCaractSeleccionada.value) {
-        cargarBibliografiasRelCaractSolo();
-    }
-};
-
-
 const cargarBibliografiasRelCaractSolo = async () => {
     if (!idCaractSeleccionada.value || !props.taxonAct.id) return;
 
@@ -1680,10 +1581,10 @@ const observaciones = ref('');
 
 const tablaNomComun = ref([]);
 const tablaNomComunReg = ref([]);
-const tablaCaracteristicas = ref([]);
+
 const tablaCaractReg = ref([]);
 
-const totalRegCaract = ref(0);
+
 const totalRegionCaract = ref(0);
 
 const tiposDistribucion = ref([]);
@@ -1954,13 +1855,6 @@ const opcionesFiltroRegNomComun = ref([
 const opcionesFiltroRegCaract = ref([
     { label: 'Region', value: 'Region' },
     { label: 'Tipo Distribución', value: 'TipDistribucion' },
-]);
-
-const columnasDefinidasCaract = ref([
-    {
-        prop: 'Caracteristica', label: 'Caracteristica', minWidth: '100',
-        align: 'left', tipo: 'texto', filtrable: true
-    }
 ]);
 
 const opcionesFiltroCaract = ref([
@@ -2274,12 +2168,11 @@ watch(
         editandoObsGeneral.value = false;
         editandoObs.value = false;
         tablaNomComun.value = [];
-        tablaCaracteristicas.value = [];
+  
         if (!nuevoValor?.id) return;
         try {
             const [respNomCom, respCaract, respRegion] = await Promise.allSettled([
                 axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
-                axios.get(`/cargaCaracTaxon/${nuevoValor.id}`),
                 axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`),
             ]);
             if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
@@ -2288,12 +2181,6 @@ watch(
                 tablaNomComunAsociados.value = data;
                 nombresAsociadosTaxon.value = data;
                 totalRegNomComun.value = data.length;
-            }
-            if (respCaract.status === 'fulfilled' && respCaract.value.status === 200) {
-                tablaCaracteristicas.value = respCaract.value.data;
-                totalRegCaract.value = respCaract.value.data.length;
-            } else {
-                console.error("Error al cargar características:", respCaract.reason || "Error 500");
             }
 
             if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
@@ -2528,20 +2415,6 @@ const clickNomCom = async (data) => {
     }
 };
 
-const clickCaract = (row) => {
-    idCaractSeleccionada.value = row.IdCatNombre || row.id;
-    tablaCaractReg.value = row.Regiones || [];
-    totalRegionCaract.value = (row.Regiones || []).length;
-    idRegionCaractSeleccionada.value = null;
-    idTipoDistSeleccionada.value = null;
-    actObsCaract.value = true;
-    rowCaract.value = row;
-    observacionesCaractGral.value = row.Observaciones
-
-
-    cargarBibliografiasRelCaractSolo();
-}
-
 const clickRegCaract = async (row) => {
     rowCaractReg.value = row;
     obsCaractReg.value = row.Observaciones;
@@ -2562,41 +2435,6 @@ const clickRegCaract = async (row) => {
         });
     }
 };
-
-const editarCarct = () => {
-    actObsCaract.value = false;
-}
-
-const guardarCaract = async () => {
-    const params = {
-        idNombre: props.taxonAct.id,
-        idCatNombre: rowCaract.value.IdCatNombre,
-        observaciones: observacionesCaractGral.value,
-    };
-
-    try {
-        const response = await axios.put(`/actualiza-Caract-Taxon`, params);
-
-        if (response.status === 200) {
-            mostrarNotificacion('Aviso', response.data.message, 'success');
-            rowCaract.value.Observaciones = observacionesCaractGral.value;
-            actObsCaract.value = true;
-
-        }
-    } catch (error) {
-        if (error.response.status === 422) {
-            const errorMessages = Object.values(error.response.data.errors).flat();
-            errorMessages.forEach(msg => {
-                mostrarNotificacionError(
-                    "Error",
-                    msg,
-                    "Error",
-                    5000
-                );
-            });
-        }
-    }
-}
 
 const editarCaractReg = () => {
     actObsCaractReg.value = false;
@@ -2648,52 +2486,6 @@ const guardarCaractReg = async () => {
             });
         }
     }
-}
-
-const eliminarCaract = async (row) => {
-    const procederConEliminacion = async () => {
-        try {
-            ElMessageBox.close();
-
-            await axios.delete(`/eliminar-Caract-Taxon`, {
-                params: {
-                    idNombre: props.taxonAct.id,
-                    idCatNombre: rowCaract.value.IdCatNombre,
-                }
-            });
-
-            const index = tablaCaracteristicas.value.indexOf(row);
-
-            if (index !== -1) {
-                tablaCaracteristicas.value.splice(index, 1);
-                tablaCaractReg.value = null;
-            }
-
-            mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
-        } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
-        }
-    };
-
-    const cancelarEliminacion = () => {
-        ElMessageBox.close();
-    };
-
-    const mensaje = `¿Está seguro de eliminar la característica "${row.Caracteristica}" con sus regiones y su bibliografía relacionada? Esta acción no se puede revertir.`;
-
-    ElMessageBox({
-        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
-        message: h('div', { class: 'custom-message-content' }, [
-            h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-                h('div', { class: 'text-container' }, [h('p', null, mensaje)])
-            ]),
-            h('div', { class: 'footer-buttons' }, [
-                h(BotonCancelar, { onClick: cancelarEliminacion }),
-                h(BotonAceptar, { onClick: procederConEliminacion }),
-            ])
-        ])
-    }).catch(() => { });
 }
 
 const eliminarCaractReg = async (row) => {
@@ -2823,10 +2615,6 @@ const nuevoRelNomComun = () => {
     dialogFormVisibleRelNomCom.value = true;
 }
 
-const nuevoRelCaract = () => {
-    dialogFormVisibleRelCaract.value = true;
-}
-
 const Guardar = () => {
 
 }
@@ -2912,6 +2700,14 @@ watch(filterText, (nuevoValor) => {
 </script>
 
 <style scoped>
+
+    .contenedor-rel-caract {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+    }
+
 .demo-tree {
     flex: 1;
     overflow-y: auto;

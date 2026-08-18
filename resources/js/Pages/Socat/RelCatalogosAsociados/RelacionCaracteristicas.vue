@@ -1,16 +1,16 @@
 <template>
-    <div>
+    <div class = "rel-caract-container">
         <el-card class="box-card">
             <div class="common-layout">
                 <el-container style="height: 72vh;">
-                    <el-header class="header">
+                    <!--el-header class="header">
                         <div class="header-content">
                             <h1 class="titulo">Asociación Taxón-Características-Región</h1>
                         </div>
-                    </el-header>
+                    </el-header-->
                     <el-main style="padding: 15px; background: #fff; overflow: auto;">
                         <div style=" margin-bottom: 20px;">
-                            <el-row :gutter="21">
+                            <!--el-row :gutter="21">
                                 <el-col :span="16">
                                     <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
                                         {{ props.taxonActual.label }} 
@@ -22,7 +22,7 @@
                                                         style="flex-shrink: 0; min-width: max-content;"/>
                                     </div>
                                 </el-col>
-                            </el-row>
+                            </el-row-->
                             <el-row :gutter="21">
                                 <el-switch
                                     v-model="georeferido"
@@ -1423,6 +1423,33 @@
 </script>
 
 <style scoped>
+
+    .rel-caract-container {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .box-card {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    :deep(.box-card .el-card__body) {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    <!-------------------------------------------------------------------->
 
     .card-disabled {
         opacity: 0.6 !important;
