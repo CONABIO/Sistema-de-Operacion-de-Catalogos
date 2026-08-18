@@ -1,6 +1,6 @@
     <template>
         <div>
-            <el-card class="box-card" style="width: 1540px; margin: 20px auto; border-radius: 12px;">
+            <el-card class="box-card" style="width: 1540px; margin: 20px auto; border-radius: 12px; height: 820px;">
                 <div class="common-layout">
                     <el-container style="height: auto;">
                         <el-header class="header">
@@ -94,8 +94,6 @@
                                                                 <template #header>
                                                                     <div style="display: flex; align-items: center; margin-top: -5px; margin-bottom: -6px; width: 100%; gap: 10px;">
                                                                         <span class="details-header-title">Región</span>
-
-                                                                        <!-- BUSCADOR INSERTADO -->
                                                                         <div class="header-buscador" style="flex-grow: 1; max-width: 300px; margin: 0 10px;">
                                                                             <el-input
                                                                                 v-model="filterText"
@@ -303,108 +301,122 @@
                                         </el-aside>
                                     </el-container>
                                 </el-tab-pane>
-                                <el-tab-pane label="Regiones2" name="Region3">
-                                    <div style="height: 500px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                <el-tab-pane label="Regiones" name="Region">
+                                    <div style="height: 540px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
+                                        <div style="padding: 10px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
+                                            <span style="font-weight: bold; color: #606266; font-size: 14px;">Búsqueda general:</span>
+                                            <SwitchBusqueda v-model="filtroRegionesGeneral" />
+                                        </div>
                                         <el-splitter lazy>
-                                            <el-splitter-panel min="50">
-                                                <div class="demo-panel panel-nombre">
-                                                    <el-container style="width:100%; height:100%;">
+                                            <el-splitter-panel :size="'23%'">
+                                                <div class="demo-panel panel-nomcomun table-wrapper">
+                                                    <el-container>
                                                         <el-header height="40px"
                                                             style=" display:flex; justify-content:center; align-items:center;">
-                                                            <span
-                                                                style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                                                Regiones asociadas al Taxón
+                                                            <span style="font-size: 15px; font-weight: bold;">
+                                                                Regiones asociadas al
+                                                                <br>
+                                                                Taxón-Nombre Comun
                                                             </span>
                                                         </el-header>
-
-                                                        <TablaFiltrable :columnas="colDefRegionNombre"
-                                                            :datos="regionesNombre"
-                                                            :opciones-filtro="opcionesFiltroRegCaract"
-                                                            :totalItems="totalRegionesNom"
-                                                            :valoresOpcion="tiposDistribucion"
-                                                            :habOpciones="habOpciones" :itemsPerPage=4
-                                                            :mostrarBiblio="true" :mostrarAcci="false" :alturaTabla=264
-                                                            :highlight-current-row="true" :mostrarNuevo="false"
-                                                            :mostrarRegion="true" :mostrarGuardar="true"
-                                                            :mostrarEditar="true" :mostrarBorrar="true"
+                                                         <TablaFiltrable
+                                                            :columnas="colDefRegionNomCom"
+                                                            :datos="regionesNomComFull"
+                                                            :totalItems="totalRegionesNomComFull"
+                                                            :tipo-busqueda-externo="filtroRegionesGeneral"
+                                                            :mostrar-switch-local="false"
+                                                            :itemsPerPage="8"
+                                                            :mostrarBiblio="false"
+                                                            :mostrarAcci="false"
+                                                            :alturaTabla="330"
+                                                            :highlight-current-row="true"
+                                                            :mostrarNuevo="false"
+                                                            :mostrarEditar="false"
+                                                            :mostrarBorrar="false"
                                                             :mostrarSalir="false">
                                                         </TablaFiltrable>
-
                                                     </el-container>
                                                 </div>
                                             </el-splitter-panel>
-                                            <el-splitter-panel min="50">
-                                                <div class="demo-panel panel-carac">
+                                            <el-splitter-panel :size="'25%'">
+                                                <div class="demo-panel panel-carac table-wrapper">
                                                     <el-container>
                                                         <el-header height="40px"
                                                             style=" display:flex; justify-content:center; align-items:center;">
                                                             <span
-                                                                style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                                                Regiones asociadas al Taxón-Caracteristica
+                                                                style="font-size: 15px;  font-weight: bold;">
+                                                                Regiones asociadas al
+                                                                <br>
+                                                                Taxón-Caracteristica
                                                             </span>
                                                         </el-header>
                                                         <TablaFiltrable :columnas="colDefRegionCaract"
                                                             :datos="regionesCaract"
-                                                            :opciones-filtro="opcionesFiltroRegCaract"
                                                             :totalItems="totalRegionesCaract"
+                                                            :tipo-busqueda-externo="filtroRegionesGeneral"
+                                                            :mostrar-switch-local="false"
                                                             :valoresOpcion="tiposDistribucion"
-                                                            :habOpciones="habOpciones" :itemsPerPage=4
-                                                            :mostrarBiblio="true" :mostrarAcci="false" :alturaTabla=288
+                                                            :habOpciones="habOpciones" :itemsPerPage=8
+                                                            :mostrarBiblio="false" :mostrarAcci="false" :alturaTabla=330
                                                             :highlight-current-row="true" :mostrarNuevo="false"
-                                                            :mostrarGuardar="true" :mostrarEditar="true"
+                                                            :mostrarGuardar="false" :mostrarEditar="false"
                                                             :mostrarBorrar="false" :mostrarSalir="false">
                                                         </TablaFiltrable>
                                                     </el-container>
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel min="50">
-                                                <div class="demo-panel panel-nomcomun">
-                                                    <el-container>
-                                                        <el-header height="40px"
-                                                            style=" display:flex; justify-content:center; align-items:center;">
-                                                            <span
-                                                                style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                                                Regiones asociadas al Taxón-Nombre Comun
-                                                            </span>
-                                                        </el-header>
-                                                        <TablaFiltrable :columnas="colDefRegionNomCom"
-                                                            :datos="regionesNomCom"
-                                                            :opciones-filtro="opcionesFiltroRegCaract"
-                                                            :totalItems="totalRegionesNomCom" :itemsPerPage=5
-                                                            :mostrarBiblio="true" :mostrarAcci="false" :alturaTabla=304
-                                                            :highlight-current-row="true" :mostrarNuevo="false"
-                                                            :mostrarEditar="false" :mostrarBorrar="false"
-                                                            :mostrarSalir="false">
-                                                        </TablaFiltrable>
-                                                    </el-container>
-                                                </div>
-                                            </el-splitter-panel>
-                                        </el-splitter>
-                                    </div>
-                                </el-tab-pane>
-                                <el-tab-pane label="Regiones3" name="Region4">
-                                    <div style="height: 500px; box-shadow: var(--el-border-color-light) 0px 0px 10px">
-                                        <el-splitter lazy>
-                                            <el-splitter-panel collapsible min="50">
-                                                <div class="demo-tree panel-nombre">
-                                                    <el-tree class="tree-full" :data="todasRegiones"
-                                                        :props="defaultProps">
-                                                        <template #default="{ node, data }">
-                                                            <Logo class="tree-node-logo"
-                                                                :rutaCategoria="data.Biblio.url" />
-                                                            <span :class="claseOrigen(data)">
-                                                                {{ data.Region }}
-                                                                <template v-if="data.TipoDistribucion">
-                                                                    ({{ data.TipoDistribucion.descripcion }})
+                                                <div class="demo-panel panel-nombre table-wrapper" style="height: 100%;">
+                                                    <el-splitter layout="vertical" style="height: 94%;">
+                                                        <el-splitter-panel :size="'125%'">
+                                                            <el-container style="width:100%; height:100%;">
+                                                                <el-header height="40px" style="display:flex; justify-content:center; align-items:center;">
+                                                                    <span style="font-size: 15px; font-weight: bold;">
+                                                                        Regiones asociadas al Taxón
+                                                                    </span>
+                                                                </el-header>
+
+                                                                <TablaFiltrable
+                                                                    ref="refTablaRegionesNombre"
+                                                                    :columnas="colDefRegionNombre"
+                                                                    :datos="regionesNombre" :row-key="'IdRegion'"
+                                                                    :totalItems="totalRegionesNom"  @row-click="handleRowClickRegion"
+                                                                    @editar-item="habilitarEdicionRegion"
+                                                                    :deshabilitarGuardar="!editandoFilaRegion"
+                                                                    :valoresOpcion="tiposDistribucion"
+                                                                    :tipo-busqueda-externo="filtroRegionesGeneral"
+                                                                    :mostrar-switch-local="false"
+                                                                    :habOpciones="habOpciones" :itemsPerPage=5
+                                                                    :mostrarBiblio="true" :mostrarAcci="false" :alturaTabla="240"
+                                                                    :highlight-current-row="true" :mostrarNuevo="true" 
+                                                                    :mostrarTipoDist="true"  @abrir-tipo-dist="abrirCatalogoTipoDist" 
+                                                                    :mostrarRegion="false" :mostrarGuardar="true" @eliminar-item="eliminarRegNombre"
+                                                                    :mostrarEditar="true" :mostrarBorrar="true"
+                                                                    :mostrarSalir="false" @nuevo-item="abrirReg" @guardar="guardarRegNombre"  @abrir-biblio="abrirResumenRegionTaxon">
+                                                                </TablaFiltrable>
+                                                            </el-container>
+                                                        </el-splitter-panel>
+
+                                                        <el-splitter-panel :size="'48%'">
+                                                            <el-card class="panel-card list-panel" shadow="never" style="border:none;">
+                                                                <template #header>
+                                                                    <div style="display: flex; align-items: center; margin-top: -5px; margin-bottom: -6px;">
+                                                                        <span style="font-weight: bold; font-size: 14px;">Observaciones Región - Taxón</span>
+                                                                    </div>
                                                                 </template>
-                                                            </span>
-                                                        </template>
-                                                    </el-tree>
-                                                </div>
-                                            </el-splitter-panel>
-                                            <el-splitter-panel collapsible min="50">
-                                                <div class="demo-panel panel-carac">
-                                                    Aqui puedo mostar el detalle
+                                                                <div style="padding: 10px;">
+                                                                    <el-input 
+                                                                        v-model="obsRegionTaxon" 
+                                                                        type="textarea" 
+                                                                        :rows="3" 
+                                                                        placeholder="Escriba las observaciones de la relación..." 
+                                                                        :disabled="!editandoFilaRegion"
+                                                                    />
+                                                                </div>
+                                                            </el-card>
+                                                        </el-splitter-panel>
+
+                                                    </el-splitter>
                                                 </div>
                                             </el-splitter-panel>
                                         </el-splitter>
@@ -422,7 +434,7 @@
                     :flatTreeDataProp="flatTreeDataProp" />
             </DialogForm>
             <DialogForm v-model="dialogFormVisibleReg" :botCerrar="true" :pressEsc="false" :width="'83%'">
-                <CuerpoRegion :modal="true" @cerrar="cerrarReg" :treeDataProp="treeRegionDataProp"
+                <CuerpoRegion :modal="true" @cerrar="cerrarReg" :treeDataProp="treeRegionDataProp" @traspasar="ejecutarTraspasoDesdeModal"
                     :tiposDeRegionProp="tiposDeRegionProp" :tiposDeRegionTreeProp="tiposDeRegionTreeProp" />
             </DialogForm>
             <DialogForm v-model="dialogFormVisibleNomCom" :botCerrar="true" :pressEsc="false" :width="'83%'">
@@ -437,7 +449,7 @@
                 <RelCaract :modal="true" :taxonActual=props.taxonAct @cerrar="cerrarRelCaract" />
             </DialogForm>
 
-            <DialogForm v-model="dialogResumenRegionesVisible" :botCerrar="true" :pressEsc="true" :width="'85%'">
+            <DialogForm v-model="dialogResumenRegionesVisible" :botCerrar="true" :pressEsc="false" :width="'85%'">
                 <div style="height: 820px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
 
                     <el-header class="header">
@@ -710,9 +722,109 @@
                     </div>
                 </div>
             </DialogForm>
+            
+            <DialogForm v-model="dialogResumenRegionTaxonVisible" :botCerrar="true" :pressEsc="false" :width="'80%'">
+    <div style="height: 750px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
+        <el-header class="header">
+            <div class="header-content">
+                <h1 class="titulo">Asociación de Región - Taxón - Bibliografía</h1>
+            </div>
+        </el-header>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+            <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                {{ props.taxonAct.label }}
+            </span>
+            <BotonSalir accion="cerrar" @salir="dialogResumenRegionTaxonVisible = false" />
+        </div>
+
+        <div style="flex: 1; min-height: 0;">
+            <el-splitter style="height: 100%; border: 1px solid #ddd; border-radius: 8px;">
+                <el-splitter-panel :size="'40%'">
+                    <div class="table-wrapper" style="height: 100%; display: flex; flex-direction: column; border-right: 1px solid #eee;">
+                        <div style="background-color: #bae1f2; padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">
+                            <span style="color: #4b7a94; font-weight: bold;">Regiones Asociadas</span>
+                        </div>
+                        <div style="flex: 1; padding: 10px; overflow: auto;">
+                            <TablaFiltrable 
+                               ref="refTablaRegionesModalResumen"
+                                :columnas="colDefRegionNombre" 
+                                :datos="regionesNombre" 
+                                :totalItems="totalRegionesNom"
+                                :alturaTabla="460" 
+                                :itemsPerPage=10
+                                :highlight-current-row="true"
+                                :mostrarBiblio="false" 
+                                :mostrarAcci="false"
+                                :mostrarNuevo="false"
+                                :mostrarEditar="false"
+                                :mostrarBorrar="false"
+                                :mostrarSalir="false"
+                                @row-click="clickRegResumenTaxon" 
+                            />
+                        </div>
+                    </div>
+                </el-splitter-panel>
+
+                <el-splitter-panel>
+                    <el-splitter layout="vertical">
+                        <el-splitter-panel :size="'70%'">
+                            <div class="table-wrapper" style="height: 100%; display: flex; flex-direction: column;">
+                                <div style="background-color: #f4f4bf; padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">
+                                    <span style="color: #856404; font-weight: bold;">Bibliografía</span>
+                                </div>
+                                <div style="flex: 1; padding: 10px; overflow: auto;">
+                                    <TablaFiltrable 
+                                        ref="refTablaBiblioRegResumen"
+                                        :columnas="colDefBiblioFinal" 
+                                        :datos="tablaBibliografiasRel"
+                                        :totalItems="totalBibliografiasRel" 
+                                        :alturaTabla="270"
+                                        :highlight-current-row="true" 
+                                        :mostrarNuevo="true"
+                                        :mostrarEditar="true" 
+                                        :mostrarBorrar="true"
+                                        :mostrarSalir="false"
+                                        :mostrar-biblio="false"
+                                        :mostrar-guardar="true"
+                                        @row-click="clickBiblioRel"
+                                        @guardar="guardarCambiosObs" 
+                                        @nuevo-item="abrirBiblio"
+                                        @eliminar-item="eliminarBiblioRel" 
+                                        @abrir-biblio="abrirBiblio"
+                                        :deshabilitarGuardar="!editandoObs" 
+                                        @editar-item="habilitarEdicionObs"
+                                    />
+                                </div>
+                            </div>
+                        </el-splitter-panel>
+
+                        <el-splitter-panel :size="'30%'">
+                            <div style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%; overflow: auto;">
+                                <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
+                                    Cita completa
+                                </p>
+                                <div style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border: 1px solid #e4e7ed; border-radius: 4px; font-size: 12px; color: #606266; line-height: 1.4;">
+                                    {{ citaCompletaResumen || '' }}
+                                </div>
+
+                                <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
+                                    Observaciones Región - Bibliografía
+                                </p>
+                                <el-input v-model="observaciones" type="textarea" :rows="3" placeholder="Observaciones..." :disabled="!editandoObs"  />
+                            </div>
+                        </el-splitter-panel>
+                    </el-splitter>
+                </el-splitter-panel>
+            </el-splitter>
+        </div>
+    </div>
+</DialogForm>
 
 
-
+<DialogForm v-model="dialogFormVisibleTipoDist" :botCerrar="true" :pressEsc="false" :width="'75%'">
+    <CuerpoTipoDistribucion :modal="true" @cerrar="cerrarTipoDist" />
+</DialogForm>
 
             <DialogForm v-model="dialogFormVisibleBiblio" :botCerrar="true" :pressEsc="false" :width="'85%'">
                 <CuerpoBibliografia :isModal="true" :traspaso="true" :biblioAct="idsBibliografiasActuales"
@@ -729,6 +841,8 @@
     </template>
 
 <script setup>
+import CuerpoTipoDistribucion from '@/Pages/Socat/TiposDistribucion/CuerpoTipoDistribucion.vue';
+import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
 import { Management, ChatLineRound, Location } from '@element-plus/icons-vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
@@ -744,7 +858,7 @@ import CuerpoNombreCom from '@/Pages/Socat/Nombres/CuerpoNombreComun.vue';
 import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import CuerpoBibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
-import { onMounted, ref, watch, computed, h, nextTick } from 'vue';
+import { onMounted,onUnmounted, ref, watch, computed, h, nextTick } from 'vue';
 import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
@@ -755,6 +869,100 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
+
+
+let backupFilaRegion = null;
+
+const cancelarEdicionRegion = () => {
+    if (!editandoFilaRegion.value) return;
+    if (backupFilaRegion) {
+        const index = regionesNombre.value.findIndex(r => r.IdRegion === backupFilaRegion.IdRegion);
+        if (index !== -1) {
+            regionesNombre.value[index] = JSON.parse(JSON.stringify(backupFilaRegion));
+        }
+    }
+    editandoFilaRegion.value = false;
+    filaRegionSeleccionada.value = null;
+    backupFilaRegion = null;
+    obsRegionTaxon.value = '';
+    if (refTablaRegionesNombre.value) {
+        refTablaRegionesNombre.value.clearCurrentRow();
+    }
+};
+
+
+const handleKeyDown = (event) => {
+    if (event.key === 'Escape' || event.keyCode === 27) {
+        if (editandoFilaRegion.value) {
+            event.preventDefault();
+            event.stopPropagation(); 
+            cancelarEdicionRegion();
+        }
+    }
+};
+
+
+const habilitarEdicionRegion = (row) => {
+    if (editandoFilaRegion.value) {
+        mostrarNotificacion(
+            "Aviso",
+            "Ya existe una edición en curso. Guarde o cancele antes de editar otro registro.",
+            "warning"
+        );
+        return; 
+    }
+    backupFilaRegion = JSON.parse(JSON.stringify(row));
+    filaRegionSeleccionada.value = row;
+    editandoFilaRegion.value = true;
+    obsRegionTaxon.value = row.Observaciones || '';
+};
+
+
+const eliminarRegNombre = async (row) => {
+    const procederConEliminacion = async () => {
+        try {
+            ElMessageBox.close();
+            await axios.delete('/eliminar-region-taxon', {
+                data: {
+                    IdNombre: props.taxonAct.id,
+                    IdRegion: row.IdRegion
+                }
+            });
+            const index = regionesNombre.value.findIndex(r => r.IdRegion === row.IdRegion);
+            if (index !== -1) {
+                regionesNombre.value.splice(index, 1);
+                totalRegionesNom.value = regionesNombre.value.length;
+            }
+            mostrarNotificacion('Eliminación', 'La región y su bibliografía han sido eliminadas correctamente.', 'success');
+        } catch (error) {
+            console.error(error);
+            mostrarNotificacion('Error', 'No se pudo eliminar la asociación.', 'error');
+        }
+    };
+
+    const mensaje = `¿Está seguro de eliminar la región seleccionada y toda su bibliografía asociada? Esta acción no se puede revertir.`;
+
+    ElMessageBox({
+        title: 'Confirmar eliminación',
+        showConfirmButton: false,
+        showCancelButton: false,
+        customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+                h('div', { class: 'custom-warning-icon-container' }, [
+                    h('div', { class: 'custom-warning-circle' }, '!')
+                ]),
+                h('div', { class: 'text-container' }, [
+                    h('p', null, mensaje)
+                ])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+                h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+                h(BotonAceptar, { onClick: procederConEliminacion }),
+            ])
+        ])
+    }).catch(() => { });
+};
 
 const cerrarModalesResumen = async () => {
     dialogResumenRegionesVisible.value = false;
@@ -950,26 +1158,42 @@ const mostrarNotificacion = (titulo, mensaje, tipo = "success") => {
 };
 
 
+
 const guardarCambiosObs = async () => {
     if (!idBiblioSeleccionada.value) {
-        mostrarNotificacion("Aviso", "Seleccione una bibliografía primero", "warning");
+        mostrarNotificacion("Aviso", "Seleccione una bibliografía de la tabla primero", "warning");
         return;
     }
+
     const procederConGuardado = async () => {
         ElMessageBox.close();
         try {
-            const payload = {
-                IdNomComun: idNomComunSeleccionado.value,
-                IdRegion: idRegionSeleccionada.value,
+            let endpoint = '';
+            let payload = {
                 IdNombre: props.taxonAct.id,
+                IdRegion: idRegionSeleccionada.value,
                 IdBibliografia: idBiblioSeleccionada.value,
                 Observaciones: observaciones.value
             };
+            if (idNomComunSeleccionado.value) {
+                endpoint = '/actualizar-obs-nomcomun-region';
+                payload.IdNomComun = idNomComunSeleccionado.value;
+            } 
+            else {
+                const regionRow = regionesNombre.value.find(r => r.IdRegion === idRegionSeleccionada.value);
+                const idTipoDist = regionRow?.TipoDistribucion?.id || regionRow?.IdTipoDistribucion;
 
-            const response = await axios.put('/actualizar-obs-nomcomun-region', payload);
+                if (!idTipoDist) {
+                    mostrarNotificacion("Error", "No se pudo determinar el tipo de distribución de la región.", "error");
+                    return;
+                }
+                endpoint = '/asociar-biblio-region-taxon'; 
+                payload.IdTipoDistribucion = idTipoDist;
+            }
+            const response = await axios.post(endpoint, payload);
             if (response.status === 200) {
-                mostrarNotificacion("Modificación", "La observación fue modificada correctamente", "success");
-                editandoObs.value = false;
+                mostrarNotificacion("Éxito", "La observación se guardó correctamente", "success");
+                editandoObs.value = false; 
                 const index = tablaBibliografiasRel.value.findIndex(
                     b => (b.IdBibliografia || b.id) === idBiblioSeleccionada.value
                 );
@@ -978,23 +1202,21 @@ const guardarCambiosObs = async () => {
                 }
             }
         } catch (error) {
-            console.error(error);
-            mostrarNotificacion("Error", "No se pudo guardar la observación", "error");
+            console.error("ERROR AL GUARDAR:", error.response?.data);
+            mostrarNotificacion("Error", "No se pudo guardar. Revisa la consola para más detalles.", "error");
         }
     };
 
     ElMessageBox({
-        title: 'Confirmar modificación',
+        title: 'Confirmar guardado',
         showConfirmButton: false,
         showCancelButton: false,
         customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [
             h('div', { class: 'body-content' }, [
-                h('div', { class: 'custom-warning-icon-container' }, [
-                    h('div', { class: 'custom-warning-circle' }, '!')
-                ]),
+                h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
                 h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Estás seguro de que deseas guardar los cambios realizados en las observaciones?")
+                    h('p', null, "¿Deseas guardar los cambios realizados en las observaciones de región - bibliografía?")
                 ])
             ]),
             h('div', { class: 'footer-buttons' }, [
@@ -1002,21 +1224,37 @@ const guardarCambiosObs = async () => {
                 h(BotonAceptar, { onClick: procederConGuardado }),
             ])
         ])
-    }).catch(() => {
-    });
+    }).catch(() => {});
 };
-
 
 const clickBiblioRel = (row) => {
-    if (!row) {
-        idBiblioSeleccionada.value = null;
-        return;
+    if (!row) return;
+    const idSugerido = String(row.IdBibliografia || row.id || row.IdCatBiblio || '');
+    const idActual = String(idBiblioSeleccionada.value || '');
+    if (editandoObs.value) {
+        if (idActual !== idSugerido) {
+            mostrarNotificacion(
+                "Aviso", 
+                "Tiene una edición en curso, por favos guarda los datos antes de seleccionar otro registro.", 
+                "warning"
+            );
+            nextTick(() => {
+                if (refTablaBiblioRegResumen.value) {
+                    const filaOriginal = tablaBibliografiasRel.value.find(b => 
+                        String(b.IdBibliografia || b.id || b.IdCatBiblio || '') === idActual
+                    );
+                    if (filaOriginal) {
+                        refTablaBiblioRegResumen.value.setCurrentRow(filaOriginal);
+                    }
+                }
+            });
+            return; 
+        }
     }
-    idBiblioSeleccionada.value = row.IdBibliografia || row.id || row.IdCatBiblio;
+    idBiblioSeleccionada.value = idSugerido;
     observaciones.value = row.Observaciones || row.observaciones || "";
-    console.log("ID Bibliografía seleccionado:", idBiblioSeleccionada.value);
+    citaCompletaResumen.value = row.CitaCompleta || row.citaCompleta || "";
 };
-
 
 const dialogResumenRegionesVisible = ref(false);
 const dialogResumenCaractVisible = ref(false);
@@ -1128,6 +1366,36 @@ const vincularInmediato = async (idBiblio) => {
         } catch (error) {
             console.error("ERROR AL VINCULAR NOM COMUN:", error.response?.data);
         }
+    } else if (tabInicial.value === 'Region') {
+        const row = regionesNombre.value.find(r => r.IdRegion === idRegionSeleccionada.value);
+        if (!row) {
+            mostrarNotificacion("Aviso", "Por favor, selecciona una región de la lista izquierda primero.", "warning");
+            return;
+        }
+        const idTipoDist = row.TipoDistribucion?.id || row.IdTipoDistribucion;
+        
+        if (!idTipoDist) {
+            mostrarNotificacion("Error", "La región seleccionada debe tener un tipo de distribución guardado.", "error");
+            return;
+        }
+
+        const params = {
+            IdNombre: props.taxonAct.id,
+            IdRegion: row.IdRegion,
+            IdTipoDistribucion: idTipoDist,
+            IdBibliografia: idBiblio
+        };
+
+        try {
+            const response = await axios.post('/asociar-biblio-region-taxon', params);
+            if (response.status === 200) {
+                if (row.Biblio) row.Biblio.url = '/storage/images/Libro_Verde.svg';
+                await clickRegResumenTaxon(row);
+            }
+        } catch (error) {
+            console.error(error);
+            mostrarNotificacion("Error", "No se pudo realizar la asociación.", "error");
+        }
     }
 };
 
@@ -1176,7 +1444,14 @@ const abrirBiblio = () => {
             mostrarNotificacion("Aviso", "Por favor selecciona una región para agregar bibliografía", "warning");
             return;
         }
+    } 
+    else if (tabInicial.value === 'Region') {
+        if (!idRegionSeleccionada.value) {
+            mostrarNotificacion("Aviso", "Por favor selecciona una región de la lista izquierda primero.", "warning");
+            return;
+        }
     }
+    
     dialogFormVisibleBiblio.value = true;
 };
 
@@ -1225,6 +1500,151 @@ const activarEdicionGeneral = () => {
 
     editandoObsGeneral.value = true;
 };
+
+
+const regionesNomComFull = computed(() => {
+    const lista = [];
+    nombresAsociadosTaxon.value.forEach(nc => {
+        if (nc.Regiones && Array.isArray(nc.Regiones)) {
+            nc.Regiones.forEach(reg => {
+                lista.push({
+                    ...reg,
+                    NombreComunPadre: nc.NombreComun
+                });
+            });
+        }
+    });
+    return lista;
+});
+
+const ejecutarTraspasoDesdeModal = (nodoRegion) => {
+    tabInicial.value = "Region";
+    const existe = regionesNombre.value.find(r => r.IdRegion === nodoRegion.IdRegion);
+    if (!existe) {
+        const nuevaFila = {
+            IdRegion: nodoRegion.IdRegion,
+            Region: nodoRegion.NombreRegion,
+            TipoDistribucion: { id: null }, 
+            Observaciones: "",
+            Biblio: { url: '/storage/images/Libro_Rojo.svg', texto: '' },
+            esNuevo: true
+        };
+        regionesNombre.value.unshift(nuevaFila);
+        totalRegionesNom.value = regionesNombre.value.length;
+        editandoFilaRegion.value = true;
+        filaRegionSeleccionada.value = nuevaFila; 
+        mostrarNotificacion(
+            "Ingreso", 
+            "La region ha sido asociada, por favor seleccione un tipo de distribucion y guarde.", 
+            "success"
+        );
+        nextTick(() => {
+            if (refTablaRegionesNombre.value) {
+                refTablaRegionesNombre.value.irAPagina(1);
+                refTablaRegionesNombre.value.setCurrentRow(nuevaFila);
+                if (typeof refTablaRegionesNombre.value.activarEdicionDesdePadre === 'function') {
+                    refTablaRegionesNombre.value.activarEdicionDesdePadre(nuevaFila);
+                }
+            }
+        });
+    } else {
+        mostrarNotificacion("Aviso", "Esta región ya se encuentra asociada al taxón.", "warning");
+    }
+    
+    cerrarReg(); 
+};
+
+const guardarRegNombre = async (modo) => {
+    const row = filaRegionSeleccionada.value;
+    if (!row) {
+        mostrarNotificacion("Aviso", "Por favor, seleccione la fila que desea guardar.", "warning");
+        return;
+    }
+    const idTipoDist = row.TipoDistribucion?.id;
+    if (!idTipoDist) {
+        mostrarNotificacion("Error", "Debe seleccionar un Tipo de Distribución.", "error");
+        return;
+    }
+
+    const params = {
+        IdNombre: props.taxonAct.id,
+        IdRegion: row.IdRegion,
+        IdTipoDistribucion: idTipoDist,
+        Observaciones: obsRegionTaxon.value 
+    };
+
+    try {
+        const response = await axios.post('/alta-relNombre-Region', params);
+        if (response.status === 200) {
+            mostrarNotificacion("Modificación", "El tipo de distribución y la observacion de la region seleccionada han sido modificada", "success");
+            
+            row.Observaciones = obsRegionTaxon.value;
+            
+            row.esNuevo = false;
+            editandoFilaRegion.value = false;
+            filaRegionSeleccionada.value = null;
+            if (refTablaRegionesNombre.value) {
+                refTablaRegionesNombre.value.clearCurrentRow(); 
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarNotificacion("Error", "No se pudo guardar la modificación.", "error");
+    }
+};
+
+const handleRowClickRegion = (row) => {
+    if (!row) return;
+
+    if (editandoFilaRegion.value) {
+        const idEditando = filaRegionSeleccionada.value ? filaRegionSeleccionada.value.IdRegion : null;
+        
+        if (String(row.IdRegion) !== String(idEditando)) {
+            mostrarNotificacion(
+                "Aviso", 
+                "Tiene una edición en curso, por favos guarda los datos o cancela (Esc) antes de seleccionar otro registro.", 
+                "warning"
+            );
+
+            nextTick(() => {
+                if (refTablaRegionesNombre.value && filaRegionSeleccionada.value) {
+                    refTablaRegionesNombre.value.setCurrentRow(filaRegionSeleccionada.value);
+                }
+            });
+            return; 
+        }
+    }
+
+    filaRegionSeleccionada.value = row;
+    idRegionSeleccionada.value = row.IdRegion;
+    obsRegionTaxon.value = row.Observaciones || ''; 
+};
+
+const dialogFormVisibleTipoDist = ref(false);
+
+const abrirCatalogoTipoDist = () => {
+    dialogFormVisibleTipoDist.value = true;
+};
+
+const cerrarTipoDist = async () => {
+    dialogFormVisibleTipoDist.value = false;
+    const tiposDistrib = await axios.get('/carga-tipos-distribucion');
+    if (tiposDistrib.status === 200) tiposDistribucion.value = tiposDistrib.data;
+};
+
+const totalRegionesNomComFull = computed(() => regionesNomComFull.value.length);
+
+const obsRegionTaxon = ref('');
+
+const dialogResumenRegionTaxonVisible = ref(false);
+const citaCompletaResumen = ref('');
+const refTablaRegionesModalResumen = ref(null);
+
+
+const refTablaRegionesNombre = ref(null);
+const filaRegionSeleccionada = ref(null);
+const editandoFilaRegion = ref(false);
+const filtroRegionesGeneral = ref('inicia');
 const valorOriginalObsGeneral = ref('');
 const nodoSeleccionadoArbol = ref(null);
 const tablaNomComunPrincipalRef = ref(null);
@@ -1301,6 +1721,64 @@ const contRegNomCom = ref(0);
 const refTablaNomComunModal = ref(null);
 const refTablaRegionesModal = ref(null);
 const refTablaBiblioModal = ref(null);
+
+
+const abrirResumenRegionTaxon = () => {
+    idRegionSeleccionada.value = null;
+    tablaBibliografiasRel.value = [];
+    totalBibliografiasRel.value = 0;
+    observaciones.value = "";
+    citaCompletaResumen.value = "";
+    editandoObs.value = false;
+    dialogResumenRegionTaxonVisible.value = true;
+    nextTick(() => {
+    });
+};
+
+const clickRegResumenTaxon = async (row) => {
+    if (!row) return;
+
+    if (editandoObs.value) {
+        mostrarNotificacion("Aviso", "Tiene una edición de observaciones activa. Guarde antes de cambiar de región.", "warning");
+    
+        nextTick(() => {
+            if (refTablaRegionesModalResumen.value) {
+                const filaOriginal = regionesNombre.value.find(r => r.IdRegion === idRegionSeleccionada.value);
+                if (filaOriginal) {
+                    refTablaRegionesModalResumen.value.setCurrentRow(filaOriginal);
+                }
+            }
+        });
+        return; 
+    }
+
+    idRegionSeleccionada.value = row.IdRegion;
+    const idTipoDist = row.TipoDistribucion?.id || row.IdTipoDistribucion;
+    if (!idTipoDist) return;
+
+    try {
+        const url = `/obtener-biblio-region-taxon/${props.taxonAct.id}/${row.IdRegion}/${idTipoDist}`;
+        const response = await axios.get(url);
+        if (response.status === 200) {
+            tablaBibliografiasRel.value = response.data;
+            totalBibliografiasRel.value = response.data.length;
+            if (response.data.length > 0) {
+                observaciones.value = response.data[0].Observaciones || "";
+                citaCompletaResumen.value = response.data[0].CitaCompleta || "";
+                idBiblioSeleccionada.value = response.data[0].IdBibliografia || response.data[0].id;
+            } else {
+                observaciones.value = "";
+                citaCompletaResumen.value = "";
+                idBiblioSeleccionada.value = null;
+            }
+        }
+    } catch (error) {
+        console.error("Error al cargar bibliografías:", error);
+        tablaBibliografiasRel.value = [];
+    }
+};
+
+
 
 const etiquetaObservaciones = computed(() => {
     if (tipoSeleccion.value === 'comun') return 'Observaciones de nombre común:';
@@ -1521,34 +1999,43 @@ const colDefRegionNombre = ref([
         prop: 'TipoDistribucion', label: 'Tipo Distribucion', minWidth: '120',
         align: 'left', tipo: 'lista', filtrable: true
     },
-    {
-        prop: 'Biblio', label: '', minWidth: '55', align: 'left',
-        tipo: 'imagenTexto', filtrable: false
-    },
+    
 ]);
 
 const colDefRegionCaract = ref([
     {
-        prop: 'Region', label: 'Región', minWidth: '120',
-        align: 'left', tipo: 'Texto', filtrable: true
+        prop: 'Region', 
+        label: 'Región', 
+        minWidth: '130',
+        align: 'left', 
+        tipo: 'Texto', 
+        filtrable: true
     },
     {
-        prop: 'TipoDistribucion', label: 'Tipo Distribucion', minWidth: '120',
-        align: 'left', tipo: 'lista', filtrable: true
+        prop: 'TipoDistribucion', 
+        label: 'Tipo Distribucion', 
+        minWidth: '120',
+        align: 'left', 
+        tipo: 'lista', 
+        filtrable: true
     },
     {
-        prop: 'Biblio', label: '', minWidth: '55', align: 'left',
-        tipo: 'imagenTexto', filtrable: false
+        prop: 'Biblio', 
+        label: '', 
+        minWidth: '56', 
+        align: 'left',
+        tipo: 'imagenTexto', 
+        filtrable: false
     },
 ]);
 
 const colDefRegionNomCom = ref([
     {
-        prop: 'Region', label: 'Región', minWidth: '120',
+        prop: 'Region', label: 'Región', minWidth: '20',
         align: 'left', tipo: 'Texto', filtrable: true
     },
     {
-        prop: 'Biblio', label: '', minWidth: '55', align: 'left',
+        prop: 'Biblio', label: '', minWidth: '5', align: 'left',
         tipo: 'imagenTexto', filtrable: false
     },
 ]);
@@ -1563,9 +2050,13 @@ const colDefBiblioFinal = ref([
         align: 'center', tipo: 'texto', filtrable: true
     },
     {
-        prop: 'CitaCompleta', label: 'Cita completa', minWidth: '200',
-        align: 'left', tipo: 'texto', filtrable: true
-    }
+        prop: 'TituloPublicacion', label: 'Título de la publicacion', minWidth: '100',
+        align: 'center', tipo: 'texto', filtrable: true
+    },
+    {
+        prop: 'TituloSubPublicacion', label: 'Título de la subpublicacion', minWidth: '100',
+        align: 'center', tipo: 'texto', filtrable: true
+    },
 ]);
 
 const tablaBibliografiasRel = ref([]);
@@ -1581,19 +2072,17 @@ const seleccionarPrimeroPorDefault = () => {
     }
 }
 
-const seleccionarTipoRegionBase = (data) => {
+const seleccionarTipoRegionBase = (data, autoSelectFirst = true) => {
     if (!data) return;
     selectedTipoRegionNode.value = data;
     activePathIds.value = findPathInTree(tiposRegionTreeData.value, data.IdTipoRegion) || [];
-
     nextTick(() => {
         tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
-        if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
+        if (autoSelectFirst && filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
             const primerNodo = filteredRegionsTree.value[0];
             handleNodeSelected(primerNodo);
-        } else {
-            selectedNode.value = null;
-            if (treeRef.value) treeRef.value.setCurrentKey(null);
+        } else if (!autoSelectFirst) {
+            tiposRegionTreeRef.value?.setCurrentKey(data.IdTipoRegion);
         }
     });
 };
@@ -1662,7 +2151,8 @@ const getTipoRegionNodeClass = (data) => {
     return activePathIds.value.includes(data.IdTipoRegion) ? 'fila-activa-completa' : '';
 };
 
-const handleTipoRegionSelected = (data) => seleccionarTipoRegionBase(data);
+const handleTipoRegionSelected = (data) => seleccionarTipoRegionBase(data, true);
+
 
 const handleTipoRegionExpand = (data) => {
     ultimoEventoExpandTime = Date.now();
@@ -1790,7 +2280,7 @@ watch(
             const [respNomCom, respCaract, respRegion] = await Promise.allSettled([
                 axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
                 axios.get(`/cargaCaracTaxon/${nuevoValor.id}`),
-                axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`)
+                axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`),
             ]);
             if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
                 const data = respNomCom.value.data;
@@ -1810,7 +2300,7 @@ watch(
                 const data = respRegion.value.data;
                 regionesNombre.value = data.regPorNombre;
                 totalRegionesNom.value = data.regPorNombre.length;
-                regionesCaract.value = data.regPorCaract;
+                regionesCaract.value = data.regPorCaract; 
                 totalRegionesCaract.value = data.regPorCaract.length;
                 regionesNomCom.value = data.regPorNomCom;
                 totalRegionesNomCom.value = data.regPorNomCom.length;
@@ -1960,31 +2450,83 @@ const ejecutarEliminacion = async () => {
 
 
 const clickNomComun = (row) => clickNomComunOriginal(row);
-const clickNomCom = (data) => {
+
+const obtenerTipoDeRegionDesdeMaestro = (nodes, idRegion) => {
+    for (const node of nodes) {
+        if (node.IdRegion === idRegion) {
+            return node.IdTipoRegion;
+        }
+        if (node.children && node.children.length > 0) {
+            const found = obtenerTipoDeRegionDesdeMaestro(node.children, idRegion);
+            if (found) return found;
+        }
+    }
+    return null;
+};
+
+
+const clickNomCom = async (data) => {
     if (!data) return;
     nodoSeleccionadoArbol.value = data;
-    tablaBibliografiasRel.value = [];
-    totalBibliografiasRel.value = 0;
-    observaciones.value = "";
-    idBiblioSeleccionada.value = null;
-    editandoObs.value = false;
-    if (data.NombreComun) {
-        idNomComunSeleccionado.value = data.IdNomComun || data.id;
-        idRegionSeleccionada.value = null;
-        tipoSeleccion.value = 'comun';
-        tablaNomComunReg.value = data.Regiones || [];
-        if (refTablaRegionesModal.value && refTablaRegionesModal.value.clearCurrentRow) {
-            refTablaRegionesModal.value.clearCurrentRow();
+    const targetId = data.IdNomComun || data.id;
+    if (tablaNomComunPrincipalRef.value) {
+        await tablaNomComunPrincipalRef.value.limpiarTodosLosFiltros();
+        try {
+            const res = await axios.post('/nombres-comunes/obtener-pagina', {
+                id: targetId,
+                perPage: 100
+            });
+            const targetPage = res.data.page;
+            await tablaNomComunPrincipalRef.value.irAPagina(targetPage);
+            await nextTick();
+            let intentos = 0;
+            const seleccionarYAenfocar = () => {
+                const filaReal = tablaNomComun.value.find(r => 
+                    String(r.IdNomComun) === String(targetId)
+                );
+                if (filaReal) {
+                    tablaNomComunPrincipalRef.value.setCurrentRow(filaReal);
+                    setTimeout(() => {
+                        tablaNomComunPrincipalRef.value.forzarFocoFilaVerde();
+                    }, 200);
+                } else if (intentos < 5) {
+                    intentos++;
+                    setTimeout(seleccionarYAenfocar, 200);
+                }
+            };
+
+            seleccionarYAenfocar();
+
+        } catch (error) {
+            console.error("No se pudo localizar el registro en la tabla:", error);
         }
-    } else {
+    }
+    if (!data.NombreComun) {
         idRegionSeleccionada.value = data.IdRegion;
         idNomComunSeleccionado.value = data.IdNomComun;
         tipoSeleccion.value = 'region';
+        
+        let idTipoRegion = data.IdTipoRegion || obtenerTipoDeRegionDesdeMaestro(localTreeDataReg.value, data.IdRegion);
+        if (idTipoRegion) {
+            const tipoNode = findNodeInTipoRegionTree(tiposRegionTreeData.value, idTipoRegion);
+            if (tipoNode) {
+                seleccionarTipoRegionBase(tipoNode, false);
+                nextTick(() => {
+                    if (treeRef.value) {
+                        treeRef.value.setCurrentKey(data.IdRegion);
+                        const node = treeRef.value.getNode(data.IdRegion);
+                        if (node) { let p = node.parent; while (p) { p.expanded = true; p = p.parent; } }
+                    }
+                });
+            }
+        }
+    } else {
+        idNomComunSeleccionado.value = targetId;
+        idRegionSeleccionada.value = null;
+        tipoSeleccion.value = 'comun';
+        tablaNomComunReg.value = data.Regiones || [];
     }
-    observacionesGeneral.value = data.Observaciones || "";
-    valorOriginalObsGeneral.value = data.Observaciones || "";
 };
-
 
 const clickCaract = (row) => {
     idCaractSeleccionada.value = row.IdCatNombre || row.id;
@@ -2290,6 +2832,7 @@ const Guardar = () => {
 }
 
 onMounted(async () => {
+    window.addEventListener('keydown', handleKeyDown, true);
     cargaRegionesCatalogos();
     cargaNomComunGlobal();
 
@@ -2302,6 +2845,10 @@ onMounted(async () => {
     const tiposDistrib = await axios.get('/carga-tipos-distribucion');
     if (tiposDistrib.status === 200) tiposDistribucion.value = tiposDistrib.data;
 
+});
+
+onUnmounted(() => {
+     window.removeEventListener('keydown', handleKeyDown, true);
 });
 
 
@@ -2573,5 +3120,11 @@ watch(filterText, (nuevoValor) => {
 
 .table-wrapper :deep(.el-table__body tr.current-row:hover > td) {
     background-color: #c9eec9 !important;
+}
+
+.panel-nombre.table-wrapper :deep(.el-button + .el-button),
+.panel-nombre.table-wrapper :deep(.el-button + span),
+.panel-nombre.table-wrapper :deep(span + .el-button) {
+    margin-left: 0 !important;
 }
 </style>

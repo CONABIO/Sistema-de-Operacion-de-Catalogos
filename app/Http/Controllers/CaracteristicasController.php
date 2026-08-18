@@ -134,74 +134,75 @@ class CaracteristicasController extends Controller
     }
 
     public function cargaRegionesNombre($idNombre){
+    $regNombre = Region::regionPorNombre($idNombre)->get();
+    $regCaract = Region::regionPorCaract($idNombre)->get();
+    $regNomComun = Region::regionPorNomComun($idNombre)->get();
+
+    $idsRegiones = collect($regNombre)->pluck('IdRegion')
+         ->merge(collect($regCaract)->pluck('IdRegion'))
+         ->merge(collect($regNomComun)->pluck('IdRegion'))
+         ->unique()->values()->toArray();
+    $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
+    $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+    $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
+
+    $regPorNombreMapped = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
+    $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
+    $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
+
+    $regPorNombre = collect($regPorNombreMapped)->map(function($item) use ($idNombre) {
+        $idTipoDist = $item['IdTipoDistribucion'] ?? ($item['TipoDistribucion']['id'] ?? null);
+
+        if ($idTipoDist) {
+            $tieneBiblio = \DB::connection('catcentral')->table('RelNombreRegionBiblio')
+                ->where('IdNombre', $idNombre)
+                ->where('IdRegion', $item['IdRegion'])
+                ->where('IdTipoDistribucion', $idTipoDist)
+                ->exists();
+
+            $item['Biblio'] = [
+                'url' => $tieneBiblio ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg',
+                'texto' => ''
+            ];
+        }
+        return $item;
+    });
+
+    $todasLasRegiones = collect()->concat($regPorNombre)->concat($regPorCarct)->concat($regPorNomCom);
+
+    return response()->json([
+        'regPorNombre' => $regPorNombre,
+        'regPorCaract' => $regPorCarct, 
+        'regPorNomCom' => $regPorNomCom,
+        'todas' => $todasLasRegiones,
+    ]);
+}
+
+private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
+    return $listaReg->map(function ($valor) use ($regIndexadas, $origenDatos){
+        $biblio = ($valor->Biblio > 0 || $valor->contBiblio > 0)
+                        ? '/storage/images/Libro_Verde.svg'
+                        : '/storage/images/Libro_Rojo.svg';
         
-        $regNombre = Region::regionPorNombre($idNombre)->get();
-        $regCaract = Region::regionPorCaract($idNombre)->get();
-        $regNomComun = Region::regionPorNomComun($idNombre)->get();
+        $tipDist = null;
+        if(isset($valor->IdTipoDistribucion) || isset($valor->id_tipo)){
+            $tipDist = [
+                'id'    => $valor->IdTipoDistribucion ?? $valor->id_tipo,
+                'label' => $valor->TipoDist ?? $valor->descripcion ?? 'Sin tipo' // IMPORTANTE: 'label'
+            ];
+        }
 
-        $idsRegiones = collect($regNombre) -> pluck('IdRegion')
-             ->merge(collect($regCaract) -> pluck('IdRegion'))
-             ->merge(collect($regNomComun) -> pluck('IdRegion'))
-             ->unique()
-             ->values()
-             ->toArray();
-
-        $todosLosNodosRegiones = Region::orderBy('NombreRegion')
-                                       ->get()
-                                       ->keyBy('IdRegion')
-                                       ->all();
-
-        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
-
-        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
-
-        $regPorNombre = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
-
-        $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
-
-        $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
-
-        $todasLasRegiones = collect()
-                                ->concat($regPorNombre)
-                                ->concat($regPorCarct)
-                                ->concat($regPorNomCom);
-
-        return response()->json([
-            'regPorNombre' => $regPorNombre,
-            'regPorCaract' => $regPorCarct,
-            'regPorNomCom' => $regPorNomCom,
-            'todas' => $todasLasRegiones,
-        ]);
-    }
-
-    private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
-        $agrupado = $listaReg
-                ->groupBy('IdRegion')
-                ->map(function ($registro) use ($regIndexadas, $origenDatos){
-                    $valor = $registro->first();
-                    $biblio = $valor->Biblio > 0
-                                    ? '/storage/images/Libro_Verde.svg'
-                                    : '/storage/images/Libro_Rojo.svg';
-                    $tipDist = null;
-
-                    if(isset($valor->IdTipoDistribucion)){
-                        $tipDist = ['id' => $valor->IdTipoDistribucion,
-                                    'descripcion' => $valor->TipoDist];
-                    }
-
-                    return [
-                        'IdRegion' => $valor->IdRegion, 
-                        'Region' => $regIndexadas[$valor->IdRegion]['Region'] ?? '',
-                        'TipoDistribucion' => $tipDist,
-                        'origen' => $origenDatos,
-                        'Biblio' => ['texto' => '',
-                                     'url' => $biblio]
-                    ];
-                })
-                -> values();
-
-        return $agrupado;
-    }
+        return [
+            'IdRegion' => $valor->IdRegion, 
+            'Region'   => $regIndexadas[$valor->IdRegion]['Region'] ?? $valor->NombreRegion ?? 'Desconocida',
+            'TipoDistribucion' => $tipDist, // Debe coincidir con el 'prop' en Vue
+            'origen'           => $origenDatos,
+            'Observaciones'    => $valor->Observaciones ?? $valor->observaciones ?? '', 
+            'Biblio'           => ['texto' => '', 'url' => $biblio]
+        ];
+    })->values();
+}
+    
 
     /*Esta es la modificacion agregada para que sea respuesta AJAX 
         Juan Carlos Mora Morquecho 22/04/2026 
@@ -309,12 +310,11 @@ class CaracteristicasController extends Controller
                 'required',
                 'string',
                 'max:255',
-                // Regla de unicidad combinada: Descripción + IdAscendente
                 Rule::unique('catcentral.CatalogoNombre', 'Descripcion')
                     ->where(function ($query) use ($nodo) {
                         return $query->where('IdAscendente', $nodo->IdAscendente);
                     })
-                    ->ignore($nodo->IdCatNombre, 'IdCatNombre') // Ignorar este nodo
+                    ->ignore($nodo->IdCatNombre, 'IdCatNombre') 
             ],
         ], [
             'Descripcion.required' => 'La descripción es obligatoria.',
@@ -340,7 +340,6 @@ class CaracteristicasController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validar antes de procesar cualquier dato
         $request->validate([
             'Descripcion' => [
                 'required',
@@ -373,7 +372,6 @@ class CaracteristicasController extends Controller
             $caracteristica->FechaCaptura = now();
             $caracteristica->save();
 
-            // Manejo de IDs adicionales
             if (!$caracteristica->IdOriginal && $caracteristica->IdCatNombre) {
                 $caracteristica->IdOriginal = $caracteristica->IdCatNombre;
                 $caracteristica->save();

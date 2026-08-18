@@ -24,6 +24,7 @@ use App\Http\Controllers\RelNomNomComunRegionBiblioController;
 use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
 use App\Http\Controllers\RelNombreNomComunController;
 use App\Http\Controllers\RelNombreCaracteristicasController;
+use App\Http\Controllers\RelNombreRegionController;
 use App\Models\Mime;
 
 
@@ -304,4 +305,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::delete('/eliminar-asociacion-nomcomun', [RelNomNomComunRegionBiblioController::class, 'eliminarRelacionNomComun']);
+
+
+    //RUTAS DE RELACION DE TAXON CON REGION Y BIBLIOGRAFÍA
+    Route::post('/alta-relNombre-Region', [RelNombreRegionController::class, 'store']);
+    Route::post('/asociar-biblio-region-taxon', [RelNombreRegionController::class, 'asociarBiblio']);
+    Route::delete('/eliminar-region-taxon', [RelNombreRegionController::class, 'eliminarRegionTaxon']);
+    Route::get('/obtener-biblio-region-taxon/{idNombre}/{idRegion}/{idTipoDist}', [RelNombreRegionController::class, 'obtenerBiblioRegionTaxon']);
+
+    Route::get('/obtener-pagina', [RelNombreRegionController::class, 'obtenerPagina']);
+   
 });
