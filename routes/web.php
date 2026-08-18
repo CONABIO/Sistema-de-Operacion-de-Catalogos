@@ -275,18 +275,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/obtener-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractSolo']);
     Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
 
-    Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
-
-Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
-Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
-
-
-Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
-Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
-Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
-
-    Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+    Route::delete('/eliminar-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+
+
+    Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
+    Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
+    Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
+
+    Route::post('/eliminar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+    Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+
+    Route::post('/actualizar-obs-biblio-caract', [RelNombreCatalogoRegionBiblioController::class, 'actualizaObsBiblioCaract']);
+    Route::post('/actualizar-obs-biblio-caract-Reg', [RelNombreCatalogoRegionBiblioController::class, 'actualizaObsBiblioCaractReg']);
 
     //------------------------------------------------------------------------------------------------------------------------------------------
     //Rutas para alta y baja de relaciones de nombre comun

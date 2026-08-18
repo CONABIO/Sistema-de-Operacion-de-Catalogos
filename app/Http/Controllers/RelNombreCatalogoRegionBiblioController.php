@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\RelNombreCatalogoBiblio;
+use App\Models\RelNombreCatalogoRegionBiblio;
 
 class RelNombreCatalogoRegionBiblioController extends Controller
 {
@@ -56,11 +59,12 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                 ->table('RelNombreCatalogoRegionBiblio')
                 ->updateOrInsert(
                     [
-                        'IdNombre' => $request->IdNombre,
-                        'IdCatNombre' => $request->IdCatNombre,
-                        'IdRegion' => $request->IdRegion,
-                        'IdTipoDistribucion' => $request->IdTipoDistribucion,
-                        'IdBibliografia' => $request->IdBibliografia
+                        'IdNombre' => $request->params['idNombre'],
+                        'IdCatNombre' => $request->params['idCaract'],
+                        'IdRegion' => $request->params['idRegion'],
+                        'IdTipoDistribucion' => $request->params['idTipDis'],
+                        'IdBibliografia' => $request->params['Biblio'],
+                        'Observaciones' => $request->params['observaciones']
                     ],
                     [
                         'usuario' => $request->usuario ?? 'sistema',
@@ -82,15 +86,83 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                 ->table('RelNombreCatalogoBiblio')
                 ->updateOrInsert(
                     [
-                        'IdNombre' => $request->IdNombre,
-                        'IdCatNombre' => $request->IdCatNombre,
-                        'IdBibliografia' => $request->IdBibliografia
+                        'IdNombre' => $request->params['idNombre'],
+                        'IdCatNombre' => $request->params['idCaract'],
+                        'IdBibliografia' => $request->params['Biblio']
                     ],
                     [
                         'usuario' => $request->usuario ?? 'sistema',
                         'FechaModificacion' => now()
                     ]
                 );
+            return response()->json(['message' => 'Asociación general (sin región) guardada']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function eliminarBiblioCaractSolo(Request $request)
+    {
+        try {
+            DB::connection('catcentral')
+                ->table('RelNombreCatalogoBiblio')
+                ->where('IdNombre', $request->params['IdNombre'])
+                ->where('IdCatNombre', $request->params['IdCatNombre'])
+                ->where('IdBibliografia',$request->params['Biblio'])
+                ->delete();
+
+            return response()->json(['message' => 'Relación eliminada'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function eliminarBiblioCaractRegion(Request $request)
+    {   
+        try {
+            DB::connection('catcentral')
+                ->table('RelNombreCatalogoRegionBiblio')
+                ->where('IdNombre', $request->idNombre)
+                ->where('IdCatNombre', $request->idCatNombre)
+                ->where('IdRegion', $request->idRegion)
+                ->where('IdTipoDistribucion', $request->idTipDist)
+                ->where('IdBibliografia', $request->biblio)
+                ->delete();
+
+            return response()->json(['message' => 'Relación eliminada'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function actualizaObsBiblioCaract(Request $request){       
+        try {
+            log::info("Estos son los parametros: ");
+            log::info($request);
+            $relBiblio = RelNombreCatalogoBiblio::where('IdNombre', $request->params['idNombre'])
+                                                ->where('IdCatNombre',  $request->params['idCaract'])
+                                                ->where('IdBibliografia',  $request->params['Biblio'])
+                                                ->update(['Observaciones' => $request->params['observaciones'],
+                                                                'usuario' => $request->params['usuario'] ?? 'sistema']);
+
+            return response()->json(['message' => 'Asociación general (sin región) guardada']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function actualizaObsBiblioCaractReg(Request $request){
+        log::info("Estos son los parametros: ");
+        log::info($request);
+        try {
+             $relBiblio = RelNombreCatalogoRegionBiblio::where('IdNombre', $request->params['idNombre'])
+                                                       ->where('IdCatNombre', $request->params['idCaract'])
+                                                       ->where('IdRegion', $request->params['idRegion'])
+                                                       ->where('IdTipoDistribucion', $request->params['idTipDis'])
+                                                       ->where('IdBibliografia',  $request->params['Biblio'])
+                                                       ->update(['Observaciones' => $request->params['observaciones'],
+                                                                       'usuario' => $request->params['usuario'] ?? 'sistema']);
+
             return response()->json(['message' => 'Asociación general (sin región) guardada']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

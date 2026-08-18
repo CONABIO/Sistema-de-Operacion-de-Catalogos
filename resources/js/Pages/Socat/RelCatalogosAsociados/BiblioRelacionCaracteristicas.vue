@@ -58,8 +58,8 @@
                         </el-card>
                     </el-splitter-panel>
                     <el-splitter-panel>
-                        <el-splitter layout="vertical">
-                            <el-splitter-panel>
+                        <el-splitter layout="vertical" style="height:100%;">
+                            <el-splitter-panel :size="500">
                                 <el-card class="panel-card list-panel" shadow="never">
                                     <template #header>
                                         <div class="header-container">
@@ -70,21 +70,38 @@
                                     </template>     
                                     <div style="flex: 1; padding: 10px; overflow: auto;">
                                         <TablaFiltrable :columnas="colDefBiblioFinal" :datos="tablaBibliografiasRel"
-                                            :totalItems="totalBibliografiasRel" :alturaTabla="320"
-                                            :highlight-current-row="true" :mostrarNuevo="true"
-                                            :mostrarEditar="false" :mostrarBorrar="true" :mostrarSalir="false"
+                                            :totalItems="totalBibliografiasRel" :alturaTabla="300"
+                                            :highlight-current-row="true" 
+                                            :mostrarNuevo="true"
+                                            :mostrarEditar="true" 
+                                            :mostrarBorrar="true" 
+                                            :mostrarGuardar="true" 
+                                            :mostrarSalir="false"
+                                            :itemsPerPage = 15
                                             @nuevo-item="abrirBiblio" @eliminar-item="eliminarBiblioRel"
-                                            @row-click="clickBiblioRel" />
+                                            @row-click="clickBiblioRel" @editar-item="clickEditarObs" 
+                                            @guardar="clickGuardar"/>
                                     </div>             
                                 </el-card>
                             </el-splitter-panel>
-                            <el-splitter-panel>
+                            <el-splitter-panel :size="140">
+                                <div
+                                    style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
+                                    <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
+                                        Cita completa</p>
+                                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                        <el-input v-model="citaBiblio" type="textarea" :rows="3" disabled
+                                            placeholder="Cita completa" style="flex: 1;" />
+                                    </div>
+                                </div>
+                            </el-splitter-panel>
+                            <el-splitter-panel :size="140">
                                 <div
                                     style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
                                     <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
                                         Observaciones</p>
                                     <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                        <el-input v-model="observaciones" type="textarea" :rows="3" disabled
+                                        <el-input v-model="observaciones" type="textarea" :rows="3" :disabled = "habObservaciones"
                                             placeholder="Observaciones" style="flex: 1;" />
                                     </div>
                                 </div>
@@ -102,9 +119,15 @@
     </div>
 </template>
 <script setup>
-    import { ref, computed, watch, onMounted } from "vue";
+    import { ref, computed, watch, onMounted, h} from "vue";
+    //import { ref, computed, watch, onMounted, h, onUnmounted, nextTick, onBeforeUnmount } from "vue";
     import Logo from '@/Components/Biotica/LogoCategoria.vue';
     import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
+    import CuerpoBibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
+    import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
+    import { ElMessageBox } from 'element-plus';
+    import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
+    import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 
     const CaracteristicasTaxon = ref([]);
     const tablaTipoDist = ref([]);
@@ -114,7 +137,19 @@
     const tablaBibliografiasRel = ref([]);
     const totalBibliografiasRel = ref(0); 
     const observaciones = ref(""); 
+    const citaBiblio = ref("");
     const dialogFormVisibleBiblio = ref(false);
+    const caractActual = ref([]);
+    const regActual = ref([]);
+    const tipoSelect = ref("");
+    const habObservaciones = ref(true);
+    const biblioSelect = ref(null);
+
+    const notificacionTitulo = ref("");
+    const notificacionMensaje = ref("");
+    const notificacionTipo = ref("info");
+    const notificacionDuracion = ref(5000);
+    const notificacionVisible = ref(false);
 
     const colDefBiblioFinal = ref([
         {
@@ -126,7 +161,11 @@
             align: 'center', tipo: 'texto', filtrable: true
         },
         {
-            prop: 'CitaCompleta', label: 'Cita completa', minWidth: '200',
+            prop: 'TituloPublicacion', label: 'Titulo de la publicación', minWidth: '200',
+            align: 'left', tipo: 'texto', filtrable: true
+        },
+        {
+            prop: 'TituloSubPublicacion', label: 'Titulo de la sub-publicación', minWidth: '200',
             align: 'left', tipo: 'texto', filtrable: true
         }
     ]);
@@ -144,16 +183,103 @@
         dialogFormVisibleBiblio.value = true;
     };
 
+    const clickEditarObs = (row) => {
+        console.log("Este es row: ", row);
+        biblioSelect.value = row; 
+        habObservaciones.value = false;
+    }
+
+    const clickGuardar = async() =>{
+        let resp;
+         if(tipoSelect.value === 'caracteristica'){
+            resp = await axios.post("/actualizar-obs-biblio-caract", {
+                params: {
+                    idNombre: props.taxonActual.id,
+                        idCaract: caractActual.value.id,
+                        Biblio: biblioSelect.value.IdBibliografia,
+                        observaciones: observaciones.value
+                }
+            })
+
+            if(resp.status === 200){
+                await cargaBiblioCaract(caractActual.value.id);
+                habObservaciones.value = true;
+            }
+        }else{
+            resp = await axios.post("/actualizar-obs-biblio-caract-Reg", {
+                params: {
+                        idNombre: props.taxonActual.id,
+                        idCaract: caractActual.value.id,
+                        idRegion: regActual.value.id,
+                        idTipDis: regActual.value.tipDistribucion,
+                        Biblio: biblioSelect.value.IdBibliografia,
+                        observaciones: observaciones.value
+                    }
+            })
+
+            if(resp.status === 200){
+                cargarBibliografiasRelCaract(caractActual.value.id, regActual.value);
+                habObservaciones.value = true;
+            }
+        }
+    }
+
+    const cerrarBiblio = async (idsSeleccionados) => {
+        cargaCaractAsocTaxon();
+        if(tipoSelect.value === 'caracteristica'){
+            cargaBiblioCaract(caractActual.value.id);
+        }else{
+            cargarBibliografiasRelCaract(caractActual.value.id, regActual.value);
+        }
+        dialogFormVisibleBiblio.value = false;
+    };
+
+    const vincularInmediato = async (idBiblio) => {
+        let resp;
+
+        if (tipoSelect.value === 'caracteristica') {
+            resp = await axios.post('/asociar-biblio-caract-solo', {
+                  params: {
+                        idNombre: props.taxonActual.id,
+                        idCaract: caractActual.value.id,
+                        Biblio: idBiblio,
+                        observaciones: ""
+                    }
+            });
+            console.log("Esta es la respuesta de la base: ", resp);
+        }else{
+            resp = await axios.post('/asociar-biblio-caract-region', {
+                  params: {
+                        idNombre: props.taxonActual.id,
+                        idCaract: caractActual.value.id,
+                        idRegion: regActual.value.id,
+                        idTipDis: regActual.value.tipDistribucion,
+                        Biblio: idBiblio,
+                        observaciones: ""
+                    }
+            });
+        }
+    };
+
     const onCurrentChange = (data, nodo) =>{
         console.log("Nodo actual: ", data);
         console.log("Padre: ", nodo.parent.data.id);
+        citaBiblio.value= "";
+        observaciones.value= "";
         if(data.tipo === "caracteristica"){
             compTitulo.value =  "Bibliografías asociadas a: " + data.label;
-
+            caractActual.value = data;
+            tipoSelect.value = data.tipo;
             cargaBiblioCaract(data.id);
         }else{
             compTitulo.value = "Bibliografías asocidas a: " + nodo.parent.label +
-                                " - " + data.label
+                                " - " + data.label;
+            caractActual.value = nodo.parent.data;
+            regActual.value = data;
+            tipoSelect.value = data.tipo;
+            console.log("Caracteristica: ", caractActual.value);
+            console.log("Region: ",  regActual.value);
+            
             cargarBibliografiasRelCaract(nodo.parent.data.id, data);
         }
     }
@@ -200,7 +326,76 @@
     }
 
     const clickBiblioRel = async(row) =>{
+        habObservaciones.value = true;
         observaciones.value = row.Observaciones; 
+        citaBiblio.value = row.CitaCompleta;
+    }
+
+    const eliminarBiblioRel = async(row) =>{
+        const procederConEliminacion = async () => {
+
+        try {
+            ElMessageBox.close();
+
+            let resp;
+            console.log("Esto es lo que vale row en realidad: ", row);
+            if(tipoSelect.value === 'caracteristica'){
+                resp = await axios.post('/eliminar-biblio-caract-solo', {
+                    params: {
+                        IdNombre: props.taxonActual.id,
+                        IdCatNombre: caractActual.value.id,
+                        Biblio: row.IdBibliografia
+                    }
+                });
+                if(resp.status === 200)
+                {
+                   await cargaBiblioCaract(caractActual.value.id);
+                }
+            }else{
+                console.log("entre al else ")
+
+                resp = await axios.delete('/eliminar-biblio-caract-region', {
+                    params: {
+                        idNombre: props.taxonActual.id,
+                        idCatNombre: caractActual.value.id,
+                        idRegion: regActual.value.id,
+                        idTipDist: regActual.value.tipDistribucion,
+                        biblio: row.IdBibliografia
+                    }
+                });
+                if(resp.status === 200)
+                {
+                    await cargarBibliografiasRelCaract(caractActual.value.id, regActual.value);
+                }
+            }
+
+            mostrarNotificacion('Eliminación exitosa', `La relación se a eliminado correctamente.`, 'success');
+        } catch (apiError) {
+            mostrarNotificacionError('Aviso', `La relación no se puede eliminar.`, 'success');
+        }
+        };
+        const cancelarEliminacion = () => {
+            ElMessageBox.close();
+        };
+
+        let mensaje = "";
+
+        mensaje = `La relación con bibliografia sera eliminada. ¿Realmente desea realizarlo?. Esta acción no se puede revertir`;
+
+        ElMessageBox({
+        title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+        message: h('div', { class: 'custom-message-content' }, [
+            h('div', { class: 'body-content' }, [
+            h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+            h('div', { class: 'text-container' }, [h('p', null, mensaje)])
+            ]),
+            h('div', { class: 'footer-buttons' }, [
+            h(BotonCancelar, { onClick: cancelarEliminacion }),
+            h(BotonAceptar, { onClick: procederConEliminacion }),
+            ])
+        ])
+        }).catch(() => { });
+        //props.taxonActual.id
     }
 
     const datosTree = computed(() =>
@@ -247,6 +442,15 @@
             CaracteristicasTaxon.value = listCaract.data;
         }
     }
+
+    const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 5000) => {
+        notificacionTitulo.value = titulo;
+        notificacionMensaje.value = mensaje;
+        notificacionTipo.value = tipo;
+        notificacionDuracion.value = 5000;
+        notificacionVisible.value = true;
+    };
+
 
     watch(
         () => props.cargarCaract,
