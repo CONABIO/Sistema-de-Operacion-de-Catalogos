@@ -1449,7 +1449,6 @@
         flex-direction: column;
     }
 
-    <!-------------------------------------------------------------------->
 
     .card-disabled {
         opacity: 0.6 !important;
