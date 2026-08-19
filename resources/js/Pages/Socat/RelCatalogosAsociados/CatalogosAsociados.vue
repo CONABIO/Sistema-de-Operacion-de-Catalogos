@@ -778,7 +778,7 @@ import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristic
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 
 
-
+const observacionesGeneral = ref("");
 
 let backupFilaRegion = null;
 
@@ -2169,12 +2169,14 @@ watch(
         editandoObs.value = false;
         tablaNomComun.value = [];
   
+        console.log("Hasta aqui no hay error");
         if (!nuevoValor?.id) return;
         try {
-            const [respNomCom, respCaract, respRegion] = await Promise.allSettled([
+            const [respNomCom, respRegion] = await Promise.allSettled([
                 axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
                 axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`),
             ]);
+            console.log("Hasta aqui no hay error 1");
             if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
                 const data = respNomCom.value.data;
                 tablaNomComun.value = data;
@@ -2182,8 +2184,10 @@ watch(
                 nombresAsociadosTaxon.value = data;
                 totalRegNomComun.value = data.length;
             }
-
+            console.log("Hasta aqui no hay error 2");
+            console.log("Este es el valor de respRegion: ", respRegion);
             if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
+                console.log("Aqui entre al if sin problemas");
                 const data = respRegion.value.data;
                 regionesNombre.value = data.regPorNombre;
                 totalRegionesNom.value = data.regPorNombre.length;
@@ -2192,7 +2196,7 @@ watch(
                 regionesNomCom.value = data.regPorNomCom;
                 totalRegionesNomCom.value = data.regPorNomCom.length;
             }
-
+            console.log("Hasta aqui no hay error 3");
         } catch (error) {
             console.error("Error crítico en el watcher:", error);
             if (typeof mostrarNotificacion === 'function') {
