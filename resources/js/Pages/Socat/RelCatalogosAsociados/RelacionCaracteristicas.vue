@@ -241,7 +241,7 @@
 
         <!--Aqui van las funciones de bibliografia-->
         <DialogForm v-model="dialogFormVisibleBiblioCaract" :botCerrar="true" :pressEsc="false" :width="'83%'">
-            <BiblioCaract :taxonActual = "props.taxonActual", :cargarCaract = "dialogFormVisibleBiblioCaract"/>
+            <BiblioCaract :taxonActual = "props.taxonActual", :cargarCaract = "dialogFormVisibleBiblioCaract" @cerrar="cerrarCaracBiblio"/>
         </DialogForm>
 
     </div>
@@ -363,6 +363,10 @@
     const defaultProps = {
         children: 'children',
         label: 'Descripcion',
+    }
+
+    const cerrarCaracBiblio = () =>{
+        dialogFormVisibleBiblioCaract.value = false;
     }
 
     const seleccionarPrimeroPorDefault = () => {

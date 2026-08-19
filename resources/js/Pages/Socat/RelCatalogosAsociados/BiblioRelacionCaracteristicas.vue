@@ -7,11 +7,20 @@
                     <h1 class="titulo">Asociación de característica - bibliografía</h1>
                 </div>
             </el-header>
-            <div style="padding: 15px 5px;">
-                <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                    {{ props.taxonActual.label }}
-                </span>
-            </div>
+            <el-row :gutter="21">
+                <el-col :span="18">
+                    <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
+                        {{ props.taxonActual.label }}
+                    </span>
+                </el-col>
+                <el-col :span="5" style="display: flex; justify-content: flex-end;">
+                    <div style="display: flex; gap: 5px;">
+                        <!--BotonSalir :accion="cerrar" @salir="closeDialog"
+                                            style="flex-shrink: 0; min-width: max-content;" /-->
+                        <BotonSalir accion="cerrar" @salir="closeDialog" style="flex-shrink: 0;" />
+                    </div>
+                </el-col>
+            </el-row>
             <div style="flex: 1; min-height: 0;">
                 <el-splitter style="height: 100%; border: 1px solid #ddd; border-radius: 8px;">
                     <el-splitter-panel :min="30" :size="'35%'">
@@ -38,7 +47,7 @@
                                             <el-select 
                                                 v-if="data.tipo === 'region'"
                                                 v-model="data.tipDistribucion"
-                                                :disabled = "!(modoEdicion && nodoSeleccionado === data)"
+                                                :disabled = "true"
                                                 @change="tipDistSelecc(data)"
                                                 placeholder="Tipo distribucón"
                                                  size="small"
@@ -128,6 +137,7 @@
     import { ElMessageBox } from 'element-plus';
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
+    import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
     const CaracteristicasTaxon = ref([]);
     const tablaTipoDist = ref([]);
@@ -150,6 +160,10 @@
     const notificacionTipo = ref("info");
     const notificacionDuracion = ref(5000);
     const notificacionVisible = ref(false);
+
+    const emit = defineEmits([
+        'cerrar'
+    ]);
 
     const colDefBiblioFinal = ref([
         {
@@ -179,12 +193,15 @@
         return tablaBibliografiasRel.value.map(b => b.IdBibliografia || b.id);
     });
 
+    const closeDialog = () =>{
+        emit('cerrar');
+    }
+
     const abrirBiblio = () => {
         dialogFormVisibleBiblio.value = true;
     };
 
     const clickEditarObs = (row) => {
-        console.log("Este es row: ", row);
         biblioSelect.value = row; 
         habObservaciones.value = false;
     }
@@ -246,7 +263,6 @@
                         observaciones: ""
                     }
             });
-            console.log("Esta es la respuesta de la base: ", resp);
         }else{
             resp = await axios.post('/asociar-biblio-caract-region', {
                   params: {
@@ -262,8 +278,6 @@
     };
 
     const onCurrentChange = (data, nodo) =>{
-        console.log("Nodo actual: ", data);
-        console.log("Padre: ", nodo.parent.data.id);
         citaBiblio.value= "";
         observaciones.value= "";
         if(data.tipo === "caracteristica"){
@@ -277,8 +291,6 @@
             caractActual.value = nodo.parent.data;
             regActual.value = data;
             tipoSelect.value = data.tipo;
-            console.log("Caracteristica: ", caractActual.value);
-            console.log("Region: ",  regActual.value);
             
             cargarBibliografiasRelCaract(nodo.parent.data.id, data);
         }
@@ -294,7 +306,6 @@
                     IdTipoDistribucion: data.tipDistribucion
                 }
             });
-            console.log("Esta es la respuesta de bibliografias regiones: ", response);
             if (response.status === 200) {
                 tablaBibliografiasRel.value = response.data;
                 totalBibliografiasRel.value = response.data.length;
@@ -312,8 +323,6 @@
                     IdCatNombre: idCaract,
                 }
             });
-
-            console.log("Esta es la respuesta: ", response);
 
             if (response.status === 200) {
                 tablaBibliografiasRel.value = response.data;
@@ -338,7 +347,7 @@
             ElMessageBox.close();
 
             let resp;
-            console.log("Esto es lo que vale row en realidad: ", row);
+            
             if(tipoSelect.value === 'caracteristica'){
                 resp = await axios.post('/eliminar-biblio-caract-solo', {
                     params: {
@@ -352,7 +361,6 @@
                    await cargaBiblioCaract(caractActual.value.id);
                 }
             }else{
-                console.log("entre al else ")
 
                 resp = await axios.delete('/eliminar-biblio-caract-region', {
                     params: {
@@ -398,25 +406,78 @@
         //props.taxonActual.id
     }
 
-    const datosTree = computed(() =>
-        CaracteristicasTaxon.value.map(caract => ({
-            treeKey: `C-${caract.IdCatNombre}`,
-            id: caract.IdCatNombre,
-            tipo: 'caracteristica',
-            label: caract.Caracteristica,
-            biblio: caract.BiblioCaract.url,
-            observaciones: caract.Observaciones,
-            children: caract.Regiones.map(region => ({
-                treeKey: `C-${caract.IdCatNombre}-R-${region.IdRegion}`,
-                id: region.IdRegion,
-                tipo: 'region',
-                label: region.Region,
-                biblio: region.Biblio.url,
-                observaciones: region.Observaciones,
-                tipDistribucion: region.TipDistribucion.id
-            }))
-        }))
-    );
+    const datosTree = computed(() => {
+
+        const caracteristicasOrdenadas = [...(CaracteristicasTaxon.value || [])]
+            .sort((a, b) => {
+
+                const nombreA = a.Caracteristica || '';
+                const nombreB = b.Caracteristica || '';
+
+                return nombreA.localeCompare(
+                    nombreB,
+                    'es',
+                    {
+                        sensitivity: 'base'
+                    }
+                );
+            });
+
+        return caracteristicasOrdenadas.map(caract => {
+
+            const regionesOrdenadas = [...(caract.Regiones || [])]
+                .filter(region => region)
+                .sort((a, b) => {
+
+                    const partesA = (a.Region || '').split('/');
+                    const partesB = (b.Region || '').split('/');
+
+                    const niveles = Math.max(
+                        partesA.length,
+                        partesB.length
+                    );
+
+                    for (let i = 0; i < niveles; i++) {
+
+                        const nivelA = partesA[i] || '';
+                        const nivelB = partesB[i] || '';
+
+                        const resultado = nivelA.localeCompare(
+                            nivelB,
+                            'es',
+                            {
+                                sensitivity: 'base'
+                            }
+                        );
+
+                        if (resultado !== 0) {
+                            return resultado;
+                        }
+                    }
+
+                    return 0;
+                });
+
+            return {
+                treeKey: `C-${caract.IdCatNombre}`,
+                id: caract.IdCatNombre,
+                tipo: 'caracteristica',
+                label: caract.Caracteristica,
+                biblio: caract.BiblioCaract?.url || '',
+                observaciones: caract.Observaciones || '',
+
+                children: regionesOrdenadas.map(region => ({
+                    treeKey: `C-${caract.IdCatNombre}-R-${region.IdRegion}`,
+                    id: region.IdRegion,
+                    tipo: 'region',
+                    label: region.Region,
+                    biblio: region.Biblio?.url || '',
+                    observaciones: region.Observaciones || '',
+                    tipDistribucion: region.TipDistribucion?.id ?? null
+                }))
+            };
+        });
+    });
 
     //Funciones para el tipo de distribucion 
     const cargaTiposDistribucion = async() =>{
@@ -434,11 +495,11 @@
     }
 
     const cargaCaractAsocTaxon = async() =>{
-        console.log("Entre a carga caracteristicas");
+        
         const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonActual.id}`);
 
         if (listCaract.status === 200) {
-            console.log("Esta es la respuesta de lista de caracteristicas", listCaract);
+            
             CaracteristicasTaxon.value = listCaract.data;
         }
     }
@@ -455,7 +516,6 @@
     watch(
         () => props.cargarCaract,
         (nuevoValor, valorAnterior) => {
-            console.log('Dialog:', valorAnterior, '->', nuevoValor);
 
             if (nuevoValor === true) {
                 // El diálogo acaba de abrirse
