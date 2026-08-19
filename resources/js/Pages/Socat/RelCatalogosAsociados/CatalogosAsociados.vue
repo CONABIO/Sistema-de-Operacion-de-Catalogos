@@ -2358,6 +2358,9 @@ const obtenerTipoDeRegionDesdeMaestro = (nodes, idRegion) => {
 
 const clickNomCom = async (data) => {
     if (!data) return;
+    observacionesGeneral.value = data.Observaciones || "";
+    valorOriginalObsGeneral.value = observacionesGeneral.value;
+    editandoObsGeneral.value = false;
     nodoSeleccionadoArbol.value = data;
     const targetId = data.IdNomComun || data.id;
     if (tablaNomComunPrincipalRef.value) {
@@ -2385,18 +2388,16 @@ const clickNomCom = async (data) => {
                     setTimeout(seleccionarYAenfocar, 200);
                 }
             };
-
             seleccionarYAenfocar();
-
         } catch (error) {
             console.error("No se pudo localizar el registro en la tabla:", error);
         }
     }
+
     if (!data.NombreComun) {
         idRegionSeleccionada.value = data.IdRegion;
         idNomComunSeleccionado.value = data.IdNomComun;
         tipoSeleccion.value = 'region';
-        
         let idTipoRegion = data.IdTipoRegion || obtenerTipoDeRegionDesdeMaestro(localTreeDataReg.value, data.IdRegion);
         if (idTipoRegion) {
             const tipoNode = findNodeInTipoRegionTree(tiposRegionTreeData.value, idTipoRegion);
