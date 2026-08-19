@@ -14,7 +14,7 @@ const handleClick = (event) => { emit('click', event); };
 <template>
   <el-tooltip class="item" effect="dark" content="Tipo de distribución">
   <el-button 
-    color="#80C2C2"
+    color="#2F8F32"
     circle 
     :disabled="disabled" 
     @click="handleClick"
