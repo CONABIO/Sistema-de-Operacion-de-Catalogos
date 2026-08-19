@@ -7,6 +7,7 @@
                     <h1 class="titulo">Asociación de característica - bibliografía</h1>
                 </div>
             </el-header>
+            </br>
             <el-row :gutter="21">
                 <el-col :span="18">
                     <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
