@@ -280,9 +280,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
 
-    Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
+    Route::post('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
     Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
-    Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
+    Route::put('/actualizar-obs-nomcomun-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
 
     Route::post('/eliminar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
