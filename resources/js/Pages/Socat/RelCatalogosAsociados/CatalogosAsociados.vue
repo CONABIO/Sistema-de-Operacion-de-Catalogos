@@ -15,19 +15,12 @@
                                         {{ props.taxonAct.label }}
                                     </span>
                                 </el-col>
-                                <el-col :span="5">
-                                    <div style="display: flex; gap: 5px; ">
-                                        <BotonCaract @click="abrirCaract"
-                                            style="flex-shrink: 0; min-width: max-content;" />
-
-                                        <BotonRegiones @click="abrirReg"
-                                            style="flex-shrink: 0; min-width: max-content;" />
-
-                                        <BotonNomComun @click="abrirNomCom"
-                                            style="flex-shrink: 0; min-width: max-content;" />
-
-                                        <BotonSalir accion="cerrar" @salir="closeDialog"
-                                            style="flex-shrink: 0; min-width: max-content;" />
+                                <el-col :span="5" style="display: flex; justify-content: flex-end;">
+                                    <div style="display: flex; gap: 5px;">
+                                        <BotonCaract @click="abrirCaract" style="flex-shrink: 0;" />
+                                        <BotonRegiones @click="abrirReg" style="flex-shrink: 0;" />
+                                        <BotonNomComun @click="abrirNomCom" style="flex-shrink: 0;" />
+                                        <BotonSalir accion="cerrar" @salir="closeDialog" style="flex-shrink: 0;" />
                                     </div>
                                 </el-col>
                             </el-row>
@@ -2169,14 +2162,13 @@ watch(
         editandoObs.value = false;
         tablaNomComun.value = [];
   
-        console.log("Hasta aqui no hay error");
         if (!nuevoValor?.id) return;
         try {
             const [respNomCom, respRegion] = await Promise.allSettled([
                 axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
                 axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`),
             ]);
-            console.log("Hasta aqui no hay error 1");
+    
             if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
                 const data = respNomCom.value.data;
                 tablaNomComun.value = data;
@@ -2184,8 +2176,7 @@ watch(
                 nombresAsociadosTaxon.value = data;
                 totalRegNomComun.value = data.length;
             }
-            console.log("Hasta aqui no hay error 2");
-            console.log("Este es el valor de respRegion: ", respRegion);
+
             if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
                 console.log("Aqui entre al if sin problemas");
                 const data = respRegion.value.data;
@@ -2196,7 +2187,7 @@ watch(
                 regionesNomCom.value = data.regPorNomCom;
                 totalRegionesNomCom.value = data.regPorNomCom.length;
             }
-            console.log("Hasta aqui no hay error 3");
+            
         } catch (error) {
             console.error("Error crítico en el watcher:", error);
             if (typeof mostrarNotificacion === 'function') {
