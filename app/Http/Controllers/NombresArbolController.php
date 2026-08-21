@@ -114,9 +114,11 @@ class NombresArbolController extends Controller
     public function fetchHijos($id)
     {
         // Relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
                            'hijos', 'ascendOblig','ascendObligHijos',
-                           'relNombreRegion','relNombreAutor', 'nombreRel'];
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];*/
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'relNombreAutor', 'nombreRel'];
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)

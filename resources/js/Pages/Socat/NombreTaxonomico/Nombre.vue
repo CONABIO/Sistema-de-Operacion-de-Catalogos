@@ -544,7 +544,7 @@
     }
 
     if (draggingNode.children.length === 0) {
-
+      
       const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
       if (response.status === 200) {
