@@ -64,9 +64,9 @@ class CaracteristicasController extends Controller
     /////////////////////////////////////////////////////////////////
     public function cargaCaracteristicasTaxon($idNombre) {
     /*Aqui se va a cargar las categorias taxonomicas*/
-        //Log::info("Este es el id que llegua a buscar: " . $idNombre);
+        Log::info("Este es el id que llega a buscar: " . $idNombre);
         $data = RelNombreCatalogo::caracteristicasTaxon($idNombre)->get();
-
+        log::info($data);
         $idsRegiones = $data->pluck('IdRegion')->unique();
         $idsCaract = $data->pluck('IdCatNombre')->unique();
         $idsDistr = $data->pluck('IdTipoDistribucion')->unique();

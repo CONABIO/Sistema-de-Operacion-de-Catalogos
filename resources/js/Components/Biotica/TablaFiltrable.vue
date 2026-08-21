@@ -440,7 +440,7 @@ defineExpose({
 <template>
     <el-card class="box-card-inner-table">
         <template #header>
-            <div class="header-container" style="flex-grow: 1; margin-top: -12px; margin-bottom: -12px;">
+            <div class="header-container" style="flex-grow: 1; margin-top: -4px; margin-bottom: -12px;">
                 <div class="right">
                     <slot name="header-title">
                         <SwitchBusqueda v-if="props.mostrarSwitchLocal" v-model="tipoDeBusqueda" />
