@@ -23,8 +23,6 @@
                                         <BotonRegiones @click="abrirReg"
                                             style="flex-shrink: 0; min-width: max-content;" />
 
-                                        <BotonNomComun @click="abrirNomCom"
-                                            style="flex-shrink: 0; min-width: max-content;" />
 
                                         <BotonSalir accion="cerrar" @salir="closeDialog"
                                             style="flex-shrink: 0; min-width: max-content;" />
@@ -36,22 +34,41 @@
                                     <div
                                         style="height: 560px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: var(--el-border-color-light) 0px 0px 10px">
                                         <el-splitter lazy>
-                                            <el-splitter-panel :size="'30%'">
-                                                <div class="table-wrapper" style="height: 100%; padding: 5px;">
-                                                    <TablaFiltrable ref="tablaNomComunPrincipalRef"
-                                                        v-model:datos="tablaNomComun" v-model:totalItems="contRegNomCom"
-                                                        endpoint="/busca-nombre-comun"
-                                                        :columnas="columnasDefinidasNomCom"
-                                                        :opciones-filtro="opcionesFiltroNomComun" :itemsPerPage="100"
-                                                        :mostrarAcci="false" :alturaTabla="452"
-                                                        :permitirSinSeleccion="true" :highlight-current-row="true"
-                                                        :mostrarBiblio="false" :mostrarNuevo="false"
-                                                        :mostrarEditar="false" :mostrarBorrar="false"
-                                                        :mostrarSalir="false" :mostrarNomComun="true"
-                                                        @row-click="clickNomComun" @abrirNomComun="abrirNomCom">
-                                                    </TablaFiltrable>
-                                                </div>
-                                            </el-splitter-panel>
+                                            <el-splitter-panel :size="'35%'">
+    <!-- El contenedor DEBE tener position: relative para que el botón flote correctamente -->
+    <div class="table-wrapper" style="height: 100%; padding: 5px; position: relative;">
+        
+        <!-- Este es el botón posicionado en el área del cuadrado rojo -->
+        <div style="position: absolute; right: 15px; top: 6px; z-index: 100;">
+            <BotonNomComun 
+                @click="abrirNomCom"
+                style="flex-shrink: 0; min-width: max-content;" 
+            />
+        </div>
+
+        <TablaFiltrable 
+            ref="tablaNomComunPrincipalRef"
+            v-model:datos="tablaNomComun" 
+            v-model:totalItems="contRegNomCom"
+            endpoint="/busca-nombre-comun"
+            :columnas="columnasDefinidasNomCom"
+            :opciones-filtro="opcionesFiltroNomComun" 
+            :itemsPerPage="100"
+            :mostrarAcci="false" 
+            :alturaTabla="452"
+            :permitirSinSeleccion="true" 
+            :highlight-current-row="true"
+            :mostrarBiblio="false" 
+            :mostrarNuevo="false"
+            :mostrarEditar="false" 
+            :mostrarBorrar="false"
+            :mostrarSalir="false" 
+            :mostrarNomComun="true"
+            @row-click="clickNomComun" 
+            @abrirNomComun="abrirNomCom">
+        </TablaFiltrable>
+    </div>
+</el-splitter-panel>
 
                                             <el-splitter-panel :size="'30%'">
                                                 <div style="height: 100%;">
@@ -136,7 +153,7 @@
                                                     style="height: 100%; border-left: 1px solid #ddd; display: flex; flex-direction: column; background: #fff;">
                                                     <div
                                                         style="padding: 10px; background: #f5f7fa; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
-                                                        <span>Nombres asociados ({{ nombresAsociadosTaxon.length
+                                                        <span>Nombres comunes asociados ({{ nombresAsociadosTaxon.length
                                                             }})</span>
                                                         <div style="display: flex; gap: 8px; align-items: center;">
                                                             <EditarButton @editar="activarEdicionGeneral" />
@@ -166,9 +183,12 @@
                                                                     style="display: flex; align-items: center; gap: 8px; width: 100%;"
                                                                     @click="clickNomCom(data)">
                                                                     <template v-if="data.NombreComun">
-                                                                        <span
-                                                                            style="font-weight: bold; font-size: 13px; color: #333;">
-                                                                            {{ data.NombreComun }}
+                                                                        <span style="font-weight: bold; font-size: 13px; color: #333;">
+                                                                            {{ data.NombreComun }} 
+                                                                            <!-- Agregamos esta línea para la lengua -->
+                                                                            <span v-if="data.Lengua" style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
+                                                                                ({{ data.Lengua }})
+                                                                            </span>
                                                                         </span>
                                                                     </template>
 
@@ -1437,17 +1457,17 @@ const abrirBiblio = () => {
             return;
         }
         if (!idNomComunSeleccionado.value) {
-            mostrarNotificacion("Aviso", "Por favor selecciona un nombre común", "warning");
+            mostrarNotificacion("Aviso", "Por favor seleccione un nombre común", "warning");
             return;
         }
         if (!idRegionSeleccionada.value) {
-            mostrarNotificacion("Aviso", "Por favor selecciona una región para agregar bibliografía", "warning");
+            mostrarNotificacion("Aviso", "Por favor seleccione una región para agregar bibliografía", "warning");
             return;
         }
     } 
     else if (tabInicial.value === 'Region') {
         if (!idRegionSeleccionada.value) {
-            mostrarNotificacion("Aviso", "Por favor selecciona una región de la lista izquierda primero.", "warning");
+            mostrarNotificacion("Aviso", "Por favor seleccione una región de la lista izquierda primero.", "warning");
             return;
         }
     }
@@ -1782,7 +1802,7 @@ const clickRegResumenTaxon = async (row) => {
 
 const etiquetaObservaciones = computed(() => {
     if (tipoSeleccion.value === 'comun') return 'Observaciones de nombre común:';
-    if (tipoSeleccion.value === 'region') return 'Observaciones de nombre común - región:';
+    if (tipoSeleccion.value === 'region') return 'Observaciones asociadas a la relación Taxón-Nombre común-Región:';
     return 'Observaciones:';
 });
 
@@ -2494,14 +2514,13 @@ const clickNomCom = async (data) => {
                     setTimeout(seleccionarYAenfocar, 200);
                 }
             };
-
             seleccionarYAenfocar();
-
         } catch (error) {
-            console.error("No se pudo localizar el registro en la tabla:", error);
+            console.error("No se pudo localizar el registro:", error);
         }
     }
-    if (!data.NombreComun) {
+
+    if (!data.NombreComun) { 
         idRegionSeleccionada.value = data.IdRegion;
         idNomComunSeleccionado.value = data.IdNomComun;
         tipoSeleccion.value = 'region';
@@ -2514,8 +2533,17 @@ const clickNomCom = async (data) => {
                 nextTick(() => {
                     if (treeRef.value) {
                         treeRef.value.setCurrentKey(data.IdRegion);
-                        const node = treeRef.value.getNode(data.IdRegion);
-                        if (node) { let p = node.parent; while (p) { p.expanded = true; p = p.parent; } }
+                        const nodeInTree = treeRef.value.getNode(data.IdRegion);
+                        if (nodeInTree) {
+                            selectedNode.value = nodeInTree.data; 
+                            let p = nodeInTree.parent;
+                            while (p) { p.expanded = true; p = p.parent; }
+                        }
+
+                        setTimeout(() => {
+                            const el = document.getElementById('region-node-' + data.IdRegion);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 200);
                     }
                 });
             }
@@ -2523,10 +2551,12 @@ const clickNomCom = async (data) => {
     } else {
         idNomComunSeleccionado.value = targetId;
         idRegionSeleccionada.value = null;
+        selectedNode.value = null; 
         tipoSeleccion.value = 'comun';
         tablaNomComunReg.value = data.Regiones || [];
     }
 };
+
 
 const clickCaract = (row) => {
     idCaractSeleccionada.value = row.IdCatNombre || row.id;
