@@ -241,7 +241,7 @@
 
         <!--Aqui van las funciones de bibliografia-->
         <DialogForm v-model="dialogFormVisibleBiblioCaract" :botCerrar="true" :pressEsc="false" :width="'83%'">
-            <BiblioCaract :taxonActual = "props.taxonActual", :cargarCaract = "dialogFormVisibleBiblioCaract"/>
+            <BiblioCaract :taxonActual = "props.taxonActual", :cargarCaract = "dialogFormVisibleBiblioCaract" @cerrar="cerrarCaracBiblio"/>
         </DialogForm>
 
     </div>
@@ -365,6 +365,10 @@
         label: 'Descripcion',
     }
 
+    const cerrarCaracBiblio = () =>{
+        dialogFormVisibleBiblioCaract.value = false;
+    }
+
     const seleccionarPrimeroPorDefault = () => {
         if (tiposRegionTreeData.value && tiposRegionTreeData.value.length > 0) {
             const primerNodo = tiposRegionTreeData.value[0];
@@ -480,7 +484,6 @@
     };
 
     const handleTipoRegionSelected = async(data) => {
-        console.log("Esto es lo que llega a data de tipo de region: ", data);
         const targetId = data.IdTipoRegion;
         const tree = tiposRegionTreeRef.value;
         const ahora = Date.now();
@@ -579,7 +582,6 @@
         const node = tree.getNode(idTipoRegion);
 
         if (!node) {
-            console.log("No existe el nodo");
             return;
         }
 
@@ -773,7 +775,6 @@
                     5000
                 );
             } else {
-                console.log("Esto es lo que voy a pasar de datos: ", idTipoReg.value);
                 idRegion.value = idTipoReg.value.IdRegion;
                 idTipoRegion.value = idTipoReg.value.IdTipoRegion;
                 idCatNombre.value = idCaracteristica.value;
@@ -862,7 +863,6 @@
 
                     if(response.status === 200)
                     {  
-                        console.log("Esta es la respuesta: ", response);
                         mostrarNotificacion('Aviso', response.data.message, 'success');
                         idCaracteristica.value = 0;
                         treeCaracteristicas.value.setCurrentKey(null);
@@ -921,30 +921,81 @@
         if(respCaract.status === 200)
         {
             datosCaracteristicas.value = respCaract.data.treeDataProp;
-
-            console.log("lista de caracteristicas :", datosCaracteristicas.value);
         }
     }
 
-    const datosTree = computed(() =>
-        CaracteristicasTaxon.value.map(caract => ({
-            treeKey: `C-${caract.IdCatNombre}`,
-            id: caract.IdCatNombre,
-            tipo: 'caracteristica',
-            label: caract.Caracteristica,
-            biblio: caract.BiblioCaract.url,
-            observaciones: caract.Observaciones,
-            children: caract.Regiones.map(region => ({
-                treeKey: `C-${caract.IdCatNombre}-R-${region.IdRegion}`,
-                id: region.IdRegion,
-                tipo: 'region',
-                label: region.Region,
-                biblio: region.Biblio.url,
-                observaciones: region.Observaciones,
-                tipDistribucion: region.TipDistribucion.id
-            }))
-        }))
-    );
+        const datosTree = computed(() => {
+
+        const caracteristicasOrdenadas = [...(CaracteristicasTaxon.value || [])]
+            .sort((a, b) => {
+
+                const nombreA = a.Caracteristica || '';
+                const nombreB = b.Caracteristica || '';
+
+                return nombreA.localeCompare(
+                    nombreB,
+                    'es',
+                    {
+                        sensitivity: 'base'
+                    }
+                );
+            });
+
+        return caracteristicasOrdenadas.map(caract => {
+
+            const regionesOrdenadas = [...(caract.Regiones || [])]
+                .filter(region => region)
+                .sort((a, b) => {
+
+                    const partesA = (a.Region || '').split('/');
+                    const partesB = (b.Region || '').split('/');
+
+                    const niveles = Math.max(
+                        partesA.length,
+                        partesB.length
+                    );
+
+                    for (let i = 0; i < niveles; i++) {
+
+                        const nivelA = partesA[i] || '';
+                        const nivelB = partesB[i] || '';
+
+                        const resultado = nivelA.localeCompare(
+                            nivelB,
+                            'es',
+                            {
+                                sensitivity: 'base'
+                            }
+                        );
+
+                        if (resultado !== 0) {
+                            return resultado;
+                        }
+                    }
+
+                    return 0;
+                });
+
+            return {
+                treeKey: `C-${caract.IdCatNombre}`,
+                id: caract.IdCatNombre,
+                tipo: 'caracteristica',
+                label: caract.Caracteristica,
+                biblio: caract.BiblioCaract?.url || '',
+                observaciones: caract.Observaciones || '',
+
+                children: regionesOrdenadas.map(region => ({
+                    treeKey: `C-${caract.IdCatNombre}-R-${region.IdRegion}`,
+                    id: region.IdRegion,
+                    tipo: 'region',
+                    label: region.Region,
+                    biblio: region.Biblio?.url || '',
+                    observaciones: region.Observaciones || '',
+                    tipDistribucion: region.TipDistribucion?.id ?? null
+                }))
+            };
+        });
+    });
 
     onMounted(() => {
         window.addEventListener('keydown', manejarEscape );
@@ -999,9 +1050,7 @@
 
     //Funcion para marcar la region
     const seleccionarNodo = async (treeRef, id, prefix) => {
-        console.log("treeRef", treeRef);
-        console.log("id", id);
-        console.log("prefix", prefix);
+ 
         await nextTick();
 
         const tree = treeRef.value;
@@ -1010,7 +1059,6 @@
         const node = tree.getNode(id);
 
         if (!node) {
-            console.warn("No se encontró el nodo", id);
             return;
         }
 
@@ -1107,8 +1155,7 @@
             ObsCaracteristicas.value = data.observaciones;
             if(modoEdicion.value && idTipoDistAnt.value === 0){
                 idTipoDistAnt.value = data.tipDistribucion;
-            }
-            console.log("Este es el tipo de distribucion: ", data.tipDistribucion);
+            }            
         }
     }    
 
@@ -1189,8 +1236,6 @@
     }
 
     const cancelarEdicion = async() => {
-        console.log("Nodo seleccionado al cancelar: ", nodoSeleccionado.value);
-        console.log("Este es el id tipo distribucion anterior: ", idTipoDistAnt.value);
         nodoSeleccionado.value.tipDistribucion = idTipoDistAnt.value;
         modoEdic.value = false;
         nodoPendiente.value = null;
@@ -1210,8 +1255,6 @@
 
     const Guardar = async () => {
         if(modoEdic.value){
-            console.log("Nodo seleccionado: ", nodoSeleccionado.value);
-            console.log("idNombre: ", props.taxonActual.id);
             if(nodoSeleccionado.value.tipo === "caracteristica"){
                 const params = { idNombre: props.taxonActual.id,
                                  idCatNombre: nodoSeleccionado.value.id,
@@ -1219,7 +1262,7 @@
                     };
                 
                 const resp = await axios.put(`/actualiza-Caract-Taxon`, params);
-                    console.log("Esta es la respuesta: ", resp);
+                    
                 if(resp.status === 200){
                     mostrarNotificacion('Aviso', resp.data.message, 'success');
                     idTipoDist.value = 0;
@@ -1248,7 +1291,7 @@
                     }
                 
                 const resp = await axios.put(`/actualiza-Caract-Taxon-Reg`, params);
-                console.log("Estos son los parametros: ", params);
+                
                 if(resp.status === 200){
                     mostrarNotificacion('Aviso', resp.data.message, 'success');
                     nodoSeleccionado.value.observaciones = ObsCaracteristicas.value;
@@ -1283,14 +1326,12 @@
             }
 
             const params = { idNombre: idNombre.value,
-                                    idCaract: idCatNombre.value,
-                                    idTipoRegion: idTipoRegion.value,
-                                    idRegion: idRegion.value,
-                                    idTipoDistribucion: idTipoDist.value,
-                                    observaciones: ObsCaracteristicas.value
+                             idCaract: idCatNombre.value,
+                             idTipoRegion: idTipoRegion.value,
+                             idRegion: idRegion.value,
+                             idTipoDistribucion: idTipoDist.value,
+                             observaciones: ObsCaracteristicas.value
                     };
-
-            console.log("Estos son los parametros ", params);
             
             try{
 
@@ -1329,11 +1370,9 @@
     }
 
     const cargaCaractAsocTaxon = async() =>{
-        console.log("Entre a carga caracteristicas");
         const listCaract = await axios.get(`/cargaCaracTaxon/${props.taxonActual.id}`);
 
         if (listCaract.status === 200) {
-            console.log("Esta es la respuesta de lista de caracteristicas", listCaract);
             CaracteristicasTaxon.value = listCaract.data;
         }
     }
@@ -1396,7 +1435,6 @@
     }
 
     const abrirBiblioCaract = () =>{
-        console.log("Voy a entrar a bibliografia para hacer los cambios");
         dialogFormVisibleBiblioCaract.value = true
     }
 
