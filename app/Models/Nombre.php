@@ -106,17 +106,35 @@ class Nombre extends Model
     public function scopeFiltraArbol($query, $categ, $catalog)
     {
         if ($catalog) {
-            return $query->select('Nombre.*', 'CategoriaTaxonomica.NombreCategoriaTaxonomica')
-                ->whereIn('SCAT.IdGrupoSCAT', $catalog)
-                ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
-                ->where('Nombre.EstadoRegistro', 1)
-                ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
-                ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica')
-                ->orderBy('CategoriaTaxonomica.IdNivel2')
-                ->orderBy('Nombre.NombreCompleto')
-                ->orderBy('CategoriaTaxonomica.IdNivel1')
-                ->orderBy('CategoriaTaxonomica.IdNivel3')
-                ->orderBy('CategoriaTaxonomica.IdNivel4');
+            $query->select(
+                        'Nombre.*',
+                        'CategoriaTaxonomica.NombreCategoriaTaxonomica',
+                        'CategoriaTaxonomica.IdNivel2',
+                        'CategoriaTaxonomica.IdNivel1',
+                        'CategoriaTaxonomica.IdNivel3',
+                        'CategoriaTaxonomica.IdNivel4'
+                    )
+                    ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                    ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                    ->where('Nombre.EstadoRegistro', 1)
+                    ->join(
+                        'SCAT',
+                        'SCAT.IdNombre',
+                        '=',
+                        'Nombre.IdNombre'
+                    )
+                    ->join(
+                        'CategoriaTaxonomica',
+                        'CategoriaTaxonomica.IdCategoriaTaxonomica',
+                        '=',
+                        'Nombre.IdCategoriaTaxonomica'
+                    )
+                    ->orderBy('CategoriaTaxonomica.IdNivel2')
+                    ->orderBy('Nombre.NombreCompleto')
+                    ->orderBy('CategoriaTaxonomica.IdNivel1')
+                    ->orderBy('CategoriaTaxonomica.IdNivel3')
+                    ->orderBy('CategoriaTaxonomica.IdNivel4')
+                    ->orderBy('Nombre.IdNombre');
         }
         return $query;
     }
@@ -125,18 +143,36 @@ class Nombre extends Model
     public function scopeFiltraArbolTaxCat($query, $categ, $catalog, $taxon) 
     {
         if ($categ) {
-            return $query->select('Nombre.*', 'CategoriaTaxonomica.NombreCategoriaTaxonomica')
-                ->whereIn('SCAT.IdGrupoSCAT', $catalog)
-                ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
-                ->whereRaw('LOWER(Nombre.NombreCompleto) LIKE LOWER(?)', ["%$taxon%"])
-                ->where('Nombre.EstadoRegistro', 1)
-                ->join('SCAT', 'SCAT.IdNombre', '=', 'Nombre.IdNombre')
-                ->join('CategoriaTaxonomica', 'CategoriaTaxonomica.IdCategoriaTaxonomica', '=', 'Nombre.IdCategoriaTaxonomica')
-                ->orderBy('CategoriaTaxonomica.IdNivel2')
-                ->orderBy('Nombre.NombreCompleto')
-                ->orderBy('CategoriaTaxonomica.IdNivel1')
-                ->orderBy('CategoriaTaxonomica.IdNivel3')
-                ->orderBy('CategoriaTaxonomica.IdNivel4');
+            return $query->select(
+                                'Nombre.*', 
+                                'CategoriaTaxonomica.NombreCategoriaTaxonomica',
+                                'CategoriaTaxonomica.IdNivel2',
+                                'CategoriaTaxonomica.IdNivel1',
+                                'CategoriaTaxonomica.IdNivel3',
+                                'CategoriaTaxonomica.IdNivel4'
+                            )
+                          ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                          ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                          ->whereRaw('LOWER(Nombre.NombreCompleto) LIKE LOWER(?)', ["%$taxon%"])
+                          ->where('Nombre.EstadoRegistro', 1)
+                          ->join(
+                                'SCAT', 
+                                'SCAT.IdNombre', 
+                                '=', 
+                                'Nombre.IdNombre'
+                            )
+                          ->join(
+                                'CategoriaTaxonomica', 
+                                'CategoriaTaxonomica.IdCategoriaTaxonomica', 
+                                '=', 
+                                'Nombre.IdCategoriaTaxonomica'
+                            )
+                          ->orderBy('CategoriaTaxonomica.IdNivel2')
+                          ->orderBy('Nombre.NombreCompleto')
+                          ->orderBy('CategoriaTaxonomica.IdNivel1')
+                          ->orderBy('CategoriaTaxonomica.IdNivel3')
+                          ->orderBy('CategoriaTaxonomica.IdNivel4')
+                          ->orderBy('Nombre.IdNombre');
         }
         return $query;
     }

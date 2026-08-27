@@ -44,27 +44,39 @@ class NombresArbolController extends Controller
 
     public function fetchNomArb(Request $request)
     {
+        Log::info("Estos son los valores del request");
+        Log::info($request);
+        
         $valor = $request->categ ?? $request->idNombre ?? '';
         
         // Determinar relaciones mínimas necesarias
-        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'ascendOblig', 'nombreRel'];
+        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig', 'nombreRel'];*/
+         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];
 
         if ($request->has('taxon')) {
+            Log::info("Entre a esta parte del controlador porque tengo taxon");
             if (!empty($request->categ)) {
                 $categ = explode(',', $request->categ);
                 $catalog = explode(',', $request->catalog);
                 $taxon = $request->taxon;
 
+                Log::info('CURSOR RECIBIDO****', ['cursor' => request()->input('cursor'),]);
+
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
                     ->with($relacionesBase)
-                    ->paginate(150); // Reducir paginación
+                    ->cursorPaginate(150); // Reducir paginación
                     
             } else {
                 $taxon = $request->taxon;
+
+                Log::info('CURSOR RECIBIDO-----', ['cursor' => request()->input('cursor'),]);
+
                 $nombres = Nombre::filtraArbolTax($taxon)
                     ->with($relacionesBase)
-                    ->paginate(150);
+                    ->cursorPaginate(150);
             }
             
         } elseif ($request->has('catalog')) {
@@ -74,12 +86,14 @@ class NombresArbolController extends Controller
             $relacionesExtendidas = array_merge($relacionesBase, [
                 'ascendObligHijos','relNombreRegion','relNombreAutor'
             ]);
+           
+            Log::info('CURSOR RECIBIDO *-*-*-*-*', ['cursor' => request()->input('cursor'),]);
 
             $query = Nombre::filtraArbol($categ, $catalog)
             ->with($relacionesExtendidas);
 
-            $nombres = $query->paginate(150);
-                
+            $nombres = $query->cursorPaginate(150);
+
         } elseif ($request->has('idNombre')) {
             $valor = $request->idNombre;
             
@@ -114,20 +128,24 @@ class NombresArbolController extends Controller
     public function fetchHijos($id)
     {
         // Relaciones mínimas necesarias
-        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'ascendOblig','ascendObligHijos',
-                           'relNombreRegion','relNombreAutor', 'nombreRel'];*/
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'relNombreAutor', 'nombreRel'];
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];
+        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'relNombreAutor', 'nombreRel'];*/
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
             ->get();
         
         // Procesar datos en batch (método del Trait)
+        $ids[] = $id;
+        $dataRef = $this->obtenerReferenciasBatch($ids);
+        log::info("Esto vale dataRef");
+        log::info($dataRef);
         $data = $this->procesarNombresBatch($nombres);
         
-        return response()->json([$data]);
+        return response()->json([$data, $dataRef]);
     }
 
     protected function relacionNombre($relaciones){
@@ -880,7 +898,7 @@ class NombresArbolController extends Controller
                     'relNombreRegion',
                     'scat.grupoScat'
                 ])
-                ->paginate(150);
+                ->cursorPaginate(150);
 
             return  response()->json([
                 'status' => 200,
