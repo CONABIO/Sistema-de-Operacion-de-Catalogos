@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/actualiza-RelBiblioNombre', [NombresArbolController::class, 'actualizaObsNomBiblio']);
     Route::delete('/elimina-RelBiblioNombre', [NombresArbolController::class, 'eliminaRelBiblio']);
     Route::get('/actualizaReferenciasNombre', [NombresArbolController::class, 'muestraReferencias']);
+    Route::get('cargar-contBusq', [NombresArbolController::class, 'cargaConteosBusq']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
 

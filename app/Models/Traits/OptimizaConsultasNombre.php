@@ -80,8 +80,6 @@ trait OptimizaConsultasNombre
      */
     public function obtenerReferenciasBatch(array $idsNombres)
     {
-        Log::info("Esto llega a obtenerReferenciasBatch");
-        Log::info($idsNombres);
         if (empty($idsNombres)) {
             return collect();
         }

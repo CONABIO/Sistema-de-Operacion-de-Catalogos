@@ -102,6 +102,45 @@ class Nombre extends Model
     	}
     }
 
+    public function scopeConteoSimple($query, $categ, $catalog){
+        return $query
+                    ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                    ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                    ->where('Nombre.EstadoRegistro', 1)
+                    ->join(
+                        'SCAT',
+                        'SCAT.IdNombre',
+                        '=',
+                        'Nombre.IdNombre'
+                    )
+                    ->join(
+                        'CategoriaTaxonomica',
+                        'CategoriaTaxonomica.IdCategoriaTaxonomica',
+                        '=',
+                        'Nombre.IdCategoriaTaxonomica'
+                    );
+    }
+
+    public function scopeConteoTaxon($query, $categ, $catalog, $taxon){
+        return $query
+                    ->whereIn('SCAT.IdGrupoSCAT', $catalog)
+                    ->whereIn('Nombre.IdCategoriaTaxonomica', $categ)
+                    ->whereRaw('LOWER(Nombre.NombreCompleto) LIKE LOWER(?)', ["%$taxon%"])
+                    ->where('Nombre.EstadoRegistro', 1)
+                    ->join(
+                        'SCAT', 
+                        'SCAT.IdNombre', 
+                        '=', 
+                        'Nombre.IdNombre'
+                    )
+                    ->join(
+                        'CategoriaTaxonomica', 
+                        'CategoriaTaxonomica.IdCategoriaTaxonomica', 
+                        '=', 
+                        'Nombre.IdCategoriaTaxonomica'
+                    );
+    }
+
     //Funación para buscar por idcat
     public function scopeFiltraArbol($query, $categ, $catalog)
     {

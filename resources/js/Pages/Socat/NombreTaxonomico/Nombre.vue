@@ -38,6 +38,8 @@
   const prevCursor = ref(null);
   const cargandoPagina = ref(false);
   const paginacion = ref(null);
+
+  const conteoReg = ref(0);
   //const itemsPerPage = ref(150);
 
 
@@ -489,6 +491,30 @@
     }
   };
 
+  const cargaConteo = async() =>{
+    let params = [];
+  
+    if(filterText.value === ""){
+      params = {
+        categ: catego.value,
+        catalog: idsGrupos.value
+      };
+    }else{
+      params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: filterText.value
+      };
+    }
+
+    const response = await axios.get('/cargar-contBusq', {
+        params
+    });
+
+    conteoReg.value = response.data[0];
+
+  }
+
   const handleChange = async (value) => {
 
     const loading = ElLoading.service({
@@ -516,6 +542,8 @@
         try {
 
           await cargarPagina();
+
+          await cargaConteo();
 
         } finally {
 
@@ -547,6 +575,7 @@
 
     } else {
 
+      conteoReg.value = 0;
       catego.value = '';
 
       tablaNomenclatura.value = [];
@@ -738,6 +767,8 @@
       
       const response = await axios.get('/cargar-nomArb',
         { params });
+
+      await cargaConteo();
       
       if (response.status === 200) {
         data.value = response.data[0];
@@ -1724,6 +1755,10 @@
             >
               >
             </el-button>
+          </div>
+
+          <div v-if="conteoReg > 0">
+            Reg. Totales: {{ conteoReg }}
           </div>
 
           <div class="pagination-right">
