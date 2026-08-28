@@ -1734,42 +1734,42 @@
               </span>
             </div>
           </div-->
-          <div class="pagination-footer">
+            <div class="pagination-footer">
 
-          <div
-            v-if="data.length > 0" class="pagination-left" >
-            <el-button
-              :disabled="!prevCursor || cargandoPagina"
-              @click="paginaAnterior"
-            >
-              <
-            </el-button>
-
-            <span style="margin: 0 15px;">
-              Página {{ currentPage }}
-            </span>
-
-            <el-button
-              :disabled="!nextCursor || cargandoPagina"
-              @click="siguientePagina"
-            >
+            <div
+              v-if="data.length > 0" class="pagination-left" >
+              <el-button
+                :disabled="!prevCursor || cargandoPagina"
+                @click="paginaAnterior"
               >
-            </el-button>
+                <
+              </el-button>
+
+              <span style="margin: 0 15px;">
+                Página {{ currentPage }}
+              </span>
+
+              <el-button
+                :disabled="!nextCursor || cargandoPagina"
+                @click="siguientePagina"
+              >
+                >
+              </el-button>
+            </div>
+
+            <div v-if="conteoReg > 0">
+              Reg. Totales: {{ conteoReg }}
+            </div>
+
+            <div class="pagination-right">
+
+              <span style="margin-left: auto;">
+                Taxa desc. : {{ numHijos }}
+              </span>
+
+            </div>
+
           </div>
-
-          <div v-if="conteoReg > 0">
-            Reg. Totales: {{ conteoReg }}
-          </div>
-
-          <div class="pagination-right">
-
-            <span style="margin-left: auto;">
-              Taxa desc. : {{ numHijos }}
-            </span>
-
-          </div>
-
-        </div>
 
         </el-footer>
       </el-header>
