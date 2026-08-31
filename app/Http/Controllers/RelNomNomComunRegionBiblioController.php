@@ -69,42 +69,6 @@ class RelNomNomComunRegionBiblioController extends Controller
     }
 }
 
-
-
-public function eliminarBiblioCaractRegion(Request $request)
-{
-    try {
-        DB::connection('catcentral')
-            ->table('RelNombreCatalogoRegionBiblio')
-            ->where('IdNombre', $request->IdNombre)
-            ->where('IdCatNombre', $request->IdCatNombre)
-            ->where('IdRegion', $request->IdRegion)
-            ->where('IdTipoDistribucion', $request->IdTipoDistribucion)
-            ->where('IdBibliografia', $request->IdBibliografia)
-            ->delete();
-
-        return response()->json(['message' => 'Relación eliminada'], 200);
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-}
-
-public function eliminarBiblioCaractSolo(Request $request)
-{
-    try {
-        DB::connection('catcentral')
-            ->table('RelNombreCatalogoBiblio')
-            ->where('IdNombre', $request->IdNombre)
-            ->where('IdCatNombre', $request->IdCatNombre)
-            ->where('IdBibliografia', $request->IdBibliografia)
-            ->delete();
-
-        return response()->json(['message' => 'Relación eliminada'], 200);
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
-}
-
 public function eliminarBiblioNomComunRegion(Request $request)
 {
     try {
