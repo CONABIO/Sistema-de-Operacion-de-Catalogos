@@ -852,7 +852,7 @@ const eliminarRegNombre = async (row) => {
             mostrarNotificacion('Eliminación', 'La región y su bibliografía han sido eliminadas correctamente.', 'success');
         } catch (error) {
             console.error(error);
-            mostrarNotificacion('Error', 'No se pudo eliminar la asociación.', 'error');
+            mostrarNotificacion('Aviso', 'No se pudo eliminar la asociación.', 'warning');
         }
     };
 
@@ -937,7 +937,7 @@ const guardarCambiosObsGeneral = async () => {
 
         } catch (error) {
             console.error(error);
-            mostrarNotificacion("Error", "No se pudo actualizar", "error");
+            mostrarNotificacion("Aviso", "No se pudo actualizar", "warning");
         }
     };
 
@@ -999,7 +999,7 @@ const guardarCambiosObsReg = async () => {
                 tablaNomComunReg.value[index].Observaciones = observacionesRegTab.value;
             }
         } catch (error) {
-            mostrarNotificacion("Error", "No se pudo actualizar", "error");
+            mostrarNotificacion("Aviso", "No se pudo actualizar", "warning");
         }
     };
 
@@ -1100,7 +1100,7 @@ const guardarCambiosObs = async () => {
                 const idTipoDist = regionRow?.TipoDistribucion?.id || regionRow?.IdTipoDistribucion;
 
                 if (!idTipoDist) {
-                    mostrarNotificacion("Error", "No se pudo determinar el tipo de distribución de la región.", "error");
+                    mostrarNotificacion("Aviso", "No se pudo determinar el tipo de distribución de la región.", "warning");
                     return;
                 }
                 endpoint = '/asociar-biblio-region-taxon';
@@ -1282,7 +1282,7 @@ const vincularInmediato = async (idBiblio) => {
         const idTipoDist = row.TipoDistribucion?.id || row.IdTipoDistribucion;
 
         if (!idTipoDist) {
-            mostrarNotificacion("Error", "La región seleccionada debe tener un tipo de distribución guardado.", "error");
+            mostrarNotificacion("Aviso", "La región seleccionada debe tener un tipo de distribución guardado.", "warning");
             return;
         }
 
@@ -1301,7 +1301,7 @@ const vincularInmediato = async (idBiblio) => {
             }
         } catch (error) {
             console.error(error);
-            mostrarNotificacion("Error", "No se pudo realizar la asociación.", "error");
+            mostrarNotificacion("Aviso", "No se pudo realizar la asociación.", "warning");
         }
     }
 };
@@ -1489,7 +1489,7 @@ const guardarRegNombre = async (modo) => {
     }
     const idTipoDist = row.TipoDistribucion?.id;
     if (!idTipoDist) {
-        mostrarNotificacion("Error", "Debe seleccionar un Tipo de Distribución.", "error");
+        mostrarNotificacion("Aviso", "Debe seleccionar un Tipo de Distribución.", "warning");
         return;
     }
 
@@ -1516,7 +1516,7 @@ const guardarRegNombre = async (modo) => {
         }
     } catch (error) {
         console.error(error);
-        mostrarNotificacion("Error", "No se pudo guardar la modificación.", "error");
+        mostrarNotificacion("Aviso", "No se pudo guardar la modificación.", "warning");
     }
 };
 
@@ -1789,7 +1789,7 @@ const eliminarBiblioRel = async (row) => {
 
         } catch (error) {
             console.error("Error al eliminar:", error);
-            mostrarNotificacion("Error", "No se pudo eliminar el registro de la base de datos.", "error");
+            mostrarNotificacion("Aviso", "No se pudo eliminar el registro de la base de datos.", "warning");
         }
     };
 
@@ -2244,7 +2244,7 @@ watch(
         } catch (error) {
             console.error("Error crítico en el watcher:", error);
             if (typeof mostrarNotificacion === 'function') {
-                mostrarNotificacion("Error", "No se pudo obtener toda la información del taxón", "error");
+                mostrarNotificacion("Aviso", "No se pudo obtener toda la información del taxón", "warning");
             }
         } finally {
             nextTick(() => {
@@ -2305,7 +2305,7 @@ const abrirReg = async () => {
         }
     } catch (error) {
         console.error("Error al cargar regiones:", error);
-        mostrarNotificacion("Error", "No se pudieron cargar los catálogos de regiones", "error");
+        mostrarNotificacion("Aviso", "No se pudieron cargar los catálogos de regiones", "warning");
     }
 }
 
@@ -2405,7 +2405,7 @@ const ejecutarEliminacion = async () => {
         }
     } catch (error) {
         console.error("Error al eliminar:", error.response);
-        mostrarNotificacion("Error", "No se pudo eliminar la relación.", "error");
+        mostrarNotificacion("Aviso", "No se pudo eliminar la relación.", "warning");
     }
 };
 
@@ -2579,9 +2579,9 @@ const guardarCaractReg = async () => {
             const errorMessages = Object.values(error.response.data.errors).flat();
             errorMessages.forEach(msg => {
                 mostrarNotificacionError(
-                    "Error",
+                    "Aviso",
                     msg,
-                    "Error",
+                    "warning",
                     5000
                 );
             });
