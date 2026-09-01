@@ -2232,7 +2232,6 @@ watch(
             }
 
             if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
-                console.log("Aqui entre al if sin problemas");
                 const data = respRegion.value.data;
                 regionesNombre.value = data.regPorNombre;
                 totalRegionesNom.value = data.regPorNombre.length;
