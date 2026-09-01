@@ -42,15 +42,31 @@ class NombresArbolController extends Controller
         ]);
     }
 
+    public function cargaConteosBusq(Request $request){
+        
+        $categ = explode(',', $request->categ);
+        $catalog = explode(',', $request->catalog);
+
+        if (!empty($request->taxon)) {
+            $conteo = Nombre::conteoTaxon($categ, $catalog, $request->taxon)->count();
+        }else{
+            $conteo = Nombre::conteoSimple($categ, $catalog)->count();
+        }
+        
+        return response()->json([$conteo]);
+    }
+
     public function fetchNomArb(Request $request)
-    {
+    {      
         $valor = $request->categ ?? $request->idNombre ?? '';
         
         // Determinar relaciones mínimas necesarias
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'ascendOblig', 'nombreRel'];
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];
 
         if ($request->has('taxon')) {
+
             if (!empty($request->categ)) {
                 $categ = explode(',', $request->categ);
                 $catalog = explode(',', $request->catalog);
@@ -58,13 +74,14 @@ class NombresArbolController extends Controller
 
                 $nombres = Nombre::filtraArbolTaxCat($categ, $catalog, $taxon)
                     ->with($relacionesBase)
-                    ->paginate(150); // Reducir paginación
+                    ->cursorPaginate(50); // Reducir paginación
                     
             } else {
                 $taxon = $request->taxon;
+
                 $nombres = Nombre::filtraArbolTax($taxon)
                     ->with($relacionesBase)
-                    ->paginate(150);
+                    ->cursorPaginate(50);
             }
             
         } elseif ($request->has('catalog')) {
@@ -78,8 +95,8 @@ class NombresArbolController extends Controller
             $query = Nombre::filtraArbol($categ, $catalog)
             ->with($relacionesExtendidas);
 
-            $nombres = $query->paginate(150);
-                
+            $nombres = $query->cursorPaginate(50);
+
         } elseif ($request->has('idNombre')) {
             $valor = $request->idNombre;
             
@@ -117,16 +134,21 @@ class NombresArbolController extends Controller
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
                            'hijos', 'ascendOblig','ascendObligHijos',
                            'relNombreRegion','relNombreAutor', 'nombreRel'];
+        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'relNombreAutor', 'nombreRel'];*/
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
             ->get();
         
         // Procesar datos en batch (método del Trait)
+        $ids[] = $id;
+        $dataRef = $this->obtenerReferenciasBatch($ids);
+
         $data = $this->procesarNombresBatch($nombres);
         
-        return response()->json([$data]);
-    }
+        return response()->json([$data, $dataRef]);
+    }    
 
     protected function relacionNombre($relaciones){
         $reldata= [];
@@ -878,7 +900,7 @@ class NombresArbolController extends Controller
                     'relNombreRegion',
                     'scat.grupoScat'
                 ])
-                ->paginate(150);
+                ->cursorPaginate(150);
 
             return  response()->json([
                 'status' => 200,

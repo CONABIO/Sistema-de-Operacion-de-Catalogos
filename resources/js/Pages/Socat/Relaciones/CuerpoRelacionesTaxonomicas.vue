@@ -161,12 +161,51 @@
                         </div>
                       </el-main>
                       <!-- PIE DE PANEL CON PAGINACIÓN -->
-                      <el-footer v-if="totalItems > 0" class="panel-footer">
+                      <!--el-footer v-if="totalItems > 0" class="panel-footer">
                         <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
                           @current-change="handlePageChange" layout="prev, pager, next, total" background small />
                         <span v-show="numHijos > 0" style="margin-left: auto;">
                           Num. Hijos: {{ numHijos }}
                         </span>
+                      </el-footer-->
+                      <el-footer>
+                        <div class="pagination-footer">
+
+                          <div
+                            v-if="data.length > 0" class="pagination-left" >
+                            <el-button
+                              :disabled="!prevCursor || cargandoPagina"
+                              @click="paginaAnterior"
+                            >
+                              <
+                            </el-button>
+
+                            <span style="margin: 0 15px;">
+                              Página {{ currentPage }}
+                            </span>
+
+                            <el-button
+                              :disabled="!nextCursor || cargandoPagina"
+                              @click="siguientePagina"
+                            >
+                              >
+                            </el-button>
+                          </div>
+
+                          <div v-if="conteoReg > 0">
+                            Reg. Totales: {{ conteoReg }}
+                          </div>
+
+                          <div class="pagination-right">
+
+                            <span style="margin-left: auto;">
+                              Taxa desc. : {{ numHijos }}
+                            </span>
+
+                          </div>
+
+                        </div>
+
                       </el-footer>
                     </el-container>
                   </el-card>
@@ -349,6 +388,16 @@ const mostrar = ref(false);
 const data = ref([]);
 const paginas = ref('');
 const currentPage = ref(1);
+
+const nextCursor = ref(null);
+const prevCursor = ref(null);
+const cargandoPagina = ref(false);
+const paginacion = ref(null);
+
+ const mostrarNuevoTax = ref(false);
+
+const conteoReg = ref(0);
+
 const itemsPerPage = ref(150);
 const taxonActRel = ref([]);
 const taxonAct = ref([]);
@@ -552,41 +601,6 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
   notificacionDuracion.value = 0;
   notificacionVisible.value = true;
 };
-
-const handleChange = async (value) => {
-  if (value != undefined) {
-    filterText.value = "";
-    mostrar.value = false;
-    catego.value = value[0];
-
-    if (idsGrupos.value != '') {
-      const params = {
-        categ: value[0],
-        catalog: idsGrupos.value
-      };
-
-      const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-
-      //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-      const response = await axios.get('/cargar-nomArb', { params });
-
-      if (response.status === 200) {
-
-        data.value = response.data[0];
-        totalItems.value = response.data[1].total;
-        paginas.value = response.data[1].last_page;
-      }
-      else {
-      }
-      loading.close();
-    }
-  }
-}
 
 const filtro_Catalogos = () => {
   //Funcion para abrir el modal que muestra los catalogos taxonómicos
@@ -1372,6 +1386,279 @@ const Guardar = async() => {
 
     habCambioSinBas.value = true;
   });
+
+  //-----------------------------------------------
+  const cargarPagina = async (cursor = null) => {
+    let params = [];
+  
+    if(filterText.value === ""){
+      params = {
+        categ: catego.value,
+        catalog: idsGrupos.value
+      };
+    }else{
+      params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: filterText.value
+      };
+    }
+  
+    // Solo enviamos cursor cuando estamos cambiando de página
+    if (cursor) {
+      params.cursor = cursor;
+    }
+
+    try {
+
+      cargandoPagina.value = true;
+     
+      const response = await axios.get('/cargar-nomArb', {
+        params
+      });
+
+      if (response.status === 200) {
+
+        const paginator = response.data[0];
+
+        // Los 150 registros
+        data.value = paginator;
+
+        // Cursores
+        nextCursor.value = response.data[1].next_cursor;
+        prevCursor.value = response.data[1].prev_cursor;
+
+        // Las categorías
+        paginacion.value = response.data[1];
+
+        // Mantienes tu lógica actual
+        if (
+          response.data[3].length === 1 &&
+          (
+            response.data[0].data.length === 0 &&
+            (
+              response.data[3][0].IdAscendente === 0 ||
+              response.data[3][0].IdAscendente === null
+            )
+          )
+        ) {
+
+          categoriaNuevoTax.value = response.data[3][0];
+          mostrarNuevoTax.value = true;
+
+        } else {
+
+          mostrarNuevoTax.value = false;
+
+        }
+
+      } else {
+
+        console.log(
+          "Se presentó un error en la recuperación de los datos"
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Error cargando nombres:",
+        error
+      );
+
+    } finally {
+
+      cargandoPagina.value = false;
+
+    }
+  };
+
+  const cargaConteo = async() =>{
+    let params = [];
+  
+    if(filterText.value === ""){
+      params = {
+        categ: catego.value,
+        catalog: idsGrupos.value
+      };
+    }else{
+      params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: filterText.value
+      };
+    }
+
+    const response = await axios.get('/cargar-contBusq', {
+        params
+    });
+
+    conteoReg.value = response.data[0];
+
+  }
+
+  const handleChange = async (value) => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+    if (value !== undefined) {
+
+      filterText.value = "";
+      mostrar.value = false;
+      catego.value = value[0];
+
+      if (idsGrupos.value !== '') {
+
+        // Cada cambio de categoría comienza desde página 1
+        currentPage.value = 1;
+
+        // Muy importante: eliminar cursores anteriores
+        nextCursor.value = null;
+        prevCursor.value = null;
+
+        try {
+
+          await cargarPagina();
+
+          await cargaConteo();
+
+        } finally {
+
+          loading.close();
+
+        }
+
+        await nextTick();
+
+        if (data.value.length > 0) {
+
+          selectedNodeKey.value = data.value[0].id;
+
+          tree.value.setCurrentKey(
+            data.value[0].id
+          );
+
+          let node = tree.value.getNode(
+            data.value[0].id
+          );
+
+          expande(
+            node.data,
+            node
+          );
+        }
+
+      }
+
+    } else {
+
+      conteoReg.value = 0;
+      catego.value = '';
+
+      tablaNomenclatura.value = [];
+      tablaReferencias.value = [];
+
+      totalRegNom.value = 0;
+      totalRegRef.value = 0;
+
+      data.value = [];
+
+      numHijos.value = 0;
+      taxonAct.value = [];
+
+      // También limpiamos paginación
+      currentPage.value = 1;
+      nextCursor.value = null;
+      prevCursor.value = null;
+
+      loading.close();
+    }
+  };
+
+  const siguientePagina = async () => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+    if (!nextCursor.value || cargandoPagina.value) {
+      loading.close();
+      return;
+    }
+
+    currentPage.value++;
+    
+    await cargarPagina(nextCursor.value);
+    
+    await nextTick();
+    
+    if (data.value.length > 0) {
+
+      selectedNodeKey.value = data.value[0].id;
+
+      tree.value.setCurrentKey(
+        data.value[0].id
+      );
+
+      const node = tree.value.getNode(
+        data.value[0].id
+      );
+
+      if (node) {
+        expande(node.data, node);
+      }
+    }
+
+    loading.close();
+  };
+
+  const paginaAnterior = async () => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+    
+    if (!prevCursor.value || cargandoPagina.value) {
+      loading.close();
+      return;
+    }
+
+    currentPage.value--;
+
+    await cargarPagina(prevCursor.value);
+
+    await nextTick();
+
+    if (data.value.length > 0) {
+
+      selectedNodeKey.value = data.value[0].id;
+
+      tree.value.setCurrentKey(
+        data.value[0].id
+      );
+
+      const node = tree.value.getNode(
+        data.value[0].id
+      );
+
+      if (node) {
+        expande(node.data, node);
+      }
+    }
+    loading.close();
+  };
 
 </script>
 
