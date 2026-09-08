@@ -15,17 +15,10 @@
                                         {{ props.taxonAct.label }}
                                     </span>
                                 </el-col>
-                                <el-col :span="5">
-                                    <div style="display: flex; gap: 5px; ">
-                                        <BotonCaract @click="abrirCaract"
-                                            style="flex-shrink: 0; min-width: max-content;" />
-
-                                        <BotonRegiones @click="abrirReg"
-                                            style="flex-shrink: 0; min-width: max-content;" />
-
-
+                                <el-col :span="6">
+                                    <div style="display: flex; gap: 5px; justify-content: flex-end;">
                                         <BotonSalir accion="cerrar" @salir="closeDialog"
-                                            style="flex-shrink: 0; min-width: max-content;" />                             
+                                            style="flex-shrink: 0; min-width: max-content;" />
                                     </div>
                                 </el-col>
                             </el-row>
@@ -67,11 +60,6 @@
                                                                     <div
                                                                         style="display: flex; align-items: center; margin-top: -4px; margin-bottom: -6px;">
                                                                         <span>Tipo de región</span>
-                                                                        <el-button
-                                                                            style="background-color: springgreen; margin-left:auto;"
-                                                                            circle @click="handleManageTiposRegion">
-                                                                            <IconoMundo />
-                                                                        </el-button>
                                                                     </div>
                                                                 </template>
                                                                 <div class="demo-tree panel-nombre">
@@ -143,20 +131,17 @@
                                                         style="padding: 10px; background: #f5f7fa; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
                                                         <span>Nombres comunes asociados ({{ nombresAsociadosTaxon.length
                                                         }})</span>
-                                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                                        <div class="contenedor-botones-asociados" style="display: flex; gap: 4px; align-items: center;">
                                                             <EditarButton @editar="activarEdicionGeneral" />
                                                             <EliminarButton @eliminar="confirmarEliminarAsociacion" />
-                                                            <GuardarButton @confirmar="guardarCambiosObsGeneral"
-                                                                :disabled="!editandoObsGeneral"
-                                                                style="margin-right: 12px; margin-left: 12px;" />
+                                                            <GuardarButton
+                                                                @confirmar="guardarCambiosObsGeneral"
+                                                                :disabled="!editandoObsGeneral" />
                                                             <BotonTraspaso @traspasa="onCreaRelacion" />
-                                                            <el-tooltip class="item" effect="dark"
-                                                                content="Bibliografia" placement="top">
+                                                            <el-tooltip class="item" effect="dark" content="Bibliografia" placement="top">
                                                                 <el-button @click="abrirResumenRegiones" circle
-                                                                    style="flex-shrink: 0; background-color: #509165; color: white;">
-                                                                    <el-icon>
-                                                                        <Management />
-                                                                    </el-icon>
+                                                                    style="background-color: #509165; color: white;">
+                                                                    <el-icon><Management /></el-icon>
                                                                 </el-button>
                                                             </el-tooltip>
                                                         </div>
@@ -195,16 +180,20 @@
                                                             description="No hay nombres asociados" :image-size="60" />
                                                     </div>
 
-                                                    <div
-                                                        style="padding: 12px; background: #fafafa; border-top: 1px solid #eee;">
-                                                        <div
-                                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                                            <span style="font-weight: bold; color: #606266;">{{
-                                                                etiquetaObservaciones }}</span>
+                                                    <div  v-if="tipoSeleccion === 'region'"  style="padding: 12px; background: #fafafa; border-top: 1px solid #eee;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                            <span style="font-weight: bold; color: #606266;">
+                                                                {{ etiquetaObservaciones }}
+                                                            </span>
                                                         </div>
-                                                        <el-input v-model="observacionesGeneral" type="textarea"
-                                                            :rows="2" :placeholder="placeholderObservaciones"
-                                                            style="font-size: 12px;" :disabled="!editandoObsGeneral" />
+                                                        <el-input
+                                                            v-model="observacionesGeneral"
+                                                            type="textarea"
+                                                            :rows="2"
+                                                            :placeholder="placeholderObservaciones"
+                                                            style="font-size: 12px;"
+                                                            :disabled="!editandoObsGeneral"
+                                                        />
                                                     </div>
                                                 </div>
                                             </el-splitter-panel>
@@ -451,17 +440,20 @@
                                                 </div>
                                             </el-splitter-panel>
 
-                                            <el-splitter-panel :size="'10%'">
-                                                <div
-                                                    style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%;">
-                                                    <p
-                                                        style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
-                                                        Observaciones asociadas a la relación Taxón-Nombre
-                                                        común-Región-Bibliografía
+                                            <el-splitter-panel :size="'25%'">
+                                                <div style="padding: 15px; background: #fff; border-top: 2px solid #eee; height: 100%; overflow: auto;">
+                                                    <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
+                                                        Cita completa
+                                                    </p>
+                                                    <div style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border: 1px solid #e4e7ed; border-radius: 4px; font-size: 12px; color: #606266; line-height: 1.4; min-height: 40px;">
+                                                        {{ citaCompletaResumen || 'Seleccione una bibliografía para ver la cita' }}
+                                                    </div>
+                                                    <p style="font-size: 13px; color: #333; margin-bottom: 8px; font-weight: bold;">
+                                                        Observaciones asociadas a la relación Taxón-Nombre común-Región-Bibliografía
                                                     </p>
                                                     <div style="display: flex; align-items: flex-start; gap: 10px;">
                                                         <el-input v-model="observaciones" type="textarea" :rows="3"
-                                                            placeholder="Observaciones" style="flex: 1;"
+                                                            placeholder="Escriba las observaciones aquí..." style="flex: 1;"
                                                             :disabled="!editandoObs" />
                                                     </div>
                                                 </div>
@@ -1131,7 +1123,7 @@ const guardarCambiosObs = async () => {
             h('div', { class: 'body-content' }, [
                 h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
                 h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Deseas guardar los cambios realizados en las observaciones de región - bibliografía?")
+                    h('p', null, "¿Deseas guardar los cambios realizados en las observaciones asociadas a la relación Taxón-Nombre común-Región-Bibliografía?")
                 ])
             ]),
             h('div', { class: 'footer-buttons' }, [
@@ -1398,11 +1390,11 @@ const activarEdicionGeneral = () => {
 
     if (tipoSeleccion.value === 'comun') {
         mostrarNotificacion(
-            "Aviso", 
-            "Las observaciones generales del nombre común deben editarse directamente en el catálogo de nombres comunes.", 
+            "Aviso",
+            "Las observaciones generales del nombre común deben editarse directamente en el catálogo de nombres comunes.",
             "warning"
         );
-        return; 
+        return;
     }
 
     if (editandoObsGeneral.value && observacionesGeneral.value !== valorOriginalObsGeneral.value) {
@@ -1438,11 +1430,11 @@ const ejecutarTraspasoDesdeModal = (nodoRegion) => {
     const tienePendiente = regionesNombre.value.some(r => r.esNuevo === true);
     if (tienePendiente) {
         mostrarNotificacion(
-            "Aviso", 
-            "Tiene una región pendiente de guardar. Por favor, seleccione su tipo de distribución y guarde antes de agregar otra.", 
+            "Aviso",
+            "Tiene una región pendiente de guardar. Por favor, seleccione su tipo de distribución y guarde antes de agregar otra.",
             "warning"
         );
-        return; 
+        return;
     }
     const existe = regionesNombre.value.find(r => r.IdRegion === nodoRegion.IdRegion);
     if (!existe) {
@@ -1452,13 +1444,13 @@ const ejecutarTraspasoDesdeModal = (nodoRegion) => {
             TipoDistribucion: { id: null },
             Observaciones: "",
             Biblio: { url: '/storage/images/Libro_Rojo.svg', texto: '' },
-            esNuevo: true 
+            esNuevo: true
         };
         regionesNombre.value.unshift(nuevaFila);
         totalRegionesNom.value = regionesNombre.value.length;
         editandoFilaRegion.value = true;
         filaRegionSeleccionada.value = nuevaFila;
-        
+
         mostrarNotificacion(
             "Ingreso",
             "La region ha sido asociada, por favor seleccione un tipo de distribucion y guarde.",
@@ -1717,7 +1709,7 @@ const etiquetaObservaciones = computed(() => {
 
 const placeholderObservaciones = computed(() => {
     return tipoSeleccion.value === 'region'
-        ? 'Observaciones de nombre común - región...'
+        ? 'Observaciones asociadas a la relación Taxón-Nombre común-Región'
         : 'Observaciones de nombre común...';
 });
 
@@ -2122,25 +2114,29 @@ const cargaRegionesCatalogos = async () => {
 const onCreaRelacion = async () => {
     const v_idNombre = props.taxonAct.id;
     const v_idNomComun = idNomComunSeleccionado.value;
-    const v_idRegion = selectedNode.value ? selectedNode.value.IdRegion : 'NULO';
-    const v_idTipoRegion = selectedTipoRegionNode.value ? selectedTipoRegionNode.value.IdTipoRegion : 'NULO';
+
+    // 1. Intentar recuperar la región directamente del árbol si la variable está nula
+    // Esto asegura que si está en verde en pantalla, lo tome.
+    if (!selectedNode.value && treeRef.value) {
+        const nodoActual = treeRef.value.getCurrentNode();
+        if (nodoActual) {
+            selectedNode.value = nodoActual;
+        }
+    }
+
+    // 2. Validaciones básicas
     if (!v_idNomComun) {
-        mostrarNotificacion("Aviso", "Debe seleccionar un nombre común", "warning");
+        mostrarNotificacion("Aviso", "Debe seleccionar un nombre común en la tabla de la izquierda", "warning");
         return;
     }
-    if (v_idTipoRegion === 'NULO') {
-        mostrarNotificacion("Aviso", "Debe seleccionar un tipo de region", "warning");
-        return;
-    }
-    if (v_idRegion === 'NULO') {
-        mostrarNotificacion("Aviso", "Debe seleccionar una región ", "warning");
+    if (!selectedNode.value) {
+        mostrarNotificacion("Aviso", "Debe seleccionar una región en el árbol central", "warning");
         return;
     }
 
-    if (Number(v_idTipoRegion) !== Number(selectedNode.value.IdTipoRegion)) {
-        mostrarNotificacion("Aviso", "El tipo de región no coincide con la región", "warning");
-        return;
-    }
+    // 3. Extraer IDs (Sin validar coincidencia con el 'Tipo de región' superior)
+    const v_idRegion = selectedNode.value.IdRegion;
+    const v_idTipoRegion = selectedNode.value.IdTipoRegion;
 
     const params = {
         idNombre: v_idNombre,
@@ -2154,22 +2150,23 @@ const onCreaRelacion = async () => {
         if (response.status === 200) {
             mostrarNotificacion('Ingreso', response.data.message, 'success');
             await recargarNombresAsociados();
-            const itemRecienAgregado = nombresAsociadosTaxon.value.find(item => 
+
+            // Mantener el foco en el árbol de asociados
+            const itemRecienAgregado = nombresAsociadosTaxon.value.find(item =>
                 String(item.IdNomComun || item.id) === String(v_idNomComun)
             );
 
             if (itemRecienAgregado) {
-                await nextTick(); 
+                await nextTick();
                 if (asociadosTreeRef.value) {
-                    const idParaArbol = itemRecienAgregado.id || itemRecienAgregado.IdNomComun;
-                    asociadosTreeRef.value.setCurrentKey(idParaArbol);
+                    asociadosTreeRef.value.setCurrentKey(itemRecienAgregado.id || itemRecienAgregado.IdNomComun);
                 }
                 await clickNomCom(itemRecienAgregado);
             }
         }
     } catch (error) {
         console.error("Error al guardar:", error);
-        mostrarNotificacion("Aviso", "La relacion de nombre común con region ya existe", "warning");
+        mostrarNotificacion("Aviso", "La relación ya existe o hubo un error en el servidor", "warning");
     }
 };
 
@@ -2215,14 +2212,14 @@ watch(
         editandoObsGeneral.value = false;
         editandoObs.value = false;
         tablaNomComun.value = [];
-  
+
         if (!nuevoValor?.id) return;
         try {
             const [respNomCom, respRegion] = await Promise.allSettled([
                 axios.get(`/cargar-nomcomun-taxon/${nuevoValor.id}`),
                 axios.get(`/cargaRegionesTaxon/${nuevoValor.id}`),
             ]);
-    
+
             if (respNomCom.status === 'fulfilled' && respNomCom.value.status === 200) {
                 const data = respNomCom.value.data;
                 tablaNomComun.value = data;
@@ -2240,7 +2237,7 @@ watch(
                 regionesNomCom.value = data.regPorNomCom;
                 totalRegionesNomCom.value = data.regPorNomCom.length;
             }
-            
+
         } catch (error) {
             console.error("Error crítico en el watcher:", error);
             if (typeof mostrarNotificacion === 'function') {
@@ -2288,11 +2285,11 @@ const abrirReg = async () => {
     const tienePendiente = regionesNombre.value.some(r => r.esNuevo === true);
     if (tienePendiente) {
         mostrarNotificacion(
-            "Aviso", 
-            "Tiene una región pendiente de guardar. Por favor, seleccione su tipo de distribución y guarde antes de agregar otra.", 
+            "Aviso",
+            "Tiene una región pendiente de guardar. Por favor, seleccione su tipo de distribución y guarde antes de agregar otra.",
             "warning"
         );
-        return; 
+        return;
     }
 
     try {
@@ -2315,7 +2312,7 @@ const clickNomComunOriginal = (row) => {
         mostrarNotificacion("Aviso", "Tiene cambios pendientes en las observaciones. Por favor, guarde o cancele antes de seleccionar otro registro.", "warning");
         nextTick(() => {
             if (tablaNomComunPrincipalRef.value && idNomComunSeleccionado.value) {
-                const filaAnterior = tablaNomComun.value.find(r => 
+                const filaAnterior = tablaNomComun.value.find(r =>
                     String(r.IdNomComun || r.id) === String(idNomComunSeleccionado.value)
                 );
                 if (filaAnterior) {
@@ -2431,8 +2428,8 @@ const clickNomCom = async (data) => {
     if (!data) return;
     if (editandoObsGeneral.value && observacionesGeneral.value !== valorOriginalObsGeneral.value) {
         mostrarNotificacion(
-            "Aviso", 
-            "Tiene cambios pendientes en las observaciones. Por favor, guarde o cancele antes de seleccionar otro registro.", 
+            "Aviso",
+            "Tiene cambios pendientes en las observaciones. Por favor, guarde o cancele antes de seleccionar otro registro.",
             "warning"
         );
         if (asociadosTreeRef.value && nodoSeleccionadoArbol.value) {
@@ -2440,8 +2437,9 @@ const clickNomCom = async (data) => {
                 asociadosTreeRef.value.setCurrentKey(nodoSeleccionadoArbol.value.id);
             });
         }
-        return; 
+        return;
     }
+     citaCompletaResumen.value = "";
     observacionesGeneral.value = data.Observaciones || "";
     valorOriginalObsGeneral.value = observacionesGeneral.value;
     editandoObsGeneral.value = false;
@@ -2636,6 +2634,8 @@ const eliminarCaractReg = async (row) => {
 }
 
 const clickRegNomCom = async (row) => {
+    citaCompletaResumen.value = "";
+    idBiblioSeleccionada.value = null;
     editandoObsReg.value = false;
     idRegionSeleccionada.value = row.IdRegion || row.id || row.IdCatRegion;
     idBiblioSeleccionada.value = null;
@@ -2771,8 +2771,8 @@ const irAlNodoBuscado = async () => {
     const match = buscarEnArbolActual(filteredRegionsTree.value);
 
     if (match) {
-        selectedNode.value = match; 
-        filterText.value = ''; 
+        selectedNode.value = match;
+        filterText.value = '';
 
         await nextTick();
 
@@ -2792,7 +2792,7 @@ const irAlNodoBuscado = async () => {
             const el = document.getElementById('region-node-' + match.IdRegion);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
+
                 const row = el.closest('.el-tree-node__content');
                 if (row) {
                     row.style.backgroundColor = "#ddf6dd";
@@ -3039,6 +3039,35 @@ watch(filterText, (nuevoValor) => {
 .panel-nombre.table-wrapper :deep(.el-button + .el-button),
 .panel-nombre.table-wrapper :deep(.el-button + span),
 .panel-nombre.table-wrapper :deep(span + .el-button) {
+    margin-left: 0 !important;
+}
+
+
+:deep(.table-wrapper .el-button + .el-button) {
+    margin-left: 0 !important;
+}
+
+:deep(.table-wrapper .el-button) {
+    margin-left: 0 !important;
+}
+
+.contenedor-botones-asociados :deep(.el-button) {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 50% !important;
+}
+
+.contenedor-botones-asociados :deep(.el-button [class^="el-icon"]) {
+    font-size: 16px !important;
+}
+
+.contenedor-botones-asociados :deep(.el-button + .el-button),
+.contenedor-botones-asociados :deep(.el-button + span),
+.contenedor-botones-asociados :deep(span + .el-button) {
     margin-left: 0 !important;
 }
 </style>
