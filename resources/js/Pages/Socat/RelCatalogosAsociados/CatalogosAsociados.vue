@@ -2740,59 +2740,94 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyDown, true);
 });
 
+const findNodeById = (nodes, id) => {
+    if (!nodes || !id) return null;
+    for (const node of nodes) {
+        if (node.IdRegion === id) return node;
+        if (node.children && node.children.length > 0) {
+            const found = findNodeById(node.children, id);
+            if (found) return found;
+        }
+    }
+    return null;
+};
 
-
-const filterText = ref('');
-
-const buscadorDeshabilitado = computed(() => {
-    return !selectedTipoRegionNode.value;
-});
 
 const irAlNodoBuscado = async () => {
-    if (!filterText.value || !treeRef.value) return;
+    if (!filterText.value || !treeRef.value || !selectedTipoRegionNode.value) return;
     const textoBusqueda = filterText.value.toLowerCase();
-    let idTipoNivelActual = selectedNode.value ? selectedNode.value.IdTipoRegion : selectedTipoRegionNode.value?.IdTipoRegion;
-    const buscarEnArbolActual = (nodos) => {
-        let cola = [...nodos];
-        while (cola.length > 0) {
-            let n = cola.shift();
+    const idTipoTarget = selectedTipoRegionNode.value.IdTipoRegion;
+    const esHijoDe = (ancestro, idBuscado) => {
+        if (ancestro.IdRegion === idBuscado) return true;
+        if (!ancestro.children) return false;
+        return ancestro.children.some(c => esHijoDe(c, idBuscado));
+    };
+    const matchesGlobales = [];
+    const buscarTodo = (nodos) => {
+        nodos.forEach(n => {
             const coincideNombre = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-            const mismoNivel = n.IdTipoRegion === idTipoNivelActual;
+            const esNivelCorrecto = n.IdTipoRegion === idTipoTarget;
+            if (esNivelCorrecto && coincideNombre) matchesGlobales.push(n);
+            if (n.children) buscarTodo(n.children);
+        });
+    };
+    buscarTodo(filteredRegionsTree.value);
 
-            if (coincideNombre && mismoNivel) return n;
+    if (matchesGlobales.length === 0) {
+        mostrarNotificacion("Aviso", `No se encontró "${filterText.value}" en este nivel.`, "warning");
+        return;
+    }
 
-            if (n.children && n.children.length > 0) {
-                cola.push(...n.children);
+    let matchesFinales = matchesGlobales;
+    if (selectedNode.value) {
+        let miEstadoActual = null;
+
+        for (const root of filteredRegionsTree.value) {
+            if (root.NombreRegion.toUpperCase() === 'MÉXICO' || root.NombreRegion.toUpperCase() === 'MEXICO') {
+                miEstadoActual = root.children?.find(estado => esHijoDe(estado, selectedNode.value.IdRegion));
+                if (miEstadoActual) break;
+            } else {
+                if (esHijoDe(root, selectedNode.value.IdRegion)) {
+                    miEstadoActual = root;
+                    break;
+                }
             }
         }
-        return null;
-    };
 
-    const match = buscarEnArbolActual(filteredRegionsTree.value);
+        if (miEstadoActual) {
+            const matchesEnMiEstado = matchesGlobales.filter(m => esHijoDe(miEstadoActual, m.IdRegion));
+            if (matchesEnMiEstado.length > 0) {
+                matchesFinales = matchesEnMiEstado;
+            } else {
+                mostrarNotificacion("Aviso", `No se encontró la region dentro de la busqueda al nivel que seleccionó.`, "warning");
+                return;
+            }
+        }
+    }
 
+    let match = null;
+    const indexActual = matchesFinales.findIndex(c => c.IdRegion === selectedNode.value?.IdRegion);
+    match = matchesFinales[(indexActual + 1) % matchesFinales.length];
     if (match) {
         selectedNode.value = match;
-        filterText.value = '';
-
         await nextTick();
 
         if (treeRef.value) {
             const nodeInTree = treeRef.value.getNode(match.IdRegion);
             if (nodeInTree) {
-                let parent = nodeInTree.parent;
-                while (parent && parent.level > 0) {
-                    parent.expanded = true;
-                    parent = parent.parent;
+                let p = nodeInTree.parent;
+                while (p && p.level > 0) {
+                    p.expanded = true;
+                    p = p.parent;
                 }
+                treeRef.value.setCurrentKey(match.IdRegion);
             }
-            treeRef.value.setCurrentKey(match.IdRegion);
         }
 
         setTimeout(() => {
             const el = document.getElementById('region-node-' + match.IdRegion);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
                 const row = el.closest('.el-tree-node__content');
                 if (row) {
                     row.style.backgroundColor = "#ddf6dd";
@@ -2800,15 +2835,15 @@ const irAlNodoBuscado = async () => {
                 }
             }
         }, 150);
-
-    } else {
-        mostrarNotificacion(
-            "Aviso",
-            `No se encontró ninguna región con ese nombre en el nivel seleccionado.`,
-            "warning"
-        );
     }
 };
+
+const filterText = ref('');
+
+const buscadorDeshabilitado = computed(() => {
+    return !selectedTipoRegionNode.value;
+});
+
 
 watch(filterText, (nuevoValor) => {
     if (nuevoValor) {
