@@ -110,7 +110,7 @@ const irAPagina = async (numeroPagina) => {
 const handleRowClickInterno = (row) => {
     if (!row) return;
     if (editarSelect.value !== null) {
-        const key = props.idKey || 'id'; 
+        const key = props.idKey || 'id';
         const idActual = String(editarSelect.value[key]);
         const idNuevo = String(row[key]);
 
@@ -118,7 +118,7 @@ const handleRowClickInterno = (row) => {
             nextTick(() => {
                 tableRefInterna.value?.setCurrentRow(editarSelect.value);
             });
-            return; 
+            return;
         }
     }
     selectedRow.value = row;
@@ -163,9 +163,9 @@ const forzarFocoFilaVerde = async () => {
         const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
 
         if (filaVerde) {
-            filaVerde.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center'     
+            filaVerde.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
             });
         } else {
             const filaCurrent = tableRefInterna.value.$el.querySelector('.current-row');
@@ -173,7 +173,7 @@ const forzarFocoFilaVerde = async () => {
                 filaCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-    }, 400); 
+    }, 400);
 };
 
 const setFiltroExterno = (campo, valor) => {
@@ -245,7 +245,7 @@ watch(
             if (coincidencia) {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
-            } 
+            }
         });
     },
     { immediate: true, deep: true }
@@ -455,10 +455,11 @@ defineExpose({
                         <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
                         <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
-                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
+
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
                             v-if="props.mostrarBorrar" />
+                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
+                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
                         <div v-if="props.mostrarBiblio">
                             <el-tooltip class="item" effect="dark" content="Bibliografia">

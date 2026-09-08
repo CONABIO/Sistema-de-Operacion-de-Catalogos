@@ -456,7 +456,7 @@ const irAlNodoBuscado = async () => {
             const coincideNombre = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
             const mismoNivel = n.IdTipoRegion === idTipoNivelActual;
 
-            if (coincideNombre && mismoNivel) return n;
+            if (mismoNivel) return n;
 
             if (n.children && n.children.length > 0) {
                 cola.push(...n.children);
@@ -468,8 +468,8 @@ const irAlNodoBuscado = async () => {
     const match = buscarEnArbolActual(filteredRegionsTree.value);
 
     if (match) {
-        selectedNode.value = match; 
-        filterText.value = ''; 
+        selectedNode.value = match;
+        filterText.value = '';
 
         await nextTick();
 
@@ -489,7 +489,7 @@ const irAlNodoBuscado = async () => {
             const el = document.getElementById('region-node-' + match.IdRegion);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
+
                 const row = el.closest('.el-tree-node__content');
                 if (row) {
                     row.style.backgroundColor = "#ddf6dd";
