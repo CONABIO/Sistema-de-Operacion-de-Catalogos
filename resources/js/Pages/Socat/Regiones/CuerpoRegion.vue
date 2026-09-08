@@ -175,9 +175,6 @@ const props = defineProps({
     modal: { type:Boolean, required:false, default:false }
 });
 
-/*Juan carlos Mora 11/06/2026
-Se agregan las funciones para que al presionar el boton de salir cierre
-    el modal y no salga al menu principal*/
 
 const emit = defineEmits(['cerrar', 'traspasar']);
 
@@ -192,13 +189,10 @@ const onTraspasarRegion = () => {
         mostrarNotificacion("Aviso", "Por favor, seleccione una región de la lista para traspasar.", "warning");
         return;
     }
-
-    // Emitimos el nodo completo al padre
     emit('traspasar', selectedNode.value);
 };
 
 
-/*Juan Carlos Mora Morquecho */
 
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
@@ -451,58 +445,63 @@ const filterNodeMethod = (value, data, node) => {
 };
 
 
-const irAlNodoBuscado = () => {
+const irAlNodoBuscado = async () => {
     if (!filterText.value || !treeRef.value) return;
-
     const textoBusqueda = filterText.value.toLowerCase();
-    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
-    const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
-    const encontrarEnArbol = (nodos) => {
-        for (const nodo of nodos) {
-            const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-            const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
+    let idTipoNivelActual = selectedNode.value ? selectedNode.value.IdTipoRegion : selectedTipoRegionNode.value?.IdTipoRegion;
+    const buscarEnArbolActual = (nodos) => {
+        let cola = [...nodos];
+        while (cola.length > 0) {
+            let n = cola.shift();
+            const coincideNombre = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+            const mismoNivel = n.IdTipoRegion === idTipoNivelActual;
 
-            if (coincideNombre && coincideTipo) return nodo;
+            if (coincideNombre && mismoNivel) return n;
 
-            if (nodo.children?.length) {
-                const encontrado = encontrarEnArbol(nodo.children);
-                if (encontrado) return encontrado;
+            if (n.children && n.children.length > 0) {
+                cola.push(...n.children);
             }
         }
         return null;
     };
 
-    let match = null;
-    let ambitoBusquedaNombre;
-    if (selectedNode.value) {
-        ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
-        const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
-        if (nodoActual && nodoActual.data.children) {
-            match = encontrarEnArbol(nodoActual.data.children);
-        }
-    } else {
-        match = encontrarEnArbol(filteredRegionsTree.value);
-    }
+    const match = buscarEnArbolActual(filteredRegionsTree.value);
+
     if (match) {
-        selectedNode.value = match;
-        treeRef.value.setCurrentKey(match.IdRegion);
-        let nodeInTree = treeRef.value.getNode(match.IdRegion);
-        if (nodeInTree) {
-            let parent = nodeInTree.parent;
-            while (parent) {
-                parent.expanded = true;
-                parent = parent.parent;
+        selectedNode.value = match; 
+        filterText.value = ''; 
+
+        await nextTick();
+
+        if (treeRef.value) {
+            const nodeInTree = treeRef.value.getNode(match.IdRegion);
+            if (nodeInTree) {
+                let parent = nodeInTree.parent;
+                while (parent && parent.level > 0) {
+                    parent.expanded = true;
+                    parent = parent.parent;
+                }
             }
+            treeRef.value.setCurrentKey(match.IdRegion);
         }
 
-        nextTick(() => {
+        setTimeout(() => {
             const el = document.getElementById('region-node-' + match.IdRegion);
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                const row = el.closest('.el-tree-node__content');
+                if (row) {
+                    row.style.backgroundColor = "#ddf6dd";
+                    setTimeout(() => row.style.backgroundColor = "", 2000);
+                }
+            }
+        }, 150);
+
     } else {
         mostrarNotificacion(
             "Aviso",
-            `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+            `No se encontró ninguna región con ese nombre en el nivel seleccionado.`,
             "warning"
         );
     }
@@ -612,7 +611,6 @@ onMounted(() => {
             formModal.value.IdTipoRegion = id;
             esModalTipoRegionVisible.value = false;
             ElMessage.success(`Se ha seleccionado: "${descripcion}"`);
-            //router.reload({ only: ['tiposDeRegionProp'] });
         }
     };
     window.addEventListener('message', handleMessageFromIframe);

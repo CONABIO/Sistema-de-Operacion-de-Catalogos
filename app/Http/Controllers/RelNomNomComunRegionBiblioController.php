@@ -20,6 +20,8 @@ class RelNomNomComunRegionBiblioController extends Controller
                 'b.Autor',
                 'b.Anio',
                 'b.CitaCompleta',
+                'b.TituloPublicacion', 
+                'b.TituloSubPublicacion',
                 'pivot.Observaciones'
             )
             ->get();

@@ -379,9 +379,9 @@ const traspasaBiblio = () => {
   if (!props.biblioAct.includes(id) &&  !biblioRelacion.value.includes(id)) {
     emit('asociar', id);
     biblioRelacion.value.push(id);
-    mostrarNotificacion("Aviso", "Se ha enviado la asociación correctamente.", "success");
+    mostrarNotificacion("Aviso", "Se ha creado la relacion Taxón-Nombre común-Región-Bibliografía correctamente", "success");
   } else {
-    mostrarNotificacion("Error", "La referencia bibliográfica ya se encuentra relacionada.", "error");
+    mostrarNotificacion("Aviso", "La referencia bibliográfica ya se encuentra relacionada.", "warning");
   }
 };
 
