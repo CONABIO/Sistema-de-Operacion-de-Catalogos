@@ -473,7 +473,7 @@ const irAlNodoBuscado = () => {
     };
 
     let match = null;
-    let ambitoBusquedaNombre = "el catálogo";
+    let ambitoBusquedaNombre;
     if (selectedNode.value) {
         ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
         const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
@@ -784,9 +784,7 @@ const guardarDesdeModal = async () => {
             idPadreFinal = selectedNode.value.IdRegionAsc || 0;
         } else if (opcionNivel.value === "inferior" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegion;
-        } else {
-            idPadreFinal = 0;
-        }
+        } 
     } else {
         idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
     }
@@ -908,8 +906,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                 const el = document.getElementById('region-node-' + idPadre);
                                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
-                        } else {
-                            if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
+                        } else if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
                                 const primerNodo = filteredRegionsTree.value[0];
                                 selectedNode.value = primerNodo;
                                 treeRef.value?.setCurrentKey(primerNodo.IdRegion);
@@ -918,7 +915,6 @@ const proceedWithDeletion = (nodeId, nombre) => {
                             } else {
                                 selectedNode.value = null;
                             }
-                        }
                     });
                 }
             });
@@ -1187,10 +1183,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 }
 
 .dialog-body-container {
-    background-color: #f3f3f3;
-    padding: 20px 24px;
     border: 3px;
-    text-align: left;
     border-radius: 10px;
     background-color: #ffffff;
     padding: 20px 24px;

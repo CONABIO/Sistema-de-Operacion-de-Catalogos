@@ -95,42 +95,6 @@ class CategoriaTaxonomicaController extends Controller
     }
 
 
-    /* private function buildTreeFromLevels(Collection $nodes): array
-    {
-        if ($nodes->isEmpty()) {
-            return [];
-        }
-
-        $tree = [];
-        $nodeMap = [];
-
-        foreach ($nodes as $node) {
-            $nodeArray = $node->toArray();
-            $nodeArray['children'] = [];
-
-            $levels = [];
-            for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
-                $levels[] = $node->{"IdNivel{$i}"};
-            }
-
-            $key = 'L' . implode('_', array_filter($levels, fn($v) => $v > 0));
-            $nodeMap[$key] = $nodeArray;
-
-            $parentKeyArray = array_filter($levels, fn($v) => $v > 0);
-            array_pop($parentKeyArray);
-            $parentKey = 'L' . implode('_', $parentKeyArray);
-
-            if (count($parentKeyArray) > 0 && isset($nodeMap[$parentKey])) {
-                $nodeMap[$parentKey]['children'][] = &$nodeMap[$key];
-            } else {
-                $tree[] = &$nodeMap[$key];
-            }
-        }
-
-        return $tree;
-    }
- */
-
     public function store(Request $request)
     {
         $levelRules = [];

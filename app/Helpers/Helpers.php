@@ -6,6 +6,9 @@ use App\Models\CatalogoNombre;
 
 class Helpers{
 
+    public const IMG_LIBRO_VERDE = '/storage/images/Libro_Verde.svg';
+    public const IMG_LIBRO_ROJO = '/storage/images/Libro_Rojo.svg';
+
 //Función es para mostrar con color la seccion seleccionada
     public static  function setActive($nombreRuta)
     {
@@ -167,7 +170,6 @@ class Helpers{
 
     public static function ascCatNombre($catNom)
     {
-        //return $catNom->Nivel1;
         $listaAscen= '';
 
         for($niv = 10; $niv>1; $niv--)
@@ -178,7 +180,6 @@ class Helpers{
                 $valAsc= CatalogoNombre::Ascendente($catNom, $niv)
                          ->get();
 
-                //return $valAsc[0]['Descripcion'];
                 if($listaAscen != '' && $valAsc != null)
                 {
                     $listaAscen= $valAsc[0]['Descripcion'].'->'.$listaAscen;
@@ -202,15 +203,6 @@ class Helpers{
             $taxonComp = taxonCompleto($hijo);    
 
             return $nomComp;
-
-            $hijo->update([
-                    'Ascendentes' => $ascen,
-                    'AscendentesObligatorios' => $ascenOblig, 
-                    'NombreCompleto' => $nomComp,
-                    'TaxonCompleto' => $taxonComp
-            ]);
-
-            //self::actualizaHijos($hijo);
         }
     }
 

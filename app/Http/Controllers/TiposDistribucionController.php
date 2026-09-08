@@ -96,7 +96,9 @@ class TiposDistribucionController extends Controller
     public function update(Request $request, $IdTipoDistribucion)
     {
         $tipoDistribucion = TipoDistribucion::find($IdTipoDistribucion);
-        if (!$tipoDistribucion) return response()->json(['message' => 'Not found'], 404);
+        if (!$tipoDistribucion){
+            return response()->json(['message' => 'Not found'], 404);
+        }
 
         // Validación de duplicado global (excluyendo el actual)
         $existing = TipoDistribucion::where(DB::raw('lower(Descripcion)'), strtolower($request->Descripcion))
@@ -128,7 +130,9 @@ class TiposDistribucionController extends Controller
         $sortOrder = $request->sortOrder ?? 'asc';
 
         $registroReferencia = TipoDistribucion::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+            return response()->json(['page' => 1]);
+        }
 
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
 

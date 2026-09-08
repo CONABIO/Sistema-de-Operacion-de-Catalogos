@@ -13,7 +13,8 @@ export default {
     }
   },
 
-  
+  emits: ['crear'],
+
   methods: {
     crear() {
       // Implementa la lógica para el método crear

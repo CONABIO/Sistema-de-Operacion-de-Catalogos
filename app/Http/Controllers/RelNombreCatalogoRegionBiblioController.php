@@ -10,6 +10,7 @@ use App\Models\RelNombreCatalogoRegionBiblio;
 
 class RelNombreCatalogoRegionBiblioController extends Controller
 {
+    private const MENSAJE_ERROR = "Asociación general (sin región) guardada";
     /**
      * CASO 1: Obtener bibliografía vinculada a una característica Y una región específica
      */
@@ -95,7 +96,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                         'FechaModificacion' => now()
                     ]
                 );
-            return response()->json(['message' => 'Asociación general (sin región) guardada']);
+            return response()->json(['message' => self::MENSAJE_ERROR]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -145,7 +146,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                                                 ->update(['Observaciones' => $request->params['observaciones'],
                                                                 'usuario' => $request->params['usuario'] ?? 'sistema']);
 
-            return response()->json(['message' => 'Asociación general (sin región) guardada']);
+            return response()->json(['message' => self::MENSAJE_ERROR]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -163,7 +164,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
                                                        ->update(['Observaciones' => $request->params['observaciones'],
                                                                        'usuario' => $request->params['usuario'] ?? 'sistema']);
 
-            return response()->json(['message' => 'Asociación general (sin región) guardada']);
+            return response()->json(['message' => self::MENSAJE_ERROR]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

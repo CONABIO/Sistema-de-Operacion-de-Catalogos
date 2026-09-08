@@ -6,6 +6,7 @@ use App\Models\NomComun;
 use App\Models\RelNomNomComunRegion;
 use App\Models\RelNomNomComunRegionBiblio;
 use App\Models\Region;
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -105,7 +106,9 @@ class NombreComunController extends Controller
     public function update(Request $request, $IdNomComun)
     {
         $nombreComun = NomComun::find($IdNomComun);
-        if (!$nombreComun) return response()->json(['message' => 'Not found'], 404);
+        if (!$nombreComun){ 
+                return response()->json(['message' => 'Not found'], 404);
+            }
         $existing = NomComun::where(DB::raw('lower(NomComun)'), strtolower($request->NomComun))
             ->where(DB::raw('lower(Lengua)'), strtolower($request->Lengua ?? ''))
             ->where('IdNomComun', '!=', $IdNomComun)
@@ -140,7 +143,9 @@ class NombreComunController extends Controller
         $sortOrder = $request->sortOrder ?? 'asc';
 
         $registroReferencia = NomComun::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+            }
 
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
 
@@ -259,7 +264,7 @@ public function cargaNombresComunes($IdNombre)
         $valor = $registro->first();
 
         $totalBiblioPadre = $registro->sum('BiblioCount');
-        $urlBiblioPadre = $totalBiblioPadre > 0 ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg';
+        $urlBiblioPadre = $totalBiblioPadre > 0 ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO;
 
         return [
             'id' => $valor->IdNomComun,
@@ -269,7 +274,7 @@ public function cargaNombresComunes($IdNombre)
             'Observaciones' => $valor->ObsNomCom,
             'Biblio' => ['texto' => '', 'url' => $urlBiblioPadre],
             'Regiones' => $registro->map(function ($item) use ($regionesIndexadas) {
-                $urlBiblio = $item->BiblioCount > 0 ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg';
+                $urlBiblio = $item->BiblioCount > 0 ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO;
 
                 return [
                     'id' => 'reg-' . $item->IdRegion . '-' . $item->IdNomComun,

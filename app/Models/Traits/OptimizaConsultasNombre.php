@@ -210,23 +210,10 @@ trait OptimizaConsultasNombre
             return [];
         }
 
-        // Filtrar solo los activos
-        //$nombresActivos = $nombres->where('EstadoRegistro', 1);
-        
-        /*if ($nombresActivos->isEmpty()) {
-            return [];
-        }*/
-
         $idsNombres = $nombres->pluck('IdNombre')->toArray();
         
         // Obtener referencias en batch
         $referenciasBatch = $this->obtenerReferenciasBatch($idsNombres);
-        
-        // Obtener relaciones en batch  
-        //$relacionesBatch = $this->obtenerRelacionesBatch($idsNombres);
-        
-        // Obtener conteos en batch
-        //$conteosBatch = $this->obtenerConteosEjemplaresBatch($idsNombres);
 
         $data = [];
         foreach ($nombres as $nombre) {
@@ -240,9 +227,6 @@ trait OptimizaConsultasNombre
 
             // Datos batch
             $referencias = $referenciasBatch->get($nombre->IdNombre, collect());
-            //$relaciones = $this->obtenerRelacionesBatch([$nombre->IdNombre], collect());
-
-            //$conteo = $conteosBatch->get($nombre->IdNombre, 0);
 
             $data[] = [
                 'id' => $nombre->IdNombre,

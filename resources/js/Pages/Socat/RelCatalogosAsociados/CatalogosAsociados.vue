@@ -2124,7 +2124,7 @@ const recargarNombresAsociados = async () => {
         const resp = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
         if (resp.status === 200) {
             nombresAsociadosTaxon.value = resp.data;
-            if (typeof tablaNomComunAsociados !== 'undefined') {
+            if (typeof tablaNomComunAsociados.value !== 'undefined') {
                 tablaNomComunAsociados.value = resp.data;
             }
         }
@@ -2748,12 +2748,6 @@ watch(filterText, (nuevoValor) => {
     max-height: 590px;
     display: flex;
     flex-direction: column;
-}
-
-.table-wrapper :deep(.el-table__body tr.current-row > td) {
-    background-color: #ddf6dd !important;
-    color: #0d6efd !important;
-    font-weight: bold;
 }
 
 .table-header {

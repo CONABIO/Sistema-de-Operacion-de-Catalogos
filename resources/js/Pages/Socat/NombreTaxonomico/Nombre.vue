@@ -281,8 +281,6 @@
   //Funcion para los cambios recibidos
   const recibeTaxMod = async (res) => {
 
-    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
     for (const node of data.value) {
       if (node.id === res.id) {
         Object.assign(node, res);
@@ -808,9 +806,15 @@
 
   //Funcion que se ejecuta para la expancion de un nodo
   //const expande = async (draggingNode, nodeData, nodeComponent) => {
-  const expande = async (draggingNode) => {
+  const expande = async (draggingNode, node) => {
     
     let loadingInstance = null;
+
+    tablaReferencias.value = [];
+    totalRegRef.value = 0;
+
+    tablaNomenclatura.value = [];
+    totalRegNom.value = 0;
 
     isMenuVisible.value = false;
     mostrar.value = true;
@@ -1026,7 +1030,7 @@
                   case 6:
                   case -9:
                     await moverTaxon(
-                      taxMov.data.completo.IdNombre,
+                      taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
                       taxMov.value,
                       node);
@@ -1053,7 +1057,7 @@
                 switch (node.data.completo.Estatus) {
                   case 6:
                     await moverTaxon(
-                      taxMov.data.completo.IdNombre,
+                      taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
                       taxMov.value,
                       node);
@@ -1061,7 +1065,7 @@
                   case -9:
                     await mostrarNotificacion(
                       "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
                       "error",
                       5000
                     );
@@ -1508,7 +1512,7 @@
       </div>
 
       <el-header class="main-header-override">
-        <div> <!--style="background: red"-->
+        <div>
           <el-row :gutter="16">
             <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
@@ -1640,8 +1644,6 @@
             <el-container class="details-container">
               <el-header class="details-header">
                 <div class="details-title">
-                  <!--img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                    class="details-title-icon"-->
                     <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" />
                   <span class="details-title-text">
                     {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
@@ -1721,19 +1723,6 @@
         </div>
 
         <el-footer>
-          <!--div class="pagination-footer">
-            <div v-if="totalItems > 0">
-              <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                @current-change="handlePageChange" layout="prev, pager, next, total" background>
-              </el-pagination>
-
-            </div>
-            <div  class="pagination-right">
-              <span style="margin-left: auto;">
-                Taxa desc. : {{ numHijos }}
-              </span>
-            </div>
-          </div-->
             <div class="pagination-footer">
 
             <div
@@ -1857,14 +1846,13 @@
   :deep(.el-collapse-item__content){
     height: 350px;
     display: flex;
-    flex-direction: column;/*height: 370px;*/
+    flex-direction: column;
     padding:10px;
     overflow: hidden;
   }
 
   .table-wrapper{
     flex: 1;
-    /*height: 360px !important;*/
     min-height: 0;
     overflow: auto;
   }
@@ -1873,12 +1861,6 @@
     display:flex;
     flex-direction:column;
     height:100%;
-  }
-
-  .tree-container {
-    flex: 1;
-    overflow: auto;
-    min-height: 0;
   }
 
   .el-tree {
@@ -1954,10 +1936,6 @@
     min-height: 0;
     margin-top: 0 !important;
     padding-top: 0 !important;
-  }
-
-  .main-layout-container-fixed {
-    height: 250px;
   }
 
   .content-wrapper {
@@ -2332,6 +2310,9 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
   }
 
   /* Quitar márgenes y padding innecesarios */
@@ -2362,6 +2343,8 @@
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
   }
 
   .dialog-header-custom h3 {
@@ -2369,15 +2352,6 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: #303133;
-  }
-
-  .dialog-header-custom {
-    background-color: #f5f5f5;
-    padding: 20px 24px;
-    border-bottom: 1px solid #e4e7ed;
-    text-align: left;
-    border-radius: 10px;
-    margin-bottom: 10px;
   }
 
   .content-wrapper-custom {

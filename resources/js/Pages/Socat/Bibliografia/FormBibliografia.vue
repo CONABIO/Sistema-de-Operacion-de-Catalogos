@@ -383,15 +383,6 @@ const cerrarDialogo = () => emit('cerrar');
     margin-bottom: 22px;
 }
 
-:deep(.el-form-item__label) {
-    font-weight: 500 !important;
-    padding-bottom: 4px !important;
-    line-height: normal !important;
-    font-size: 0.9em;
-    color: #606266;
-}
-
-
 .form-number {
     display: inline-flex;
     align-items: center;
@@ -401,9 +392,9 @@ const cerrarDialogo = () => emit('cerrar');
     background-color: #409eff;
     color: white;
     border-radius: 50%;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
-    margin-right: 8px;
+    margin-right: 10px;
     line-height: 1;
     vertical-align: middle;
 }
@@ -413,6 +404,7 @@ const cerrarDialogo = () => emit('cerrar');
     align-items: center;
     font-weight: 600;
     color: #606266;
+    padding-bottom: 8px !important;
 }
 
 :deep(.el-textarea.is-disabled .el-textarea__inner) {
@@ -522,27 +514,7 @@ const cerrarDialogo = () => emit('cerrar');
     font-size: 18px;
 }
 
-.form-number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    background-color: #409eff;
-    color: white;
-    border-radius: 50%;
-    font-size: 11px;
-    font-weight: bold;
-    margin-right: 10px;
-}
 
-:deep(.el-form-item__label) {
-    display: flex !important;
-    align-items: center;
-    font-weight: 600;
-    color: #606266;
-    padding-bottom: 8px !important;
-}
 
 .custom-dialog-style :deep(.el-dialog__header) {
     padding: 20px 25px 0 25px !important;

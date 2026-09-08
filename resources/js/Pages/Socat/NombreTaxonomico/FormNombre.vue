@@ -265,19 +265,7 @@
                     <br>
                     <el-row :gutter='25'>
                       <el-col :span="24">
-                        <!--p></p>
-                        <el-row>
-                          Homonimia SNIB
-                        </el-row>
-                        <el-row>
-                          <el-input type="input" 
-                                    placeholder="Homonimia SNIB" 
-                                    v-model="homonimiaSnib"
-                                    show-word-limit 
-                                    @keydown="onPressSistC" 
-                                    :disabled="autorAct" 
-                                    maxlength="255" />
-                        </el-row-->
+                        
                         <el-form-item label = "Homonimia SNIB" prop = "homonimiaSnib">
                           <el-input type="text" 
                                           placeholder="Homonimia SNIB" 
@@ -926,7 +914,7 @@
     valSnib.value = '';
     habGuardar.value = false;
 
-    const resp = await AltaEstatus();
+    await AltaEstatus();
     
     nombreTax.nombreTaxon = '';
     nombreTax.nombreAutoridad = '';
@@ -1014,17 +1002,13 @@
           estNa.value = false;
           estNd.value = false;
           break;
-        case 6:
+        case 6, -9:
           estCor.value = response.data != 1 ? true : false;
           estSin.value = response.data != 1 ? true : false;
           estNa.value = false;
           estNd.value = false;
           break;
-        case -9:
-          estCor.value = response.data != 1 ? true : false;
-          estSin.value = response.data != 1 ? true : false;
-          estNa.value = false;
-          estNd.value = false;
+        default:
           break;
       }
     });
@@ -1242,7 +1226,7 @@
     {
       catTax = props.catNuevoTax.IdCategoriaTaxonomica;
     }
-    else{
+       else{
       if(typeof nombreTax.catTax === 'number'){
         catTax = nombreTax.catTax;
       }else{
@@ -1250,6 +1234,7 @@
         catTax = categ;
       }
     }
+    
 
     if(!props.nuevoTax){
       if(props.taxonAct.completo.categoria.IdNivel3 === 0){
@@ -1330,7 +1315,7 @@
                       }
                   }
                 break;
-                case 'editar':  
+                case 'editar':{  
                 
                   const confirmado = await showConfirmMessage({
                       title: 'Confirmar modificación',
@@ -1397,7 +1382,8 @@
                           });
                       }
                   }
-                break;
+                 break;
+                }
                 default:
                 break;
               } 

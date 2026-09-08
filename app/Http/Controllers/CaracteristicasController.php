@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CatalogoNombre;
 use App\Models\RelNombreCatalogo;
 use App\Models\Region;
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -33,8 +34,6 @@ class CaracteristicasController extends Controller
             'treeDataProp' => $data['treeDataProp'],
             'flatTreeDataProp' => $data['flatTreeDataProp'],
             'errors' => session('errors') ? session('errors')->getBag('default')->getMessages() : (object) [],
-
-
         ]);
     }
 
@@ -64,7 +63,6 @@ class CaracteristicasController extends Controller
     /////////////////////////////////////////////////////////////////
     public function cargaCaracteristicasTaxon($idNombre) {
     /*Aqui se va a cargar las categorias taxonomicas*/
-        Log::info("Este es el id que llega a buscar: " . $idNombre);
         $data = RelNombreCatalogo::caracteristicasTaxon($idNombre)->get();
 
         if($data->isEmpty())
@@ -98,8 +96,8 @@ class CaracteristicasController extends Controller
             $primero = $registros->first();
 
             $biblio = $primero->contBiblio > 0
-                        ? '/storage/images/Libro_Verde.svg'
-                        : '/storage/images/Libro_Rojo.svg';
+                        ? Helpers::IMG_LIBRO_VERDE
+                        : Helpers::IMG_LIBRO_ROJO;
 
             $item = ['IdCatNombre' => $idCatNombre,
                     'Caracteristica' => $caractIndexadas[$idCatNombre]['caracteristica'] ?? '',
@@ -118,8 +116,8 @@ class CaracteristicasController extends Controller
                 }
 
                 $biblioReg = $registro->contBiblioRegion > 0
-                                ? '/storage/images/Libro_Verde.svg'
-                                : '/storage/images/Libro_Rojo.svg';
+                                ? Helpers::IMG_LIBRO_VERDE
+                                : Helpers::IMG_LIBRO_ROJO;
                 
                 $item['Regiones'][] = [
                         'IdRegion' => $registro->IdRegion,
@@ -166,7 +164,7 @@ class CaracteristicasController extends Controller
                 ->exists();
 
             $item['Biblio'] = [
-                'url' => $tieneBiblio ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg',
+                'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
                 'texto' => ''
             ];
         }
@@ -186,8 +184,8 @@ class CaracteristicasController extends Controller
 private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
     return $listaReg->map(function ($valor) use ($regIndexadas, $origenDatos){
         $biblio = ($valor->Biblio > 0 || $valor->contBiblio > 0)
-                        ? '/storage/images/Libro_Verde.svg'
-                        : '/storage/images/Libro_Rojo.svg';
+                        ? Helpers::IMG_LIBRO_VERDE
+                        : Helpers::IMG_LIBRO_ROJO;
         
         $tipDist = null;
         if(isset($valor->IdTipoDistribucion) || isset($valor->id_tipo)){

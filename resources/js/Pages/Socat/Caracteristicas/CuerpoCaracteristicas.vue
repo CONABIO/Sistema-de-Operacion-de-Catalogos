@@ -238,8 +238,6 @@ const modalRules = {
 };
 
 const abrirModalParaInsertar = () => {
-  if (!selectedNode.value && props.treeDataProp.length > 0) {
-  }
   modalMode.value = "insertar";
   formModal.value = { Descripcion: "" };
   opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
@@ -384,7 +382,6 @@ const guardarDesdeModal = async () => {
   if (modalMode.value === 'insertar') {
     proceedWithSave();
   } else {
-    const nombreCaracteristica = formModal.value.Descripcion.trim();
     ElMessageBox({
       title: "Confirmar modificación",
       showConfirmButton: false,
@@ -440,7 +437,6 @@ const handleEliminar = () => {
 
   nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
 
-  const nombreCaracteristica = nodeDataForDeleteConfirmation.value.Descripcion;
   const mensaje = `¿Está seguro de eliminar la característica seleccionada? Esta acción no se puede revertir.`;
 
   ElMessageBox({
@@ -902,23 +898,14 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-body-container {
-  background-color: #f3f3f3;
+  background-color: #ffffff;
   padding: 20px 24px;
   border: 3px;
   text-align: left;
   border-radius: 10px;
-  background-color: #ffffff;
-  padding: 20px 24px;
-  text-align: left;
   position: relative;
   z-index: 10;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 :deep(.el-form-item) {
@@ -931,8 +918,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   font-size: 0.9em;
   color: #606266;
 }
-
-
 
 .botonera-biotica {
   display: flex;
