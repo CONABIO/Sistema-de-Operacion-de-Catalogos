@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class RegionController extends Controller
 {
-    /*Juan Carlos Mora 10/06/2026 
+    /*Juan Carlos Mora 10/06/2026
     Se modifica la funcion para que funcione por medio de axios y inertia en la carga de datos*/
     public function index()
     {
@@ -48,7 +48,7 @@ class RegionController extends Controller
     public function cargaRegiones() {
         return response()->json($this->cargaInicio());
     }
-              
+
      /*Juan Carlos Mora 10/06/2026*/
 
     private function buildRegionTree(array $elements): array
@@ -155,7 +155,7 @@ class RegionController extends Controller
                 'IdTipoRegion' => $validatedData['IdTipoRegion'],
                 'ClaveRegion' => $validatedData['ClaveRegion'],
                 'Abreviado' => $validatedData['Abreviado'],
-                'IdRegionAsc' => $idPadreFinal ?? 1, 
+                'IdRegionAsc' => $idPadreFinal ?? 1,
                 'DatoActivo' => 1,
                 'FechaCaptura' => now(),
             ]);
@@ -167,7 +167,7 @@ class RegionController extends Controller
             }
         });
 
-        return redirect()->route('regiones.index')->with('success', 'Región creada correctamente.');
+        return back()->with('success', 'Región creada correctamente.');
     }
 
 
@@ -180,7 +180,7 @@ class RegionController extends Controller
             'Abreviado' => 'nullable|string|max:255',
         ]);
         $region->update($validatedData);
-        return redirect()->route('regiones.index')->with('success', 'Región actualizada.');
+        return back()->with('success', 'Región actualizada.');
     }
 
 
@@ -216,6 +216,6 @@ class RegionController extends Controller
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
         }
 
-        return redirect()->route('regiones.index')->with('success', 'Región eliminada correctamente.');
+        return back()->with('success', 'Región eliminada correctamente.');
     }
 }
