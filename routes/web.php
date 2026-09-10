@@ -317,5 +317,18 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     Route::get('/obtener-biblio-region-taxon/{idNombre}/{idRegion}/{idTipoDist}', [RelNombreRegionController::class, 'obtenerBiblioRegionTaxon']);
 
     Route::get('/obtener-pagina', [RelNombreRegionController::class, 'obtenerPagina']);
-   
+
+
+
+    // ASOCIAR OBJETO EXTERNO
+
+    Route::post('/asociaciones-objetos/asociar', [BibliografiaController::class, 'asociarObjetoExterno'])
+        ->name('bibliografias.asociarObjeto');
+
+    Route::delete('/asociaciones-objetos/eliminar', [BibliografiaController::class, 'eliminarAsociacionObjeto'])
+        ->name('bibliografias.asociarObjeto.eliminar');
+
+    Route::put('/asociaciones-objetos/actualizar', [BibliografiaController::class, 'actualizarAsociacionObjeto'])
+        ->name('bibliografias.asociarObjeto.actualizar');
+
 });
