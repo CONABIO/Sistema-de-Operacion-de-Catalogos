@@ -538,9 +538,9 @@ const onEliminarInterno = () => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'"
                 :columnas="columnasDefinidas" v-model:datos="datosDeAutores" v-model:total-items="totalAutores"
                 :opciones-filtro="opcionesFiltroAutores" :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor"
-                :asignaTrasp="'Arriba'" :mostrarSalir="!props.nombre" endpoint="/busca-autor" id-key="IdAutorTaxon"
-                @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem"
-                @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
+                :moduloSocat="'MnuCatAutores'" :asignaTrasp="'Arriba'" :mostrarSalir="!props.nombre" 
+                endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName" 
+                @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
 
 
                 <template #header-actions>

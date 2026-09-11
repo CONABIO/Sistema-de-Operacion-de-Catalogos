@@ -14,6 +14,9 @@ import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
 
 const selectedRowId = ref(null);
 
@@ -24,7 +27,7 @@ const tieneGrupoSeleccionado = computed(() => {
   return datosGrupos.value.length > 0 && selectedObjetoRow.value !== null;
 });
 
-
+const moduloSocat = ref('MnuCatBiblio');
 
 const cerrarBiblio = async (bibliografiasSeleccionadas) => {
     dialogFormVisibleBiblio.value = false;
@@ -52,6 +55,11 @@ const cerrarBiblio = async (bibliografiasSeleccionadas) => {
     }
 };
 
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const tieneObjetoSeleccionado = computed(() => {
   return datosObjetos.value.length > 0 && selectedGrupoRow.value !== null;
@@ -561,7 +569,7 @@ onMounted(() => {
 
       <div class="seccion-tabla-completa">
         <TablaFiltrable class="flex-grow tabla-bibliografia-ancha" ref="tablaRef" :columnas="columnasDefinidas"
-          v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
+          v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api" :moduloSocat="moduloSocat"
           id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
           @row-click="handleRowClick" @traspasaBiblio="traspasaBiblio" @cerrar="cerrarModal" :botCerrar="props.isModal"
           :highlight-current-row="true" :mostrarTraspaso="props.traspaso">
@@ -595,9 +603,9 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
             <div class="botones">
-              <NuevoButton @crear="agregarGrupo" />
-              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" />
-              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
+              <NuevoButton @crear="agregarGrupo" v-if= "hasPermisos('MnuCatGrpTax', 'Altas')"/>
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" v-if= "hasPermisos(moduloSocat, 'Cambios')" />
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" v-if= "hasPermisos(moduloSocat, 'Bajas')"/>
             </div>
           </div>
           <div class="widget-table-container">
@@ -614,9 +622,9 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Objeto externo</h3>
             <div class="botones">
-              <NuevoButton />
-              <EditarButton :disabled="!tieneObjetoSeleccionado"/>
-              <EliminarButton  :disabled="!tieneObjetoSeleccionado"/>
+              <NuevoButton v-if= "hasPermisos('MnuCatObjExt', 'Altas')"/>
+              <EditarButton :disabled="!tieneObjetoSeleccionado" v-if= "hasPermisos(moduloSocat, 'Cambios')"/>
+              <EliminarButton  :disabled="!tieneObjetoSeleccionado"  v-if= "hasPermisos(moduloSocat, 'Bajas')"/>
             </div>
           </div>
           <div class="widget-table-container">

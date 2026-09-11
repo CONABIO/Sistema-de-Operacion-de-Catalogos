@@ -244,7 +244,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
-                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila"
+                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila" :moduloSocat="'MnuCatTipDist'"
                 :botCerrar = "props.modal" @cerrar="emit('cerrar')">
                 <template #expand-column>
                     <el-table-column type="expand">

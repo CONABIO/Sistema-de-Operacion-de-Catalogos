@@ -12,7 +12,8 @@ class ModuloSocat extends Model
     protected $connection = 'socat';
 
     //Se asigna el nombre de la Tabla 
-    protected $table = 'ModuloSocat';
+    //protected $table = 'ModuloSocat';
+    protected $table = 'modulosocat_Resp';
 
     //Se asigna el nombre del campo llave primaria
     protected $primaryKey='IdModulo';

@@ -83,7 +83,7 @@ class User extends Authenticatable
     }
 
     //Función para extraer los modelos y permisos por perfil
-    public function scopePermisos($query, $idUsuario) {
+    /*public function scopePermisos($query, $idUsuario) {
         if ($idUsuario) {
             // Esto está bien configurado, con los nombres de tablas correctos
             return DB::select("
@@ -95,6 +95,22 @@ class User extends Authenticatable
                         FROM users
                              INNER JOIN relmodulorol ON users.IdRol = relmodulorol.IdRol
                              INNER JOIN modulosocat ON relmodulorol.IdModulo = modulosocat.IdModulo
+                             WHERE users.id = ?",[$idUsuario]);
+        }
+        return $query;
+    }*/
+    public function scopePermisos($query, $idUsuario) {
+        if ($idUsuario) {
+            // Esto está bien configurado, con los nombres de tablas correctos
+            return DB::select("
+                        SELECT modulosocat_Resp.NombreModulo,
+                               relmodulorol.Altas,
+                               relmodulorol.Bajas,
+                               relmodulorol.Cambios,
+                               relmodulorol.Visible
+                        FROM users
+                             INNER JOIN relmodulorol ON users.IdRol = relmodulorol.IdRol
+                             INNER JOIN modulosocat_Resp ON relmodulorol.IdModulo = modulosocat_Resp.IdModulo
                              WHERE users.id = ?",[$idUsuario]);
         }
         return $query;

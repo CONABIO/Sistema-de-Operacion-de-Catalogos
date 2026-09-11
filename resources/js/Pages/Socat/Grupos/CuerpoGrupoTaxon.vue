@@ -22,6 +22,7 @@ const props = defineProps({
                default: true
     }
 });
+
 /*Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
     Se define la variable emit para pasar funciones o datos al componente padre*/
 const emit = defineEmits(['cerrar']);
@@ -289,7 +290,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
     <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Grupos Taxonómicos"
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
-            <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
+            <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef" :moduloSocat="'MnuCatGrpTax'"
                 class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"  :row-class-name="tableRowClassName" 
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="false">
@@ -324,12 +325,11 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <!-- Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               Se agrega variable para indicar si es modal :botCerrar -->
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
-                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" 
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
-                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" @cerrar="cerrarVentana"
-                :highlight-current-row="false">
-            </TablaFiltrable>
+                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" 
+                @cerrar="cerrarVentana" :highlight-current-row="false" />
         </div>
     </div>
 

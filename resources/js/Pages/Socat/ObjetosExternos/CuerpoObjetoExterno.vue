@@ -261,7 +261,7 @@ const eliminarObjetoExterno = (idObjeto) => {
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-objeto-externo"  id-key="IdObjetoExterno"
-                @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
+                :moduloSocat="'MnuCatObjExt'" @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno"  @row-click="manejarClickFila">
 
                 <template #header-actions>

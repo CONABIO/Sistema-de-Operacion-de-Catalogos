@@ -201,7 +201,7 @@
   };
 
   const hasPermisos = (etiqueta, modulo) => {
-
+    console.log("Esto es lo que vale permisos ", permisos);
     const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
     return permiso[modulo];
@@ -1595,7 +1595,7 @@
                             <InfoFilled />
                           </el-icon>
                         </el-tooltip>
-                        <div v-if="hasPermisos('MnuNomCientifico', 'Cambios')">
+                        <div v-if="hasPermisos('MnuCatNombres', 'Cambios')">
                           <el-tooltip class="item" effect="dark" content="Mover" placement="bottom">
                             <span :style="{ color: node.color }" :id="`node-${node.id}`">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1674,6 +1674,7 @@
                         :mostrarBiblio = "true"
                         :mostrarAcci = "true"
                         :alturaTabla = 170
+                        :moduloSocat = "'MnuCatNombres'"
                         @eliminar-item = "manejarEliminarRel"
                         @abrir-Biblio = "abrirBiblio"
                         :highlight-current-row = "true"
@@ -1699,6 +1700,7 @@
                           v-model:datos = "tablaReferencias"
                           v-model:total-items = "totalRegRef"
                           :opciones-filtro = "opcionesFiltroRef"
+                          :moduloSocat = "'MnuCatNombres'"
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"

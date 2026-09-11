@@ -18,10 +18,20 @@ import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import { Plus, Download } from '@element-plus/icons-vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatReg');
 
 const tipoBusqueda = ref('inicia');
 
 const nodoDuplicadoParaSeleccionar = ref(null);
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const handleCerrarNotificacion = async () => {
     notificacionVisible.value = false;
@@ -979,11 +989,11 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <div class="right-header-content">
                             <div class="action-group">
 
-                                <BotonTraspaso v-if="modal" @traspasa="onTraspasarRegion" />
+                                <BotonTraspaso v-if="modal && hasPermisos(moduloSocat, 'Altas')" @traspasa="onTraspasarRegion" />
 
                                 <el-tooltip class="item" effect="dark" content="Ingresar">
                                     <el-button type="primary" circle @click="intentarAbrirModalInsertar"
-                                        :disabled="botonNuevoDeshabilitado" title="Nuevo">
+                                        :disabled="botonNuevoDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Altas')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                             fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
                                             <path fill-rule="evenodd"
@@ -996,7 +1006,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                                 <el-tooltip class="item" effect="dark" content="Modificar">
                                     <el-button type="success" circle @click="intentarAbrirModalEditar"
-                                        :disabled="botonEditarDeshabilitado" title="Nuevo">
+                                        :disabled="botonEditarDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Cambios')">
                                         <el-icon>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                                                 <path fill="currentColor"
@@ -1009,7 +1019,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                                 <el-tooltip class="item" effect="dark" content="Eliminar">
                                     <el-button type="danger" circle @click="intentarAbrirModalEliminar"
-                                        :disabled="botonEliminarDeshabilitado" title="Nuevo">
+                                        :disabled="botonEliminarDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Bajas')">
                                         <el-icon>
                                             <el-icon>
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
