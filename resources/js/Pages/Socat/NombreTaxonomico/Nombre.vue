@@ -219,6 +219,10 @@
     emit('reset-form');
   }
 
+  function closeDialogSalir() {
+  dialogFormVisibleAscendentes.value = false;
+}
+
   /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
     Se agrega la reasignacion de referencia para que cuando cierra
       la ventana se actualice como si se ingresara de inicio*/
@@ -405,7 +409,7 @@
 
   const cargarPagina = async (cursor = null) => {
     let params = [];
-  
+
     if(filterText.value === ""){
       params = {
         categ: catego.value,
@@ -418,7 +422,7 @@
         taxon: filterText.value
       };
     }
-  
+
     // Solo enviamos cursor cuando estamos cambiando de página
     if (cursor) {
       params.cursor = cursor;
@@ -427,7 +431,7 @@
     try {
 
       cargandoPagina.value = true;
-     
+
       const response = await axios.get('/cargar-nomArb', {
         params
       });
@@ -491,7 +495,7 @@
 
   const cargaConteo = async() =>{
     let params = [];
-  
+
     if(filterText.value === ""){
       params = {
         categ: catego.value,
@@ -611,11 +615,11 @@
     }
 
     currentPage.value++;
-    
+
     await cargarPagina(nextCursor.value);
-    
+
     await nextTick();
-    
+
     if (data.value.length > 0) {
 
       selectedNodeKey.value = data.value[0].id;
@@ -644,7 +648,7 @@
           spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
           backgroud: 'rgba(255,255,255,0.85)',
         });
-    
+
     if (!prevCursor.value || cargandoPagina.value) {
       loading.close();
       return;
@@ -762,12 +766,12 @@
         catalog: idsGrupos.value,
         taxon: value
       };
-      
+
       const response = await axios.get('/cargar-nomArb',
         { params });
 
       await cargaConteo();
-      
+
       if (response.status === 200) {
         data.value = response.data[0];
         //totalItems.value = response.data[1].total;
@@ -836,7 +840,7 @@
     }
 
     if (draggingNode.children.length === 0) {
-      
+
       const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
       if (response.status === 200) {
@@ -1429,8 +1433,7 @@
     }
 
     loading.close();
-    /*currentData.value = response.data.data || [];
-    totalItems.value = response.data.total || response.data.totalItems || 0;*/
+
   };
 
   const abre_Relaciones = () => {
@@ -1440,6 +1443,8 @@
   const abre_CatalogosAsociados = () => {
         dialogFormVisibleAsocCat.value = true;
   }
+
+
 
   const showAscendants = async () => {
     if (!taxonAct.value?.completo?.Ascendentes) {
@@ -1514,7 +1519,6 @@
       <el-header class="main-header-override">
         <div>
           <el-row :gutter="16">
-            <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
               <span>Ir a:</span>
               <el-input clearable placeholder="" v-model="filterText" @change="filterNode" style="height: 28px;"
@@ -1522,7 +1526,6 @@
               </el-input>
             </el-col>
 
-            <!-- Segunda columna -->
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
               <el-cascader
@@ -1543,7 +1546,6 @@
                 </template>
               </el-cascader>
 
-              <!-- Botón debajo -->
               <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;"
                     v-if="mostrarNuevoTax">
                 <nuevoTax  @crear="openDialog"/>
@@ -1553,7 +1555,6 @@
 
             <el-col :xs="24" :md="12" class="form-item-col">
               <el-row :gutter="10">
-                <!-- Catálogo(s) -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -1563,7 +1564,6 @@
                   </div>
                 </el-col>
 
-                <!-- Grupo SCAT -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -1651,7 +1651,6 @@
                 </div>
               </el-header>
               <el-main class="details-main">
-                <!--Prueba colapse-->
                 <div>
                   <el-collapse accordion expand-icon-position="left"
                                  v-model="activeNames">
@@ -1731,7 +1730,7 @@
                 :disabled="!prevCursor || cargandoPagina"
                 @click="paginaAnterior"
               >
-                <
+
               </el-button>
 
               <span style="margin: 0 15px;">
@@ -1742,7 +1741,7 @@
                 :disabled="!nextCursor || cargandoPagina"
                 @click="siguientePagina"
               >
-                >
+
               </el-button>
             </div>
 
@@ -1806,7 +1805,10 @@
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
-        <h3>Ascendentes del taxón</h3>
+        <div  style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h3 style="margin: 0;">Ascendentes del taxón</h3>
+            <salir accion="cerrar" @salir="closeDialogSalir" />
+        </div>
       </div>
       <div class="content-wrapper-custom">
         <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
