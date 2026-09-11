@@ -1,6 +1,5 @@
 <template>
     <div class="common-layout">
-        <!--el-container style="height: 500px; border: 1px solid #eee"-->
         <el-container >
                 <el-header class="header">
                     <div class=" header-content ">

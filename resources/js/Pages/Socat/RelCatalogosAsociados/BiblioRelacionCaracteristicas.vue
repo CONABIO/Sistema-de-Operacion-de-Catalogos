@@ -16,8 +16,6 @@
                 </el-col>
                 <el-col :span="5" style="display: flex; justify-content: flex-end;">
                     <div style="display: flex; gap: 5px;">
-                        <!--BotonSalir :accion="cerrar" @salir="closeDialog"
-                                            style="flex-shrink: 0; min-width: max-content;" /-->
                         <BotonSalir accion="cerrar" @salir="closeDialog" style="flex-shrink: 0;" />
                     </div>
                 </el-col>
@@ -256,7 +254,7 @@
         let resp;
 
         if (tipoSelect.value === 'caracteristica') {
-            resp = await axios.post('/asociar-biblio-caract-solo', {
+            await axios.post('/asociar-biblio-caract-solo', {
                   params: {
                         idNombre: props.taxonActual.id,
                         idCaract: caractActual.value.id,
@@ -265,7 +263,7 @@
                     }
             });
         }else{
-            resp = await axios.post('/asociar-biblio-caract-region', {
+            await axios.post('/asociar-biblio-caract-region', {
                   params: {
                         idNombre: props.taxonActual.id,
                         idCaract: caractActual.value.id,
@@ -535,12 +533,6 @@
 </script>
 
 <style scope>
-    .panel-card {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
     .header-container {
         display: flex;
         justify-content: space-between;

@@ -32,8 +32,6 @@
     methods: {
       renderChart() {
         const data = this.treeMapData;
-        const width = this.width;
-        const height = this.height;
 
         const treeMap = new this.google.visualization.TreeMap(this.$refs.chartContainer);
 

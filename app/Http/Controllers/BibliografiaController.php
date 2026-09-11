@@ -155,7 +155,9 @@ class BibliografiaController extends Controller
     public function update(Request $request, $id)
     {
         $biblio = Bibliografia::find($id);
-        if (!$biblio) return response()->json(['message' => 'No encontrado'], 404);
+        if (!$biblio){
+                return response()->json(['message' => 'No encontrado'], 404);
+            }
         $existing = Bibliografia::where('Autor', $request->Autor)
             ->where('Anio', $request->Anio)
             ->where('TituloPublicacion', $request->TituloPublicacion)
@@ -186,7 +188,9 @@ class BibliografiaController extends Controller
         $sortOrder = $request->sortOrder ?? 'asc';
 
         $registroReferencia = Bibliografia::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+            }
 
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
 

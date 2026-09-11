@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div>    
     <el-card class="box-card">
       <div class="common-layout">
         <el-container style="height: 98vh;">
@@ -12,7 +12,6 @@
                 <el-row>
                     <div class="dual-panel-container">
                             <el-card class="table-panel">
-                                    <!--span style="font-size: 20px; font-weight: bold;"-->
                                 <div class="header-row">
                                     <span  class="etiqueta">
                                         Cita(s) bibliografica(s) asociada(s) a:                                     
@@ -220,6 +219,9 @@
                 
                 bibliografiaRel.value = response.data;
 
+                observacionRel.value = "";
+                citaCompleta.value = "";
+
                 mostrarNotificacion('Eliminación Exitosa', `La relación con la bibliografia fue eliminada correctamente.`, 'success');
             } catch (apiError) {
                 mostrarNotificacionError('Aviso', `La relación no se puede eliminar.`, 'success');
@@ -379,8 +381,6 @@
     .table-panel :deep(.el-table__body tr.current-row > td) {
         background-color: #ddf6dd !important;
         color: #0d6efd !important;
-        /*background-color: #3c793c !important;
-        color: #18a72b !important;*/
         font-weight: bold;
     }
 </style>

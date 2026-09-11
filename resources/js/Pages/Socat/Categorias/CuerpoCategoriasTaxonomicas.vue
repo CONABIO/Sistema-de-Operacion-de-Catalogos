@@ -218,15 +218,14 @@ const guardarDesdeModal = async () => {
   let idPadreObjetivo = null;
   if (esEdicion) {
     idPadreObjetivo = nodoEnModal.value.IdAscendente;
-  } else {
-    if (opcionNivel.value === 'mismo') {
+  } else if (opcionNivel.value === 'mismo') {
       idPadreObjetivo = selectedNode.value ? selectedNode.value.IdAscendente : null;
     } else if (opcionNivel.value === 'inferior') {
       idPadreObjetivo = selectedNode.value ? selectedNode.value.IdCategoriaTaxonomica : null;
     } else {
       idPadreObjetivo = null;
     }
-  }
+  
   const registroExistente = props.flatTreeDataProp.find(item => {
     const mismoNombre = item.NombreCategoriaTaxonomica.trim().toLowerCase() === nombreNormalizado;
     const mismoPadre = item.IdAscendente === idPadreObjetivo;

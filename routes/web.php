@@ -27,6 +27,7 @@ use App\Http\Controllers\RelNombreCaracteristicasController;
 use App\Http\Controllers\RelNombreRegionController;
 use App\Models\Mime;
 
+const RUTA_AUTORES = '/autores';
 
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
@@ -50,16 +51,16 @@ Route::middleware([
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     //Rutas definidas para Socat
     Route::get('/busca-autor', [AutorTaxonController::class, 'buscaAutor']);
-    Route::get('/autores', [AutorTaxonController::class, 'Index'])->name('autorTaxon.index');
+    Route::get(RUTA_AUTORES, [AutorTaxonController::class, 'Index'])->name('autorTaxon.index');
 });
 
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/generate-token', [TokenController::class, 'generateToken'])->name('generate.token');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/autores', [AutorTaxonController::class, 'index'])->name('autorTaxon.index');
+    Route::get(RUTA_AUTORES, [AutorTaxonController::class, 'index'])->name('autorTaxon.index');
     Route::get('/autores/create', [AutorTaxonController::class, 'create'])->name('autores.create');
-    Route::post('/autores', [AutorTaxonController::class, 'store'])->name('autores.store');
+    Route::post(RUTA_AUTORES, [AutorTaxonController::class, 'store'])->name('autores.store');
     Route::get('/autores/{autor}/edit', [AutorTaxonController::class, 'edit'])->name('autores.edit');
     Route::put('/autores/{id}', [AutorTaxonController::class, 'update'])->name('autores.update');
     Route::delete('/autores/{id}', [AutorTaxonController::class, 'destroy'])->name('autores.destroy');
@@ -245,8 +246,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cargar-tipoRel', [TipoRelacionController::class, 'inicioTipRel']);
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
-
-    //Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
 
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');

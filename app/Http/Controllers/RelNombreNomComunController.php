@@ -37,9 +37,8 @@ class RelNombreNomComunController extends Controller
             ], 200);
 
         }catch(\Exception $e){
-            console.log("Este es el codigo de error", $e);
             DB::rollBack();
-            //throw $e;
+
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);

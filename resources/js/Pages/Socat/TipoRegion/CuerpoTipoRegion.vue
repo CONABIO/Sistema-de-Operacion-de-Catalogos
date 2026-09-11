@@ -742,10 +742,7 @@ const handleNodeDoubleClick = (data) => {
 }
 
 .dialog-body-container {
-    background-color: #f3f3f3;
-    padding: 20px 24px;
     border: 3px;
-    text-align: left;
     border-radius: 10px;
     background-color: #ffffff;
     padding: 20px 24px;

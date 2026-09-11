@@ -548,8 +548,9 @@ const cerrarModalGrupos = () => {
 
 const traspasaBiblio = () => {
   const id = selectedBibliografia.value.IdBibliografia;
-  if (!props.biblioAct.includes(id)) {
+  if (!props.biblioAct.includes(id) &&  !biblioRelacion.value.includes(id)) {
     emit('asociar', id);
+    biblioRelacion.value.push(id);
     mostrarNotificacion("Aviso", "Se ha creado la relacion Taxón-Nombre común-Región-Bibliografía correctamente", "success");
   } else {
     mostrarNotificacion("Aviso", "La referencia bibliográfica ya se encuentra relacionada.", "warning");
@@ -607,7 +608,7 @@ const handleFormSubmited = (datosDelFormulario) => {
         await irAlRegistroEspecifico(error.response.data.idExistente);
       } else if (error.response?.status === 422) {
         let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0, true);
+        mostrarNotificacion("Error", errorMsg, "error", 0);
       } else {
         mostrarNotificacion("Aviso", "No se pudo procesar la solicitud.", "warning");
       }
@@ -644,7 +645,6 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 
 const borrarDatos = (idBibliografia) => {
-  const itemAEliminar = localTableData.value.find(item => item.IdBibliografia == idBibliografia);
   const procederConEliminacion = async () => {
     try {
       ElMessageBox.close();
@@ -848,8 +848,7 @@ onMounted(() => {
 
       <div class="dialog-body-iframe-container"
         style="padding: 0; border: none; display: flex; flex-direction: column;">
-        <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full"
-          frameborder="0">
+        <iframe v-if="esModalGruposVisible" :src="route('grupoTaxonomico.index', { modal: true })" class="iframe-full">
         </iframe>
       </div>
     </DialogGeneral>
@@ -973,10 +972,6 @@ onMounted(() => {
 </style>
 
 <style scoped>
-.cita-container {
-  flex-shrink: 0;
-  margin-top: 20px;
-}
 
 .expand-content-detail {
   padding: 10px 15px;
@@ -1012,33 +1007,6 @@ onMounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.widget-table-container {
-  max-height: 250px;
-  overflow-y: auto;
-}
-
-.widget-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 12px;
-}
-
-.widget-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.botones {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-right: 30px;
-}
-
 .widget-actions {
   display: flex;
   justify-content: flex-end;
@@ -1046,17 +1014,10 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-
 :deep(.el-dialog .dialog-body-iframe-container) {
   height: 700px;
 }
 
-:deep(.el-dialog__body) {
-  padding: 0 !important;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 
 .dialog-body-iframe-container {
   flex-grow: 1;
@@ -1070,13 +1031,7 @@ onMounted(() => {
   flex-grow: 1;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
-  margin-right: 35px;
-  gap: 10px;
-}
+
 
 .dialog-footer-custom {
   display: flex;
@@ -1221,6 +1176,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: center;
+  margin-right: 30px;
 }
 
 .cita-container {
@@ -1228,10 +1184,12 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
-
 :deep(.el-dialog__body) {
   padding: 0 !important;
+  display: flex;
+  flex-direction: column;
   background-color: transparent !important;
+  height: 100%;
 }
 
 .dialog-header {

@@ -338,7 +338,7 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
             } else if (error.response?.status === 422) {
                 const errors = error.response.data.errors;
                 let errorMsg = "Error de validación:<ul>" + Object.values(errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-                mostrarNotificacion("Error", errorMsg, "error", 0, true);
+                mostrarNotificacion("Error", errorMsg, "error", 0);
             } else {
                 mostrarNotificacionError("Error", "No se pudo procesar la información.");
             }
@@ -386,7 +386,8 @@ const manejarEliminarItem = (itemId) => {
 
             const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
 
-            const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
+            
+
             await axios.delete(`/autores/${itemId}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
@@ -399,9 +400,9 @@ const manejarEliminarItem = (itemId) => {
     const cancelarEliminacion = () => {
         ElMessageBox.close();
     };
-    const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
-    const nombreAutorEliminado = autorAEliminar ? `"${autorAEliminar.NombreAutoridad}"` : 'el registro seleccionado';
+
     const mensaje = `¿Está seguro de eliminar el autor seleccionado? Esta acción no se puede revertir.`;
+
     ElMessageBox({
         title: 'Confirmar eliminación', showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
         message: h('div', { class: 'custom-message-content' }, [

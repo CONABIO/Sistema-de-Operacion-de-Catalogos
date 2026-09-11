@@ -36,7 +36,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
@@ -79,7 +78,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){            
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
@@ -98,9 +96,6 @@ class RelNombreCaracteristicasController extends Controller
                 $relacion->update(['Observaciones'=> $request['observaciones']]);
             }
 
-            log::info("estos son los cambios en relacion");
-            log::info($relacion);
-
             DB::commit();
 
             return response()->json([
@@ -109,7 +104,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){            
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
@@ -117,8 +111,6 @@ class RelNombreCaracteristicasController extends Controller
     }
 
     function actCaractTaxonReg(RequestActualizaNombreCaractReg $request){
-        log::info("Estos son los registros de llegada");
-        log::info($request->all());
 
         try{
             DB::beginTransaction();
@@ -136,9 +128,7 @@ class RelNombreCaracteristicasController extends Controller
                                                ->update(['IdTipoDistribucion' => $request['idTipoDistNue'],
                                                          'Observaciones' => $request['observaciones']]);   
 
-            DB::commit();
-            log::info("Relacion despues de actualizar");  
-            log::info($relacion);  
+            DB::commit();;  
 
             return response()->json([
                 'message' => "La relación entre taxón, caracteristica y region se ha actualizado correctamente.",
@@ -146,7 +136,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){            
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
@@ -177,7 +166,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){            
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
@@ -212,7 +200,6 @@ class RelNombreCaracteristicasController extends Controller
 
         }catch(\Exception $e){            
             DB::rollBack();
-            //throw $e;
             return response()->json([
                 'message' => $e->getMessage()
             ], 500);
