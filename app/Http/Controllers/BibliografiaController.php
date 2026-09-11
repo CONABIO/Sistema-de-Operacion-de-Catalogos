@@ -448,7 +448,7 @@ class BibliografiaController extends Controller
     {
         $datosValidados = $request->validate([
             'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
-            'IdObjetoExterno' => 'required|integer|exists:catcentral.ObjetoExterno,IdObjetoExterno',
+            'IdObjetoExterno' => 'required|integer',
         ]);
 
         try {
@@ -461,6 +461,34 @@ class BibliografiaController extends Controller
         } catch (\Exception $e) {
             Log::error("Error en eliminarAsociacionObjeto: " . $e->getMessage());
             return response()->json(['message' => 'Error al eliminar la asociación del objeto.'], 500);
+        }
+    }
+
+    public function actualizarAsociacionObjeto(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'IdBibliografia' => 'required|integer|exists:catcentral.Bibliografia,IdBibliografia',
+            'IdObjetoExterno' => 'required|integer',
+            'Observaciones' => 'nullable|string',
+        ]);
+
+        try {
+            $affectedRows = DB::connection('catcentral')->table('RelObjetoExternoBiblio')
+                ->where('IdBibliografia', $datosValidados['IdBibliografia'])
+                ->where('IdObjetoExterno', $datosValidados['IdObjetoExterno'])
+                ->update([
+                    'Observaciones' => $datosValidados['Observaciones'],
+                    'FechaModificacion' => now(),
+                ]);
+
+            if ($affectedRows === 0) {
+                return response()->json(['message' => 'No se encontró la asociación para actualizar.'], 404);
+            }
+
+            return response()->json(['message' => 'Observaciones actualizadas con éxito.'], 200);
+        } catch (\Exception $e) {
+            Log::error("Error en actualizarAsociacionObjeto: " . $e->getMessage());
+            return response()->json(['message' => 'Error al actualizar las observaciones del objeto asociado.'], 500);
         }
     }
 }

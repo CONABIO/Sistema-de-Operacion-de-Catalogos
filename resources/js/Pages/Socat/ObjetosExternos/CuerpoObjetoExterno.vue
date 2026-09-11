@@ -1,8 +1,8 @@
 <script setup>
-import { ref, h, nextTick, watch  } from 'vue';
+import { ref, h, nextTick, watch, computed, defineProps, defineEmits } from 'vue';
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import axios from 'axios';
-import { ElMessageBox, ElTableColumn } from 'element-plus';
+import { ElMessageBox, ElTableColumn, ElButton } from 'element-plus';
 import TablaFiltrable from "@/Components/Biotica/TablaFiltrable.vue";
 import FormObjetoExterno from './FormObjetoExterno.vue';
 import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoErrorModal.vue";
@@ -10,12 +10,37 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 import NuevoButton from "@/Components/Biotica/NuevoButton.vue";
 
+const props = defineProps({
+    isModal: {
+        type: Boolean,
+        default: false
+    },
+    traspaso: {
+        type: Boolean,
+        default: true
+    }
+});
+
+const emit = defineEmits(['asociar', 'cerrar']);
+
 const selectedRowId = ref(null);
-// VARIABLE NUEVA PARA FORZAR EL REFRESCO
 const modalKey = ref(Date.now());
 
+const selectedRow = computed(() => {
+    return currentData.value.find(d => d.IdObjetoExterno === selectedRowId.value);
+});
+
+const asociarObjeto = () => {
+    if (!selectedRow.value) return;
+    emit('asociar', selectedRow.value);
+};
+
+const cerrarVentana = () => {
+    emit('cerrar');
+};
+
 const manejarClickFila = (row) => {
-    selectedRowId.value = row.IdObjetoExterno;
+    selectedRowId.value = row ? row.IdObjetoExterno : null;
     if (tablaRef.value) {
         tablaRef.value.selectedRow = row;
     }
@@ -65,7 +90,6 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
     }
 };
 
-
 const tablaRef = ref(null);
 const currentData = ref([]);
 const totalItems = ref(0);
@@ -107,12 +131,9 @@ const cerrarNotificacion = () => {
 
 const nuevoObjetoExterno = () => {
   objetoExternoEditado.value = null;
-  // CAMBIAMOS LA KEY PARA QUE VUE RE-RENDERICE EL MODAL
   modalKey.value = Date.now();
   modalVisible.value = true;
-  console.log("Entrando")
 };
-
 
 const editarObjetoExterno = async (item) => {
     await nextTick();
@@ -132,8 +153,6 @@ watch(modalVisible, (newVal) => {
     }
 });
 
-
-
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = objetoExternoEditado.value !== null;
@@ -146,7 +165,6 @@ const handleFormSubmited = (datosDelFormulario) => {
         ? "El objeto externo que desea modificar ya existe, las modificaciones no se realizaron."
         : "El objeto externo que desea ingresar ya existe.";
 
-    // Validación local: Solo bloquea si coinciden Nombre Y Sitio
     const registroExistenteLocal = currentData.value.find(item => {
         const nItem = (item.NombreObjeto || "").trim().toLowerCase();
         const sItem = (item.NombreSitio || "").trim().toLowerCase();
@@ -168,7 +186,7 @@ const handleFormSubmited = (datosDelFormulario) => {
         try {
             if (!esEdicion) {
                 const response = await axios.post('/objetos-externos', datosDelFormulario);
-                mostrarNotificacion("Ingreso", "El objeto externo ha sido ingresado correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El objeto externo ha sido ingresada correctamente.", "success");
                 const nuevoId = response.data.data?.IdObjetoExterno || response.data.IdObjetoExterno;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
                 else if (tablaRef.value) await tablaRef.value.fetchData();
@@ -251,17 +269,15 @@ const eliminarObjetoExterno = (idObjeto) => {
         ])
     }).catch(() => { });
 };
-
-
 </script>
 
 <template>
-    <LayoutCuerpo :usar-app-layout="false" tituloPag="Objetos Externos"
+    <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Objetos Externos"
         tituloArea="Catálogo de objetos externos">
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-objeto-externo"  id-key="IdObjetoExterno"
-                :moduloSocat="'MnuCatObjExt'" @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
+                @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno"  @row-click="manejarClickFila">
 
                 <template #header-actions>
@@ -290,22 +306,57 @@ const eliminarObjetoExterno = (idObjeto) => {
                 </template>
             </TablaFiltrable>
         </div>
-
-        <Teleport to="body">
-            <!-- LA KEY AHORA USA EL TIMESTAMP SI ES NUEVO PARA FORZAR EL RESET -->
-            <FormObjetoExterno
-                :visible="modalVisible"
-                :objeto-externo-edit="objetoExternoEditado"
-                :key="objetoExternoEditado ? objetoExternoEditado.IdObjetoExterno : modalKey"
-                :accion="objetoExternoEditado ? 'editar' : 'crear'"
-                @cerrar="cerrarModal"
-                @formSubmited="handleFormSubmited" />
-
-            <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
-                :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
-                @close="cerrarNotificacion" />
-        </Teleport>
     </LayoutCuerpo>
+
+    <div v-else class="modal-view-container">
+        <div class="area-title" style="background-color: #d9e1eb; color: black; border-radius: 8px; height: 60px;">
+            <h2 style="margin-top: 14px; margin-left: 20px;">Catálogo de objetos externos</h2>
+        </div>
+        <div class="h-full flex flex-col flex-grow">
+            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+                v-model:total-items="totalItems" endpoint="/busca-objeto-externo" id-key="IdObjetoExterno"
+                @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
+                @nuevo-item="nuevoObjetoExterno" @row-click="manejarClickFila"
+                :mostrarTraspaso="props.traspaso" @traspasaBiblio="asociarObjeto"
+                :botCerrar="props.isModal" @cerrar="cerrarVentana" :highlight-current-row="false">
+
+                <template #extra-columns>
+                    <el-table-column label="Extensión" min-width="100">
+                        <template #default="{ row }"><span>{{ row.extension }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="Tipo" min-width="200">
+                        <template #default="{ row }"><span>{{ row.tipo }}</span></template>
+                    </el-table-column>
+                </template>
+
+                <template #expand-column>
+                    <el-table-column type="expand">
+                        <template #default="{ row }">
+                            <div class="expand-content-detail">
+                                <p><strong>ID:</strong> {{ row.IdObjetoExterno }}</p>
+                                <p><strong>Ruta:</strong> {{ row.Ruta }}</p>
+                                <p><strong>Sitio:</strong> {{ row.NombreSitio }}</p>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </template>
+            </TablaFiltrable>
+        </div>
+    </div>
+
+    <Teleport to="body">
+        <FormObjetoExterno
+            :visible="modalVisible"
+            :objeto-externo-edit="objetoExternoEditado"
+            :key="objetoExternoEditado ? objetoExternoEditado.IdObjetoExterno : modalKey"
+            :accion="objetoExternoEditado ? 'editar' : 'crear'"
+            @cerrar="cerrarModal"
+            @formSubmited="handleFormSubmited" />
+
+        <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
+            :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
+            @close="cerrarNotificacion" />
+    </Teleport>
 </template>
 
 <style>
@@ -336,4 +387,21 @@ const eliminarObjetoExterno = (idObjeto) => {
   --el-table-tr-bg-color: #ddf6dd !important;
 }
 .expand-content-detail { padding: 10px 15px; background-color: #fdfdfd; font-size: 13px; }
+
+.modal-view-container {
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+}
+
+.area-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
 </style>

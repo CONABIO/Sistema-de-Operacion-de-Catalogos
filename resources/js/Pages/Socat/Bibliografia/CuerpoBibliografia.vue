@@ -14,17 +14,161 @@ import EditarButton from '@/Components/Biotica/EditarButton.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import ObjetoExterno from '@/Pages/Socat/ObjetosExternos/CuerpoObjetoExterno.vue';
 import usePermisos from '@/composables/usePermisos';
 
 const { permisos } = usePermisos();
 
 const selectedRowId = ref(null);
 
+const selectedObjetoId = ref(null);
+const selectedObjetoRow = ref(null);
+const esModalEditarObjetoVisible = ref(false);
+
+const objetoParaEditar = ref({
+  IdBibliografia: null,
+  IdObjeto: null,
+  objeto: '',
+  observaciones: ''
+});
+
+const tieneObjetoSeleccionado = computed(() => {
+  return datosObjetos.value.length > 0 && selectedObjetoRow.value !== null;
+});
+
+const handleObjetoRowClick = (row) => {
+  const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
+  selectedObjetoId.value = row[idKey];
+  selectedObjetoRow.value = row;
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
+};
+
+const rowObjetoClassName = ({ row }) => {
+  const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
+  if (row[idKey] === selectedObjetoId.value) {
+    return 'fila-seleccionada-verde';
+  }
+  return '';
+};
+
+const agregarObjeto = () => {
+  if (!selectedBibliografia.value) {
+    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
+    return;
+  }
+  esModalObjetosVisible.value = true;
+};
+
+const cerrarModalObjetos = () => {
+  esModalObjetosVisible.value = false;
+  if (selectedBibliografia.value) {
+    handleRowClick(selectedBibliografia.value);
+  }
+};
+
+const abrirModalEditarObjeto = (filaObjeto) => {
+  if (!filaObjeto) return;
+  const idKey = filaObjeto.IdObjetoExterno ? 'IdObjetoExterno' : (filaObjeto.IdObjeto ? 'IdObjeto' : 'id');
+  objetoParaEditar.value = {
+    ...filaObjeto,
+    IdBibliografia: filaObjeto.IdBibliografia || selectedBibliografia.value?.IdBibliografia,
+    IdObjeto: filaObjeto[idKey],
+    objeto: filaObjeto.objeto,
+    observaciones: filaObjeto.observaciones
+  };
+  esModalEditarObjetoVisible.value = true;
+};
+
+const guardarObservacionesObjeto = async () => {
+  const idValue = objetoParaEditar.value?.IdObjeto || objetoParaEditar.value?.IdObjetoExterno || objetoParaEditar.value?.id;
+  if (!objetoParaEditar.value?.IdBibliografia || !idValue) {
+    mostrarNotificacion('Aviso', 'Faltan datos para actualizar el objeto.', 'warning');
+    return;
+  }
+
+  try {
+    await axios.put(route('bibliografias.asociarObjeto.actualizar'), {
+      IdBibliografia: objetoParaEditar.value.IdBibliografia,
+      IdObjetoExterno: idValue,
+      Observaciones: objetoParaEditar.value.observaciones
+    });
+
+    mostrarNotificacion('Modificación', 'Las observaciones han sido actualizadas exitosamente.', 'success');
+    esModalEditarObjetoVisible.value = false;
+    handleRowClick(selectedBibliografia.value);
+
+  } catch (error) {
+    const mensajeError = error.response?.data?.message || 'No se pudieron guardar los cambios.';
+    mostrarNotificacion('Aviso', mensajeError, 'warning');
+    console.error("Error al guardar observaciones del objeto:", error.response);
+  }
+};
+
+const confirmarEliminacionObjeto = (filaObjeto) => {
+  const idKey = filaObjeto?.IdObjetoExterno ? 'IdObjetoExterno' : (filaObjeto?.IdObjeto ? 'IdObjeto' : 'id');
+  const idObjetoVal = filaObjeto?.[idKey] || 0;
+  if (!selectedBibliografia.value?.IdBibliografia && !filaObjeto?.IdBibliografia) {
+    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación.', 'warning');
+    return;
+  }
+
+  const procederConEliminacionObjeto = async () => {
+    try {
+      ElMessageBox.close();
+
+      await axios.delete(route('bibliografias.asociarObjeto.eliminar'), {
+        data: {
+          IdBibliografia: selectedBibliografia.value?.IdBibliografia || filaObjeto.IdBibliografia,
+          IdObjetoExterno: idObjetoVal
+        }
+      });
+
+      mostrarNotificacion('Eliminación', 'El objeto externo ha sido desasociado correctamente.', 'success');
+
+      handleRowClick(selectedBibliografia.value);
+      selectedObjetoId.value = null;
+      selectedObjetoRow.value = null;
+
+    } catch (error) {
+      const mensajeError = error.response?.data?.message || 'No se pudo desasociar el objeto.';
+      mostrarNotificacion('Aviso', mensajeError, 'warning');
+      console.error("Error al eliminar asociación del objeto:", error.response);
+    }
+  };
+
+  const mensaje = `¿Estás seguro de que quieres desasociar el objeto externo seleccionado de esta referencia bibliográfica? Esta acción no se puede revertir.`;
+
+  ElMessageBox({
+    title: "Confirmar eliminación",
+    showConfirmButton: false,
+    showCancelButton: false,
+    customClass: "message-box-diseno-limpio",
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [
+          h('div', { class: 'custom-warning-circle' }, '!')
+        ]),
+        h('div', { class: 'text-container' }, [
+          h('p', null, mensaje)
+        ])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+        h(BotonAceptar, {
+          texto: "Sí, Eliminar",
+          onClick: procederConEliminacionObjeto
+        }),
+      ]),
+    ]),
+  }).catch(() => {
+  });
+};
+
 const selectedGrupoId = ref(null);
 const selectedGrupoRow = ref(null);
-const selectedObjetoRow = ref(null);
 const tieneGrupoSeleccionado = computed(() => {
-  return datosGrupos.value.length > 0 && selectedObjetoRow.value !== null;
+  return datosGrupos.value.length > 0 && selectedGrupoRow.value !== null;
 });
 
 const moduloSocat = ref('MnuCatBiblio');
@@ -61,14 +205,14 @@ const hasPermisos = (etiqueta, modulo) => {
     return permiso[modulo];
 };
 
-const tieneObjetoSeleccionado = computed(() => {
-  return datosObjetos.value.length > 0 && selectedGrupoRow.value !== null;
-});
+
 
 
 const handleGrupoRowClick = (row) => {
   selectedGrupoId.value = row.IdGrupoSCAT;
   selectedGrupoRow.value = row;
+  selectedObjetoId.value = null;
+  selectedObjetoRow.value = null;
 };
 
 const rowGrupoClassName = ({ row }) => {
@@ -89,6 +233,8 @@ const agregarGrupo = () => {
 const manejarClickFila = (row) => {
   selectedGrupoId.value = null;
   selectedGrupoRow.value = null;
+  selectedObjetoId.value = null;
+  selectedObjetoRow.value = null;
   selectedRowId.value = row.IdBibliografia;
   handleRowClick(row);
 };
@@ -324,6 +470,8 @@ const handleRowClick = async (row) => {
   selectedBibliografia.value = row;
   selectedGrupoId.value = null;
   selectedGrupoRow.value = null;
+  selectedObjetoId.value = null;
+  selectedObjetoRow.value = null;
   citaCompleta(row);
   const idBibliografia = row.IdBibliografia;
   if (!idBibliografia) return;
@@ -333,12 +481,6 @@ const handleRowClick = async (row) => {
   try {
     const responseGrupos = await axios.get(`/api/bibliografias/${idBibliografia}/grupos-taxonomicos`);
     datosGrupos.value = responseGrupos.data;
-    if (datosGrupos.value.length > 0 && !selectedGrupoId.value) {
-      handleGrupoRowClick(datosGrupos.value[0]);
-    } else if (selectedGrupoId.value) {
-      const actual = datosGrupos.value.find(g => g.IdGrupoSCAT === selectedGrupoId.value);
-      if (actual) handleGrupoRowClick(actual);
-    }
   } catch (error) {
     console.error("Error al cargar los grupos taxonómicos:", error);
     mostrarNotificacion("Aviso", "No se pudieron cargar los grupos taxonómicos asociados.", "warning");
@@ -357,6 +499,36 @@ const handleRowClick = async (row) => {
   } finally {
     loadingObjetos.value = false;
   }
+};
+
+
+const asociarObjetoDesdeModal = (objetoSeleccionado) => {
+  if (!selectedBibliografia.value) {
+    mostrarNotificacion("Aviso", "No hay una bibliografía seleccionada.", "warning");
+    return;
+  }
+  const idValue = objetoSeleccionado.IdObjetoExterno || objetoSeleccionado.id_objeto_externo || objetoSeleccionado.IdObjeto || objetoSeleccionado.id;
+  axios.post(route('bibliografias.asociarObjeto'), {
+    IdBibliografia: selectedBibliografia.value.IdBibliografia,
+    IdObjetoExterno: idValue,
+    id_objeto_externo: idValue,
+    IdObjeto: idValue
+  })
+    .then(async (response) => {
+      mostrarNotificacion("Ingreso", response.data.message, "success");
+      esModalObjetosVisible.value = false;
+      await handleRowClick(selectedBibliografia.value);
+      const nuevoId = idValue;
+      const keyToFind = datosObjetos.value[0]?.IdObjetoExterno ? 'IdObjetoExterno' : (datosObjetos.value[0]?.IdObjeto ? 'IdObjeto' : 'id');
+      const filaRecienAgregada = datosObjetos.value.find(o => o[keyToFind] === nuevoId);
+      if (filaRecienAgregada) {
+        handleObjetoRowClick(filaRecienAgregada);
+      }
+    })
+    .catch(error => {
+      const errorMessage = error.response?.data?.message || 'No se pudo asociar el objeto.';
+      mostrarNotificacionError("Aviso", errorMessage, "error");
+    });
 };
 
 
@@ -549,8 +721,38 @@ onMounted(() => {
           mostrarNotificacionError("Aviso", errorMessage, "error");
         });
     }
+
+    if (event.data && event.data.type === 'objetoExternoSeleccionado') {
+      const objetoSeleccionado = event.data.payload;
+      if (!selectedBibliografia.value) {
+        mostrarNotificacion("Aviso", "No hay una bibliografía seleccionada.", "warning");
+        return;
+      }
+      const idKey = objetoSeleccionado.IdObjeto ? 'IdObjeto' : (objetoSeleccionado.IdObjetoExterno ? 'IdObjetoExterno' : 'id');
+      axios.post(route('bibliografias.asociarObjeto'), {
+        IdBibliografia: selectedBibliografia.value.IdBibliografia,
+        IdObjeto: objetoSeleccionado[idKey] || objetoSeleccionado.id,
+      })
+        .then(async (response) => {
+          mostrarNotificacion("Ingreso", response.data.message, "success");
+          esModalObjetosVisible.value = false;
+          await handleRowClick(selectedBibliografia.value);
+          const nuevoId = objetoSeleccionado[idKey] || objetoSeleccionado.id;
+          const keyToFind = datosObjetos.value[0]?.IdObjeto ? 'IdObjeto' : (datosObjetos.value[0]?.IdObjetoExterno ? 'IdObjetoExterno' : 'id');
+          const filaRecienAgregada = datosObjetos.value.find(o => o[keyToFind] === nuevoId);
+          if (filaRecienAgregada) {
+            handleObjetoRowClick(filaRecienAgregada);
+          }
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data?.message || 'No se pudo asociar el objeto.';
+          mostrarNotificacionError("Aviso", errorMessage, "error");
+        });
+    }
+
     if (event.data && event.data.type === 'cerrarModal') {
       esModalGruposVisible.value = false;
+      esModalObjetosVisible.value = false;
     }
   };
   window.addEventListener('message', handleMessageFromIframe);
@@ -603,9 +805,9 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
             <div class="botones">
-              <NuevoButton @crear="agregarGrupo" v-if= "hasPermisos('MnuCatGrpTax', 'Altas')"/>
-              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" v-if= "hasPermisos(moduloSocat, 'Cambios')" />
-              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" v-if= "hasPermisos(moduloSocat, 'Bajas')"/>
+              <NuevoButton @crear="agregarGrupo" />
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" />
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
             </div>
           </div>
           <div class="widget-table-container">
@@ -618,17 +820,19 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="widget-card-inferior">
+        <div class="widget-card-inferior" v-loading="loadingObjetos">
           <div class="widget-header">
             <h3>Objeto externo</h3>
             <div class="botones">
-              <NuevoButton v-if= "hasPermisos('MnuCatObjExt', 'Altas')"/>
-              <EditarButton :disabled="!tieneObjetoSeleccionado" v-if= "hasPermisos(moduloSocat, 'Cambios')"/>
-              <EliminarButton  :disabled="!tieneObjetoSeleccionado"  v-if= "hasPermisos(moduloSocat, 'Bajas')"/>
+              <NuevoButton />
+              <EditarButton :disabled="!tieneObjetoSeleccionado"/>
+              <EliminarButton  :disabled="!tieneObjetoSeleccionado"/>
             </div>
           </div>
           <div class="widget-table-container">
-            <el-table :data="datosObjetos" border style="width: 100%" empty-text="Sin Datos">
+            <el-table :data="datosObjetos" border style="width: 100%" :row-class-name="rowObjetoClassName"
+              @row-click="handleObjetoRowClick"
+              :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin objetos asociados'">
               <el-table-column prop="objeto" label="Objeto externo" />
               <el-table-column prop="observaciones" label="Observaciones" />
             </el-table>
@@ -647,7 +851,7 @@ onMounted(() => {
     <NotificacionExitoErrorModal :visible="notificacionVisible" :titulo="notificacionTitulo"
       :mensaje="notificacionMensaje" :tipo="notificacionTipo" :duracion="notificacionDuracion"
       @close="cerrarNotificacion" />
-    <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :pressEsc="true" width="100%"
+    <DialogGeneral v-model="esModalGruposVisible" :bot-cerrar="true" :pressEsc="true" width="75%"
       @close="cerrarModalGrupos" :draggable="true">
 
       <div class="dialog-body-iframe-container"
@@ -676,6 +880,38 @@ onMounted(() => {
                 resize="none" placeholder="Añade tus observaciones aquí" maxlength="255" show-word-limit />
             </el-form-item>
 
+          </el-form>
+        </div>
+      </div>
+    </DialogGeneral>
+
+    <DialogGeneral v-model="esModalObjetosVisible" :bot-cerrar="true" :pressEsc="true" width="75%"
+    @close="cerrarModalObjetos" :draggable="true">
+        <div class="dialog-body-iframe-container"
+            style="padding: 0; border: none; display: flex; flex-direction: column;">
+            <ObjetoExterno :is-modal="true" @asociar="asociarObjetoDesdeModal" @cerrar="cerrarModalObjetos" />
+        </div>
+    </DialogGeneral>
+
+    <DialogGeneral v-model="esModalEditarObjetoVisible" :bot-cerrar="true" :press-esc="true" width="1000px">
+      <div class="dialog-header">
+        <h3>Modificar las observaciones del objeto externo</h3>
+      </div>
+      <div class="header">
+        <div class="form-actions">
+          <GuardarButton @click="guardarObservacionesObjeto" />
+          <BotonSalir accion="cerrar" @salir="esModalEditarObjetoVisible = false" />
+        </div>
+        <div class="dialog-body">
+          <el-form label-position="top">
+            <el-form-item label="Nombre del objeto">
+              <el-input type="textarea" v-model="objetoParaEditar.objeto" readonly :autosize="{ minRows: 1, maxRows: 2 }"
+                resize="none" class="input-solo-lectura" />
+            </el-form-item>
+            <el-form-item label="Observaciones">
+              <el-input type="textarea" v-model="objetoParaEditar.observaciones" :autosize="{ minRows: 1, maxRows: 3 }"
+                resize="none" placeholder="Añade tus observaciones aquí" maxlength="255" show-word-limit />
+            </el-form-item>
           </el-form>
         </div>
       </div>
@@ -1020,3 +1256,4 @@ onMounted(() => {
   color: #909399;
 }
 </style>
+
