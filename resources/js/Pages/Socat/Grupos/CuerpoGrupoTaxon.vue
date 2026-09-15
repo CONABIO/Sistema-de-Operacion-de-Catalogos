@@ -325,7 +325,7 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <!-- Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
               Se agrega variable para indicar si es modal :botCerrar -->
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
-                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" 
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :moduloSocat="'MnuCatGrpTax'"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
                 @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" 

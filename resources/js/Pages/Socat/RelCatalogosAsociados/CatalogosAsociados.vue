@@ -132,12 +132,13 @@
                                                         <span>Nombres comunes asociados ({{ nombresAsociadosTaxon.length
                                                         }})</span>
                                                         <div class="contenedor-botones-asociados" style="display: flex; gap: 4px; align-items: center;">
-                                                            <EditarButton @editar="activarEdicionGeneral" />
-                                                            <EliminarButton @eliminar="confirmarEliminarAsociacion" />
+                                                            <EditarButton @editar="activarEdicionGeneral" v-if="hasPermisos(moduloSocatNomComun, 'Cambios')"/>
+                                                            <EliminarButton @eliminar="confirmarEliminarAsociacion" v-if="hasPermisos(moduloSocatNomComun, 'Bajas')" />
                                                             <GuardarButton
                                                                 @confirmar="guardarCambiosObsGeneral"
-                                                                :disabled="!editandoObsGeneral" />
-                                                            <BotonTraspaso @traspasa="onCreaRelacion" />
+                                                                :disabled="!editandoObsGeneral" 
+                                                                v-if="hasPermisos(moduloSocatNomComun, 'Cambios')" />
+                                                            <BotonTraspaso @traspasa="onCreaRelacion" v-if="hasPermisos(moduloSocatNomComun, 'Altas')"/>
                                                             <el-tooltip class="item" effect="dark" content="Bibliografia" placement="top">
                                                                 <el-button @click="abrirResumenRegiones" circle
                                                                     style="background-color: #509165; color: white;">
@@ -287,6 +288,7 @@
                                                                     :valoresOpcion="tiposDistribucion"
                                                                     :tipo-busqueda-externo="filtroRegionesGeneral"
                                                                     :mostrar-switch-local="false"
+                                                                    :moduloSocat = "'RelNombreReg'"
                                                                     :habOpciones="habOpciones" :itemsPerPage=5
                                                                     :mostrarBiblio="true" :mostrarAcci="false"
                                                                     :alturaTabla="240" :highlight-current-row="true"
@@ -430,6 +432,7 @@
                                                             :totalItems="totalBibliografiasRel" :alturaTabla="350"
                                                             :highlight-current-row="true" :mostrarNuevo="true"
                                                             :mostrarEditar="true" :mostrarBorrar="true"
+                                                            :moduloSocat = "'RelNombreNomComunBiblio'"
                                                             :mostrarSalir="false" :mostrarGuardar="true"
                                                             :deshabilitarGuardar="botonGuardarDeshabilitado"
                                                             @row-click="clickBiblioRel" @nuevo-item="abrirBiblio"
@@ -685,6 +688,7 @@
                                                     :highlight-current-row="true" :mostrarNuevo="true"
                                                     :mostrarEditar="true" :mostrarBorrar="true" :mostrarSalir="false"
                                                     :mostrar-biblio="false" :mostrar-guardar="true"
+                                                    :moduloSocat = "'RelNombreRegBiblio'"
                                                     @row-click="clickBiblioRel" @guardar="guardarCambiosObs"
                                                     @nuevo-item="abrirBiblio" @eliminar-item="eliminarBiblioRel"
                                                     @abrir-biblio="abrirBiblio" :deshabilitarGuardar="!editandoObs"
@@ -768,9 +772,13 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
+import usePermisos from '@/composables/usePermisos';
 
+const { permisos } = usePermisos();
 
 const observacionesGeneral = ref("");
+
+const moduloSocatNomComun = ref("RelNombreNomComun")
 
 let backupFilaRegion = null;
 
@@ -798,6 +806,11 @@ const cancelarEdicionRegion = () => {
     }
 };
 
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const handleKeyDown = (event) => {
     if (event.key === 'Escape' || event.keyCode === 27) {

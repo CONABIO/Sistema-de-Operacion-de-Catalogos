@@ -201,7 +201,6 @@
   };
 
   const hasPermisos = (etiqueta, modulo) => {
-    console.log("Esto es lo que vale permisos ", permisos);
     const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
     return permiso[modulo];
@@ -1673,7 +1672,7 @@
                         :mostrarBiblio = "true"
                         :mostrarAcci = "true"
                         :alturaTabla = 170
-                        :moduloSocat = "'MnuCatNombres'"
+                        :moduloSocat = "'RelNombreNomclatura'"
                         @eliminar-item = "manejarEliminarRel"
                         @abrir-Biblio = "abrirBiblio"
                         :highlight-current-row = "true"
@@ -1699,7 +1698,7 @@
                           v-model:datos = "tablaReferencias"
                           v-model:total-items = "totalRegRef"
                           :opciones-filtro = "opcionesFiltroRef"
-                          :moduloSocat = "'MnuCatNombres'"
+                          :moduloSocat = "'RelNombreBiblio'"
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"

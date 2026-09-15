@@ -131,7 +131,8 @@
                         placeholder="Observaciones"
                       />
                       <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
-                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                    style="flex-shrink: 0; min-width: max-content;"
+                                    v-if="hasPermisos(moduloSocat,'Cambios')"/>
                     </div>
                   </div>
                 </el-col>
@@ -213,7 +214,7 @@
                               gap: 16px;">
                     <el-tooltip effect="dark" content="Relaciona taxón" placement="top">
                       <el-button @click="traspasaDatos" circle color="#8e44ad" :disabled="habTraspaso"
-                                  style="margin-left: 10px;">
+                                  style="margin-left: 10px;" v-if="hasPermisos(moduloSocat,'Altas')">
                         <el-icon>
                           <iconoTraspaso />
                         </el-icon>
@@ -222,7 +223,8 @@
                     <el-tooltip effect="dark" content="Cambio de relación" placement="right">
                       <el-button @click="CambioBasSin" circle type="warning" 
                                   style="margin-left: 10px;"
-                                  :disabled = "habCambioSinBas">
+                                  :disabled = "habCambioSinBas" 
+                                  v-if="hasPermisos(moduloSocat,'Cambios')">
                         <el-icon>
                           <reemplazo />
                         </el-icon>
@@ -231,7 +233,8 @@
                     <el-tooltip effect="dark" content="Traspaso de información" placement="right">
                       <el-button @click="CambioBasSin" circle  
                                   style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
-                                  :disabled = "habCambioSinBas">
+                                  :disabled = "habCambioSinBas"
+                                  v-if="hasPermisos(moduloSocat,'Cambios')">
                         <img :src = "'/storage/images/TraspasoInformacion.png'" style="width: 25px; height: 28px">
                       </el-button>
                     </el-tooltip>
@@ -253,6 +256,7 @@
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :moduloSocat="moduloSocat"
                           :mostrarSalir = "false" 
                           :mostrarNuevo = "false"
                           :alturaTabla = 220
@@ -368,6 +372,8 @@ const habObservaciones = ref(true);
 const relDetectada = ref([]);
 const taxActBiblio = ref([]);
 const tipRelacion = ref([]);
+
+const moduloSocat = ref("RelNombreNomclatura");
 
 const habTraspaso = ref(true);
 const notificacionVisible = ref(false);

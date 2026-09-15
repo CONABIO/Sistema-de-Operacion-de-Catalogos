@@ -119,11 +119,12 @@
                                                     <div class="header-container">
                                                         <span class="details-header-title">Características asociadas al taxón</span>  
                                                         <div style="display: flex; gap: 5px; justify-content: flex-end;">   
-                                                            <BotonTraspaso @traspasa="onCreaRelacion" /> 
-                                                            <EditarButton  @editar="onEditar" :disabled = "habEdiBorr"/>
+                                                            <BotonTraspaso @traspasa="onCreaRelacion" v-if="hasPermisos(moduloSocatCaract, 'Altas')"/> 
+                                                            <EditarButton  @editar="onEditar" :disabled = "habEdiBorr" v-if="hasPermisos(moduloSocatCaract, 'Cambios')"/>
                                                             <GuardarButton @click="Guardar" :disabled = "habGuardado"
-                                                                            style="flex-shrink: 0; min-width: max-content;"/>
-                                                            <EliminarButton @eliminar="onEliminar" :habActTax = "habEdiBorr" />
+                                                                            style="flex-shrink: 0; min-width: max-content;" 
+                                                                            v-if="hasPermisos(moduloSocatCaract, 'Cambios')"/>
+                                                            <EliminarButton @eliminar="onEliminar" :habActTax = "habEdiBorr" v-if="hasPermisos(moduloSocatCaract, 'Bajas')"/>
                                                             <div>
                                                                 <el-tooltip class="item" effect="dark" content="Bibliografia">
                                                                     <el-button @click="abrirBiblioCaract" circle style="flex-shrink: 0;
@@ -254,6 +255,17 @@
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
     import BiblioCaract from '@/Pages/Socat/RelCatalogosAsociados/BiblioRelacionCaracteristicas.vue';
+    import usePermisos from '@/composables/usePermisos';
+
+    const { permisos } = usePermisos();
+
+    const hasPermisos = (etiqueta, modulo) => {
+        const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+        return permiso[modulo];
+    };
+
+    const moduloSocatCaract = ref("RelNombreCaract");
 
     const emit = defineEmits(['cerrar']);
     const georeferido = ref(true);

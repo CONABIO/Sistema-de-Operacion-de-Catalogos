@@ -172,6 +172,8 @@ const tieneGrupoSeleccionado = computed(() => {
 });
 
 const moduloSocat = ref('MnuCatBiblio');
+const moduloSocatGrp = ref('RelBiblioGrp');
+const moduloSocatObj = ref('RelBiblioObj');
 
 const cerrarBiblio = async (bibliografiasSeleccionadas) => {
     dialogFormVisibleBiblio.value = false;
@@ -805,9 +807,9 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
             <div class="botones">
-              <NuevoButton @crear="agregarGrupo" />
-              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" />
-              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" />
+              <NuevoButton @crear="agregarGrupo" v-if="hasPermisos(moduloSocatGrp, 'Altas')"/>
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Cambios')"/>
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Bajas')" />
             </div>
           </div>
           <div class="widget-table-container">
@@ -824,9 +826,11 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Objeto externo</h3>
             <div class="botones">
-              <NuevoButton />
-              <EditarButton :disabled="!tieneObjetoSeleccionado"/>
-              <EliminarButton  :disabled="!tieneObjetoSeleccionado"/>
+              <NuevoButton @crear="agregarObjeto" v-if="hasPermisos(moduloSocatObj, 'Altas')" />
+              <EditarButton @editar="abrirModalEditarObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado" 
+                            v-if="hasPermisos(moduloSocatObj, 'Cambios')"/>
+              <EliminarButton @eliminar="confirmarEliminacionObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado"
+                              v-if="hasPermisos(moduloSocatObj, 'Bajas')"/>
             </div>
           </div>
           <div class="widget-table-container">
