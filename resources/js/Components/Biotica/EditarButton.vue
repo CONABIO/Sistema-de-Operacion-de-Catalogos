@@ -26,8 +26,14 @@
       type:String,
       default: 'default',
       validator: (value) => ['large', 'default', 'small', 'mini'].includes(value),
+    }, 
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
+
+  emits: ['editar'],
 
     methods: {
       editar() {
@@ -36,14 +42,3 @@
     }
   }
   </script>
-
-  <script setup>
-defineProps({
-  disabled: {
-    type: Boolean,
-    default: false
-  }
-});
-
-defineEmits(['editar']);
-</script>

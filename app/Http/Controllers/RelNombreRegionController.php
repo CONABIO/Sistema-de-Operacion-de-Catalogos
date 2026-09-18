@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Helpers\Helpers;
 use Illuminate\Support\Facades\DB;
 
 class RelNombreRegionController extends Controller
@@ -114,7 +115,7 @@ public function cargaRegionesNombre($id)
                     'label' => $item->TipoDistLabel ?? 'Sin tipo'
                 ],
                 'Biblio' => [                    
-                    'url' => $tieneBiblio ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg',
+                    'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
                     'texto' => ''
                 ]
             ];
@@ -137,7 +138,7 @@ public function cargaRegionesNombre($id)
                     'label' => $item->Descripcion ?? 'Sin tipo'
                 ],
                 'Observaciones' => $item->Observaciones,
-                'Biblio' => ['url' => $tieneBiblio ? '/storage/images/Libro_Verde.svg' : '/storage/images/Libro_Rojo.svg', 'texto' => '']
+                'Biblio' => ['url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO, 'texto' => '']
             ];
         });
 
@@ -154,7 +155,9 @@ public function obtenerPagina(Request $request)
     $id = $request->id;
     $perPage = 100; 
     $registro = DB::connection('catcentral')->table('NomComun')->where('IdNomComun', $id)->first();
-    if (!$registro) return response()->json(['page' => 1]);
+    if (!$registro){
+        return response()->json(['page' => 1]);
+    }
     $nombre = $registro->NomComun;
     $posicion = DB::connection('catcentral')->table('NomComun')
         ->where(function($query) use ($nombre, $id) {

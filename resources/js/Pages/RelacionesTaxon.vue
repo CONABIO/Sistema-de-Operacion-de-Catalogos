@@ -268,7 +268,7 @@ const openDialog = async (nodo) => {
 
         for (const child of tiposRel.value) {
             if (child.children && child.children.length > 0) {
-                const found = await updateChildNode(child.children, value[value.length - 1]);
+                await updateChildNode(child.children, value[value.length - 1]);
             } 
         }
         //Aqui se valida la recuperación de los sinonimos o validos confirmando si es un objeto o un array

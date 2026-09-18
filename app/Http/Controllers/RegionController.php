@@ -77,7 +77,9 @@ class RegionController extends Controller
 
     private function buildTipoRegionTree(Collection $nodes): array
     {
-        if ($nodes->isEmpty()) return [];
+        if ($nodes->isEmpty()){ 
+            return [];
+        }
         $tree = [];
         $nodeMap = [];
         foreach ($nodes as $node) {

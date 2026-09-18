@@ -554,13 +554,6 @@ onMounted(async () => {
     color: #303133;
 }
 
-
-.panel-nombre {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-}
-
 .header-container {
     display: flex;
     justify-content: space-between;

@@ -160,14 +160,7 @@
                           </el-scrollbar>
                         </div>
                       </el-main>
-                      <!-- PIE DE PANEL CON PAGINACIÓN -->
-                      <!--el-footer v-if="totalItems > 0" class="panel-footer">
-                        <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                          @current-change="handlePageChange" layout="prev, pager, next, total" background small />
-                        <span v-show="numHijos > 0" style="margin-left: auto;">
-                          Num. Hijos: {{ numHijos }}
-                        </span>
-                      </el-footer-->
+                     
                       <el-footer>
                         <div class="pagination-footer">
 
@@ -734,7 +727,7 @@ const cerrarDialog = async(valor) => {
     case "grupos":
       dialogFormVisibleCat.value = false;
     break;
-    case "biblio":
+    case "biblio":{
       const params= {
                   taxAct: props.taxonAct.id
                 };   
@@ -748,6 +741,7 @@ const cerrarDialog = async(valor) => {
       dialogFormVisibleBiblio.value = false;
 
     break;
+    }
     case "relTax": 
       dialogFormVisibleTiposRel.value = false;
     break;
@@ -762,7 +756,7 @@ const Guardar = async() => {
   const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
-      const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
+      await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
                                                                             observacion: observacionesRel.value,
                                                                             taxAct: props.taxonAct.id}});
 
@@ -831,7 +825,7 @@ const Guardar = async() => {
             {
                 for (const child of tiposRel.value) {
                     if (child.children && child.children.length > 0) {
-                        const found = await updateChildNode(child.children, value[value.length - 1]);
+                        await updateChildNode(child.children, value[value.length - 1]);
                     } 
                 }
                 
@@ -949,11 +943,15 @@ const Guardar = async() => {
         }
     } 
     
-    const validacionSinonimos = async () => {
-        const valTaxAct = Object.values(props.taxonAct.relaciones)
-                               .flat()
-                               .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));                               
+    const validacionSinonimos = async () => {  
+        let valTaxAct = null;  
       
+        if(props.taxonAct.relaciones && Object.keys(props.taxonAct.relaciones).length > 0){
+          valTaxAct = Object.values(props.taxonAct.relaciones)
+                                .flat()
+                                .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));  
+        }
+                       
         const valTaxRel = Object.values(taxonActRel.value)
                                .flat()
                                .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));
@@ -968,8 +966,7 @@ const Guardar = async() => {
               7000
           ); 
           return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-        }else{
-          if(valTaxAct !== undefined || valTaxRel !== undefined)
+        }else if(valTaxAct !== null || valTaxRel !== undefined)
           {
             mostrarNotificacion(
                 "Error",
@@ -978,8 +975,7 @@ const Guardar = async() => {
                 7000
             );
             return false;//Se valida que el taxon a relacionar no tenga validos asociados
-          }else{
-              if(props.taxonAct.completo.Estatus === "ND"){
+          }else if(props.taxonAct.completo.Estatus === "ND"){
                 mostrarNotificacion(
                   "Error",
                   "El taxón actual tiene estatus ND, por lo cual no puede tener relaciones de sinonimia.",
@@ -987,8 +983,7 @@ const Guardar = async() => {
                   7000
               );
               return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-            }else{
-              if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
+            }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
                  taxonActRel.value.completo.categoria.IdNivel1 < 5){
                   mostrarNotificacion(
                     "Error",
@@ -998,9 +993,6 @@ const Guardar = async() => {
                   );
                   return false;
                  }              
-                }
-              }
-            }
         return true;
       }
 
@@ -1172,12 +1164,13 @@ const Guardar = async() => {
     }
 
    switch (tipRelSelec.value) {
-    case 1:
-      relacionar = validacionSinonimos();
+    case 1:{
+      let relacionar = validacionSinonimos();
       if (relacionar) {
         altaRelacion();
       }
       break;
+    }
   }
 
   const CambioBasSin = async() => {
@@ -1207,7 +1200,7 @@ const Guardar = async() => {
       }
     };
 
-    const procederConActSinBas = async () => {
+    /*const procederConActSinBas = async () => {
       try {
         
         ElMessageBox.close();
@@ -1226,7 +1219,7 @@ const Guardar = async() => {
       } catch (apiError) {
         mostrarNotificacionError('Error', `El tipo de relación no se puede actualizar.`, 'error');
       }
-    };
+    };*/
     //---------------------------------Aqui termina la definición de las funciones internas--------------------------------- 
 
     //---------------------------------Se valida si es basonimo o sinonimo 

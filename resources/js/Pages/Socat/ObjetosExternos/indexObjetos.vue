@@ -9,7 +9,3 @@ import CuerpoAutor from '@/Pages/Socat/ObjetosExternos/CuerpoObjetoExterno.vue';
 
     </AppLayout>
 </template>
-
-<style scoped>
-
-</style>

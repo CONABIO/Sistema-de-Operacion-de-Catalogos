@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class RequestBasonimos extends FormRequest
 {
+    private const ESTADO_VALIDO = 'Válido';
+    private const ESTADO_CORRECTO = 'Correcto';
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -56,7 +58,6 @@ class RequestBasonimos extends FormRequest
     }
 
     public function withValidator($validator){
-        //Log::info('Request completo:', $this->all());
 
         $validator->after(function ($validator){
             $taxonAct = $this->input('params.taxonAct', []); 
@@ -71,14 +72,14 @@ class RequestBasonimos extends FormRequest
 
             // === Conteo de registros validos ===
             $contValidoAct = collect($filtraVal)->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
-                        || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
+                return in_array(data_get($rel, 'Nombrecompleto.estatus'), [self::ESTADO_VALIDO, self::ESTADO_CORRECTO], true)
+                        || data_get($rel, 'TipoRelacion.idTipoRel') === 2;
             });
 
             // === Conteo de registros relacionados ===
             $conValidoRel = collect($filtraRel)->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto'])
-                        || data_get($rel, 'TipoRelacion.idTipoRel' == 2);
+                return in_array(data_get($rel, 'Nombrecompleto.estatus'), [self::ESTADO_VALIDO, self::ESTADO_CORRECTO], true)
+                        || data_get($rel, 'TipoRelacion.idTipoRel') === 2;
             });
 
             $estatusAct = data_get($taxonAct, 'estatus');
@@ -101,11 +102,11 @@ class RequestBasonimos extends FormRequest
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 
-            if(($estatusAct === 'Válido' || $estatusAct === 'Correcto') && $idNivelAct < 7){
+            if(($estatusAct === self::ESTADO_VALIDO || $estatusAct === self::ESTADO_CORRECTO) && $idNivelAct < 7){
                 $validator->errors()->add('validos', 'El taxón actual es de categoria superior a especie por lo cual no se puede generar la relación de basonimia');
             }
 
-            if(($estatusRel === 'Válido' || $estatusRel === 'Correcto') && $idNivelRel < 7){
+            if(($estatusRel === self::ESTADO_VALIDO || $estatusRel === self::ESTADO_CORRECTO) && $idNivelRel < 7){
                 $validator->errors()->add('validos', 'El taxón a relacionar es de categoria superior a especie por lo cual no se puede generar la relación de basonimia');
             }
 

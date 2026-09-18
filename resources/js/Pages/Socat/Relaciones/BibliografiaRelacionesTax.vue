@@ -114,14 +114,11 @@
                                     </span>
                                     <el-input  :rows="2"
                                             type="textarea"
-                                            placeholder="Observaciones"
+                                            placeholder="Cita completa"
                                             :disable = true
                                             v-model="citaCompleta">
                                     </el-input>
                                 </div>
-                                <!--/el-card-->
-                                <!--el-card class="table-panel"-->
-                                
                                     <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                             <span style="font-size: 18px; font-weight: bold;">
@@ -252,7 +249,6 @@
     };
 
     const cerrarRelBiblio = async (datos) =>{
-
         const loading = ElLoading.service({
             lock: true,
             text: "Loading",
@@ -273,7 +269,6 @@
                                                                                     
             } catch (error) {
                 mostrarNotificacionError('Aviso', error.response.data.message, 'error');
-                console.log("Error 422:", error.response.data.message);
             }
         }
         loading.close();
@@ -415,7 +410,7 @@
 
 
 </script>
-<style scope>
+<style scoped>
     .box-card {
         width: 100%;
         max-width: 100%;
