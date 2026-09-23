@@ -20,6 +20,10 @@ use Exception;
 class NombresController extends Controller
 {
 
+    private const ESTADO_VALIDO = 'Válido';
+    private const ESTADO_CORRECTO = 'Correcto';
+    private const ETIQUETA_SISTCLASS = " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";  
+
     public function index()
     {
 
@@ -141,7 +145,7 @@ class NombresController extends Controller
                     default:
                         switch ($nombre->Nombre) {
                             case 'Animalia':
-                                $status = "Válido";
+                                $status = self::ESTADO_VALIDO;
                                 break;
                             case 'Plantae':
                             case 'Fungi':
@@ -149,20 +153,20 @@ class NombresController extends Controller
                             case 'Archaea':
                             case 'Bacteria':
                             case 'Chromista':
-                                $status = "Correcto";
+                                $status = self::ESTADO_CORRECTO;
                                 break;
                             default:
                                 if ($nombre->categoria->IdNivel2 === 0) {
-                                    $status = "Correcto";
+                                    $status = self::ESTADO_CORRECTO;
                                 } else {
-                                    $status = "Válido";
+                                    $status = self::ESTADO_VALIDO;
                                 }
                         }
                         break;
                 }
 
                 $nomCat = $nombre->categoria->NombreCategoriaTaxonomica .
-                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                    self::ETIQUETA_SISTCLASS;
 
                 $etiqueta = $nombre->NombreCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
 
@@ -174,6 +178,7 @@ class NombresController extends Controller
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
                 $resp = DB::connection('catcentral')->select($query);
+                $resp = Nombre::conteoRelacionados($nombre->IdNombre)->count();
 
                 $newHijo = [
                     'id' => $nombre->IdNombre,
@@ -181,7 +186,7 @@ class NombresController extends Controller
                     'children' => [],
                     'texto' => $nomCat,
                     'estatus' => $status,
-                    'numEjemp' => $resp[0]->conteo,
+                    'numEjemp' => $resp,
                     'completo' => $nombre
                 ];
 
@@ -232,15 +237,15 @@ class NombresController extends Controller
                     break;
                 default:
                     if ($nombre->categoria->IdNivel2 === 0) {
-                        $status = "Correcto";
+                        $status = self::ESTADO_CORRECTO;
                     } else {
-                        $status = "Válido";
+                        $status = self::ESTADO_VALIDO;
                     }
                     break;
             }
 
             $nomCat = $nombre->NombreCategoriaTaxonomica .
-                " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                self::ETIQUETA_SISTCLASS;
 
             $etiqueta = $nombre->TaxonCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
 
@@ -253,6 +258,7 @@ class NombresController extends Controller
 
 
             $resp = DB::connection('catcentral')->select($query);
+            $resp = Nombre::conteoRelacionados($nombre->IdNombre)->count();
 
             $newHijo = [
                 'id' => $nombre->IdNombre,
@@ -260,7 +266,7 @@ class NombresController extends Controller
                 'children' => [],
                 'texto' => $nomCat,
                 'estatus' => $status,
-                'numEjemp' => $resp[0]->conteo,
+                'numEjemp' => $resp,
                 'completo' => $nombre
             ];
 
@@ -281,9 +287,9 @@ class NombresController extends Controller
                     break;
                 default:
                     if ($relacion->categoria->IdNivel2 === 0) {
-                        $status = "Correcto";
+                        $status = self::ESTADO_CORRECTO;
                     } else {
-                        $status = "Válido";
+                        $status = self::ESTADO_VALIDO;
                     }
                     break;
             }
@@ -434,6 +440,8 @@ class NombresController extends Controller
                 return true;
 
                 break;
+            default:
+                break;
         }
     }
 
@@ -477,8 +485,6 @@ class NombresController extends Controller
             ->select(DB::raw('nombre_taxonomia.idnombre, nombre_taxonomia.comentarioscat, nombre_taxonomia.llavenombre'))
             ->where('nombre_taxonomia.comentarioscat', '=', $request->comentarios)
             ->where(function ($query) use ($request) {
-                /*$query->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
-                        ->orWhere('nombre_taxonomia.idnombre', '=', $request->idNombre);*/
                 $query->where('nombre_taxonomia.idnombre', '=', $request->idNombre);
             })->distinct()->get();
 
@@ -488,21 +494,20 @@ class NombresController extends Controller
     //Carga lista de categorias taxonomicas descendentes
     public function cargaCategorias(Request $request)
     {
+        $ordenamiento = "IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, IdNivel4 ASC";
 
         if ($request->idNombre === '1') {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
-                                                             IdNivel4 ASC')
+                ->OrderByRaw($ordenamiento)
                 ->get();
         } else {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->where('IdNivel2', '=', $request->IdNivel2)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
-                                                             IdNivel4 ASC')
+                ->OrderByRaw($ordenamiento)
                 ->get();
 
             if ($request->IdNivel1 < 7) {
@@ -512,8 +517,7 @@ class NombresController extends Controller
                     ->where('IdNivel3', '=', '0')
                     ->where('IdNivel4', '=', '0')
                     ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                    ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
-                                                             IdNivel4 ASC')
+                    ->OrderByRaw($ordenamiento)
                     ->get();
 
                 $categorias = $categorias->merge($categ);
@@ -633,7 +637,7 @@ class NombresController extends Controller
                     default:
                         switch ($nombres->Nombre) {
                             case 'Animalia':
-                                $status = "Válido";
+                                $status = self::ESTADO_VALIDO;
                                 break;
                             case 'Plantae':
                             case 'Fungi':
@@ -641,20 +645,20 @@ class NombresController extends Controller
                             case 'Archaea':
                             case 'Bacteria':
                             case 'Chromista':
-                                $status = "Correcto";
+                                $status = self::ESTADO_CORRECTO;
                                 break;
                             default:
                                 if ($nombres->categoria->IdNivel2 === 0) {
                                     $status = "Correcto";
                                 } else {
-                                    $status = "Válido";
+                                    $status = self::ESTADO_VALIDO;
                                 }
                         }
                         break;
                 }
 
                 $nomCat = $nombres->categoria->NombreCategoriaTaxonomica .
-                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                    self::ETIQUETA_SISTCLASS;
                 $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
 
                 $query = "select count(1) as conteo
@@ -665,6 +669,7 @@ class NombresController extends Controller
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
                 $resp = DB::select(DB::raw($query));
+                $resp = Nombre::conteoRelacionados($nombre->IdNombre)->count();
 
                 $newHijo = [
                     'id' => $nombres->IdNombre,
@@ -672,7 +677,7 @@ class NombresController extends Controller
                     'children' => [],
                     'texto' => $nomCat,
                     'estatus' => $status,
-                    'numEjemp' => $resp[0]->conteo,
+                    'numEjemp' => $resp,
                     'completo' => $nombres
                 ];
             }
@@ -805,7 +810,7 @@ class NombresController extends Controller
                     default:
                         switch ($nombres->Nombre) {
                             case 'Animalia':
-                                $status = "Válido";
+                                $status = self::ESTADO_VALIDO;
                                 break;
                             case 'Plantae':
                             case 'Fungi':
@@ -813,20 +818,20 @@ class NombresController extends Controller
                             case 'Archaea':
                             case 'Bacteria':
                             case 'Chromista':
-                                $status = "Correcto";
+                                $status = self::ESTADO_CORRECTO;
                                 break;
                             default:
                                 if ($nombres->categoria->IdNivel2 === 0) {
                                     $status = "Correcto";
                                 } else {
-                                    $status = "Válido";
+                                    $status = self::ESTADO_VALIDO;
                                 }
                         }
                         break;
                 }
 
                 $nomCat = $nombres->categoria->NombreCategoriaTaxonomica .
-                    " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
+                    self::ETIQUETA_SISTCLASS;
                 $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
 
                 $query = "select count(1) as conteo
@@ -837,6 +842,7 @@ class NombresController extends Controller
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
 
                 $resp = DB::select(DB::raw($query));
+                $resp = Nombre::conteoRelacionados($nombre->IdNombre)->count();
 
                 $newHijo = [
                     'id' => $nombres->IdNombre,
@@ -844,7 +850,7 @@ class NombresController extends Controller
                     'children' => [],
                     'texto' => $nomCat,
                     'estatus' => $status,
-                    'numEjemp' => $resp[0]->conteo,
+                    'numEjemp' => $resp,
                     'completo' => $nombres
                 ];
             }
@@ -937,7 +943,6 @@ class NombresController extends Controller
         } catch (\Exception $e) {
             //Si se presenta un error se aplicara un rollback
             DB::rollback();
-            return $e;
             return  response()->json([
                 'status' => 400,
                 'message' => 'No se puede hacer el movimiento del taxon',

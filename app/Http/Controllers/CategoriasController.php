@@ -81,7 +81,7 @@ class CategoriasController extends Controller
         $catTax->update();
 
        return response()->json([
-           'status=>200',
+           'status'=>200,
            'message'=> "El registro se actualizo son exito",
        ]);
     }
@@ -125,7 +125,7 @@ class CategoriasController extends Controller
         $nueCat->save();
 
         return response()->json([
-            'status=>200',
+            'status'=>200,
             'message'=> "El registro se dio de alta con exito",
         ]);
 
@@ -155,7 +155,7 @@ class CategoriasController extends Controller
         }
 
         return response()->json([
-            'status=>200',
+            'status'=>200,
             'message'=> "La categoria se elimino con exito",
         ]);
     }

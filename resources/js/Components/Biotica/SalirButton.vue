@@ -61,7 +61,7 @@
 <script setup>
 import { defineEmits } from 'vue';
 import { router } from '@inertiajs/vue3';
-import '/resources/css/components/botonSalir.css';
+import '../../../css/components/botonSalir.css';
 
 const props = defineProps({
   accion: {

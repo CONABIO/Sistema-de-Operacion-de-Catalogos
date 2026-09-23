@@ -48,7 +48,7 @@ defineProps({
             <div class="w-full max-w-[1600px]  mx-auto h-full">
                 <Titulo :titulo="tituloArea" />
                 <br>
-                <div class="bg-white shadow-md sm:rounded-lg w-full flex flex-col" style="">
+                <div class="bg-white shadow-md sm:rounded-lg w-full flex flex-col">
                     <div class="p-1 w-full h-full overflow=auto">
                         <el-card class="box-card w-full h-full flex flex-col">
                             <div class="w-full h-full flex flex-col flex-grow">

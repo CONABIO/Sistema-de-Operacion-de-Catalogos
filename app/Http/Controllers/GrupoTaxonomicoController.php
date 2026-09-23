@@ -120,9 +120,9 @@ class GrupoTaxonomicoController extends Controller
     }
 
     public function store(Request $request)
-    {
+    {        
         $existing = GrupoScat::where(DB::raw('lower(GrupoSCAT)'), strtolower($request->GrupoSCAT))->first();
-
+        
         if ($existing) {
             return response()->json([
                 'status' => 400,
@@ -130,7 +130,7 @@ class GrupoTaxonomicoController extends Controller
                 'idExistente' => $existing->IdGrupoSCAT 
             ], 400);
         }
-
+        
         try {
             $grupoScat = new GrupoScat;
             $grupoScat->GrupoScat = $request->GrupoSCAT;
@@ -152,7 +152,9 @@ class GrupoTaxonomicoController extends Controller
     public function update(Request $request, $IdGrupoSCAT)
     {
         $grupoTaxonomico = GrupoScat::find($IdGrupoSCAT);
-        if (!$grupoTaxonomico) return response()->json(['message' => 'Not found'], 404);
+        if (!$grupoTaxonomico){
+                return response()->json(['message' => 'Not found'], 404);
+            }
         $existing = GrupoScat::where(DB::raw('lower(GrupoSCAT)'), strtolower($request->input('GrupoSCAT')))
             ->where('IdGrupoSCAT', '!=', $IdGrupoSCAT)
             ->first();
@@ -183,7 +185,9 @@ class GrupoTaxonomicoController extends Controller
         $sortOrder = $request->sortOrder ?? 'asc';
 
         $registroReferencia = GrupoScat::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+            }
 
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
 

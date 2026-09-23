@@ -47,7 +47,6 @@ const dialogFormVisible = defineModel();
             <template #header="{ close, titleId, titleClass }">
                 <div class="my-dialog-header">
                     <slot name="header"></slot>
-                    <!--BotonSalir @salir="handleLogout" /-->
                 </div>
             </template>
 

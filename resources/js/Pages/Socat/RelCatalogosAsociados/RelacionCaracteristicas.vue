@@ -3,26 +3,8 @@
         <el-card class="box-card">
             <div class="common-layout">
                 <el-container style="height: 72vh;">
-                    <!--el-header class="header">
-                        <div class="header-content">
-                            <h1 class="titulo">Asociación Taxón-Características-Región</h1>
-                        </div>
-                    </el-header-->
                     <el-main style="padding: 15px; background: #fff; overflow: auto;">
                         <div style=" margin-bottom: 20px;">
-                            <!--el-row :gutter="21">
-                                <el-col :span="16">
-                                    <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                        {{ props.taxonActual.label }} 
-                                    </span>
-                                </el-col>
-                                <el-col :span="8" >
-                                    <div style="display: flex; gap: 5px; justify-content: flex-end;">                                
-                                        <BotonSalir accion="cerrar" @salir="closeDialog"
-                                                        style="flex-shrink: 0; min-width: max-content;"/>
-                                    </div>
-                                </el-col>
-                            </el-row-->
                             <el-row :gutter="21">
                                 <el-switch
                                     v-model="georeferido"
@@ -636,7 +618,7 @@
         };
 
         let match = null;
-        let ambitoBusquedaNombre = "el catálogo";
+        let ambitoBusquedaNombre;
         if (selectedNode.value) {
             ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
             const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
@@ -844,8 +826,7 @@
                     arbolDeshabilitado.value = true;
                 }   
             }
-        } else {            
-            if(idCaracteristica.value <= 0){
+        } else if(idCaracteristica.value <= 0){
                 mostrarNotificacionError(
                         "Error",
                         "Se debe de seleccionar una caracteristica para continuar",
@@ -884,7 +865,6 @@
                     }
                 }
             }         
-        }
     }
 
     const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -1167,7 +1147,7 @@
             ElMessageBox.close();
 
             if(ramaSelecc.value.tipo === 'caracteristica'){ 
-                const response = await axios.delete('/eliminar-Caract-Taxon', { data: {
+                await axios.delete('/eliminar-Caract-Taxon', { data: {
                                         idNombre: props.taxonActual.id,
                                         idCaract: ramaSelecc.value.id 
                                     }
@@ -1175,7 +1155,7 @@
             }else{
                 const idCaracteristica = ramaSelecc.value.treeKey.split('-')[1];
               
-                const response = await axios.delete('/eliminar-Caract-Taxon-Reg', { data: {
+                await axios.delete('/eliminar-Caract-Taxon-Reg', { data: {
                                         idNombre: props.taxonActual.id,
                                         idCaract: idCaracteristica,
                                         idRegion: ramaSelecc.value.id,
@@ -1519,12 +1499,6 @@
         color: #303133;
     }
 
-    .panel-nombre {
-        flex: 1;
-        min-height: 0;
-        overflow: auto;
-    }
-
     .panel-card {
         height: 100%;
         display: flex;
@@ -1572,12 +1546,6 @@
         max-height: 590px;
         display: flex;
         flex-direction: column;
-    }
-
-    .table-wrapper :deep(.el-table__body tr.current-row > td) {
-      background-color: #ddf6dd !important;
-      color: #0d6efd !important;
-      font-weight: bold;
     }
 
     /* Cabecera de la tabla */

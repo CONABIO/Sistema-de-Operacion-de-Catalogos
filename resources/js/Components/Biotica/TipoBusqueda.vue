@@ -24,6 +24,3 @@ watch(seleccion, (nuevoValor) => {
     <el-radio label="termina">Termina con</el-radio>
   </el-radio-group>
 </template>
-
-<style scoped>
-</style>

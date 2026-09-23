@@ -207,7 +207,9 @@ const emit = defineEmits([
     'cerrar',
     'abrir-Biblio',
     'guardar',
-    'lista-Actual'
+    'lista-Actual',
+    'abrirNomComun',
+    'abrirTipoDist'
 ]);
 
 
@@ -729,9 +731,9 @@ defineExpose({
     gap: 30px;
     justify-content: flex-end;
     margin-bottom: 15px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
-
-
 
 :deep(.el-table__inner-wrapper) {
     overflow-x: auto !important;

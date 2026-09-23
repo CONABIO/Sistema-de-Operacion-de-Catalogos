@@ -30,7 +30,10 @@ class NombresArbolController extends Controller
 
     use OptimizaConsultasNombre;
 
-   public function index(){
+    private const ESTADO_VALIDO = 'Válido';
+    private const ESTADO_CORRECTO = 'Correcto';
+
+    public function index(){
 
         $gruposTax = $this->filtroGruposSCAT();
 
@@ -134,8 +137,6 @@ class NombresArbolController extends Controller
         $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
                            'hijos', 'ascendOblig','ascendObligHijos',
                            'relNombreRegion','relNombreAutor', 'nombreRel'];
-        /*$relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
-                           'hijos', 'relNombreAutor', 'nombreRel'];*/
         
         $nombres = Nombre::cargaHijos($id)
             ->with($relacionesBase)
@@ -168,20 +169,20 @@ class NombresArbolController extends Controller
                 default:
                     if($relacion->IdNivel2 === 0)
                     {
-                        $status = "Correcto";
+                        $status = self::ESTADO_CORRECTO;
                     }else{
-                        $status = "Válido";
+                        $status = self::ESTADO_VALIDO;
                     }
                 break;
             }
 
             if($relacion->Biblio > 0)
             {
-                $biblio = '/storage/images/Libro_Verde.svg';
+                $biblio = Helpers::IMG_LIBRO_VERDE;
             }
             else
             {
-                $biblio = '/storage/images/Libro_Rojo.svg';
+                $biblio = Helpers::IMG_LIBRO_ROJO;
             }
             
             $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
@@ -280,7 +281,6 @@ class NombresArbolController extends Controller
 
     public function validaCambio(Request $request)
     {
-        //log::info("Llegue al controller");
         switch ($request->estatusInicio) {
             case 1:
                 $tiposRel = Nombre_Relacion::where('IdNombre', '=', $request->nomAct)
@@ -335,6 +335,8 @@ class NombresArbolController extends Controller
                 return true;
 
                 break;
+            default:
+            break;
         }
     }
 
@@ -390,21 +392,20 @@ class NombresArbolController extends Controller
     //Carga lista de categorias taxonomicas descendentes 
     public function cargaCategorias(Request $request)
     {
+        $ordenamiento = "IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, IdNivel4 ASC";
 
         if ($request->idNombre === '1') {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
-                                                             IdNivel4 ASC')
+                ->OrderByRaw($ordenamiento)
                 ->get();
         } else {
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->where('IdNivel2', '=', $request->IdNivel2)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
-                                                             IdNivel4 ASC')
+                ->OrderByRaw($ordenamiento)
                 ->get();
 
             if ($request->IdNivel1 < 7) {
@@ -414,8 +415,7 @@ class NombresArbolController extends Controller
                     ->where('IdNivel3', '=', '0')
                     ->where('IdNivel4', '=', '0')
                     ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                    ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
-                                                             IdNivel4 ASC')
+                    ->OrderByRaw($ordenamiento)
                     ->get();
 
                 $categorias = $categorias->merge($categ);
@@ -460,7 +460,6 @@ class NombresArbolController extends Controller
                 
         try {
 
-            //Log::info($request);
             DB::transaction(function () use ($datosNombre, 
                                              $datosScat, 
                                              $datosRelNomAutor, 
@@ -559,7 +558,6 @@ class NombresArbolController extends Controller
                 ])
                     ->find($nombre['IdNombre']);
 
-                //Log::info($nombres);
             });
 
             DB::commit(); // Confirma la transacción
@@ -578,7 +576,7 @@ class NombresArbolController extends Controller
                     default:
                         switch ($nombres->Nombre) {
                             case 'Animalia':
-                                $status = "Válido";
+                                $status = self::ESTADO_VALIDO;
                                 break;
                             case 'Plantae':
                             case 'Fungi':
@@ -586,13 +584,13 @@ class NombresArbolController extends Controller
                             case 'Archaea':
                             case 'Bacteria':
                             case 'Chromista':
-                                $status = "Correcto";
+                                $status = self::ESTADO_CORRECTO;
                                 break;
                             default:
                                 if ($nombres->categoria->IdNivel2 === 0) {
-                                    $status = "Correcto";
+                                    $status = self::ESTADO_CORRECTO;
                                 } else {
-                                    $status = "Válido";
+                                    $status = self::ESTADO_VALIDO;
                                 }
                         }
                         break;
@@ -713,9 +711,6 @@ class NombresArbolController extends Controller
                         'IdCOL' => $datosScat['scat']["idCol"]
                     ]);
                     
-                    //Log::info("Lista de autores : " . print_r($data['listAutor'], true));
-                    //log::info("Esto es la lista de autores: " . count($data['listAutor']));
-                    
                     if (count($datosRelNomAutor['relNombreAutor']['listAutor']) > 0) {
 
                         $relAutor = RelNombreAutor::where('IdNombre', '=',  $id);
@@ -775,7 +770,7 @@ class NombresArbolController extends Controller
                     default:
                         switch ($nombres->Nombre) {
                             case 'Animalia':
-                                $status = "Válido";
+                                $status = self::ESTADO_VALIDO;
                                 break;
                             case 'Plantae':
                             case 'Fungi':
@@ -783,13 +778,13 @@ class NombresArbolController extends Controller
                             case 'Archaea':
                             case 'Bacteria':
                             case 'Chromista':
-                                $status = "Correcto";
+                                $status = self::ESTADO_CORRECTO;
                                 break;
                             default:
                                 if ($nombres->categoria->IdNivel2 === 0) {
-                                    $status = "Correcto";
+                                    $status = self::ESTADO_CORRECTO;
                                 } else {
-                                    $status = "Válido";
+                                    $status = self::ESTADO_VALIDO;
                                 }
                         }
                         break;
@@ -838,12 +833,8 @@ class NombresArbolController extends Controller
         $nombre = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 'categoria'])
             ->find($request['taxonRecibir']);
 
-            //Log::info("Esta es la información de nombre {$nombre}");
-
         $nombreAct = Nombre::with(['padre', 'hijos', 'ascendOblig', 'ascendObligHijos', 'categoria'])
             ->find($request['taxonMover']);
-
-            //Log::info("Esta es la información de nombre {$nombreAct}");
 
         DB::begintransaction();
 
@@ -910,7 +901,6 @@ class NombresArbolController extends Controller
         } catch (\Exception $e) {
             //Si se presenta un error se aplicara un rollback
             DB::rollback();
-            return $e;
             return  response()->json([
                 'status' => 400,
                 'message' => 'No se puede hacer el movimiento del taxon',
@@ -941,7 +931,6 @@ class NombresArbolController extends Controller
 
     public function actualizaNombreHijos($nombre)
     {
-        //Log::info($nombre->hijos);
 
         foreach ($nombre->hijos as $hijo) {
  

@@ -23,10 +23,4 @@ class GrupoScat extends Model
       //Se asignan los campos que podran ser actualizados 
     protected $guarded = [];
 
-    /*
-    public function scat()
-    {
-        return $this->belongsToMany(Scat::class, 'IdGrupoSCAT');
-    }*/
-
 }

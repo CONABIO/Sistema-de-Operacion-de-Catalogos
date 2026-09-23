@@ -741,7 +741,7 @@ const handleEliminar = () => {
     }
 
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
-    const nombreTipoRelacion = nodeDataForDeleteConfirmation.value.Descripcion;
+
     const mensaje = `¿Está seguro de eliminar el tipo de relación seleccionado? Esta acción no se puede revertir.`;
 
     ElMessageBox({
@@ -765,7 +765,9 @@ const handleEliminar = () => {
 const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
-        if (!nodeDataForDeleteConfirmation.value) return;
+        if (!nodeDataForDeleteConfirmation.value){ 
+            return;
+        }
 
          const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion;
 
@@ -1081,20 +1083,6 @@ const cerrarDialogo = () => {
     flex-shrink: 0;
 }
 
-.custom-warning-circle {
-    width: 30px;
-    height: 30px;
-    border-radius: 90%;
-    background-color: #f56c6c;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1;
-}
-
 .footer-buttons {
     display: flex;
     justify-content: flex-end;
@@ -1131,21 +1119,6 @@ const cerrarDialogo = () => {
     color: #909399;
 }
 
-.custom-element-tree .el-tree-node__expand-icon:hover {
-    color: #606266;
-}
-
-.tree-card>.el-card__body {
-    overflow-y: auto;
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ebeef5;
-    border-radius: 4px;
-    margin: 0 24px 24px 24px;
-}
-
-
-
 .custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
     background-color: #d4edda !important;
     border-left: 5px solid #28a745 !important;
@@ -1168,18 +1141,10 @@ const cerrarDialogo = () => {
     overflow-y: auto !important;
     flex-grow: 1;
     padding: 10px !important;
-
     border: 1px solid #ebeef5 !important;
     border-radius: 4px;
     margin: 0 24px 24px 24px !important;
-
     background-color: #ffffff;
-}
-
-.custom-element-tree :deep(.el-tree-node.is-current > .el-tree-node__content) {
-    background-color: #d4edda !important;
-    border-left: 5px solid #28a745 !important;
-    color: #155724 !important;
 }
 
 .custom-element-tree {
@@ -1210,23 +1175,9 @@ const cerrarDialogo = () => {
     object-fit: contain;
 }
 
-.message-box-diseno-limpio .el-message-box__header {
-    border-bottom: none;
-}
-
 .message-box-diseno-limpio .el-message-box__content {
     padding: 10px 20px 20px 20px;
-}
-
-.custom-message-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.body-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    border-bottom: none;
 }
 
 .custom-warning-circle {
@@ -1240,36 +1191,11 @@ const cerrarDialogo = () => {
     justify-content: center;
     font-size: 20px;
     font-weight: bold;
-}
-
-.footer-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 25px;
+    line-height: 1;
 }
 </style>
 
 <style scoped>
-.tree-card {
-    width: 100%;
-    height: 726px;
-    max-width: 1600px;
-    max-height: 726px;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Importante: el padding 0 aquí permite que el margen del estilo global funcione */
-:deep(.el-card__body) {
-    padding: 0;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    background-color: transparent;
-    /* Para que se vea el fondo gris de atrás */
-}
 
 :deep(.el-card__header) {
     padding: 16px 24px !important;
@@ -1283,6 +1209,7 @@ const cerrarDialogo = () => {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    background-color: transparent;
 }
 
 .header-container {
@@ -1360,15 +1287,11 @@ const cerrarDialogo = () => {
     color: #606266;
 }
 
-
-
 .custom-tree-node-content {
     display: flex;
     align-items: center;
     gap: 4px;
 }
-
-
 
 .icon-grid {
     display: grid;
@@ -1418,6 +1341,12 @@ const cerrarDialogo = () => {
 }
 
 .tree-card {
+    width: 100%;
+    height: 726px;
+    max-width: 1600px;
+    max-height: 726px;
+    display: flex;
+    flex-direction: column;
     border: 1px solid #ebeef5;
     border-radius: 8px;
 }
