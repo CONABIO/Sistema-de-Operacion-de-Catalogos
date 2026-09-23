@@ -1802,12 +1802,15 @@
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
-        <div  style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h3 style="margin: 0;">Ascendentes del taxón</h3>
-            <salir accion="cerrar" @salir="closeDialogSalir" />
         </div>
       </div>
       <div class="content-wrapper-custom">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+          <salir accion="cerrar" @salir="closeDialogSalir" />
+        </div>
+
         <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
           :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
           empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
