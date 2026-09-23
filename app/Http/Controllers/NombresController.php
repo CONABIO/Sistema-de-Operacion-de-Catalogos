@@ -166,9 +166,9 @@ class NombresController extends Controller
 
                 $etiqueta = $nombre->NombreCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
 
-                $query = "select count(1) as conteo 
-                              from snib.nombre_taxonomia nt 
-                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
+                $query = "select count(1) as conteo
+                              from snib.nombre_taxonomia nt
+                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
                               Where (t.IdNombreRel = " . $nombre->IdNombre . " Or nt.IdNombre = " . $nombre->IdNombre . ") " .
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
@@ -244,9 +244,9 @@ class NombresController extends Controller
 
             $etiqueta = $nombre->TaxonCompleto . " " . $nombre->NombreAutoridad . " - " . $status . " - " . $nombre->SistClasCatDicc;
 
-            $query = "select count(1) as conteo 
-                              from snib.nombre_taxonomia nt 
-                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
+            $query = "select count(1) as conteo
+                              from snib.nombre_taxonomia nt
+                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
                               Where (t.IdNombreRel = " . $nombre->IdNombre . " Or nt.IdNombre = " . $nombre->IdNombre . ") " .
                 "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
@@ -351,7 +351,7 @@ class NombresController extends Controller
             DB::raw('group_concat(IdCategoriaTaxonomica) as value')
         )
             ->groupBy('NombreCategoriaTaxonomica')
-            ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+            ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
                                                       IdNivel4 ASC')
             ->get();
 
@@ -440,7 +440,7 @@ class NombresController extends Controller
     public function  cargaComSnib(Request $request)
     {
 
-        //Aqui se define un inner join con la segunda base de datos en el mismo servidor 
+        //Aqui se define un inner join con la segunda base de datos en el mismo servidor
         $resultado = DB::connection('snib')->table('nombre_taxonomia')
             ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
             ->where('_TransformaTablaNombre_snib.IdNombreRel', '=', $request->idNombre)
@@ -450,7 +450,7 @@ class NombresController extends Controller
         return $resultado;
     }
 
-    //carga comentarios del snib 
+    //carga comentarios del snib
     public function cargaComAcum(Request $request)
     {
 
@@ -470,7 +470,7 @@ class NombresController extends Controller
     {
 
         //return $request->idNombre;
-        //En esta condicion se maneja una condicion entre parentesis 
+        //En esta condicion se maneja una condicion entre parentesis
 
         $resultado = DB::connection('mysql2')->table('snib.nombre_taxonomia')
             ->join('catalogocentralizado._TransformaTablaNombre_snib', 'nombre_taxonomia.idnombre', '=', '_TransformaTablaNombre_snib.idNombre')
@@ -485,7 +485,7 @@ class NombresController extends Controller
         return response()->json($resultado);
     }
 
-    //Carga lista de categorias taxonomicas descendentes 
+    //Carga lista de categorias taxonomicas descendentes
     public function cargaCategorias(Request $request)
     {
 
@@ -493,7 +493,7 @@ class NombresController extends Controller
             $categorias = CategoriasTaxonomicas::where('IdAscendente', '=', $request->idNombre)
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
                                                              IdNivel4 ASC')
                 ->get();
         } else {
@@ -501,7 +501,7 @@ class NombresController extends Controller
                 ->where('IdCategoriaTaxonomica', '<>', $request->idNombre)
                 ->where('IdNivel2', '=', $request->IdNivel2)
                 ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
                                                              IdNivel4 ASC')
                 ->get();
 
@@ -512,7 +512,7 @@ class NombresController extends Controller
                     ->where('IdNivel3', '=', '0')
                     ->where('IdNivel4', '=', '0')
                     ->select('IdCategoriaTaxonomica', 'NombreCategoriaTaxonomica')
-                    ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC, 
+                    ->OrderByRaw('IdNivel1 ASC, IdNivel2 ASC, IdNivel3 ASC,
                                                              IdNivel4 ASC')
                     ->get();
 
@@ -535,7 +535,7 @@ class NombresController extends Controller
         return $lista;
     }
 
-    //Funcion para dar de alta un taxon 
+    //Funcion para dar de alta un taxon
     public function store(Request $request)
     {
         try {
@@ -657,9 +657,9 @@ class NombresController extends Controller
                     " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
                 $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
 
-                $query = "select count(1) as conteo 
-                              from snib.nombre_taxonomia nt 
-                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
+                $query = "select count(1) as conteo
+                              from snib.nombre_taxonomia nt
+                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
                               Where (t.IdNombreRel = " . $nombres->IdNombre . " Or nt.IdNombre = " . $nombres->IdNombre . ") " .
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
@@ -706,7 +706,7 @@ class NombresController extends Controller
         return response()->json(['error' => 'No se ha proporcionado ninguna imagen'], 400);
     }
 
-    //Funcion para actualizar el nombre del taxon 
+    //Funcion para actualizar el nombre del taxon
     public function update(Request $request, $id)
     {
 
@@ -829,9 +829,9 @@ class NombresController extends Controller
                     " - Autor taxón Estatus Sist. Clas./Catálogo de autoridad/Diccionario ";
                 $etiqueta = $nombres->NombreCompleto . " " . $nombres->NombreAutoridad . " - " . $status . " - " . $nombres->SistClasCatDicc;
 
-                $query = "select count(1) as conteo 
-                                from snib.nombre_taxonomia nt 
-                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre 
+                $query = "select count(1) as conteo
+                                from snib.nombre_taxonomia nt
+                                    left join snib.ejemplar_curatorial e on nt.llavenombre = e.llavenombre
                                     inner join catalogocentralizado._TransformaTablaNombre_snib t on nt.idnombre = t.IdNombre
                                 Where (t.IdNombreRel = " . $nombres->IdNombre . " Or nt.IdNombre = " . $nombres->IdNombre . ") " .
                     "and (e.estadoregistro = '' and nt.estadoregistro NOT LIKE '%En proceso de integraci%')";
