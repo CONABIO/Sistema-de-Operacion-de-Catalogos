@@ -456,44 +456,34 @@ const filterNodeMethod = (value, data, node) => {
 
 
 const irAlNodoBuscado = async () => {
-    if (!filterText.value || !treeRef.value || !selectedTipoRegionNode.value) return;
+    if (!filterText.value || !treeRef.value) return;
     const textoBusqueda = filterText.value.toLowerCase();
-    const idTipoTarget = selectedTipoRegionNode.value.IdTipoRegion;
-    let nodosDondeBuscar = [];
+    let nodosMismoNivel = [];
     if (selectedNode.value) {
-        if (selectedNode.value.IdTipoRegion === idTipoTarget) {
-            const idPadre = selectedNode.value.IdRegionAsc;
+        const idPadre = selectedNode.value.IdRegionAsc;
+        if (idPadre && idPadre !== selectedNode.value.IdRegion) {
             const nodoPadre = findNodeById(localTreeData.value, idPadre);
-            nodosDondeBuscar = nodoPadre ? nodoPadre.children : filteredRegionsTree.value;
+            nodosMismoNivel = nodoPadre ? (nodoPadre.children || []) : [];
         } else {
-            const nodoActual = findNodeById(localTreeData.value, selectedNode.value.IdRegion);
-            nodosDondeBuscar = nodoActual ? (nodoActual.children || []) : [];
+            nodosMismoNivel = filteredRegionsTree.value;
         }
     } else {
-        nodosDondeBuscar = filteredRegionsTree.value;
+        nodosMismoNivel = filteredRegionsTree.value;
     }
-
-    const buscarRecursivo = (nodos) => {
+    const buscarEntreHermanos = (nodos) => {
         for (const n of nodos) {
-            const coincideNombre = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-            const esNivelCorrecto = n.IdTipoRegion === idTipoTarget;
-
-            if (esNivelCorrecto && coincideNombre) {
-                return n;
-            }
-            if (n.children && n.children.length > 0) {
-                const encontrado = buscarRecursivo(n.children);
-                if (encontrado) return encontrado;
-            }
+            const coincide = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+            if (coincide) return n;
         }
         return null;
     };
-
-    const match = buscarRecursivo(nodosDondeBuscar);
+    let match = nodosMismoNivel.find(n => (n.NombreRegion || "").toLowerCase().includes(textoBusqueda));
+    if (!match) {
+        match = buscarEntreHermanos(nodosMismoNivel);
+    }
 
     if (match) {
         selectedNode.value = match;
-
         await nextTick();
 
         if (treeRef.value) {
@@ -523,11 +513,13 @@ const irAlNodoBuscado = async () => {
     } else {
         mostrarNotificacion(
             "Aviso",
-            `No se encontró la region dentro de la busqueda al nivel que seleccionó.`,
+            `No se encontró "${filterText.value}" al mismo nivel de la región seleccionada.`,
             "warning"
         );
     }
 };
+
+
 
 function findNodeById(nodes, id) {
     for (const node of nodes) {

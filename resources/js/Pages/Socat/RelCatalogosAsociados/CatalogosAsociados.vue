@@ -2127,17 +2127,12 @@ const cargaRegionesCatalogos = async () => {
 const onCreaRelacion = async () => {
     const v_idNombre = props.taxonAct.id;
     const v_idNomComun = idNomComunSeleccionado.value;
-
-    // 1. Intentar recuperar la región directamente del árbol si la variable está nula
-    // Esto asegura que si está en verde en pantalla, lo tome.
     if (!selectedNode.value && treeRef.value) {
         const nodoActual = treeRef.value.getCurrentNode();
         if (nodoActual) {
             selectedNode.value = nodoActual;
         }
     }
-
-    // 2. Validaciones básicas
     if (!v_idNomComun) {
         mostrarNotificacion("Aviso", "Debe seleccionar un nombre común en la tabla de la izquierda", "warning");
         return;
@@ -2147,7 +2142,6 @@ const onCreaRelacion = async () => {
         return;
     }
 
-    // 3. Extraer IDs (Sin validar coincidencia con el 'Tipo de región' superior)
     const v_idRegion = selectedNode.value.IdRegion;
     const v_idTipoRegion = selectedNode.value.IdTipoRegion;
 
@@ -2164,7 +2158,6 @@ const onCreaRelacion = async () => {
             mostrarNotificacion('Ingreso', response.data.message, 'success');
             await recargarNombresAsociados();
 
-            // Mantener el foco en el árbol de asociados
             const itemRecienAgregado = nombresAsociadosTaxon.value.find(item =>
                 String(item.IdNomComun || item.id) === String(v_idNomComun)
             );
@@ -2767,71 +2760,37 @@ const findNodeById = (nodes, id) => {
 
 
 const irAlNodoBuscado = async () => {
-    if (!filterText.value || !treeRef.value || !selectedTipoRegionNode.value) return;
+    if (!filterText.value || !treeRef.value) return;
     const textoBusqueda = filterText.value.toLowerCase();
-    const idTipoTarget = selectedTipoRegionNode.value.IdTipoRegion;
-    const esHijoDe = (ancestro, idBuscado) => {
-        if (ancestro.IdRegion === idBuscado) return true;
-        if (!ancestro.children) return false;
-        return ancestro.children.some(c => esHijoDe(c, idBuscado));
-    };
-    const matchesGlobales = [];
-    const buscarTodo = (nodos) => {
-        nodos.forEach(n => {
-            const coincideNombre = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-            const esNivelCorrecto = n.IdTipoRegion === idTipoTarget;
-            if (esNivelCorrecto && coincideNombre) matchesGlobales.push(n);
-            if (n.children) buscarTodo(n.children);
-        });
-    };
-    buscarTodo(filteredRegionsTree.value);
-
-    if (matchesGlobales.length === 0) {
-        mostrarNotificacion("Aviso", `No se encontró "${filterText.value}" en este nivel.`, "warning");
-        return;
-    }
-
-    let matchesFinales = matchesGlobales;
+    let nodosMismoNivel = [];
     if (selectedNode.value) {
-        let miEstadoActual = null;
-
-        for (const root of filteredRegionsTree.value) {
-            if (root.NombreRegion.toUpperCase() === 'MÉXICO' || root.NombreRegion.toUpperCase() === 'MEXICO') {
-                miEstadoActual = root.children?.find(estado => esHijoDe(estado, selectedNode.value.IdRegion));
-                if (miEstadoActual) break;
-            } else {
-                if (esHijoDe(root, selectedNode.value.IdRegion)) {
-                    miEstadoActual = root;
-                    break;
-                }
-            }
+        const idPadre = selectedNode.value.IdRegionAsc;
+        if (idPadre && idPadre !== selectedNode.value.IdRegion) {
+            const nodoPadre = findNodeById(localTreeDataReg.value, idPadre);
+            nodosMismoNivel = nodoPadre ? (nodoPadre.children || []) : [];
+        } else {
+            nodosMismoNivel = filteredRegionsTree.value;
         }
-
-        if (miEstadoActual) {
-            const matchesEnMiEstado = matchesGlobales.filter(m => esHijoDe(miEstadoActual, m.IdRegion));
-            if (matchesEnMiEstado.length > 0) {
-                matchesFinales = matchesEnMiEstado;
-            } else {
-                mostrarNotificacion("Aviso", `No se encontró la region dentro de la busqueda al nivel que seleccionó.`, "warning");
-                return;
-            }
-        }
+    } else {
+        nodosMismoNivel = filteredRegionsTree.value;
     }
 
-    let match = null;
-    const indexActual = matchesFinales.findIndex(c => c.IdRegion === selectedNode.value?.IdRegion);
-    match = matchesFinales[(indexActual + 1) % matchesFinales.length];
+    const match = nodosMismoNivel.find(n =>
+        (n.NombreRegion || "").toLowerCase().includes(textoBusqueda)
+    );
+
     if (match) {
         selectedNode.value = match;
+        idRegionSeleccionada.value = match.IdRegion;
         await nextTick();
 
         if (treeRef.value) {
             const nodeInTree = treeRef.value.getNode(match.IdRegion);
             if (nodeInTree) {
-                let p = nodeInTree.parent;
-                while (p && p.level > 0) {
-                    p.expanded = true;
-                    p = p.parent;
+                let parent = nodeInTree.parent;
+                while (parent && parent.level > 0) {
+                    parent.expanded = true;
+                    parent = parent.parent;
                 }
                 treeRef.value.setCurrentKey(match.IdRegion);
             }
@@ -2848,6 +2807,13 @@ const irAlNodoBuscado = async () => {
                 }
             }
         }, 150);
+
+    } else {
+        mostrarNotificacion(
+            "Aviso",
+            `No se encontró "${filterText.value}" al mismo nivel de la región seleccionada.`,
+            "warning"
+        );
     }
 };
 

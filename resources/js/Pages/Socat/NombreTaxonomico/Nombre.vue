@@ -1521,6 +1521,11 @@
     document.removeEventListener('keydown', handleEscKey);
   };
 
+
+  const toggleNode = (data, node) => {
+    node.expanded = !node.expanded;
+  };
+
   // Manejador de tecla Escape
   const handleEscKey = (event) => {
     if (event.key === 'Escape' || event.key === 'Esc') {
@@ -1566,13 +1571,17 @@
 
 
 
-  const showAscendants = async () => {
+const showAscendants = async () => {
     if (!taxonAct.value?.completo?.Ascendentes) {
       ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
       return;
     }
     const ascendantsString = taxonAct.value.completo.Ascendentes;
-    const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+    const currentTaxonId = String(taxonAct.value.id);
+
+    let ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(id => id && id !== currentTaxonId);
+    ascendantIds.push(currentTaxonId);
+
     if (ascendantIds.length === 0) {
       ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
       return;
@@ -1587,20 +1596,43 @@
     try {
       const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
       if (response.status === 200 && Array.isArray(response.data)) {
-        const ascendantTaxa = response.data;
+        let ascendantTaxa = response.data;
+
+        const indexActual = ascendantTaxa.findIndex(t => String(t.id) === currentTaxonId);
+        if (indexActual !== -1) {
+          ascendantTaxa = ascendantTaxa.slice(0, indexActual + 1);
+        }
+
+        // Ordenamos estrictamente de mayor a menor jerarquía (Reino -> Género)
+        ascendantTaxa.sort((a, b) => {
+          const nivelA = a.completo?.categoria?.IdNivel1 ?? a.IdNivel1 ?? 0;
+          const nivelB = b.completo?.categoria?.IdNivel1 ?? b.IdNivel1 ?? 0;
+          return nivelA - nivelB;
+        });
+
+        // AISLAMIENTO TOTAL: Destruimos cualquier hijo precargado de la base de datos
         let nestedTree = [];
         if (ascendantTaxa.length > 0) {
-          nestedTree.push(ascendantTaxa[0]);
-          let currentNode = nestedTree[0];
+          // Tomamos el primer elemento (la raíz) y le purgamos CUALQUIER hijo que traiga precargado
+          const raiz = { ...ascendantTaxa[0], children: [] };
+          nestedTree = [raiz];
+          let currentNode = raiz;
+
           for (let i = 1; i < ascendantTaxa.length; i++) {
-            const nextNode = ascendantTaxa[i];
-            currentNode.children = [nextNode];
-            currentNode = nextNode;
+            // Creamos el siguiente nodo limpio (sin hijos precargados)
+            const siguienteNodo = { ...ascendantTaxa[i], children: [] };
+
+            // Lo enganchamos como el ÚNICO hijo permitido en la cadena vertical hacia arriba
+            currentNode.children = [siguienteNodo];
+            currentNode = siguienteNodo;
           }
+          // El último nodo (el género seleccionado) se queda con children = [] a huevo,
+          // sin importar qué pinche basura precargada mandara el servidor.
         }
 
         treeDataAscendentes.value = nestedTree;
         dialogFormVisibleAscendentes.value = true;
+
       } else {
         ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
       }
@@ -1611,6 +1643,7 @@
       loading.close();
     }
   };
+
 </script>
 
 <template>
@@ -1933,16 +1966,20 @@
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
-        <div  style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h3 style="margin: 0;">Ascendentes del taxón</h3>
-            <salir accion="cerrar" @salir="closeDialogSalir" />
         </div>
       </div>
       <div class="content-wrapper-custom">
-        <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
-          :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+          <salir accion="cerrar" @salir="closeDialogSalir" />
+        </div>
+
+        <el-tree :data="treeDataAscendentes" node-key="id"
+          :expand-on-click-node="false" :draggable="false"
           empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
-          :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
+          :current-node-key="selectedNodeKey" :props="defaultProps"
+          @node-click="toggleNode"
           default-expand-all>
           <template #default="{ node }">
             <div class="tree-node-wrapper">
@@ -2409,7 +2446,7 @@
   }
 
   .dialog-header-custom {
-    background-color: #f1f7ff;
+    background-color: #d9e1eb;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
@@ -2422,6 +2459,15 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: #303133;
+  }
+
+  .dialog-header-custom {
+    background-color: #d9e1eb;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
+    text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
   }
 
   .content-wrapper-custom {
