@@ -1287,11 +1287,26 @@
     
 
     if(!props.nuevoTax){
-      if(taxonActual.value.completo.categoria.IdNivel3 === 0){
-        IdAscOblig = taxonActual.value.completo.IdNombre;
-      }
-      else{
-        IdAscOblig = taxonActual.value.completo.IdAscendObligatorio;
+      console.log("Esto vale taxonActual: ", taxonActual.value);
+      if(taxonActual.value !== undefined &&
+         taxonActual.value !== null &&
+         taxonActual.value !== '' &&
+         (!Array.isArray(taxonActual.value) || taxonActual.value.length > 0)){
+        if(taxonActual.value.completo.categoria.IdNivel3 === 0){
+          IdAscOblig = taxonActual.value.completo.IdNombre;
+        }
+        else{
+          console.log("Entre a validar si es un cambio");
+          IdAscOblig = taxonActual.value.completo.IdAscendObligatorio;
+        }
+      }else{
+        if(props.taxonAct.completo.categoria.IdNivel3 === 0){
+          IdAscOblig = props.taxonAct.completo.IdNombre;
+        }
+        else{
+          console.log("Entre a validar si es un cambio");
+          IdAscOblig = props.taxonAct.completo.IdAscendObligatorio;
+        }
       }
     }else{
       IdAscOblig = 1;
