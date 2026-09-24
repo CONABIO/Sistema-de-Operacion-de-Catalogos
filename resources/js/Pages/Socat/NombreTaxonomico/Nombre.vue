@@ -311,7 +311,7 @@
     return false;
   };
 
-  //Funcion para buscar el nodo en el arbol 
+  //Funcion para buscar el nodo en el arbol
   const buscarNodo = (nodos, id) => {
     console.log("Esto llega a buscarNodos: ", nodos);
     for(const nodo of nodos){
@@ -338,11 +338,11 @@
     let nodoSeleccionado;
 
     if(nivel === "nivelInferior"){
-      
+
       nodoSeleccionado = buscarNodo(data.value, taxonAct.value.id);
 
     }else{
-      
+
       nodoSeleccionado = buscarNodo(data.value, taxonAct.value.completo.IdNombreAscendente);
 
     }
@@ -379,12 +379,12 @@
       nodoActual,
       nodoActual
     );
-  } 
+  }
 
   //Función para recibir los nuevos taxones
   /*const recibeTaxNuevo = async (res, nivel) => {
     console.log("esta es la respuesta que llega res: ", res);
-    
+
     console.log("Cual es el pinche taxon actual: ", taxonAct.value);
     if (nivel === "nivelInferior"){
 
@@ -413,7 +413,7 @@
       console.log("Esto vale index: ", index);
       console.log("Esto vale nivel: ", nivel);
       if(nivel === "mismoNivel" && index !== -1)
-      {        
+      {
         data.value[index].children.push(res);
 
         // 👇 esperar a que el DOM y el tree se actualicen
@@ -450,7 +450,7 @@
 
   //Función para recibir los taxones que dan de baja
   const recibeTaxBaja = (res) => {
-    
+
     // 1️⃣ Buscar si es nodo raíz
     const rootIndex = data.value.findIndex(
       node => String(node.id) === String(res.Id)
@@ -471,7 +471,7 @@
 
           console.log("Cuales el taxon actual: ", taxonAct.value.completo);
           selectedNodeKey.value = taxonAct.value.completo.IdNombreAscendente;
-          
+
           tree.value.setCurrentKey(
             taxonAct.value.completo.IdNombreAscendente
           );
@@ -931,7 +931,7 @@
   //Funcion que se ejecuta para la expancion de un nodo
   //const expande = async (draggingNode, nodeData, nodeComponent) => {
   const expande = async (draggingNode, node) => {
-    
+
     let loadingInstance = null;
 
     tablaReferencias.value = [];
@@ -1797,7 +1797,7 @@ const showAscendants = async () => {
             <el-container class="details-container">
               <el-header class="details-header">
                 <div class="details-title">
-                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" 
+                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono"
                             :textoInfo ="taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica"/>
                   <span class="details-title-text">
                     {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
@@ -1959,7 +1959,7 @@ const showAscendants = async () => {
     </DialogForm>
 
     <DialogForm v-model="dialogFormVisibleAsocCat" :botCerrar="true" :pressEsc="true" :width="'74%'"  >
-      <CatalogosAsociados v-if="dialogFormVisibleAsocCat"  :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" style="height: 825px; margin-top: -40px;"/>
+      <CatalogosAsociados v-if="dialogFormVisibleAsocCat"  :taxonAct="taxonAct" @cerrar = "cerrarRelCatAsoc" style="height: 790px; margin-top: -30px;"/>
 
     </DialogForm>
 
