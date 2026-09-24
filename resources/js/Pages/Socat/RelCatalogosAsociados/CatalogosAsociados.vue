@@ -1,11 +1,13 @@
     <template>
         <div>
-            <el-card class="box-card" style="width: 1540px; margin: 20px auto; border-radius: 12px; height: 820px;">
+            <el-card class="box-card" style="width: 1300px; margin: 20px auto; border-radius: 12px; height: 810px;">
                 <div class="common-layout">
                     <el-container style="height: auto;">
                         <el-header class="header">
-                            <div class="header-content">
-                                <h1 class="titulo">Asociación de catalogos</h1>
+                            <div class="dialog-header-custom">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <h3 style="margin: 0;">Asociación de catalogos</h3>
+                                </div>
                             </div>
                         </el-header>
                         <el-main style="padding: 10px; background: #fff; overflow: hidden;">
@@ -132,12 +134,13 @@
                                                         <span>Nombres comunes asociados ({{ nombresAsociadosTaxon.length
                                                         }})</span>
                                                         <div class="contenedor-botones-asociados" style="display: flex; gap: 4px; align-items: center;">
-                                                            <EditarButton @editar="activarEdicionGeneral" />
-                                                            <EliminarButton @eliminar="confirmarEliminarAsociacion" />
+                                                            <EditarButton @editar="activarEdicionGeneral" v-if="hasPermisos(moduloSocatNomComun, 'Cambios')"/>
+                                                            <EliminarButton @eliminar="confirmarEliminarAsociacion" v-if="hasPermisos(moduloSocatNomComun, 'Bajas')" />
                                                             <GuardarButton
                                                                 @confirmar="guardarCambiosObsGeneral"
-                                                                :disabled="!editandoObsGeneral" />
-                                                            <BotonTraspaso @traspasa="onCreaRelacion" />
+                                                                :disabled="!editandoObsGeneral"
+                                                                v-if="hasPermisos(moduloSocatNomComun, 'Cambios')" />
+                                                            <BotonTraspaso @traspasa="onCreaRelacion" v-if="hasPermisos(moduloSocatNomComun, 'Altas')"/>
                                                             <el-tooltip class="item" effect="dark" content="Bibliografia" placement="top">
                                                                 <el-button @click="abrirResumenRegiones" circle
                                                                     style="background-color: #509165; color: white;">
@@ -287,6 +290,7 @@
                                                                     :valoresOpcion="tiposDistribucion"
                                                                     :tipo-busqueda-externo="filtroRegionesGeneral"
                                                                     :mostrar-switch-local="false"
+                                                                    :moduloSocat = "'RelNombreReg'"
                                                                     :habOpciones="habOpciones" :itemsPerPage=5
                                                                     :mostrarBiblio="true" :mostrarAcci="false"
                                                                     :alturaTabla="240" :highlight-current-row="true"
@@ -430,6 +434,7 @@
                                                             :totalItems="totalBibliografiasRel" :alturaTabla="350"
                                                             :highlight-current-row="true" :mostrarNuevo="true"
                                                             :mostrarEditar="true" :mostrarBorrar="true"
+                                                            :moduloSocat = "'RelNombreNomComunBiblio'"
                                                             :mostrarSalir="false" :mostrarGuardar="true"
                                                             :deshabilitarGuardar="botonGuardarDeshabilitado"
                                                             @row-click="clickBiblioRel" @nuevo-item="abrirBiblio"
@@ -685,6 +690,7 @@
                                                     :highlight-current-row="true" :mostrarNuevo="true"
                                                     :mostrarEditar="true" :mostrarBorrar="true" :mostrarSalir="false"
                                                     :mostrar-biblio="false" :mostrar-guardar="true"
+                                                    :moduloSocat = "'RelNombreRegBiblio'"
                                                     @row-click="clickBiblioRel" @guardar="guardarCambiosObs"
                                                     @nuevo-item="abrirBiblio" @eliminar-item="eliminarBiblioRel"
                                                     @abrir-biblio="abrirBiblio" :deshabilitarGuardar="!editandoObs"
@@ -768,9 +774,13 @@ import NotificacionExitoErrorModal from "@/Components/Biotica/NotificacionExitoE
 import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import RelCaract from '@/Pages/Socat/RelCatalogosAsociados/RelacionCaracteristicas.vue';
 import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
+import usePermisos from '@/composables/usePermisos';
 
+const { permisos } = usePermisos();
 
 const observacionesGeneral = ref("");
+
+const moduloSocatNomComun = ref("RelNombreNomComun")
 
 let backupFilaRegion = null;
 
@@ -798,6 +808,11 @@ const cancelarEdicionRegion = () => {
     }
 };
 
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const handleKeyDown = (event) => {
     if (event.key === 'Escape' || event.keyCode === 27) {
@@ -3065,4 +3080,30 @@ watch(filterText, (nuevoValor) => {
 .contenedor-botones-asociados :deep(span + .el-button) {
     margin-left: 0 !important;
 }
+
+
+.dialog-header-custom h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  .dialog-header-custom {
+    background-color: #d9e1eb;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e4e7ed;
+    text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .content-wrapper-custom {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+      max-height: 65vh;
+      overflow-y: auto;
+  }
 </style>

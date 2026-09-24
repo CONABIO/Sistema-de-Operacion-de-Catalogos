@@ -10,21 +10,46 @@
       <el-main>
         <el-form ref="formRef" :model="nombreTax" :rules="rules" label-width="180px" label-position="left">
           <el-row :gutter="21">
-              <el-col :span="16">
-                <span class="subtitulo" style="color: red;">
-                  Taxón seleccionado: {{ taxonAct?.label }}
-                </span>
+              <el-col :span="16" v-if="taxonActual.length === 0">
+                <!--span class="subtitulo" style="color: red;">
+                  {{ etiquetaTaxActual }}
+                </span-->
+                <div class="details-title">
+                  <span class="details-title-text">
+                    Taxón Actual: 
+                  </span>
+                  <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" 
+                            :textoInfo ="taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica"/>
+                  <span class="details-title-text">
+                    {{ props.taxonAct.label }}
+                  </span>
+                </div>
+              </el-col>
+              <el-col :span="16" v-else>
+                <!--span class="subtitulo" style="color: red;">
+                  {{ etiquetaTaxActual }}
+                </span-->
+                <div class="details-title">
+                  <span class="details-title-text">
+                    Taxón ascendente: 
+                  </span>
+                  <Logo class="details-title-icon" v-if="taxonActual?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonActual?.completo?.categoria?.RutaIcono" 
+                            :textoInfo ="taxonActual?.completo?.categoria?.NombreCategoriaTaxonomica"/>
+                  <span class="details-title-text">
+                    {{ taxonActual.label }}
+                  </span>
+                </div>
               </el-col>
 
               <el-col :span="8" >
                   <div class="botonera-biotica">
-                    <NuevoButton v-if="hasPermisos('MnuNomCientifico', 'Altas')"
+                    <NuevoButton v-if="hasPermisos('MnuCatNombres', 'Altas')"
                                 @crear="nuevoTax" toolPosicion="bottom" :habActTax="habNuevo"
                                 style="flex-shrink: 0;"/>
-                    <EditarButton v-if="hasPermisos('MnuNomCientifico', 'Cambios')"
+                    <EditarButton v-if="hasPermisos('MnuCatNombres', 'Cambios')"
                                 @editar="editarTax()" toolPosicion = 'bottom' :habActTax = 'habMod' 
                                 style="flex-shrink: 0;"/>
-                    <EliminarButton v-if="hasPermisos('MnuNomCientifico', 'Bajas')" 
+                    <EliminarButton v-if="hasPermisos('MnuCatNombres', 'Bajas')" 
                                 @eliminar="borrarDatos()" toolPosicion = 'bottom' :habActTax = 'habElim' 
                                 style="flex-shrink: 0;"/>
                     <!--Juan Carlos - 05/02/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
@@ -40,7 +65,8 @@
             <el-select v-model="nombreTax.catTax"  
                        placeholder = "Nivel taxonómico" 
                        popper-class="select-verde-dropdown"
-                       :disabled = nivelAct>
+                       :disabled = nivelAct
+                       @change="categoriaAlta">
               <el-option
                 v-for="item in categorias"
                       :key="item.id"
@@ -376,6 +402,7 @@
   import BotonSalir from '@/Components/Biotica/SalirButton.vue';
   import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
   import { showConfirmMessage } from '@/Composables/mensajeConfirm';
+  import Logo from '@/Components/Biotica/LogoCategoria.vue';
 
   const { permisos, usuario } = usePermisos();
 
@@ -383,8 +410,12 @@
 
   const taxon = ref('');
 
+  const taxonActual = ref([]);
+  const etiquetaTaxActual = ref("");
+
   const hasPermisos = (etiqueta, modulo) => {
       
+      console.log("Esto vale permisos: ", permisos);
       const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
       return permiso[modulo];
@@ -393,6 +424,22 @@
   const abrirAutorTaxon = () => {
     dialogFormVisibleAutor.value = true;
   };
+
+  const categoriaAlta = async () =>{
+    if(props.taxonAct.completo.categoria.IdCategoriaTaxonomica === nombreTax.catTax){
+      const taxonPadre = await axios.get(`/carga-taxon/${props.taxonAct.completo.IdNombreAscendente}`);
+      taxonActual.value = taxonPadre.data[0];
+      etiquetaTaxActual.value = "Taxón ascendente: " + taxonActual.value.label;
+      idNom.value = taxonActual.value.IdNombre;
+      await AltaEstatus();
+    }else{
+      taxonActual.value = props.taxonAct;
+      etiquetaTaxActual.value = "Taxón ascendente: " + taxonActual.value.label;
+      idNom.value = taxonActual.value.completo.IdNombre;
+      await AltaEstatus();
+    }
+    
+  }
 
   const props = defineProps({
     autTaxEdit: [],
@@ -586,9 +633,12 @@
     estCor.value = true;
     estSin.value = true;
     estNa.value = true;
+
     estNd.value = true;
     habGuardar.value = true;
     
+    etiquetaTaxActual.value = "Taxón seleccionado: " + props.taxonAct.label;
+
     Object.assign(nombreTax, {
       nombreTaxon : props.taxonAct?.completo?.Nombre || '',
       nombreAutoridad : props.taxonAct?.completo?.NombreAutoridad || '',
@@ -845,9 +895,9 @@
   };
 
   const AltaEstatus = async () =>{
-    if(props.taxonAct.completo.categoria.IdNivel1 < 4)
+    if(taxonActual.value.completo.categoria.IdNivel1 < 4)
       {
-        nombreTax.estatusTax = props.taxonAct.completo.Estatus; 
+        nombreTax.estatusTax = taxonActual.value.completo.Estatus; 
         estCor.value = true;
         estSin.value = true;
         estNa.value= true;
@@ -855,7 +905,7 @@
         return; 
 
       }
-      switch(props.taxonAct.completo.Estatus){
+      switch(taxonActual.value.completo.Estatus){
         case 2:
           estCor.value = false;
           estSin.value = false;
@@ -914,7 +964,7 @@
     valSnib.value = '';
     habGuardar.value = false;
 
-    await AltaEstatus();
+    //await AltaEstatus();
     
     nombreTax.nombreTaxon = '';
     nombreTax.nombreAutoridad = '';
@@ -1237,11 +1287,11 @@
     
 
     if(!props.nuevoTax){
-      if(props.taxonAct.completo.categoria.IdNivel3 === 0){
-        IdAscOblig = props.taxonAct.completo.IdNombre;
+      if(taxonActual.value.completo.categoria.IdNivel3 === 0){
+        IdAscOblig = taxonActual.value.completo.IdNombre;
       }
       else{
-        IdAscOblig = props.taxonAct.completo.IdAscendObligatorio;
+        IdAscOblig = taxonActual.value.completo.IdAscendObligatorio;
       }
     }else{
       IdAscOblig = 1;
@@ -1250,6 +1300,8 @@
 
     let params;
     let res;
+    let IdAscendente;
+    let nivel;
 
     switch(accion.value){
                 case 'crear':
@@ -1263,6 +1315,15 @@
                     );
                     return;
                   }
+                
+                  if(catTax === props.taxonAct.completo.categoria.IdCategoriaTaxonomica){
+                      IdAscendente = taxonActual.value.id;
+                      nivel = "mismoNivel";
+                  }else{
+                      IdAscendente = props.taxonAct.id;
+                      nivel = "nivelInferior";
+                  }
+
                   params = {
                     scat:{
                       Grupo: grupoScat,
@@ -1275,8 +1336,10 @@
                       idCites: idCites.value, 
                     },
 
+                    
+
                     nombreTaxon:{
-                      IdAscendente: props.taxonAct.id,
+                      IdAscendente: IdAscendente,
                       IdAscenOblig: IdAscOblig,
                       NombreTax: nombreTax,
                       alias: usuario.user.Alias,
@@ -1295,10 +1358,9 @@
                   }
 
                   try{
-                      
                       const response = await axios.post(`/nombres-store`, params);
                       emit('cerrar', false);
-                      emit('resultadoAlta', response.data.nombreNuevo);
+                      emit('resultadoAlta', response.data.nombreNuevo, nivel);
                   }
                   catch(error){
                     console.log("este es el error: ", error);
@@ -1411,6 +1473,22 @@
 </script>
 
 <style scoped>
+
+
+  .details-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    color: red 
+  }
+
+  .details-title-icon {
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+  }
 
   /*Juan Carlos 17/02/2026
   Esta funcion se agrega para evitar el conflicto de tailwind con element-plus

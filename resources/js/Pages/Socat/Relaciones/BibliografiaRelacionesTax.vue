@@ -76,6 +76,7 @@
                                         :total-items="bibliografiaRel.length"
                                         :highlight-current-row = "true"
                                         :origen = "true"
+                                        :moduloSocat = "'RelNombreNomenclaturaBiblio'"
                                         :alturaTabla = 195
                                         :itemsPerPage = 3
                                         :mostrarAcci = "true"
@@ -131,7 +132,8 @@
                                                     v-model="observacionRel">
                                             </el-input>
                                             <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
-                                                style="flex-shrink: 0; min-width: max-content;"/>
+                                                style="flex-shrink: 0; min-width: max-content; " 
+                                                v-if="hasPermisos('RelNombreNomenclaturaBiblio', 'Cambios')"/>
                                         </div>
                                     </div>
                                 <!--/el-card-->
@@ -166,6 +168,9 @@
     import Bibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
     import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
     import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+    import usePermisos from '@/composables/usePermisos';
+
+    const { permisos } = usePermisos();
 
     // Props del componente
     const props = defineProps({
@@ -219,6 +224,12 @@
     const cerrarNotificacion = () => {
         notificacionVisible.value = false;
     };
+
+    const hasPermisos = (etiqueta, modulo) => {
+        const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+        return permiso[modulo];
+    };    
 
     const manejaClick = (row) => {        
         tipRelacion.value = row.TipoRelacion.texto;

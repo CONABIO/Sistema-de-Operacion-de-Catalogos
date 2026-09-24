@@ -86,18 +86,18 @@ watch(
                 <el-menu-item index="2-4" v-if="hasPermisos('MnuCatTipDist')">Tipos de distribución</el-menu-item>
                 <el-menu-item index="2-5" v-if="hasPermisos('MnuCatTipRel')">Tipos de relaciones taxonómicas</el-menu-item>
                 <el-menu-item index="2-6" v-if="hasPermisos('MnuCatCatTax')">Categorías taxonómicas</el-menu-item>
-                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCatTax')">Características asociadas al taxón</el-menu-item>
-                <el-menu-item index="2-8" >Tipos de regiones</el-menu-item>
-                <el-menu-item index="2-9" >Regiones</el-menu-item>
-                <el-menu-item index="2-10">Objetos externos</el-menu-item>
+                <el-menu-item index="2-7" v-if="hasPermisos('MnuCatCaract')">Características asociadas al taxón</el-menu-item>
+                <el-menu-item index="2-8" v-if="hasPermisos('MnuCatTipReg')">Tipos de regiones</el-menu-item>
+                <el-menu-item index="2-9" v-if="hasPermisos('MnuCatReg')">Regiones</el-menu-item>
+                <el-menu-item index="2-10" v-if="hasPermisos('MnuCatObjExt')">Objetos externos</el-menu-item>
             </el-sub-menu>
 
-            <el-sub-menu index="3" v-if="hasPermisos('MnuNomenclatura')">
+            <el-sub-menu index="3" v-if="hasPermisos('MnuCatNombres')">
                 <template #title>Nomenclatura</template>
-                <el-menu-item index="3-1" v-if="hasPermisos('MnuNomCientifico')">Nombre científico</el-menu-item>
+                <el-menu-item index="3-1" v-if="hasPermisos('MnuCatNombres')">Nombre científico</el-menu-item>
             </el-sub-menu>
 
-            <el-menu-item index="4" v-if="hasPermisos('MnuBibliografia')">
+            <el-menu-item index="4" v-if="hasPermisos('MnuCatBiblio')">
                 Bibliografía
             </el-menu-item>
         </el-menu>

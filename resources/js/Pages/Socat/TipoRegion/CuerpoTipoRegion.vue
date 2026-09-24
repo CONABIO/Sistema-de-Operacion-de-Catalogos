@@ -13,6 +13,10 @@ import { ElTree, ElMessage, ElMessageBox, ElInput, ElRadioGroup, ElRadio, ElForm
 import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatTipReg');
 
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -45,6 +49,12 @@ const props = defineProps({
         default: false
     }
 });
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const handleNodeExpand = (data) => {
     expandedNodeIds.value.add(data.IdTipoRegion);
@@ -477,11 +487,11 @@ const handleNodeDoubleClick = (data) => {
                     <div class="right-header-content">
                         <div class="action-group">
                             <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom"
-                                :disabled="esModalVisible" />
+                                :disabled="esModalVisible" v-if="hasPermisos(moduloSocat, 'Altas')"/>
                             <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
                             <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')"/>
 
                             <BotonSalir v-if="!isModal" />
 

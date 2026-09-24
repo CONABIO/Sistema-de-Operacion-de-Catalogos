@@ -13,9 +13,14 @@ import { ref, computed, watch, onMounted, nextTick, h } from "vue";
 import { ElTree, ElMessage, ElMessageBox, ElInput, ElRadioGroup, ElRadio, ElForm, ElFormItem, ElSelect, ElOption, } from "element-plus";
 import { router, usePage } from "@inertiajs/vue3";
 
+import usePermisos from '@/composables/usePermisos';
+
 import CambiarIconoButton from "@/Components/Biotica/CambiarIconoButton.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 
+const { permisos } = usePermisos();
+
+const moduloSocat = ref('MnuCatTipRel');
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -56,6 +61,12 @@ const props = defineProps({
     flatTreeDataProp: { type: Array, required: true, default: () => [] },
     accion: { type: String, required:false, default: "salida"}
 });
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 
 const activePathIds = ref([]);
@@ -947,13 +958,13 @@ const cerrarDialogo = () => {
                         <div class="right-header-content">
                             <div class="action-group">
                                 <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom"
-                                    :disabled="esModalVisible" />
+                                    :disabled="esModalVisible" v-if="hasPermisos(moduloSocat, 'Altas')" />
                                 <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                                    :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                    :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
                                 <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                                    :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                                    :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
-                                    :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" />
+                                    :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" v-if="hasPermisos(moduloSocat, 'Cambios')" />
                                 <BotonSalir toolPosicion="bottom" :accion = props.accion  @salir="cerrarDialogo" />                            
                             </div>
                         </div>

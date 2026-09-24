@@ -255,6 +255,7 @@ const eliminarNombreComun = (idNomComun) => {
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow"
                 :columnas="columnasDefinidas"
+                :moduloSocat="'MnuCatNomCom'"
                 v-model:datos="currentData"
                 :row-class-name="tableRowClassName"
                 :botCerrar = props.modal

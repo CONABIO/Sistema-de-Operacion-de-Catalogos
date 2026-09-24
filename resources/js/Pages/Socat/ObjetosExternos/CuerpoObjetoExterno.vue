@@ -276,9 +276,9 @@ const eliminarObjetoExterno = (idObjeto) => {
         tituloArea="Catálogo de objetos externos">
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
-                v-model:total-items="totalItems" endpoint="/busca-objeto-externo" id-key="IdObjetoExterno"
+                v-model:total-items="totalItems" endpoint="/busca-objeto-externo"  id-key="IdObjetoExterno"  :moduloSocat="'MnuCatObjExt'"
                 @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
-                @nuevo-item="nuevoObjetoExterno" @row-click="manejarClickFila">
+                @nuevo-item="nuevoObjetoExterno"  @row-click="manejarClickFila">
 
                 <template #header-actions>
                     <NuevoButton @crear="nuevoObjetoExterno" />
@@ -314,7 +314,7 @@ const eliminarObjetoExterno = (idObjeto) => {
         </div>
         <div class="h-full flex flex-col flex-grow">
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
-                v-model:total-items="totalItems" endpoint="/busca-objeto-externo" id-key="IdObjetoExterno"
+                v-model:total-items="totalItems" endpoint="/busca-objeto-externo" id-key="IdObjetoExterno" :moduloSocat="'MnuCatObjExt'"
                 @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno" @row-click="manejarClickFila"
                 :mostrarTraspaso="props.traspaso" @traspasaBiblio="asociarObjeto"
