@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class RelNombreCatalogo extends Model
 {
+    private const CONTEO_BIBLIO = 'COUNT(IdBibliografia)';
+
     use HasFactory, HasCompositePrimaryKey;
 
     protected $connection = 'catcentral';// Conexión a 'catalogocentralizado'
@@ -57,7 +59,7 @@ class RelNombreCatalogo extends Model
             ])
             ->selectSub(
                 RelNombreCatalogoBiblio::query()
-                    ->selectRaw('COUNT(IdBibliografia)')
+                    ->selectRaw(self::CONTEO_BIBLIO)
                     ->whereColumn('RelNombreCatalogoBiblio.IdNombre', 'rnc.IdNombre')
                     ->whereColumn('RelNombreCatalogoBiblio.IdCatNombre', 'rnc.IdCatNombre'),
                 'contBiblio'
@@ -81,14 +83,14 @@ class RelNombreCatalogo extends Model
                                          td.Descripcion")
                             ->selectSub(
                                 RelNombreCatalogoBiblio::query()
-                                    ->selectRaw('COUNT(IdBibliografia)')
+                                    ->selectRaw(self::CONTEO_BIBLIO)
                                     ->whereColumn('IdNombre', 'rncr.IdNombre')
                                     ->whereColumn('IdCatNombre', 'rncr.IdCatNombre'),
                                 'contBiblio'
                             )
                             ->selectSub(
                                 RelNombreCatalogoRegionBiblio::query()
-                                    ->selectRaw('COUNT(IdBibliografia)')
+                                    ->selectRaw(self::CONTEO_BIBLIO)
                                     ->whereColumn('IdNombre', 'rncr.IdNombre')
                                     ->whereColumn('IdCatNombre', 'rncr.IdCatNombre')
                                     ->whereColumn('IdRegion', 'rncr.IdRegion')

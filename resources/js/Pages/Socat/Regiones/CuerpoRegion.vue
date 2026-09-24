@@ -18,10 +18,20 @@ import IconoMundo from '@/Components/Biotica/IconoMundo.vue';
 import CuerpoTipoRegion from '@/Pages/Socat/TipoRegion/CuerpoTipoRegion.vue';
 import { Plus, Download } from '@element-plus/icons-vue';
 import BotonTraspaso from '@/Components/Biotica/BtnTraspaso.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatReg');
 
 const tipoBusqueda = ref('inicia');
 
 const nodoDuplicadoParaSeleccionar = ref(null);
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 const handleCerrarNotificacion = async () => {
     notificacionVisible.value = false;
@@ -175,9 +185,6 @@ const props = defineProps({
     modal: { type:Boolean, required:false, default:false }
 });
 
-/*Juan carlos Mora 11/06/2026
-Se agregan las funciones para que al presionar el boton de salir cierre
-    el modal y no salga al menu principal*/
 
 const emit = defineEmits(['cerrar', 'traspasar']);
 
@@ -192,13 +199,10 @@ const onTraspasarRegion = () => {
         mostrarNotificacion("Aviso", "Por favor, seleccione una región de la lista para traspasar.", "warning");
         return;
     }
-
-    // Emitimos el nodo completo al padre
     emit('traspasar', selectedNode.value);
 };
 
 
-/*Juan Carlos Mora Morquecho */
 
 const botonNuevoDeshabilitado = computed(() => {
     if (!selectedTipoRegionNode.value) return true;
@@ -451,62 +455,71 @@ const filterNodeMethod = (value, data, node) => {
 };
 
 
-const irAlNodoBuscado = () => {
+const irAlNodoBuscado = async () => {
     if (!filterText.value || !treeRef.value) return;
-
     const textoBusqueda = filterText.value.toLowerCase();
-    const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
-    const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
-    const encontrarEnArbol = (nodos) => {
-        for (const nodo of nodos) {
-            const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-            const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
-
-            if (coincideNombre && coincideTipo) return nodo;
-
-            if (nodo.children?.length) {
-                const encontrado = encontrarEnArbol(nodo.children);
-                if (encontrado) return encontrado;
-            }
+    let nodosMismoNivel = [];
+    if (selectedNode.value) {
+        const idPadre = selectedNode.value.IdRegionAsc;
+        if (idPadre && idPadre !== selectedNode.value.IdRegion) {
+            const nodoPadre = findNodeById(localTreeData.value, idPadre);
+            nodosMismoNivel = nodoPadre ? (nodoPadre.children || []) : [];
+        } else {
+            nodosMismoNivel = filteredRegionsTree.value;
+        }
+    } else {
+        nodosMismoNivel = filteredRegionsTree.value;
+    }
+    const buscarEntreHermanos = (nodos) => {
+        for (const n of nodos) {
+            const coincide = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+            if (coincide) return n;
         }
         return null;
     };
-
-    let match = null;
-    let ambitoBusquedaNombre = "el catálogo";
-    if (selectedNode.value) {
-        ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
-        const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
-        if (nodoActual && nodoActual.data.children) {
-            match = encontrarEnArbol(nodoActual.data.children);
-        }
-    } else {
-        match = encontrarEnArbol(filteredRegionsTree.value);
+    let match = nodosMismoNivel.find(n => (n.NombreRegion || "").toLowerCase().includes(textoBusqueda));
+    if (!match) {
+        match = buscarEntreHermanos(nodosMismoNivel);
     }
+
     if (match) {
         selectedNode.value = match;
-        treeRef.value.setCurrentKey(match.IdRegion);
-        let nodeInTree = treeRef.value.getNode(match.IdRegion);
-        if (nodeInTree) {
-            let parent = nodeInTree.parent;
-            while (parent) {
-                parent.expanded = true;
-                parent = parent.parent;
+        await nextTick();
+
+        if (treeRef.value) {
+            const nodeInTree = treeRef.value.getNode(match.IdRegion);
+            if (nodeInTree) {
+                let parent = nodeInTree.parent;
+                while (parent && parent.level > 0) {
+                    parent.expanded = true;
+                    parent = parent.parent;
+                }
+                treeRef.value.setCurrentKey(match.IdRegion);
             }
         }
 
-        nextTick(() => {
+        setTimeout(() => {
             const el = document.getElementById('region-node-' + match.IdRegion);
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const row = el.closest('.el-tree-node__content');
+                if (row) {
+                    row.style.backgroundColor = "#ddf6dd";
+                    setTimeout(() => row.style.backgroundColor = "", 2000);
+                }
+            }
+        }, 150);
+
     } else {
         mostrarNotificacion(
             "Aviso",
-            `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+            `No se encontró "${filterText.value}" al mismo nivel de la región seleccionada.`,
             "warning"
         );
     }
 };
+
+
 
 function findNodeById(nodes, id) {
     for (const node of nodes) {
@@ -612,7 +625,6 @@ onMounted(() => {
             formModal.value.IdTipoRegion = id;
             esModalTipoRegionVisible.value = false;
             ElMessage.success(`Se ha seleccionado: "${descripcion}"`);
-            //router.reload({ only: ['tiposDeRegionProp'] });
         }
     };
     window.addEventListener('message', handleMessageFromIframe);
@@ -784,9 +796,7 @@ const guardarDesdeModal = async () => {
             idPadreFinal = selectedNode.value.IdRegionAsc || 0;
         } else if (opcionNivel.value === "inferior" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegion;
-        } else {
-            idPadreFinal = 0;
-        }
+        } 
     } else {
         idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
     }
@@ -908,8 +918,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
                                 const el = document.getElementById('region-node-' + idPadre);
                                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
-                        } else {
-                            if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
+                        } else if (filteredRegionsTree.value && filteredRegionsTree.value.length > 0) {
                                 const primerNodo = filteredRegionsTree.value[0];
                                 selectedNode.value = primerNodo;
                                 treeRef.value?.setCurrentKey(primerNodo.IdRegion);
@@ -918,7 +927,6 @@ const proceedWithDeletion = (nodeId, nombre) => {
                             } else {
                                 selectedNode.value = null;
                             }
-                        }
                     });
                 }
             });
@@ -973,11 +981,11 @@ const proceedWithDeletion = (nodeId, nombre) => {
                         <div class="right-header-content">
                             <div class="action-group">
 
-                                <BotonTraspaso v-if="modal" @traspasa="onTraspasarRegion" />
+                                <BotonTraspaso v-if="modal && hasPermisos(moduloSocat, 'Altas')" @traspasa="onTraspasarRegion" />
 
                                 <el-tooltip class="item" effect="dark" content="Ingresar">
                                     <el-button type="primary" circle @click="intentarAbrirModalInsertar"
-                                        :disabled="botonNuevoDeshabilitado" title="Nuevo">
+                                        :disabled="botonNuevoDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Altas')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                             fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
                                             <path fill-rule="evenodd"
@@ -990,7 +998,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                                 <el-tooltip class="item" effect="dark" content="Modificar">
                                     <el-button type="success" circle @click="intentarAbrirModalEditar"
-                                        :disabled="botonEditarDeshabilitado" title="Nuevo">
+                                        :disabled="botonEditarDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Cambios')">
                                         <el-icon>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
                                                 <path fill="currentColor"
@@ -1003,7 +1011,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 
                                 <el-tooltip class="item" effect="dark" content="Eliminar">
                                     <el-button type="danger" circle @click="intentarAbrirModalEliminar"
-                                        :disabled="botonEliminarDeshabilitado" title="Nuevo">
+                                        :disabled="botonEliminarDeshabilitado" title="Nuevo" v-if="hasPermisos(moduloSocat, 'Bajas')">
                                         <el-icon>
                                             <el-icon>
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -1187,10 +1195,7 @@ const proceedWithDeletion = (nodeId, nombre) => {
 }
 
 .dialog-body-container {
-    background-color: #f3f3f3;
-    padding: 20px 24px;
     border: 3px;
-    text-align: left;
     border-radius: 10px;
     background-color: #ffffff;
     padding: 20px 24px;

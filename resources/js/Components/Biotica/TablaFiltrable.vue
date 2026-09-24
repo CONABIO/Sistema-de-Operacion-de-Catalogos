@@ -14,7 +14,9 @@ import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
 import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
 import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
 import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+import usePermisos from '@/composables/usePermisos';
 
+const { permisos } = usePermisos();
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -48,6 +50,7 @@ const props = defineProps({
     permitirSinSeleccion: { type: Boolean, default: false },
     tipoBusquedaExterno: { type: String, default: '' },
     mostrarSwitchLocal: { type: Boolean, default: true },
+    moduloSocat: { type: String, default: '' },
     alturaTabla: {
         type: Number,
         default: 550
@@ -88,6 +91,12 @@ const handleVisibleChange = (visible, prop) => {
     }
 };
 
+const hasPermisos = (modulo) => {
+    if(props.moduloSocat != ""){
+    const permiso = permisos.find(item => item.NombreModulo === props.moduloSocat);
+    return permiso[modulo];
+    }else{return false};
+  };
 
 const buscarExterno = async (columna, valor) => {
     filtros.value[columna] = valor;
@@ -110,7 +119,7 @@ const irAPagina = async (numeroPagina) => {
 const handleRowClickInterno = (row) => {
     if (!row) return;
     if (editarSelect.value !== null) {
-        const key = props.idKey || 'id'; 
+        const key = props.idKey || 'id';
         const idActual = String(editarSelect.value[key]);
         const idNuevo = String(row[key]);
 
@@ -118,7 +127,7 @@ const handleRowClickInterno = (row) => {
             nextTick(() => {
                 tableRefInterna.value?.setCurrentRow(editarSelect.value);
             });
-            return; 
+            return;
         }
     }
     selectedRow.value = row;
@@ -163,9 +172,9 @@ const forzarFocoFilaVerde = async () => {
         const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
 
         if (filaVerde) {
-            filaVerde.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center'     
+            filaVerde.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
             });
         } else {
             const filaCurrent = tableRefInterna.value.$el.querySelector('.current-row');
@@ -173,7 +182,7 @@ const forzarFocoFilaVerde = async () => {
                 filaCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-    }, 400); 
+    }, 400);
 };
 
 const setFiltroExterno = (campo, valor) => {
@@ -207,7 +216,9 @@ const emit = defineEmits([
     'cerrar',
     'abrir-Biblio',
     'guardar',
-    'lista-Actual'
+    'lista-Actual',
+    'abrirNomComun',
+    'abrirTipoDist'
 ]);
 
 
@@ -243,7 +254,7 @@ watch(
             if (coincidencia) {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
-            } 
+            }
         });
     },
     { immediate: true, deep: true }
@@ -448,15 +459,16 @@ defineExpose({
                 </div>
                 <div class="left">
                     <div class="botonera-biotica">
-                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
+                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso && hasPermisos('Altas')"
                             @traspasa="onRecuperaMarcado" />
-                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
+                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo && hasPermisos('Altas')" />
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
-                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
-                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
+                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar && hasPermisos('Cambios')" />
+
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
-                            v-if="props.mostrarBorrar" />
+                            v-if="props.mostrarBorrar && hasPermisos('Bajas')" />
+                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
+                            v-if="props.mostrarGuardar && hasPermisos('Cambios')" :disabled="props.deshabilitarGuardar"  />
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
                         <div v-if="props.mostrarBiblio">
                             <el-tooltip class="item" effect="dark" content="Bibliografia">
@@ -728,9 +740,9 @@ defineExpose({
     gap: 30px;
     justify-content: flex-end;
     margin-bottom: 15px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
-
-
 
 :deep(.el-table__inner-wrapper) {
     overflow-x: auto !important;

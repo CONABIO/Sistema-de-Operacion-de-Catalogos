@@ -131,7 +131,9 @@ class ObjetoExternoController extends Controller
         $sortBy = $request->sortBy ?? 'NombreObjeto';
         $sortOrder = $request->sortOrder ?? 'asc';
         $registroReferencia = ObjetoExterno::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+        }
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
         $posicion = ObjetoExterno::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
             $valor = $registroReferencia->{$sortBy};

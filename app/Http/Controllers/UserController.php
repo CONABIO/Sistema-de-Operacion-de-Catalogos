@@ -23,5 +23,29 @@ class UserController extends Controller
         ]);
     }
 
+    public function eliminaUsuario(Request $request)
+    {
+        log::info("Estoy llegando al controlador");
+        log::info($request);
+
+        $usuario = User::find($request['id']);
+        $usuario->delete();
+
+        $usuarios = User::all();
+
+        return $usuarios;
+    }
+
+    public function cargaUsuarios(){
+        $usuarios = User::all();
+
+        return $usuarios;
+    }
+
+    public function cargaPerfiles(){
+        $roles = Rol::all();
+
+        return $roles;
+    }
    
 }

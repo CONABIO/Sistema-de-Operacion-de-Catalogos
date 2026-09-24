@@ -1,6 +1,6 @@
 <script setup>
   import { ref, onMounted, triggerRef, h, computed, onUnmounted, nextTick  } from 'vue';
-  import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View } from '@element-plus/icons-vue';
+  import { InfoFilled, MessageBox, Setting, HelpFilled, Grid, View, ArrowLeft, ArrowRight } from '@element-plus/icons-vue';
   import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
   import FormNombre from '@/Pages/Socat/NombreTaxonomico/FormNombre.vue';
   import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
@@ -201,7 +201,6 @@
   };
 
   const hasPermisos = (etiqueta, modulo) => {
-
     const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
     return permiso[modulo];
@@ -218,6 +217,10 @@
   const resetFormNombre = () => {
     emit('reset-form');
   }
+
+  function closeDialogSalir() {
+  dialogFormVisibleAscendentes.value = false;
+}
 
   /*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
     Se agrega la reasignacion de referencia para que cuando cierra
@@ -281,8 +284,6 @@
   //Funcion para los cambios recibidos
   const recibeTaxMod = async (res) => {
 
-    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-
     for (const node of data.value) {
       if (node.id === res.id) {
         Object.assign(node, res);
@@ -310,11 +311,88 @@
     return false;
   };
 
-  //Función para recibir los nuevos taxones
-  const recibeTaxNuevo = async (res) => {
-    const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+  //Funcion para buscar el nodo en el arbol 
+  const buscarNodo = (nodos, id) => {
+    console.log("Esto llega a buscarNodos: ", nodos);
+    for(const nodo of nodos){
+      // ¿Es el nodo que buscamos?
+        if (String(nodo.id) === String(id)) {
+            return nodo;
+        }
 
-    if (index !== -1) {
+        // Si tiene hijos, seguimos buscando dentro de ellos
+        if (nodo.children?.length) {
+            const encontrado = buscarNodo(nodo.children, id);
+
+            if (encontrado) {
+                return encontrado;
+            }
+        }
+    }
+
+    return null;
+  }
+
+  //Funcion para recibir los nuevos taxones
+  const recibeTaxNuevo = async(res, nivel) =>{
+    let nodoSeleccionado;
+
+    if(nivel === "nivelInferior"){
+      
+      nodoSeleccionado = buscarNodo(data.value, taxonAct.value.id);
+
+    }else{
+      
+      nodoSeleccionado = buscarNodo(data.value, taxonAct.value.completo.IdNombreAscendente);
+
+    }
+
+    if(nodoSeleccionado)
+    {
+      if (nodoSeleccionado) {
+        if (!nodoSeleccionado.children) {
+            nodoSeleccionado.children = [];
+        }
+        nodoSeleccionado.children.push(res);
+      }
+    }
+
+    await nextTick();
+
+    const nodoActual = tree.value.getNode(res.id);
+
+    if (nodoActual) {
+
+    // Expandir todos sus padres
+    let padre = nodoActual.parent;
+
+    while (padre && padre.level > 0) {
+      padre.expanded = true;
+      padre = padre.parent;
+    }
+
+    // Seleccionar el nuevo nodo
+    tree.value.setCurrentKey(res.id);
+  }
+
+    expande(
+      nodoActual,
+      nodoActual
+    );
+  } 
+
+  //Función para recibir los nuevos taxones
+  /*const recibeTaxNuevo = async (res, nivel) => {
+    console.log("esta es la respuesta que llega res: ", res);
+    
+    console.log("Cual es el pinche taxon actual: ", taxonAct.value);
+    if (nivel === "nivelInferior"){
+
+      console.log("Este es el taxon que existe");
+      const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
+      console.log("Esto vale index------------------------: ", index);
+
+      console.log("Entre al if");
       if (!data.value[index].children) {
         data.value[index].children = [];
       }
@@ -330,21 +408,49 @@
       // 👇 seleccionar el nuevo nodo
       selectedNodeKey.value = res.id;
     }else{
-      data.value.push(res);
+      console.log("Entre al else");
+      const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.completo.IdNombreAscendente);
+      console.log("Esto vale index: ", index);
+      console.log("Esto vale nivel: ", nivel);
+      if(nivel === "mismoNivel" && index !== -1)
+      {        
+        data.value[index].children.push(res);
 
-      // 👇 esperar a que el DOM y el tree se actualicen
-      await nextTick();
+        // 👇 esperar a que el DOM y el tree se actualicen
+        await nextTick();
 
-      // 👇 seleccionar el nuevo nodo
-      selectedNodeKey.value = res.id;
+        // 👇 expandir el padre (opcional pero recomendado)
+        tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
+
+        // 👇 seleccionar el nuevo nodo
+        selectedNodeKey.value = res.id;
+      }
 
       mostrarNuevoTax.value = false;
     }
-  };
+    console.log("Mierda no entre a ninguno");
+    console.log("Esto vale res.id: ", res.id);
+
+    tree.value.setCurrentKey(
+      res.id
+    );
+
+    let node = tree.value.getNode(
+      res.id
+    );
+
+    console.log("Esto vale node: ", node);
+
+    expande(
+      node.data,
+      node
+    );
+
+  };*/
 
   //Función para recibir los taxones que dan de baja
   const recibeTaxBaja = (res) => {
-
+    
     // 1️⃣ Buscar si es nodo raíz
     const rootIndex = data.value.findIndex(
       node => String(node.id) === String(res.Id)
@@ -362,7 +468,23 @@
       if (data.value[i].children?.length) {
         const found = deleteChildNode(data.value[i].children, res);
         if (found) {
-          taxonAct.value = [];
+
+          console.log("Cuales el taxon actual: ", taxonAct.value.completo);
+          selectedNodeKey.value = taxonAct.value.completo.IdNombreAscendente;
+          
+          tree.value.setCurrentKey(
+            taxonAct.value.completo.IdNombreAscendente
+          );
+
+          let node = tree.value.getNode(
+            taxonAct.value.completo.IdNombreAscendente
+          );
+
+          expande(
+            node.data,
+            node
+          );
+
           return true;
         }
       }
@@ -407,7 +529,7 @@
 
   const cargarPagina = async (cursor = null) => {
     let params = [];
-  
+
     if(filterText.value === ""){
       params = {
         categ: catego.value,
@@ -420,7 +542,7 @@
         taxon: filterText.value
       };
     }
-  
+
     // Solo enviamos cursor cuando estamos cambiando de página
     if (cursor) {
       params.cursor = cursor;
@@ -429,7 +551,7 @@
     try {
 
       cargandoPagina.value = true;
-     
+
       const response = await axios.get('/cargar-nomArb', {
         params
       });
@@ -493,7 +615,7 @@
 
   const cargaConteo = async() =>{
     let params = [];
-  
+
     if(filterText.value === ""){
       params = {
         categ: catego.value,
@@ -613,11 +735,11 @@
     }
 
     currentPage.value++;
-    
+
     await cargarPagina(nextCursor.value);
-    
+
     await nextTick();
-    
+
     if (data.value.length > 0) {
 
       selectedNodeKey.value = data.value[0].id;
@@ -646,7 +768,7 @@
           spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
           backgroud: 'rgba(255,255,255,0.85)',
         });
-    
+
     if (!prevCursor.value || cargandoPagina.value) {
       loading.close();
       return;
@@ -764,12 +886,12 @@
         catalog: idsGrupos.value,
         taxon: value
       };
-      
+
       const response = await axios.get('/cargar-nomArb',
         { params });
 
       await cargaConteo();
-      
+
       if (response.status === 200) {
         data.value = response.data[0];
         //totalItems.value = response.data[1].total;
@@ -808,9 +930,15 @@
 
   //Funcion que se ejecuta para la expancion de un nodo
   //const expande = async (draggingNode, nodeData, nodeComponent) => {
-  const expande = async (draggingNode) => {
+  const expande = async (draggingNode, node) => {
     
     let loadingInstance = null;
+
+    tablaReferencias.value = [];
+    totalRegRef.value = 0;
+
+    tablaNomenclatura.value = [];
+    totalRegNom.value = 0;
 
     isMenuVisible.value = false;
     mostrar.value = true;
@@ -832,7 +960,7 @@
     }
 
     if (draggingNode.children.length === 0) {
-      
+
       const response = await axios.get(`/cargar-hijos-nomArb/${draggingNode.id}`);
 
       if (response.status === 200) {
@@ -1026,7 +1154,7 @@
                   case 6:
                   case -9:
                     await moverTaxon(
-                      taxMov.data.completo.IdNombre,
+                      taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
                       taxMov.value,
                       node);
@@ -1053,7 +1181,7 @@
                 switch (node.data.completo.Estatus) {
                   case 6:
                     await moverTaxon(
-                      taxMov.data.completo.IdNombre,
+                      taxMov.value.data.completo.IdNombre,
                       node.data.completo.IdNombre,
                       taxMov.value,
                       node);
@@ -1061,7 +1189,7 @@
                   case -9:
                     await mostrarNotificacion(
                       "Error",
-                      `Está intentando mover un taxón con estatus ${taxMov.data.estatus} a un taxón con estatus ${node.data.estatus}`,
+                      `Está intentando mover un taxón con estatus ${taxMov.value.data.estatus} a un taxón con estatus ${node.data.estatus}`,
                       "error",
                       5000
                     );
@@ -1393,6 +1521,11 @@
     document.removeEventListener('keydown', handleEscKey);
   };
 
+
+  const toggleNode = (data, node) => {
+    node.expanded = !node.expanded;
+  };
+
   // Manejador de tecla Escape
   const handleEscKey = (event) => {
     if (event.key === 'Escape' || event.key === 'Esc') {
@@ -1425,8 +1558,7 @@
     }
 
     loading.close();
-    /*currentData.value = response.data.data || [];
-    totalItems.value = response.data.total || response.data.totalItems || 0;*/
+
   };
 
   const abre_Relaciones = () => {
@@ -1437,13 +1569,19 @@
         dialogFormVisibleAsocCat.value = true;
   }
 
-  const showAscendants = async () => {
+
+
+const showAscendants = async () => {
     if (!taxonAct.value?.completo?.Ascendentes) {
       ElMessageBox.alert('No hay información de ascendentes para el taxón seleccionado.', 'Aviso', { confirmButtonText: 'OK' });
       return;
     }
     const ascendantsString = taxonAct.value.completo.Ascendentes;
-    const ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(Boolean);
+    const currentTaxonId = String(taxonAct.value.id);
+
+    let ascendantIds = ascendantsString.split(',').map(id => id.trim()).filter(id => id && id !== currentTaxonId);
+    ascendantIds.push(currentTaxonId);
+
     if (ascendantIds.length === 0) {
       ElMessageBox.alert('No se encontraron IDs de ascendentes válidos.', 'Aviso', { confirmButtonText: 'OK' });
       return;
@@ -1458,20 +1596,43 @@
     try {
       const response = await axios.post('/cargar-ascendentes', { ids: ascendantIds });
       if (response.status === 200 && Array.isArray(response.data)) {
-        const ascendantTaxa = response.data;
+        let ascendantTaxa = response.data;
+
+        const indexActual = ascendantTaxa.findIndex(t => String(t.id) === currentTaxonId);
+        if (indexActual !== -1) {
+          ascendantTaxa = ascendantTaxa.slice(0, indexActual + 1);
+        }
+
+        // Ordenamos estrictamente de mayor a menor jerarquía (Reino -> Género)
+        ascendantTaxa.sort((a, b) => {
+          const nivelA = a.completo?.categoria?.IdNivel1 ?? a.IdNivel1 ?? 0;
+          const nivelB = b.completo?.categoria?.IdNivel1 ?? b.IdNivel1 ?? 0;
+          return nivelA - nivelB;
+        });
+
+        // AISLAMIENTO TOTAL: Destruimos cualquier hijo precargado de la base de datos
         let nestedTree = [];
         if (ascendantTaxa.length > 0) {
-          nestedTree.push(ascendantTaxa[0]);
-          let currentNode = nestedTree[0];
+          // Tomamos el primer elemento (la raíz) y le purgamos CUALQUIER hijo que traiga precargado
+          const raiz = { ...ascendantTaxa[0], children: [] };
+          nestedTree = [raiz];
+          let currentNode = raiz;
+
           for (let i = 1; i < ascendantTaxa.length; i++) {
-            const nextNode = ascendantTaxa[i];
-            currentNode.children = [nextNode];
-            currentNode = nextNode;
+            // Creamos el siguiente nodo limpio (sin hijos precargados)
+            const siguienteNodo = { ...ascendantTaxa[i], children: [] };
+
+            // Lo enganchamos como el ÚNICO hijo permitido en la cadena vertical hacia arriba
+            currentNode.children = [siguienteNodo];
+            currentNode = siguienteNodo;
           }
+          // El último nodo (el género seleccionado) se queda con children = [] a huevo,
+          // sin importar qué pinche basura precargada mandara el servidor.
         }
 
         treeDataAscendentes.value = nestedTree;
         dialogFormVisibleAscendentes.value = true;
+
       } else {
         ElMessageBox.alert('La respuesta del servidor no fue válida.', 'Error', { confirmButtonText: 'OK' });
       }
@@ -1482,6 +1643,7 @@
       loading.close();
     }
   };
+
 </script>
 
 <template>
@@ -1508,9 +1670,8 @@
       </div>
 
       <el-header class="main-header-override">
-        <div> <!--style="background: red"-->
+        <div>
           <el-row :gutter="16">
-            <!-- Primera columna -->
             <el-col :xs="24" :sm="12" :md="7" class="form-item-col">
               <span>Ir a:</span>
               <el-input clearable placeholder="" v-model="filterText" @change="filterNode" style="height: 28px;"
@@ -1518,7 +1679,6 @@
               </el-input>
             </el-col>
 
-            <!-- Segunda columna -->
             <el-col :xs="24" :sm="12" :md="5" class="form-item-col">
               <span class="block">Nivel taxonómico</span>
               <el-cascader
@@ -1539,7 +1699,6 @@
                 </template>
               </el-cascader>
 
-              <!-- Botón debajo -->
               <div style="margin-top: 5px; display: flex; justify-content: flex-end; gap: 50px; padding-right: 50px;"
                     v-if="mostrarNuevoTax">
                 <nuevoTax  @crear="openDialog"/>
@@ -1549,7 +1708,6 @@
 
             <el-col :xs="24" :md="12" class="form-item-col">
               <el-row :gutter="10">
-                <!-- Catálogo(s) -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -1559,7 +1717,6 @@
                   </div>
                 </el-col>
 
-                <!-- Grupo SCAT -->
                 <el-col :xs="24" :sm="11">
                   <div style="display: flex; flex-direction: column;">
                     <span class="demo-input-label" style="margin-bottom: 4px;">
@@ -1578,20 +1735,20 @@
           <el-container class="main-content-container">
             <el-aside class="aside-tree">
               <div class="tree-container">
-                <el-scrollbar height="500px">
+                <el-scrollbar class="tree-scrollbar">
                   <el-tree :data="data" node-key="id" @node-click="expande"
                     :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
                     empty-text='Sin datos que mostrar' ref="tree" :highlight-current="true"
                     :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick">
                     <template #default="{ node }">
                       <div class="tree-node-wrapper">
-                        <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" />
+                        <Logo class="tree-node-logo" :rutaCategoria="node.data.completo.categoria.RutaIcono" :textoInfo ="node.data.completo.categoria.NombreCategoriaTaxonomica"/>
                         <el-tooltip content="Información">
                           <el-icon @click.prevent="openDialog(node.data)">
                             <InfoFilled />
                           </el-icon>
                         </el-tooltip>
-                        <div v-if="hasPermisos('MnuNomCientifico', 'Cambios')">
+                        <div v-if="hasPermisos('MnuCatNombres', 'Cambios')">
                           <el-tooltip class="item" effect="dark" content="Mover" placement="bottom">
                             <span :style="{ color: node.color }" :id="`node-${node.id}`">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1640,16 +1797,14 @@
             <el-container class="details-container">
               <el-header class="details-header">
                 <div class="details-title">
-                  <!--img v-if="taxonAct?.completo?.categoria?.RutaIcono" :src="taxonAct?.completo?.categoria?.RutaIcono"
-                    class="details-title-icon"-->
-                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" />
+                    <Logo class="details-title-icon" v-if="taxonAct?.completo?.categoria?.RutaIcono" :rutaCategoria="taxonAct?.completo?.categoria?.RutaIcono" 
+                            :textoInfo ="taxonAct?.completo?.categoria?.NombreCategoriaTaxonomica"/>
                   <span class="details-title-text">
                     {{ taxonAct?.completo?.NombreCompleto }} {{ taxonAct?.completo?.NombreAutoridad }}
                   </span>
                 </div>
               </el-header>
               <el-main class="details-main">
-                <!--Prueba colapse-->
                 <div>
                   <el-collapse accordion expand-icon-position="left"
                                  v-model="activeNames">
@@ -1672,6 +1827,7 @@
                         :mostrarBiblio = "true"
                         :mostrarAcci = "true"
                         :alturaTabla = 170
+                        :moduloSocat = "'RelNombreNomclatura'"
                         @eliminar-item = "manejarEliminarRel"
                         @abrir-Biblio = "abrirBiblio"
                         :highlight-current-row = "true"
@@ -1697,6 +1853,7 @@
                           v-model:datos = "tablaReferencias"
                           v-model:total-items = "totalRegRef"
                           :opciones-filtro = "opcionesFiltroRef"
+                          :moduloSocat = "'RelNombreBiblio'"
                           :totalItems = "totalRegRef"
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
@@ -1721,19 +1878,6 @@
         </div>
 
         <el-footer>
-          <!--div class="pagination-footer">
-            <div v-if="totalItems > 0">
-              <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                @current-change="handlePageChange" layout="prev, pager, next, total" background>
-              </el-pagination>
-
-            </div>
-            <div  class="pagination-right">
-              <span style="margin-left: auto;">
-                Taxa desc. : {{ numHijos }}
-              </span>
-            </div>
-          </div-->
             <div class="pagination-footer">
 
             <div
@@ -1741,8 +1885,10 @@
               <el-button
                 :disabled="!prevCursor || cargandoPagina"
                 @click="paginaAnterior"
-              >
-                <
+                style="background: #c9eec9;">
+              <el-icon class="icono-paginado">
+                <ArrowLeft />
+              </el-icon>
               </el-button>
 
               <span style="margin: 0 15px;">
@@ -1752,8 +1898,11 @@
               <el-button
                 :disabled="!nextCursor || cargandoPagina"
                 @click="siguientePagina"
+                style="background: #c9eec9;"
               >
-                >
+              <el-icon class="icono-paginado">
+                <ArrowRight />
+              </el-icon>
               </el-button>
             </div>
 
@@ -1780,7 +1929,7 @@
       <FiltroGrupos :grupos="gruposTax" @cerrar="cerrarDialog" @regresaGrupos="recibeGrupos" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleAlta" @close="closeDialog"
+    <DialogForm v-if= "dialogFormVisibleAlta" v-model="dialogFormVisibleAlta" @close="closeDialog"
                 @reset-form="resetFormNombre" :botCerrar="false"
                 :pressEsc="true" custom-class="responsive-dialog">
       <FormNombre :taxonAct="taxonAct" :paginaActual="1" :categoria="catego"
@@ -1817,13 +1966,20 @@
     <DialogForm v-model="dialogFormVisibleAscendentes" :botCerrar="false" :pressEsc="false"
       custom-class="dialog-ascendentes-diseno">
       <div class="dialog-header-custom">
-        <h3>Ascendentes del taxón</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h3 style="margin: 0;">Ascendentes del taxón</h3>
+        </div>
       </div>
       <div class="content-wrapper-custom">
-        <el-tree :data="treeDataAscendentes" node-key="id" @node-click="expande"
-          :expand-on-click-node="true" :filter-node-method="filterNode" :draggable="false"
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+          <salir accion="cerrar" @salir="closeDialogSalir" />
+        </div>
+
+        <el-tree :data="treeDataAscendentes" node-key="id"
+          :expand-on-click-node="false" :draggable="false"
           empty-text='Sin datos que mostrar' ref="ascendantsTree" :highlight-current="true"
-          :current-node-key="selectedNodeKey" :props="defaultProps" @node-contextmenu="handleNodeRightClick"
+          :current-node-key="selectedNodeKey" :props="defaultProps"
+          @node-click="toggleNode"
           default-expand-all>
           <template #default="{ node }">
             <div class="tree-node-wrapper">
@@ -1846,6 +2002,16 @@
 </template>
 
 <style scoped>
+
+.icono-paginado {
+  color: #0d6efd;
+  font-size: 16px;
+}
+
+.icono-paginado svg {
+  stroke-width: 9.5;
+}
+
   :deep(.z-index-fix) {
     z-index: 3000 !important;
   }
@@ -1857,14 +2023,13 @@
   :deep(.el-collapse-item__content){
     height: 350px;
     display: flex;
-    flex-direction: column;/*height: 370px;*/
+    flex-direction: column;
     padding:10px;
     overflow: hidden;
   }
 
   .table-wrapper{
     flex: 1;
-    /*height: 360px !important;*/
     min-height: 0;
     overflow: auto;
   }
@@ -1873,18 +2038,6 @@
     display:flex;
     flex-direction:column;
     height:100%;
-  }
-
-  .tree-container {
-    flex: 1;
-    overflow: auto;
-    min-height: 0;
-  }
-
-  .el-tree {
-    min-width: fit-content;
-    width: 100%;
-    padding-bottom: 25px;
   }
 
   .tree-node-wrapper {
@@ -1956,10 +2109,6 @@
     padding-top: 0 !important;
   }
 
-  .main-layout-container-fixed {
-    height: 250px;
-  }
-
   .content-wrapper {
     flex-grow: 1;
     margin-top: 1px;
@@ -1988,7 +2137,7 @@
       width: 600px !important;
       background-color: rgb(238, 241, 246);
       height: 500px;
-      overflow: auto;
+      /*overflow: auto;*/
       display: flex;
       flex-direction: column;
       border: 1px solid #e4e7ed;
@@ -2121,10 +2270,6 @@
       overflow-y: visible;
       flex-direction: column;
       gap: 20px;
-    }
-
-    .aside-tree .el-scrollbar {
-      height: 350px !important;
     }
 
     .details-container .el-scrollbar {
@@ -2277,63 +2422,6 @@
     line-height: 1.4;
   }
 
-  /* Ajustes para pantallas de 1440px */
-  @media (max-width: 1440px) and (min-width: 992px) {
-    .aside-tree {
-      width: 500px !important;
-    }
-
-    .content-wrapper {
-      max-height: 450px;
-    }
-
-    .table-wrapper {
-      max-height: 250px;
-    }
-  }
-
-  /* Ajustes para pantallas de 1280px */
-  @media (max-width: 1280px) and (min-width: 992px) {
-    .aside-tree {
-      width: 450px !important;
-    }
-
-    .content-wrapper {
-      max-height: 400px;
-    }
-
-    .table-wrapper {
-      max-height: 200px;
-    }
-  }
-
-  /* Para pantallas altas */
-  @media (min-height: 800px) {
-    .main-layout-container-fixed {
-      height: 800px;
-    }
-
-    .details-container {
-      height: 520px;
-    }
-
-    .table-wrapper {
-      max-height: 350px;
-    }
-  }
-
-  /* Para que el árbol no se haga demasiado pequeño */
-  .aside-tree {
-    min-width: 350px;
-  }
-
-  /* Asegurar que el árbol también tenga altura fija */
-  .tree-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
   /* Quitar márgenes y padding innecesarios */
   :deep(.el-table__body-wrapper) {
     scrollbar-width: thin;
@@ -2358,10 +2446,12 @@
   }
 
   .dialog-header-custom {
-    background-color: #f1f7ff;
+    background-color: #d9e1eb;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
+    border-radius: 10px;
+    margin-bottom: 10px;
   }
 
   .dialog-header-custom h3 {
@@ -2372,7 +2462,7 @@
   }
 
   .dialog-header-custom {
-    background-color: #f5f5f5;
+    background-color: #d9e1eb;
     padding: 20px 24px;
     border-bottom: 1px solid #e4e7ed;
     text-align: left;
@@ -2402,4 +2492,235 @@
   .cascader-verde-dropdown .el-cascader-node:hover {
     background-color: rgb(240, 245, 239) !important;
   }
+
+
+  /* =========================================
+   CONTENEDOR PRINCIPAL DEL ÁRBOL
+   ========================================= */
+
+.aside-tree {
+  width: 600px !important;
+  min-width: 0;
+  height: 500px;
+  background-color: rgb(238, 241, 246);
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   CONTENEDOR DEL TREE
+   ========================================= */
+
+.tree-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================
+   SCROLLBAR DEL TREE
+   ========================================= */
+
+.tree-scrollbar {
+  width: 100%;
+  height: 100%;
+}
+
+
+/*
+ * Permitimos desplazamiento horizontal y vertical
+ * dentro del el-scrollbar.
+ */
+:deep(.tree-scrollbar .el-scrollbar__wrap) {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+
+/* =========================================
+   TREE
+   ========================================= */
+
+.el-tree {
+  /*
+   * Importante:
+   * el árbol puede crecer horizontalmente
+   * cuando un nodo tiene mucho texto.
+   */
+  width: max-content;
+  min-width: 100%;
+
+  padding-bottom: 25px;
+}
+
+
+/* =========================================
+   CONTENIDO DE CADA NODO
+   ========================================= */
+
+.tree-node-wrapper {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  /*
+   * Evita que el nombre del taxón se parta
+   * en varias líneas.
+   */
+  white-space: nowrap;
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   ICONO
+   ========================================= */
+
+.tree-node-logo {
+  width: 25px;
+  height: 25px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================
+   CONTENEDOR DERECHO
+   ========================================= */
+
+.details-container {
+  flex-grow: 1;
+
+  /*
+   * Muy importante en un layout flex.
+   * Permite que esta sección se reduzca
+   * cuando hacemos más pequeña la ventana.
+   */
+  min-width: 0;
+
+  padding-left: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  height: 500px;
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   PANTALLAS PEQUEÑAS
+   ========================================= */
+
+@media (max-width: 991px) {
+
+  .main-content-container {
+    height: auto;
+    flex-direction: column;
+  }
+
+
+  .aside-tree {
+    width: 100% !important;
+
+    min-width: 0;
+
+    height: 400px;
+
+    margin-bottom: 20px;
+
+    overflow: hidden;
+  }
+
+
+  .tree-container {
+    width: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+
+  .tree-scrollbar {
+    width: 100%;
+    height: 100%;
+  }
+
+
+  .el-tree {
+    width: max-content;
+    min-width: 100%;
+  }
+
+
+  .details-container {
+    width: 100%;
+
+    min-width: 0;
+
+    padding-left: 0;
+
+    height: auto;
+
+    overflow: visible;
+  }
+}
+
+@media (min-width: 992px) {
+
+  .aside-tree {
+    width: 600px !important;
+    height: 500px;
+
+    flex-shrink: 0;
+
+    overflow: hidden;
+  }
+
+  .tree-container {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+  .tree-scrollbar {
+    width: 100%;
+    height: 100%;
+  }
+
+  .el-tree {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .details-container {
+    flex-grow: 1;
+    min-width: 0;
+  }
+}
+
+
+
 </style>

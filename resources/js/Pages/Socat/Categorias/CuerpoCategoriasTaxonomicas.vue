@@ -14,6 +14,10 @@ import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 import CambiarIconoButton from "@/Components/Biotica/CambiarIconoButton.vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatCatTax');
 
 const treeRef = ref(null);
 const ICONO_POR_DEFECTO = '/storage/images/RERJvyv0qvxOR9of8BRobZjiodN2DK4euvMWNYkZ.png';
@@ -62,6 +66,12 @@ const seleccionarNodoAlInteractuar = (data) => {
   if (esModalVisible.value) return;
   selectedNode.value = data;
   treeRef.value?.setCurrentKey(data.IdCategoriaTaxonomica);
+};
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
 };
 
 
@@ -218,15 +228,14 @@ const guardarDesdeModal = async () => {
   let idPadreObjetivo = null;
   if (esEdicion) {
     idPadreObjetivo = nodoEnModal.value.IdAscendente;
-  } else {
-    if (opcionNivel.value === 'mismo') {
+  } else if (opcionNivel.value === 'mismo') {
       idPadreObjetivo = selectedNode.value ? selectedNode.value.IdAscendente : null;
     } else if (opcionNivel.value === 'inferior') {
       idPadreObjetivo = selectedNode.value ? selectedNode.value.IdCategoriaTaxonomica : null;
     } else {
       idPadreObjetivo = null;
     }
-  }
+  
   const registroExistente = props.flatTreeDataProp.find(item => {
     const mismoNombre = item.NombreCategoriaTaxonomica.trim().toLowerCase() === nombreNormalizado;
     const mismoPadre = item.IdAscendente === idPadreObjetivo;
@@ -661,13 +670,14 @@ const isCambiarIconoDeshabilitado = computed(() => {
           <div class="left-header-content"></div>
           <div class="right-header-content">
             <div class="action-group">
-              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" 
+                  v-if="hasPermisos(moduloSocat, 'Altas')" />
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
               <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')"/>
               <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
-                :disabled="isCambiarIconoDeshabilitado" />
+                :disabled="isCambiarIconoDeshabilitado" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
               <BotonSalir toolPosicion="bottom" />
             </div>
           </div>

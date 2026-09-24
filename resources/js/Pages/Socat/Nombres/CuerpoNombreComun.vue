@@ -229,7 +229,6 @@ const eliminarNombreComun = (idNomComun) => {
     };
 
     const cancelarEliminacion = () => { ElMessageBox.close(); };
-    const itemAEliminar = currentData.value.find(item => item.IdNomComun === idNomComun);
     const mensaje = `¿Está seguro de eliminar el nombre común seleccionado? Esta acción no se puede revertir.`;
 
     ElMessageBox({
@@ -256,6 +255,7 @@ const eliminarNombreComun = (idNomComun) => {
         <div class="h-full flex flex-col">
             <TablaFiltrable ref="tablaRef" class="flex-grow"
                 :columnas="columnasDefinidas"
+                :moduloSocat="'MnuCatNomCom'"
                 v-model:datos="currentData"
                 :row-class-name="tableRowClassName"
                 :botCerrar = props.modal
@@ -348,10 +348,6 @@ const eliminarNombreComun = (idNomComun) => {
     margin-top: 35px;
 }
 
-.el-table .fila-seleccionada-verde {
-    background-color: #ddf6dd !important;
-}
-
 .el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
   color: #007bff !important;
@@ -361,6 +357,7 @@ const eliminarNombreComun = (idNomComun) => {
 
 .el-table .fila-seleccionada-verde {
     --el-table-tr-bg-color: #ddf6dd !important;
+    background-color: #ddf6dd !important;
 }
 
 .el-table .fila-seleccionada-verde:hover>td.el-table__cell {

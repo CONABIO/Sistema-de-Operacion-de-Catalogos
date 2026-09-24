@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\Helpers;
 use App\Models\Nombre_Relacion;
 use App\Models\RelNombreAutor;
 use App\Models\RelacionBibliografia;
@@ -27,11 +28,14 @@ use Exception;
 
 class RelNombresController extends Controller
 {
+    private const ESTADO_VALIDO = 'Válido';
+    private const ESTADO_CORRECTO = 'Correcto';
+    private const MENSAJE_ERROR = 'Error al eliminar la relación.';
+
     public function cargaRelaciones(Request $request){
         
         $relaciones = Nombre::cargaRelaciones($request->taxAct)
                             ->get();  
-        
         $relaciones = $relaciones->map(function ($relacion){
             $bibliografia = RelacionBibliografia::bibliografiaRelacion(
                 $relacion['RelIdNom'],
@@ -63,7 +67,7 @@ class RelNombresController extends Controller
 
                 $estatus = $data['params']['taxonAct']['estatus'];
                 
-                if($estatus === 'Válido' || $estatus === 'Correcto'){
+                if($estatus === self::ESTADO_VALIDO || $estatus === self::ESTADO_CORRECTO){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
@@ -87,7 +91,7 @@ class RelNombresController extends Controller
 
                 $estatus = $data['params']['taxonAct']['estatus'];
                 
-                if($estatus === 'Válido' || $estatus === 'Correcto'){
+                if($estatus === self::ESTADO_VALIDO || $estatus === self::ESTADO_CORRECTO){
                     $idNombre = $data['params']['taxonAct']['id'];
                     $idNombreRel = $data['params']['taxonActRel']['id'];
                 }else{
@@ -160,6 +164,8 @@ class RelNombresController extends Controller
                 $idNombreRel =  $data['params']['taxonActRel']['id'];
 
                 break;
+            default:
+                break;
         }
         
 
@@ -205,20 +211,20 @@ class RelNombresController extends Controller
                 default:
                     if($relacion->IdNivel2 === 0)
                     {
-                        $status = "Correcto";
+                        $status = self::ESTADO_CORRECTO;
                     }else{
-                        $status = "Válido";
+                        $status = self::ESTADO_VALIDO;
                     }
                 break;
             }
 
             if($relacion->Biblio > 0)
             {
-                $biblio = '/storage/images/Libro_Verde.svg';
+                $biblio = Helpers::IMG_LIBRO_VERDE;
             }
             else
             {
-                $biblio = '/storage/images/Libro_Rojo.svg';
+                $biblio = Helpers::IMG_LIBRO_ROJO;
             }
             
             $newRel = [ 'TipoRelacion' => [ 'idTipoRel' => $relacion->IdTipoRelacion,
@@ -281,7 +287,7 @@ class RelNombresController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+            return response()->json(['error' => self::MENSAJE_ERROR], 500);
         }        
     }
 
@@ -323,7 +329,7 @@ class RelNombresController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+            return response()->json(['error' => self::MENSAJE_ERROR], 500);
         }      
     }
 
@@ -364,7 +370,7 @@ class RelNombresController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+            return response()->json(['error' => self::MENSAJE_ERROR], 500);
         }      
     }
 
@@ -405,7 +411,7 @@ class RelNombresController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+            return response()->json(['error' => self::MENSAJE_ERROR], 500);
         }      
     }
 
@@ -498,7 +504,7 @@ class RelNombresController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Error al eliminar la relación.'], 500);
+            return response()->json(['error' => self::MENSAJE_ERROR], 500);
         }      
     }
 }

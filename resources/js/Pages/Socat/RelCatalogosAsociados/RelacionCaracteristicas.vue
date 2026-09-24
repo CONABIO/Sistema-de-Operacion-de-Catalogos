@@ -3,26 +3,8 @@
         <el-card class="box-card">
             <div class="common-layout">
                 <el-container style="height: 72vh;">
-                    <!--el-header class="header">
-                        <div class="header-content">
-                            <h1 class="titulo">Asociación Taxón-Características-Región</h1>
-                        </div>
-                    </el-header-->
                     <el-main style="padding: 15px; background: #fff; overflow: auto;">
                         <div style=" margin-bottom: 20px;">
-                            <!--el-row :gutter="21">
-                                <el-col :span="16">
-                                    <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                        {{ props.taxonActual.label }} 
-                                    </span>
-                                </el-col>
-                                <el-col :span="8" >
-                                    <div style="display: flex; gap: 5px; justify-content: flex-end;">                                
-                                        <BotonSalir accion="cerrar" @salir="closeDialog"
-                                                        style="flex-shrink: 0; min-width: max-content;"/>
-                                    </div>
-                                </el-col>
-                            </el-row-->
                             <el-row :gutter="21">
                                 <el-switch
                                     v-model="georeferido"
@@ -137,11 +119,12 @@
                                                     <div class="header-container">
                                                         <span class="details-header-title">Características asociadas al taxón</span>  
                                                         <div style="display: flex; gap: 5px; justify-content: flex-end;">   
-                                                            <BotonTraspaso @traspasa="onCreaRelacion" /> 
-                                                            <EditarButton  @editar="onEditar" :disabled = "habEdiBorr"/>
+                                                            <BotonTraspaso @traspasa="onCreaRelacion" v-if="hasPermisos(moduloSocatCaract, 'Altas')"/> 
+                                                            <EditarButton  @editar="onEditar" :disabled = "habEdiBorr" v-if="hasPermisos(moduloSocatCaract, 'Cambios')"/>
                                                             <GuardarButton @click="Guardar" :disabled = "habGuardado"
-                                                                            style="flex-shrink: 0; min-width: max-content;"/>
-                                                            <EliminarButton @eliminar="onEliminar" :habActTax = "habEdiBorr" />
+                                                                            style="flex-shrink: 0; min-width: max-content;" 
+                                                                            v-if="hasPermisos(moduloSocatCaract, 'Cambios')"/>
+                                                            <EliminarButton @eliminar="onEliminar" :habActTax = "habEdiBorr" v-if="hasPermisos(moduloSocatCaract, 'Bajas')"/>
                                                             <div>
                                                                 <el-tooltip class="item" effect="dark" content="Bibliografia">
                                                                     <el-button @click="abrirBiblioCaract" circle style="flex-shrink: 0;
@@ -272,6 +255,17 @@
     import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
     import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
     import BiblioCaract from '@/Pages/Socat/RelCatalogosAsociados/BiblioRelacionCaracteristicas.vue';
+    import usePermisos from '@/composables/usePermisos';
+
+    const { permisos } = usePermisos();
+
+    const hasPermisos = (etiqueta, modulo) => {
+        const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+        return permiso[modulo];
+    };
+
+    const moduloSocatCaract = ref("RelNombreCaract");
 
     const emit = defineEmits(['cerrar']);
     const georeferido = ref(true);
@@ -612,65 +606,70 @@
             });
     }
 
-    const irAlNodoBuscado = () => {
-
+    const irAlNodoBuscado = async () => {
         if (!filterText.value || !treeRef.value) return;
-
         const textoBusqueda = filterText.value.toLowerCase();
-        const idTipoTarget = selectedTipoRegionNode.value?.IdTipoRegion;
-        const nombreTipoTarget = selectedTipoRegionNode.value?.Descripcion || "este nivel";
-
-        const encontrarEnArbol = (nodos) => {
-            for (const nodo of nodos) {
-                const coincideNombre = (nodo.NombreRegion || "").toLowerCase().includes(textoBusqueda);
-                const coincideTipo = nodo.IdTipoRegion === idTipoTarget;
-
-                if (coincideNombre && coincideTipo) return nodo;
-
-                if (nodo.children?.length) {
-                    const encontrado = encontrarEnArbol(nodo.children);
-                    if (encontrado) return encontrado;
-                }
+        let nodosMismoNivel = [];
+        if (selectedNode.value) {
+            const idPadre = selectedNode.value.IdRegionAsc;
+            if (idPadre && idPadre !== selectedNode.value.IdRegion) {
+                const nodoPadre = findNodeById(localTreeData.value, idPadre);
+                nodosMismoNivel = nodoPadre ? (nodoPadre.children || []) : [];
+            } else {
+                nodosMismoNivel = filteredRegionsTree.value;
+            }
+        } else {
+            nodosMismoNivel = filteredRegionsTree.value;
+        }
+        const buscarEntreHermanos = (nodos) => {
+            for (const n of nodos) {
+                const coincide = (n.NombreRegion || "").toLowerCase().includes(textoBusqueda);
+                if (coincide) return n;
             }
             return null;
         };
-
-        let match = null;
-        let ambitoBusquedaNombre = "el catálogo";
-        if (selectedNode.value) {
-            ambitoBusquedaNombre = `"${selectedNode.value.NombreRegion}"`;
-            const nodoActual = treeRef.value.getNode(selectedNode.value.IdRegion);
-            if (nodoActual && nodoActual.data.children) {
-                match = encontrarEnArbol(nodoActual.data.children);
-            }
-        } else {
-            match = encontrarEnArbol(filteredRegionsTree.value);
+        let match = nodosMismoNivel.find(n => (n.NombreRegion || "").toLowerCase().includes(textoBusqueda));
+        if (!match) {
+            match = buscarEntreHermanos(nodosMismoNivel);
         }
+
         if (match) {
             selectedNode.value = match;
-            treeRef.value.setCurrentKey(match.IdRegion);
-            let nodeInTree = treeRef.value.getNode(match.IdRegion);
-            if (nodeInTree) {
-                let parent = nodeInTree.parent;
-                while (parent) {
-                    parent.expanded = true;
-                    parent = parent.parent;
+            await nextTick();
+
+            if (treeRef.value) {
+                const nodeInTree = treeRef.value.getNode(match.IdRegion);
+                if (nodeInTree) {
+                    let parent = nodeInTree.parent;
+                    while (parent && parent.level > 0) {
+                        parent.expanded = true;
+                        parent = parent.parent;
+                    }
+                    treeRef.value.setCurrentKey(match.IdRegion);
                 }
             }
 
-            nextTick(() => {
+            setTimeout(() => {
                 const el = document.getElementById('region-node-' + match.IdRegion);
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const row = el.closest('.el-tree-node__content');
+                    if (row) {
+                        row.style.backgroundColor = "#ddf6dd";
+                        setTimeout(() => row.style.backgroundColor = "", 2000);
+                    }
+                }
+            }, 150);
+
         } else {
             mostrarNotificacion(
                 "Aviso",
-                `No se encontró "${filterText.value}" como ${nombreTipoTarget}.`,
+                `No se encontró "${filterText.value}" al mismo nivel de la región seleccionada.`,
                 "warning"
             );
         }
     };
-
+    
     const abrirReg = async () => {
         dialogFormVisibleReg.value = true;
     }
@@ -844,8 +843,7 @@
                     arbolDeshabilitado.value = true;
                 }   
             }
-        } else {            
-            if(idCaracteristica.value <= 0){
+        } else if(idCaracteristica.value <= 0){
                 mostrarNotificacionError(
                         "Error",
                         "Se debe de seleccionar una caracteristica para continuar",
@@ -884,7 +882,6 @@
                     }
                 }
             }         
-        }
     }
 
     const mostrarNotificacion = (titulo, mensaje, tipo = "info", duracion = 5000) => {
@@ -1167,7 +1164,7 @@
             ElMessageBox.close();
 
             if(ramaSelecc.value.tipo === 'caracteristica'){ 
-                const response = await axios.delete('/eliminar-Caract-Taxon', { data: {
+                await axios.delete('/eliminar-Caract-Taxon', { data: {
                                         idNombre: props.taxonActual.id,
                                         idCaract: ramaSelecc.value.id 
                                     }
@@ -1175,7 +1172,7 @@
             }else{
                 const idCaracteristica = ramaSelecc.value.treeKey.split('-')[1];
               
-                const response = await axios.delete('/eliminar-Caract-Taxon-Reg', { data: {
+                await axios.delete('/eliminar-Caract-Taxon-Reg', { data: {
                                         idNombre: props.taxonActual.id,
                                         idCaract: idCaracteristica,
                                         idRegion: ramaSelecc.value.id,
@@ -1519,12 +1516,6 @@
         color: #303133;
     }
 
-    .panel-nombre {
-        flex: 1;
-        min-height: 0;
-        overflow: auto;
-    }
-
     .panel-card {
         height: 100%;
         display: flex;
@@ -1572,12 +1563,6 @@
         max-height: 590px;
         display: flex;
         flex-direction: column;
-    }
-
-    .table-wrapper :deep(.el-table__body tr.current-row > td) {
-      background-color: #ddf6dd !important;
-      color: #0d6efd !important;
-      font-weight: bold;
     }
 
     /* Cabecera de la tabla */
