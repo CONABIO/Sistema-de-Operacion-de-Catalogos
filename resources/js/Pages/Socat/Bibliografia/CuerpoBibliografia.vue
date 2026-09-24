@@ -19,6 +19,9 @@ import usePermisos from '@/composables/usePermisos';
 
 const { permisos } = usePermisos();
 
+const grupoTableRef = ref(null);
+const objetoTableRef = ref(null);
+
 const selectedRowId = ref(null);
 
 const selectedObjetoId = ref(null);
@@ -37,27 +40,26 @@ const tieneObjetoSeleccionado = computed(() => {
 });
 
 const handleObjetoRowClick = (row) => {
+  if (!row) return;
   const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
   selectedObjetoId.value = row[idKey];
   selectedObjetoRow.value = row;
   selectedGrupoId.value = null;
   selectedGrupoRow.value = null;
+  if (grupoTableRef.value) {
+    grupoTableRef.value.setCurrentRow(null);
+  }
+  if (objetoTableRef.value) {
+    objetoTableRef.value.setCurrentRow(row);
+  }
 };
 
 const rowObjetoClassName = ({ row }) => {
   const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
-  if (row[idKey] === selectedObjetoId.value) {
+  if (selectedObjetoId.value !== null && row[idKey] === selectedObjetoId.value) {
     return 'fila-seleccionada-verde';
   }
   return '';
-};
-
-const agregarObjeto = () => {
-  if (!selectedBibliografia.value) {
-    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
-    return;
-  }
-  esModalObjetosVisible.value = true;
 };
 
 const cerrarModalObjetos = () => {
@@ -87,17 +89,16 @@ const guardarObservacionesObjeto = async () => {
     return;
   }
 
+  const idObjetoEditado = idValue;
   try {
     await axios.put(route('bibliografias.asociarObjeto.actualizar'), {
       IdBibliografia: objetoParaEditar.value.IdBibliografia,
-      IdObjetoExterno: idValue,
+      IdObjetoExterno: idObjetoEditado,
       Observaciones: objetoParaEditar.value.observaciones
     });
-
     mostrarNotificacion('Modificación', 'Las observaciones han sido actualizadas exitosamente.', 'success');
     esModalEditarObjetoVisible.value = false;
-    handleRowClick(selectedBibliografia.value);
-
+    await handleRowClick(selectedBibliografia.value, null, idObjetoEditado);
   } catch (error) {
     const mensajeError = error.response?.data?.message || 'No se pudieron guardar los cambios.';
     mostrarNotificacion('Aviso', mensajeError, 'warning');
@@ -133,7 +134,6 @@ const confirmarEliminacionObjeto = (filaObjeto) => {
     } catch (error) {
       const mensajeError = error.response?.data?.message || 'No se pudo desasociar el objeto.';
       mostrarNotificacion('Aviso', mensajeError, 'warning');
-      console.error("Error al eliminar asociación del objeto:", error.response);
     }
   };
 
@@ -211,18 +211,26 @@ const hasPermisos = (etiqueta, modulo) => {
 
 
 const handleGrupoRowClick = (row) => {
+  if (!row) return;
   selectedGrupoId.value = row.IdGrupoSCAT;
   selectedGrupoRow.value = row;
   selectedObjetoId.value = null;
   selectedObjetoRow.value = null;
+  if (objetoTableRef.value) {
+    objetoTableRef.value.setCurrentRow(null);
+  }
+  if (grupoTableRef.value) {
+    grupoTableRef.value.setCurrentRow(row);
+  }
 };
 
 const rowGrupoClassName = ({ row }) => {
-  if (row.IdGrupoSCAT === selectedGrupoId.value) {
+  if (selectedGrupoId.value !== null && row.IdGrupoSCAT === selectedGrupoId.value) {
     return 'fila-seleccionada-verde';
   }
   return '';
 };
+
 
 const agregarGrupo = () => {
   if (!selectedBibliografia.value) {
@@ -356,18 +364,16 @@ const guardarObservaciones = async () => {
     mostrarNotificacion('Aviso', 'Faltan datos para actualizar el grupo.', 'warning');
     return;
   }
-
+  const idGrupoEditado = grupoParaEditar.value.IdGrupoSCAT;
   try {
     await axios.put(route('bibliografias.asociarGrupo.actualizar'), {
       IdBibliografia: grupoParaEditar.value.IdBibliografia,
-      IdGrupoSCAT: grupoParaEditar.value.IdGrupoSCAT,
+      IdGrupoSCAT: idGrupoEditado,
       Observaciones: grupoParaEditar.value.observaciones
     });
-
     mostrarNotificacion('Modificación', 'Las observaciones han sido actualizadas exitosamente.', 'success');
     esModalEditarGrupoVisible.value = false;
-    handleRowClick(selectedBibliografia.value);
-
+    await handleRowClick(selectedBibliografia.value, idGrupoEditado, null);
   } catch (error) {
     const mensajeError = error.response?.data?.message || 'No se pudieron guardar los cambios.';
     mostrarNotificacion('Aviso', mensajeError, 'warning');
@@ -468,21 +474,33 @@ const editar = (row) => {
 const cerrarDialogo = () => { dialogFormVisible.value = false; };
 
 
-const handleRowClick = async (row) => {
+const handleRowClick = async (row, idGrupoASeleccionar = null, idObjetoASeleccionar = null) => {
   selectedBibliografia.value = row;
-  selectedGrupoId.value = null;
-  selectedGrupoRow.value = null;
-  selectedObjetoId.value = null;
-  selectedObjetoRow.value = null;
   citaCompleta(row);
   const idBibliografia = row.IdBibliografia;
   if (!idBibliografia) return;
-
+  selectedGrupoId.value = null;
+  selectedGrupoRow.value = null;
   datosGrupos.value = [];
   loadingGrupos.value = true;
+
   try {
     const responseGrupos = await axios.get(`/api/bibliografias/${idBibliografia}/grupos-taxonomicos`);
     datosGrupos.value = responseGrupos.data;
+
+    if (datosGrupos.value.length > 0) {
+      const targetGrupo = idGrupoASeleccionar
+        ? datosGrupos.value.find(g => g.IdGrupoSCAT === idGrupoASeleccionar)
+        : datosGrupos.value[0];
+
+      await nextTick();
+      const filaFinalGrupo = targetGrupo || datosGrupos.value[0];
+      selectedGrupoId.value = filaFinalGrupo.IdGrupoSCAT;
+      selectedGrupoRow.value = filaFinalGrupo;
+      if (grupoTableRef.value) {
+        grupoTableRef.value.setCurrentRow(filaFinalGrupo);
+      }
+    }
   } catch (error) {
     console.error("Error al cargar los grupos taxonómicos:", error);
     mostrarNotificacion("Aviso", "No se pudieron cargar los grupos taxonómicos asociados.", "warning");
@@ -490,11 +508,29 @@ const handleRowClick = async (row) => {
     loadingGrupos.value = false;
   }
 
+  selectedObjetoId.value = null;
+  selectedObjetoRow.value = null;
   datosObjetos.value = [];
   loadingObjetos.value = true;
+
   try {
     const responseObjetos = await axios.get(route('bibliografias.objetosExternos.get', { bibliografiaId: idBibliografia }));
     datosObjetos.value = responseObjetos.data;
+
+    if (datosObjetos.value.length > 0) {
+      const idKey = datosObjetos.value[0].IdObjetoExterno ? 'IdObjetoExterno' : (datosObjetos.value[0].IdObjeto ? 'IdObjeto' : 'id');
+      const targetObjeto = idObjetoASeleccionar
+        ? datosObjetos.value.find(o => o[idKey] === idObjetoASeleccionar)
+        : datosObjetos.value[0];
+
+      await nextTick();
+      const filaFinalObjeto = targetObjeto || datosObjetos.value[0];
+      selectedObjetoId.value = filaFinalObjeto[idKey];
+      selectedObjetoRow.value = filaFinalObjeto;
+      if (objetoTableRef.value) {
+        objetoTableRef.value.setCurrentRow(filaFinalObjeto);
+      }
+    }
   } catch (error) {
     console.error("Error al cargar los objetos externos:", error);
     mostrarNotificacion("Aviso", "No se pudieron cargar los objetos externos asociados.", "warning");
@@ -502,6 +538,7 @@ const handleRowClick = async (row) => {
     loadingObjetos.value = false;
   }
 };
+
 
 
 const asociarObjetoDesdeModal = (objetoSeleccionado) => {
@@ -598,60 +635,81 @@ const handleFormSubmited = (datosDelFormulario) => {
     return;
   }
 
-  const procederConGuardado = async () => {
-    try {
-      if (!esEdicion) {
-        const response = await axios.post('/bibliografias', datosDelFormulario);
-        mostrarNotificacion("Ingreso", "La referencia bibliográfica ha sido ingresada correctamente.", "success");
-        const nuevoId = response.data.data?.IdBibliografia;
-        if (nuevoId) await irAlRegistroEspecifico(nuevoId);
-      } else {
-        await axios.put(`/bibliografias/${rowEdit.value.IdBibliografia}`, datosDelFormulario);
-        mostrarNotificacion("Modificación", "La referencia bibliografica ha sido modificada correctamente.", "success");
-        if (tablaRef.value) await tablaRef.value.fetchData();
-        await nextTick();
-        tablaRef.value.forzarFocoFilaVerde();
+ const procederConGuardado = async () => {
+  try {
+    if (!esEdicion) {
+      const response = await axios.post('/bibliografias', datosDelFormulario);
+      mostrarNotificacion("Ingreso", "La referencia bibliográfica ha sido ingresada correctamente.", "success");
+      const nuevoId = response.data.data?.IdBibliografia;
+      if (nuevoId) await irAlRegistroEspecifico(nuevoId);
+    } else {
+      const idEditado = rowEdit.value.IdBibliografia;
+
+      await axios.put(`/bibliografias/${idEditado}`, datosDelFormulario);
+      mostrarNotificacion("Modificación", "La referencia bibliografica ha sido modificada correctamente.", "success");
+
+      if (tablaRef.value) {
+        await tablaRef.value.fetchData();
       }
-    } catch (error) {
-      if (error.response?.status === 400 && error.response.data.idExistente) {
-        mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
-        await irAlRegistroEspecifico(error.response.data.idExistente);
-      } else if (error.response?.status === 422) {
-        let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
-        mostrarNotificacion("Error", errorMsg, "error", 0);
+
+      await nextTick();
+
+      const filaActualizada = localTableData.value.find(d => String(d.IdBibliografia) === String(idEditado));
+
+      if (filaActualizada) {
+        selectedRowId.value = idEditado;
+        if (tablaRef.value) {
+          tablaRef.value.selectedRow = filaActualizada;
+        }
+        handleRowClick(filaActualizada);
       } else {
-        mostrarNotificacion("Aviso", "No se pudo procesar la solicitud.", "warning");
+        selectedRowId.value = null;
+        selectedBibliografia.value = null;
+        cita.value = '';
+        datosGrupos.value = [];
+        datosObjetos.value = [];
       }
     }
-  };
-
-  if (!esEdicion) {
-    procederConGuardado();
-  } else {
-    const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la referencia bibliográfica seleccionada?`;
-    ElMessageBox({
-      title: 'Confirmar modificación',
-      showConfirmButton: false,
-      showCancelButton: false,
-      customClass: 'message-box-diseno-limpio',
-      message: h('div', { class: 'custom-message-content' }, [
-        h('div', { class: 'body-content' }, [
-          h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
-          h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
-        ]),
-        h('div', { class: 'footer-buttons' }, [
-          h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-          h(BotonAceptar, {
-            onClick: () => {
-              ElMessageBox.close();
-              procederConGuardado();
-            }
-          }),
-        ])
-      ])
-    }).catch(() => { });
+  } catch (error) {
+    if (error.response?.status === 400 && error.response.data.idExistente) {
+      mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
+      await irAlRegistroEspecifico(error.response.data.idExistente);
+    } else if (error.response?.status === 422) {
+      let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
+      mostrarNotificacion("Error", errorMsg, "error", 0);
+    } else {
+      mostrarNotificacion("Aviso", "No se pudo procesar la solicitud.", "warning");
+    }
   }
-};
+ }
+
+if (!esEdicion) {
+  procederConGuardado();
+} else {
+  const mensajeConfirmacion = `¿Estás seguro de guardar los cambios para la referencia bibliográfica seleccionada?`;
+  ElMessageBox({
+    title: 'Confirmar modificación',
+    showConfirmButton: false,
+    showCancelButton: false,
+    customClass: 'message-box-diseno-limpio',
+    message: h('div', { class: 'custom-message-content' }, [
+      h('div', { class: 'body-content' }, [
+        h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
+        h('div', { class: 'text-container' }, [h('p', null, mensajeConfirmacion)])
+      ]),
+      h('div', { class: 'footer-buttons' }, [
+        h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
+        h(BotonAceptar, {
+          onClick: () => {
+            ElMessageBox.close();
+            procederConGuardado();
+          }
+        }),
+      ])
+    ])
+  }).catch(() => { });
+}
+}
 
 
 const borrarDatos = (idBibliografia) => {
@@ -811,7 +869,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="widget-table-container">
-            <el-table :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName"
+            <el-table ref="grupoTableRef" :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName"
               @row-click="handleGrupoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
@@ -832,7 +890,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="widget-table-container">
-            <el-table :data="datosObjetos" border style="width: 100%" :row-class-name="rowObjetoClassName"
+            <el-table ref="objetoTableRef"  :data="datosObjetos" border style="width: 100%" :row-class-name="rowObjetoClassName"
               @row-click="handleObjetoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin objetos asociados'">
               <el-table-column prop="objeto" label="Objeto externo" />
@@ -1269,6 +1327,17 @@ onMounted(() => {
   padding: 8px 12px !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   min-width: 0;
+}
+
+.widget-table-container .el-table__body tr:not(.fila-seleccionada-verde) td {
+  color: #606266 !important;
+  background-color: transparent !important;
+}
+
+.widget-table-container .el-table__body tr.fila-seleccionada-verde td {
+  background-color: #ddf6dd !important;
+  color: #000 !important;
+  font-weight: bold;
 }
 
 </style>
