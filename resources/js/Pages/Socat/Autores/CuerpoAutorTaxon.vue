@@ -465,7 +465,7 @@ const onEliminarInterno = () => {
         tituloArea="Catálogo de autoridades taxonómicas">
         <div class="h-full flex flex-col">
             <div v-if="props.nombre" class="main-section" style="margin-bottom: 10px;">
-                <el-card class="box-card-inner-table">
+                <el-card class="box-card-inner-table" style="height: 400px;">
                     <el-collapse v-model="activeNames">
                         <el-collapse-item title="Autores Relacionados" name="1">
                             <el-scrollbar max-height="400px">
@@ -538,9 +538,9 @@ const onEliminarInterno = () => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :container-class="'main-section'"
                 :columnas="columnasDefinidas" v-model:datos="datosDeAutores" v-model:total-items="totalAutores"
                 :opciones-filtro="opcionesFiltroAutores" :mostrarTraspaso="props.nombre" @traspasaBiblio="agregarAutor"
-                :asignaTrasp="'Arriba'" :mostrarSalir="!props.nombre" endpoint="/busca-autor" id-key="IdAutorTaxon"
-                @row-click="manejarClickFila" :row-class-name="tableRowClassName" @editar-item="manejarEditarItem"
-                @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
+                :moduloSocat="'MnuCatAutores'" :asignaTrasp="'Arriba'" :mostrarSalir="!props.nombre" 
+                endpoint="/busca-autor" id-key="IdAutorTaxon" @row-click="manejarClickFila" :row-class-name="tableRowClassName" 
+                @editar-item="manejarEditarItem" @eliminar-item="manejarEliminarItem" @nuevo-item="manejarNuevoItem">
 
 
                 <template #header-actions>

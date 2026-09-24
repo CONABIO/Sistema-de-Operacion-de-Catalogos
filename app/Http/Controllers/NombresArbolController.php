@@ -59,6 +59,22 @@ class NombresArbolController extends Controller
         return response()->json([$conteo]);
     }
 
+    public function cargaTaxon($id){
+        
+        $relacionesBase = ['categoria', 'scat', 'scat.grupoScat','padre', 
+                           'hijos', 'ascendOblig','ascendObligHijos',
+                           'relNombreRegion','relNombreAutor', 'nombreRel'];
+
+        $nombres = Nombre::with($relacionesBase)
+                         ->where ('IdNombre', $id)
+                         ->get();
+
+        $data = $this->procesarNombresBatch($nombres);
+
+        return $data;
+
+    }
+
     public function fetchNomArb(Request $request)
     {      
         $valor = $request->categ ?? $request->idNombre ?? '';

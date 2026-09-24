@@ -144,7 +144,7 @@ const logout = () => {
                                         </div>
 
                                         <DropdownLink :href="route('users.index')">
-                                            Perfiles
+                                            Usuarios
                                         </DropdownLink>
 
                                         <DropdownLink :href="route('profile.show')">
@@ -225,7 +225,7 @@ const logout = () => {
                         <div class="mt-3 space-y-1">
                             <MenuBio :users="authUser" />
                             <ResponsiveNavLink :href="route('users.index')" :active="route().current('users.index')">
-                                Perfiles
+                                Usuarios
                             </ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('profile.show')" :active="route().current('profile.show')">
                                 Profile

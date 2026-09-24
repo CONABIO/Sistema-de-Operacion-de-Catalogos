@@ -14,7 +14,9 @@ import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
 import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
 import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
 import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+import usePermisos from '@/composables/usePermisos';
 
+const { permisos } = usePermisos();
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -48,6 +50,7 @@ const props = defineProps({
     permitirSinSeleccion: { type: Boolean, default: false },
     tipoBusquedaExterno: { type: String, default: '' },
     mostrarSwitchLocal: { type: Boolean, default: true },
+    moduloSocat: { type: String, default: '' },
     alturaTabla: {
         type: Number,
         default: 550
@@ -88,6 +91,12 @@ const handleVisibleChange = (visible, prop) => {
     }
 };
 
+const hasPermisos = (modulo) => {
+    if(props.moduloSocat != ""){
+    const permiso = permisos.find(item => item.NombreModulo === props.moduloSocat);
+    return permiso[modulo];
+    }else{return false};
+  };
 
 const buscarExterno = async (columna, valor) => {
     filtros.value[columna] = valor;
@@ -450,16 +459,16 @@ defineExpose({
                 </div>
                 <div class="left">
                     <div class="botonera-biotica">
-                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
+                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso && hasPermisos('Altas')"
                             @traspasa="onRecuperaMarcado" />
-                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
+                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo && hasPermisos('Altas')" />
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
-                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
+                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar && hasPermisos('Cambios')" />
 
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
-                            v-if="props.mostrarBorrar" />
+                            v-if="props.mostrarBorrar && hasPermisos('Bajas')" />
                         <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" :disabled="props.deshabilitarGuardar"  />
+                            v-if="props.mostrarGuardar && hasPermisos('Cambios')" :disabled="props.deshabilitarGuardar"  />
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
                         <div v-if="props.mostrarBiblio">
                             <el-tooltip class="item" effect="dark" content="Bibliografia">
