@@ -1244,14 +1244,15 @@
 
       try {
         ElMessageBox.close();
-
+        console.log("Porque no permite la eliminacion: ", item.idNombre);
         const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta,
-                                                                                taxAct: props.taxonAct.id}});
-
+                                                                                taxAct: item.idNombre}});
+        console.log("Porque no permite la eliminacion:::::::::::: ", response);
         tablaNomenclatura.value = response.data;
 
         mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
       } catch (apiError) {
+        console.log("Que trae apiError: ", apiError);
         mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
       }
     };
