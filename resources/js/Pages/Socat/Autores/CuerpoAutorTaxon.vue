@@ -465,7 +465,7 @@ const onEliminarInterno = () => {
         tituloArea="Catálogo de autoridades taxonómicas">
         <div class="h-full flex flex-col">
             <div v-if="props.nombre" class="main-section" style="margin-bottom: 10px;">
-                <el-card class="box-card-inner-table">
+                <el-card class="box-card-inner-table" style="height: 400px;">
                     <el-collapse v-model="activeNames">
                         <el-collapse-item title="Autores Relacionados" name="1">
                             <el-scrollbar max-height="400px">

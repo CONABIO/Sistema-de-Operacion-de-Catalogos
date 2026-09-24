@@ -82,23 +82,20 @@ class User extends Authenticatable
         return $this->belongsTo(rol::class,'IdRol', 'IdRol');
     }
 
-    //Función para extraer los modelos y permisos por perfil
-    /*public function scopePermisos($query, $idUsuario) {
-        if ($idUsuario) {
-            // Esto está bien configurado, con los nombres de tablas correctos
-            return DB::select("
-                        SELECT modulosocat.NombreModulo,
-                               relmodulorol.Altas,
-                               relmodulorol.Bajas,
-                               relmodulorol.Cambios,
-                               relmodulorol.Visible
-                        FROM users
-                             INNER JOIN relmodulorol ON users.IdRol = relmodulorol.IdRol
-                             INNER JOIN modulosocat ON relmodulorol.IdModulo = modulosocat.IdModulo
-                             WHERE users.id = ?",[$idUsuario]);
-        }
-        return $query;
+    /*public function scopeusrRol($query)
+    {
+        return $query
+            ->join('Rol as r', 'r.IdRol', '=', 'users.IdRol')
+            ->select([
+                'users.Alias',
+                'users.name',
+                'users.email',
+                'r.Perfil',
+                'r.Nombre_Perfil',
+                'r.Descripcion',
+            ]);
     }*/
+
     public function scopePermisos($query, $idUsuario) {
         if ($idUsuario) {
             // Esto está bien configurado, con los nombres de tablas correctos

@@ -46,9 +46,15 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/cargar-usuarios', [UserController::class, 'cargaUsuarios']);
+    Route::get('/carga-perfiles', [UserController::class, 'cargaPerfiles']);
+    Route::delete('/elimina-usuario', [UserController::class, 'eliminaUsuario']);
+    
     //Rutas definidas para Socat
     Route::get('/busca-autor', [AutorTaxonController::class, 'buscaAutor']);
     Route::get(RUTA_AUTORES, [AutorTaxonController::class, 'Index'])->name('autorTaxon.index');
@@ -111,7 +117,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/Nombre', [NombresArbolController::class, 'Index'])->name('nombreTax.index');
     Route::get('/cargar-nomArb', [NombresArbolController::class, 'fetchNomArb']);
     Route::get('/cargar-hijos-nomArb/{id}', [NombresArbolController::class, 'fetchHijos']);
-
+    Route::get('/carga-taxon/{id}', [NombresArbolController::class, 'cargaTaxon']);
 
     Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
     Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
