@@ -83,6 +83,7 @@
                                             :mostrarNuevo="true"
                                             :mostrarEditar="true" 
                                             :mostrarBorrar="true" 
+                                            :moduloSocat = "'RelNombreCaractBiblio'"
                                             :mostrarGuardar="true" 
                                             :mostrarSalir="false"
                                             :itemsPerPage = 15

@@ -45,7 +45,7 @@
 <body class="font-sans antialiased">
     @inertia
 
-¿<script>
+<script>
     (function() {
     const MINUTES_TOTAL = 120;
     const WARNING_SECONDS = 30;

@@ -10,6 +10,7 @@ import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import { ref, computed, watch, onMounted, nextTick, h } from "vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import usePermisos from '@/composables/usePermisos';
 
 import {
   ElTree,
@@ -24,7 +25,8 @@ import {
 import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 
-
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatCaract');
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -45,6 +47,12 @@ const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 const handleNodeExpand = (data, node) => {
   expandedNodeIds.value.add(data.IdCatNombre);
   handleNodeSelected(data, node);
+};
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
 };
 
 const handleNodeCollapse = (data, node) => {
@@ -652,11 +660,12 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
           <div class="left-header-content"></div>
           <div class="right-header-content">
             <div class="botonera-biotica">
-              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" 
+                  v-if="hasPermisos(moduloSocat, 'Altas')"/>
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
               <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')"/>
               <BotonSalir :accion="modal ? 'cerrar' : 'salida'" @salir="cerrarDialogo"/>
             </div>
           </div>

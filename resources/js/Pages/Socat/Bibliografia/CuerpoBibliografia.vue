@@ -15,6 +15,9 @@ import EliminarButton from '@/Components/Biotica/EliminarButton.vue';
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import ObjetoExterno from '@/Pages/Socat/ObjetosExternos/CuerpoObjetoExterno.vue';
+import usePermisos from '@/composables/usePermisos';
+
+const { permisos } = usePermisos();
 
 const selectedRowId = ref(null);
 
@@ -168,7 +171,9 @@ const tieneGrupoSeleccionado = computed(() => {
   return datosGrupos.value.length > 0 && selectedGrupoRow.value !== null;
 });
 
-
+const moduloSocat = ref('MnuCatBiblio');
+const moduloSocatGrp = ref('RelBiblioGrp');
+const moduloSocatObj = ref('RelBiblioObj');
 
 const cerrarBiblio = async (bibliografiasSeleccionadas) => {
     dialogFormVisibleBiblio.value = false;
@@ -196,6 +201,11 @@ const cerrarBiblio = async (bibliografiasSeleccionadas) => {
     }
 };
 
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
+};
 
 
 
@@ -758,12 +768,10 @@ onMounted(() => {
 
 <template>
   <LayoutCuerpo :usar-app-layout="false" tituloPag="Bibliografía" tituloArea="Catálogo de referencias bibliográficas">
-
     <div class="layout-vertical">
-
       <div class="seccion-tabla-completa">
         <TablaFiltrable class="flex-grow tabla-bibliografia-ancha" ref="tablaRef" :columnas="columnasDefinidas"
-          v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api"
+          v-model:datos="localTableData" v-model:total-items="total" endpoint="/bibliografias-api" :moduloSocat="moduloSocat"
           id-key="IdBibliografia" @editar-item="editar" @eliminar-item="borrarDatos" @nuevo-item="crear"
           @row-click="handleRowClick" @traspasaBiblio="traspasaBiblio" @cerrar="cerrarModal" :botCerrar="props.isModal"
           :highlight-current-row="true" :mostrarTraspaso="props.traspaso">
@@ -787,7 +795,7 @@ onMounted(() => {
         </TablaFiltrable>
 
         <div class="cita-container">
-          <el-input type="textarea" :rows="3" v-model="cita" readonly disabled resize="none"
+          <el-input type="textarea" :rows="2" v-model="cita" readonly disabled resize="none"
             placeholder="Haga clic en una fila para ver la cita completa..." />
         </div>
       </div>
@@ -797,9 +805,9 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Grupo taxonómico</h3>
             <div class="botones">
-              <NuevoButton @crear="agregarGrupo" />
-              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" :disabled="!tieneGrupoSeleccionado" />
-              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" :disabled="!tieneGrupoSeleccionado" />
+              <NuevoButton @crear="agregarGrupo" v-if="hasPermisos(moduloSocatGrp, 'Altas')"/>
+              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Cambios')"/>
+              <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Bajas')" />
             </div>
           </div>
           <div class="widget-table-container">
@@ -816,9 +824,11 @@ onMounted(() => {
           <div class="widget-header">
             <h3>Objeto externo</h3>
             <div class="botones">
-              <NuevoButton @crear="agregarObjeto" />
-              <EditarButton @editar="abrirModalEditarObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado"/>
-              <EliminarButton @eliminar="confirmarEliminacionObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado"/>
+              <NuevoButton @crear="agregarObjeto" v-if="hasPermisos(moduloSocatObj, 'Altas')" />
+              <EditarButton @editar="abrirModalEditarObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado"
+                            v-if="hasPermisos(moduloSocatObj, 'Cambios')"/>
+              <EliminarButton @eliminar="confirmarEliminacionObjeto(selectedObjetoRow)" :disabled="!tieneObjetoSeleccionado"
+                              v-if="hasPermisos(moduloSocatObj, 'Bajas')"/>
             </div>
           </div>
           <div class="widget-table-container">
@@ -1060,6 +1070,7 @@ onMounted(() => {
   height: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .tabla-bibliografia-ancha {
@@ -1068,7 +1079,7 @@ onMounted(() => {
 }
 
 .tabla-bibliografia-ancha :deep(.el-table__body-wrapper) {
-  max-height: 500px !important;
+  max-height: 180px !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
 }
@@ -1079,14 +1090,6 @@ onMounted(() => {
   background: rgba(241, 241, 241, 0.9) !important;
   border-radius: 10px;
   bottom: 0 !important;
-  display: block !important;
-}
-
-.tabla-bibliografia-ancha :deep(.el-scrollbar__bar.is-vertical) {
-  width: 14px !important;
-  opacity: 1 !important;
-  background: rgba(241, 241, 241, 0.9) !important;
-  border-radius: 10px;
   display: block !important;
 }
 
@@ -1125,21 +1128,17 @@ onMounted(() => {
 .tabla-bibliografia-ancha :deep(.el-table) {
   display: flex;
   flex-direction: column;
-  height: 400px;
+  height: 240px;
 }
 
-.tabla-bibliografia-ancha :deep(.el-pagination) {
-  margin-top: 5px !important;
-  padding: 5px 0 !important;
-  background-color: transparent;
-}
+
 
 .contenedor-widgets-inferiores {
   display: flex;
   flex-direction: row;
   gap: 15px;
   width: 100%;
-  margin-top: 0;
+  margin-top: 5px;
 }
 
 .widget-card-inferior {
@@ -1147,13 +1146,13 @@ onMounted(() => {
   background-color: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   min-width: 0;
 }
 
 .widget-table-container {
-  max-height: 160px;
+  max-height: 120px;
   overflow-y: auto;
 }
 
@@ -1161,13 +1160,13 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
 }
 
 .widget-header h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
 }
@@ -1180,8 +1179,13 @@ onMounted(() => {
 }
 
 .cita-container {
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.cita-container :deep(.el-textarea__inner) {
+  font-size: 12px;
+  padding: 6px 10px;
 }
 
 :deep(.el-dialog__body) {
@@ -1247,5 +1251,24 @@ onMounted(() => {
   cursor: default;
   color: #909399;
 }
-</style>
 
+
+.tabla-bibliografia-ancha :deep(.el-table__body-wrapper) {
+  max-height: 330px !important;
+}
+
+.tabla-bibliografia-ancha :deep(.el-table) {
+  height: auto !important;
+}
+
+.widget-card-inferior {
+  flex: 1;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 0;
+}
+
+</style>
