@@ -1214,6 +1214,15 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+
+.widget-table-container :deep(.el-table__body tr:hover > td) {
+  background-color: transparent !important;
+}
+
+.widget-table-container :deep(.el-table__body tr.fila-seleccionada-verde:hover > td) {
+  background-color: #ddf6dd !important;
+}
+
 .widget-header {
   display: flex;
   justify-content: space-between;
