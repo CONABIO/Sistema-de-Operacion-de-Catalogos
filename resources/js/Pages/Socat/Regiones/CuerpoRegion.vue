@@ -510,6 +510,7 @@ const irAlNodoBuscado = async () => {
             }
         }, 150);
 
+         filterText.value = '';
     } else {
         mostrarNotificacion(
             "Aviso",
@@ -796,7 +797,7 @@ const guardarDesdeModal = async () => {
             idPadreFinal = selectedNode.value.IdRegionAsc || 0;
         } else if (opcionNivel.value === "inferior" && selectedNode.value) {
             idPadreFinal = selectedNode.value.IdRegion;
-        } 
+        }
     } else {
         idPadreFinal = nodoEnModal.value.IdRegionAsc || 0;
     }

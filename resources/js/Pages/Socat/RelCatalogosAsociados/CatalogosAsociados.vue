@@ -29,7 +29,7 @@
                                     <div
                                         style="height: 560px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: var(--el-border-color-light) 0px 0px 10px">
                                         <el-splitter lazy>
-                                            <el-splitter-panel :size="'35%'">
+                                            <el-splitter-panel :size="'33%'" :min="25">
                                                 <div class="table-wrapper"
                                                     style="height: 100%; padding: 5px; position: relative;">
                                                     <div
@@ -53,10 +53,10 @@
                                                 </div>
                                             </el-splitter-panel>
 
-                                            <el-splitter-panel :size="'30%'">
+                                            <el-splitter-panel :size="'32%'" :min="25">
                                                 <div style="height: 100%;">
                                                     <el-splitter layout="vertical" style="height:100%;">
-                                                        <el-splitter-panel>
+                                                        <el-splitter-panel :min="25">
                                                             <el-card class="panel-card list-panel" shadow="never">
                                                                 <template #header>
                                                                     <div
@@ -84,7 +84,7 @@
                                                                 </div>
                                                             </el-card>
                                                         </el-splitter-panel>
-                                                        <el-splitter-panel>
+                                                        <el-splitter-panel :min="25">
                                                             <el-card class="panel-card list-panel" shadow="never">
                                                                 <template #header>
                                                                     <div
@@ -126,7 +126,7 @@
                                                 </div>
                                             </el-splitter-panel>
 
-                                            <el-splitter-panel :size="'40%'">
+                                            <el-splitter-panel :size="'35%'" :min="25">
                                                 <div
                                                     style="height: 100%; border-left: 1px solid #ddd; display: flex; flex-direction: column; background: #fff;">
                                                     <div
@@ -218,7 +218,7 @@
                                             <SwitchBusqueda v-model="filtroRegionesGeneral" />
                                         </div>
                                         <el-splitter lazy>
-                                            <el-splitter-panel :size="'23%'">
+                                            <el-splitter-panel :size="'23%'" :min="20">
                                                 <div class="demo-panel panel-nomcomun table-wrapper">
                                                     <el-container>
                                                         <el-header height="40px"
@@ -242,7 +242,7 @@
                                                     </el-container>
                                                 </div>
                                             </el-splitter-panel>
-                                            <el-splitter-panel :size="'25%'">
+                                            <el-splitter-panel :size="'25%'" :min="20">
                                                 <div class="demo-panel panel-carac table-wrapper">
                                                     <el-container>
                                                         <el-header height="40px"
@@ -267,11 +267,11 @@
                                                     </el-container>
                                                 </div>
                                             </el-splitter-panel>
-                                            <el-splitter-panel min="50">
+                                            <el-splitter-panel :size="'52%'" :min="30">
                                                 <div class="demo-panel panel-nombre table-wrapper"
                                                     style="height: 100%;">
                                                     <el-splitter layout="vertical" style="height: 94%;">
-                                                        <el-splitter-panel :size="'125%'">
+                                                        <el-splitter-panel :size="'125%'" :min="40">
                                                             <el-container style="width:100%; height:100%;">
                                                                 <el-header height="40px"
                                                                     style="display:flex; justify-content:center; align-items:center;">
@@ -306,7 +306,7 @@
                                                             </el-container>
                                                         </el-splitter-panel>
 
-                                                        <el-splitter-panel :size="'48%'">
+                                                        <el-splitter-panel :size="'48%'" :min="20">
                                                             <el-card class="panel-card list-panel" shadow="never"
                                                                 style="border:none;">
                                                                 <template #header>
@@ -960,7 +960,7 @@ const guardarCambiosObsGeneral = async () => {
                     h('div', { class: 'custom-warning-circle' }, '!')
                 ]),
                 h('div', { class: 'text-container' }, [
-                    h('p', null, `¿Deseas guardar los cambios en las ${textoPregunta}?`)
+                    h('p', null, `¿Desea guardar los cambios en las ${textoPregunta}?`)
                 ])
             ]),
             h('div', { class: 'footer-buttons' }, [
@@ -1019,7 +1019,7 @@ const guardarCambiosObsReg = async () => {
             h('div', { class: 'body-content' }, [
                 h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
                 h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Deseas guardar los cambios en las observaciones de esta región?")
+                    h('p', null, "¿Desea guardar los cambios en las observaciones de esta región?")
                 ])
             ]),
             h('div', { class: 'footer-buttons' }, [
@@ -1138,7 +1138,7 @@ const guardarCambiosObs = async () => {
             h('div', { class: 'body-content' }, [
                 h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
                 h('div', { class: 'text-container' }, [
-                    h('p', null, "¿Deseas guardar los cambios realizados en las observaciones asociadas a la relación Taxón-Nombre común-Región-Bibliografía?")
+                    h('p', null, "¿Desea guardar los cambios realizados en las observaciones asociadas a la relación Taxón-Nombre común-Región-Bibliografía?")
                 ])
             ]),
             h('div', { class: 'footer-buttons' }, [
@@ -2140,7 +2140,7 @@ const onCreaRelacion = async () => {
         return;
     }
     if (!selectedNode.value) {
-        mostrarNotificacion("Aviso", "Debe seleccionar una región en el árbol central", "warning");
+        mostrarNotificacion("Aviso", "El dato de la región es obligatorio, para asociar un nombre común al taxón.", "warning");
         return;
     }
 
@@ -2174,7 +2174,7 @@ const onCreaRelacion = async () => {
         }
     } catch (error) {
         console.error("Error al guardar:", error);
-        mostrarNotificacion("Aviso", "La relación ya existe o hubo un error en el servidor", "warning");
+        mostrarNotificacion("Aviso", "La relación de nombre común con región ya existe ", "warning");
     }
 };
 
@@ -2317,7 +2317,7 @@ const abrirReg = async () => {
 const clickNomComunOriginal = (row) => {
     if (!row) return;
      if (editandoObsGeneral.value && observacionesGeneral.value !== valorOriginalObsGeneral.value) {
-        mostrarNotificacion("Aviso", "Tiene cambios pendientes en las observaciones. Por favor, guarde o cancele antes de seleccionar otro registro.", "warning");
+        mostrarNotificacion("Aviso", "Tiene cambios pendientes en las observaciones. Por favor, guarde antes de seleccionar otro registro.", "warning");
         nextTick(() => {
             if (tablaNomComunPrincipalRef.value && idNomComunSeleccionado.value) {
                 const filaAnterior = tablaNomComun.value.find(r =>
@@ -2363,12 +2363,12 @@ const confirmarEliminarAsociacion = () => {
         );
 
         if (nombreComunPadre && nombreComunPadre.Regiones && nombreComunPadre.Regiones.length === 1) {
-            mensaje = "¿Estás seguro de borrar la región y la asociación del nombre común con el taxón?";
+            mensaje = "¿Está seguro de borrar la región y la asociación del nombre común con el taxón?";
         } else {
-            mensaje = "¿Estás seguro de eliminar la región seleccionada y su bibliografía asociada?";
+            mensaje = "¿Está seguro de eliminar la región seleccionada y su bibliografía asociada?";
         }
     } else {
-        mensaje = `¿Estás seguro de eliminar el nombre común seleccionado y sus regiones y bibliografías?`;
+        mensaje = `¿Está seguro de eliminar el nombre común seleccionado y sus regiones y bibliografías?`;
     }
 
     ElMessageBox({
@@ -2809,7 +2809,7 @@ const irAlNodoBuscado = async () => {
                 }
             }
         }, 150);
-
+        filterText.value = '';
     } else {
         mostrarNotificacion(
             "Aviso",
@@ -3106,4 +3106,9 @@ watch(filterText, (nuevoValor) => {
       max-height: 65vh;
       overflow-y: auto;
   }
+
+  :deep(.el-splitter-panel) {
+  min-width: 400px !important;
+  min-height: 120px !important;
+}
 </style>
