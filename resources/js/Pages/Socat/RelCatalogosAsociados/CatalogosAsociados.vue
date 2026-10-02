@@ -362,12 +362,14 @@
 
             <DialogForm v-model="dialogResumenRegionesVisible" :botCerrar="true" :pressEsc="false" :width="'85%'">
                 <div style="height: 820px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
-
                     <el-header class="header">
-                        <div class="header-content">
-                            <h1 class="titulo">Asociación de nombre comun - región - bibliografía</h1>
-                        </div>
-                    </el-header>
+                            <div class="dialog-header-custom">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <h3 style="margin: 0;">Asociación de nombre comun - región - bibliografía</h3>
+                                </div>
+                            </div>
+                        </el-header>
+
 
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
                         <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
@@ -568,12 +570,13 @@
             <DialogForm v-model="dialogResumenCaractSoloVisible" :botCerrar="true" :width="'80%'">
                 <div
                     style="height: 830px; padding: 10px; background-color: #fff; display: flex; flex-direction: column;">
-
                     <el-header class="header">
-                        <div class="header-content">
-                            <h1 class="titulo">Asociación de característica - bibliografía</h1>
-                        </div>
-                    </el-header>
+                            <div class="dialog-header-custom">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <h3 style="margin: 0;">Asociación de catalogos</h3>
+                                </div>
+                            </div>
+                        </el-header>
 
                     <div style="padding: 15px 5px;">
                         <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
@@ -642,10 +645,12 @@
             <DialogForm v-model="dialogResumenRegionTaxonVisible" :botCerrar="true" :pressEsc="false" :width="'80%'">
                 <div style="height: 750px; background-color: #fff; display: flex; flex-direction: column; gap: 15px;">
                     <el-header class="header">
-                        <div class="header-content">
-                            <h1 class="titulo">Asociación de Región - Taxón - Bibliografía</h1>
-                        </div>
-                    </el-header>
+                            <div class="dialog-header-custom">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <h3 style="margin: 0;">Asociación de Región - Taxón - Bibliografía</h3>
+                                </div>
+                            </div>
+                        </el-header>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
                         <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
@@ -669,7 +674,11 @@
                                             :totalItems="totalRegionesNom" :alturaTabla="460" :itemsPerPage=10
                                             :highlight-current-row="true" :mostrarBiblio="false" :mostrarAcci="false"
                                             :mostrarNuevo="false" :mostrarEditar="false" :mostrarBorrar="false"
-                                            :mostrarSalir="false" @row-click="clickRegResumenTaxon" />
+                                            :mostrarSalir="false"
+                                            :valoresOpcion="tiposDistribucion"
+                                            :mostrarTipoDist="true"
+                                            :habOpciones="habOpciones"
+                                            @row-click="clickRegResumenTaxon" />
                                     </div>
                                 </div>
                             </el-splitter-panel>
@@ -2238,8 +2247,25 @@ watch(
 
             if (respRegion.status === 'fulfilled' && respRegion.value.status === 200) {
                 const data = respRegion.value.data;
-                regionesNombre.value = data.regPorNombre;
-                totalRegionesNom.value = data.regPorNombre.length;
+                const tiposDistList = tiposDistribucion.value || [];
+                regionesNombre.value = (data.regPorNombre || []).map(reg => {
+                    const idDist = reg.TipoDistribucion?.id || reg.TipoDistribucion?.IdTipoDistribucion || reg.IdTipoDistribucion || reg.tipoDistribucionId;
+                    const matchTipo = tiposDistList.find(t =>
+                        String(t.id || t.IdTipoDistribucion) === String(idDist)
+                    );
+                    const descripcionTexto = matchTipo ? (matchTipo.Descripcion || matchTipo.nombre || matchTipo.label) : '';
+                    return {
+                        ...reg,
+                        TipoDistribucion: {
+                            id: idDist,
+                            label: descripcionTexto,
+                            Descripcion: descripcionTexto,
+                            nombre: descripcionTexto
+                        }
+                    };
+                });
+
+                totalRegionesNom.value = regionesNombre.value.length;
                 regionesCaract.value = data.regPorCaract;
                 totalRegionesCaract.value = data.regPorCaract.length;
                 regionesNomCom.value = data.regPorNomCom;
@@ -2272,6 +2298,31 @@ watch(
     },
     { immediate: true }
 );
+
+
+watch(tiposDistribucion, (nuevosTipos) => {
+    if (nuevosTipos && nuevosTipos.length > 0 && regionesNombre.value.length > 0) {
+        regionesNombre.value = regionesNombre.value.map(reg => {
+            const idDist = reg.TipoDistribucion?.id || reg.IdTipoDistribucion;
+            const matchTipo = nuevosTipos.find(t => String(t.id || t.IdTipoDistribucion) === String(idDist));
+            if (matchTipo) {
+                const desc = matchTipo.Descripcion || matchTipo.nombre || matchTipo.label;
+                return {
+                    ...reg,
+                    TipoDistribucion: {
+                        id: idDist,
+                        label: desc,
+                        Descripcion: desc,
+                        nombre: desc
+                    }
+                };
+            }
+            return reg;
+        });
+    }
+}, { deep: true });
+
+
 
 const abrirCaract = async () => {
     const respCarac = await axios.get('/cargar-caracteristicas');
