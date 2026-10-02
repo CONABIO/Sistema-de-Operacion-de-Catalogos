@@ -2488,7 +2488,7 @@ const clickNomCom = async (data) => {
     if (editandoObsGeneral.value && observacionesGeneral.value !== valorOriginalObsGeneral.value) {
         mostrarNotificacion(
             "Aviso",
-            "Tiene cambios pendientes en las observaciones. Por favor, guarde o cancele antes de seleccionar otro registro.",
+            "Tiene cambios pendientes en las observaciones. Por favor, guarde antes de seleccionar otro registro.",
             "warning"
         );
         if (asociadosTreeRef.value && nodoSeleccionadoArbol.value) {
