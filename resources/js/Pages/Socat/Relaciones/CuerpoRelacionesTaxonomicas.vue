@@ -231,7 +231,7 @@
                       </el-button>
                     </el-tooltip>
                     <el-tooltip effect="dark" content="Traspaso de información" placement="right">
-                      <el-button @click="CambioBasSin" circle  
+                      <el-button @click="traspasoInformacion" circle  
                                   style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
                                   :disabled = "habCambioSinBas"
                                   v-if="hasPermisos(moduloSocat,'Cambios')">
@@ -295,11 +295,12 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83+%'">
-      <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
-                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
+    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <Traspaso :taxonAct = "props.taxonAct" 
+                :sinonimo = "relacionAct"
+                @cerrar="cerrarTraspaso"/>
     </DialogForm>
-
+      
     <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
       <IndexRelaciones 
           :treeDataProp = "tipRelacion.treeDataProp"
@@ -328,6 +329,7 @@ import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import { usePage } from '@inertiajs/vue3';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+import Traspaso from '@/Pages/Socat/Relaciones/TraspasoInformacion.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
@@ -359,6 +361,7 @@ const dialogFormVisibleCat = ref(false);
 const dialogFormVisibleBiblio = ref(false);
 const dialogFormVisibleTiposRel = ref(false);
 const dialogFormVisibleTraspasoInfo = ref(false);
+
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -393,7 +396,7 @@ const prevCursor = ref(null);
 const cargandoPagina = ref(false);
 const paginacion = ref(null);
 
- const mostrarNuevoTax = ref(false);
+const mostrarNuevoTax = ref(false);
 
 const conteoReg = ref(0);
 
@@ -499,6 +502,20 @@ const opcionesFiltroNomenclatura = ref([
   { label: 'NombreCompleto', value: 'Nombrecompleto' }
 ]);
 
+const traspasoInformacion = async() =>{
+  console.log("Este es el valor del taxon relacionado: ", relacionAct.value.TipoRelacion.idTipoRel); 
+  if(relacionAct.value.TipoRelacion.idTipoRel === 1 || relacionAct.value.TipoRelacion.idTipoRel === 2)
+  {
+    dialogFormVisibleTraspasoInfo.value = true;
+  }else{
+    mostrarNotificacionError('Error', `Para que se habilite el traspaso de información debe existir una relación de sinonimia.`, 'error');
+  }
+}
+
+const cerrarTraspaso =() =>{
+  dialogFormVisibleTraspasoInfo.value= false;
+}
+
 //Funcion para recibir los datos de los grupos y catalogos selccionados
 const recibeGrupos = async (data) => {
   catalogos.value = data['catalogos'];
@@ -563,6 +580,7 @@ const manejarEditar = (item) => {
 const manejaClick = (row) => {
   observacionesRel.value = row.Observaciones;
   relacionAct.value = row;
+  console.log("Este es el valor de relacion Actual: ",  relacionAct.value);
 
   if(JSON.stringify(relDetectada.value) != JSON.stringify(row))
   {
@@ -1268,7 +1286,7 @@ const Guardar = async() => {
     }
   }
 
-    // Inicialización de datos
+  // Inicialización de datos
   onMounted( async () => {
     const response = await axios.get('/cargar-tipoRel');
     const resTiposRel = await axios.get('/tipos-relacion/cargaInicial');

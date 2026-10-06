@@ -335,5 +335,4 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
 
     Route::put('/asociaciones-objetos/actualizar', [BibliografiaController::class, 'actualizarAsociacionObjeto'])
         ->name('bibliografias.asociarObjeto.actualizar');
-
 });

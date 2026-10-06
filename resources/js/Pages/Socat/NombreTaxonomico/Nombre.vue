@@ -381,73 +381,6 @@
     );
   }
 
-  //Función para recibir los nuevos taxones
-  /*const recibeTaxNuevo = async (res, nivel) => {
-    console.log("esta es la respuesta que llega res: ", res);
-
-    console.log("Cual es el pinche taxon actual: ", taxonAct.value);
-    if (nivel === "nivelInferior"){
-
-      console.log("Este es el taxon que existe");
-      const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.id);
-      console.log("Esto vale index------------------------: ", index);
-
-      console.log("Entre al if");
-      if (!data.value[index].children) {
-        data.value[index].children = [];
-      }
-
-      data.value[index].children.push(res);
-
-      // 👇 esperar a que el DOM y el tree se actualicen
-      await nextTick();
-
-      // 👇 expandir el padre (opcional pero recomendado)
-      tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
-
-      // 👇 seleccionar el nuevo nodo
-      selectedNodeKey.value = res.id;
-    }else{
-      console.log("Entre al else");
-      const index = data.value.findIndex(nombre => nombre.id === taxonAct.value.completo.IdNombreAscendente);
-      console.log("Esto vale index: ", index);
-      console.log("Esto vale nivel: ", nivel);
-      if(nivel === "mismoNivel" && index !== -1)
-      {
-        data.value[index].children.push(res);
-
-        // 👇 esperar a que el DOM y el tree se actualicen
-        await nextTick();
-
-        // 👇 expandir el padre (opcional pero recomendado)
-        tree.value.store.nodesMap[taxonAct.value.id].expanded = true;
-
-        // 👇 seleccionar el nuevo nodo
-        selectedNodeKey.value = res.id;
-      }
-
-      mostrarNuevoTax.value = false;
-    }
-    console.log("Mierda no entre a ninguno");
-    console.log("Esto vale res.id: ", res.id);
-
-    tree.value.setCurrentKey(
-      res.id
-    );
-
-    let node = tree.value.getNode(
-      res.id
-    );
-
-    console.log("Esto vale node: ", node);
-
-    expande(
-      node.data,
-      node
-    );
-
-  };*/
-
   //Función para recibir los taxones que dan de baja
   const recibeTaxBaja = (res) => {
 
@@ -798,76 +731,6 @@
     }
     loading.close();
   };
-
-  //Esta funcion se dispara una vez que se selecciona una categia taxonomica
-  /*
-  const handleChange = async (value) => {
-    if (value != undefined) {
-      filterText.value = "";
-      mostrar.value = false;
-      catego.value = value[0];
-
-      if (idsGrupos.value != '') {
-        const params = {
-          categ: value[0],
-          catalog: idsGrupos.value
-        };
-
-        const loading = ElLoading.service({
-          lock: true,
-          text: "Loading",
-          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-          backgroud: 'rgba(255,255,255,0.85)',
-        });
-
-        //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-        const response = await axios.get('/cargar-nomArb', { params });
-        console.log("Esto es lo que llega  de respuesta del arbol: ", response);
-        if (response.status === 200) {
-          data.value = response.data[0];
-          paginacion.value = data[1];
-          //totalItems.value = response.data[1].total;
-          //paginas.value = response.data[1].last_page;
-
-          if(response.data[3].length === 1 &&(response.data[0].length === 0 &&
-                                              (response.data[3][0].IdAscendente === 0 ||
-                                                response.data[3][0].IdAscendente === null))){
-
-            categoriaNuevoTax.value = response.data[3][0];
-            mostrarNuevoTax.value = true;
-          }else{
-            mostrarNuevoTax.value = false;
-          }
-        }
-        else {
-          console.log("Se presentó un error en la recuperación de los datos");
-        }
-        loading.close();
-
-        await nextTick();
-
-        if(data.value.length > 0)
-        {
-          selectedNodeKey.value= data.value[0].id;
-          tree.value.setCurrentKey(data.value[0].id);
-
-          let node = tree.value.getNode(data.value[0].id);
-
-          expande(node.data, node);
-        }
-      }
-    }else
-    {
-      catego.value = '';
-      tablaNomenclatura.value = [];
-      tablaReferencias.value = [];
-      totalRegNom.value = 0;
-      totalRegRef.value = 0;
-      data.value = [];
-      numHijos.value = 0;
-      taxonAct.value = [];
-    }
-  }*/
 
   //Función para hacer la busqueda de los valores colocados en el input de busqueda
   const filterNode = async (value) => {
@@ -1244,10 +1107,10 @@
 
       try {
         ElMessageBox.close();
-        console.log("Porque no permite la eliminacion: ", item.idNombre);
+        
         const response = await axios.delete('/elimina-RelacionesTax', { data: {relCompleta: item.TipoRelacion.relCompleta,
                                                                                 taxAct: item.idNombre}});
-        console.log("Porque no permite la eliminacion:::::::::::: ", response);
+        
         tablaNomenclatura.value = response.data;
 
         mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
