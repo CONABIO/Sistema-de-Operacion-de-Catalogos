@@ -221,8 +221,8 @@ class BibliografiaController extends Controller
                 return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más taxones.'], 400);
             }
 
-            if ($conn->table('RelBiblioGrupoSCAT')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más grupos taxonómicos.'], 400);
+            if ($conn->table('RelNomNomComunRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres comunes .'], 400);
             }
 
             if ($conn->table('RelNombreCatalogoBiblio')->where('IdBibliografia', $id)->exists()) {
