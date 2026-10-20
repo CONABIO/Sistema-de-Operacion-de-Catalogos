@@ -19,6 +19,15 @@ import usePermisos from '@/composables/usePermisos';
 
 const { permisos } = usePermisos();
 
+
+const agregarObjeto = () => {
+  if (!selectedBibliografia.value) {
+    mostrarNotificacion("Advertencia", "Por favor, seleccione una bibliografía de la tabla principal primero.", "warning");
+    return;
+  }
+  esModalObjetosVisible.value = true;
+};
+
 const grupoTableRef = ref(null);
 const objetoTableRef = ref(null);
 
@@ -55,10 +64,18 @@ const handleObjetoRowClick = (row) => {
 };
 
 const rowObjetoClassName = ({ row }) => {
-  const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
-  if (selectedObjetoId.value !== null && row[idKey] === selectedObjetoId.value) {
+  if (!row || !selectedObjetoRow.value) return '';
+
+  if (row === selectedObjetoRow.value) {
     return 'fila-seleccionada-verde';
   }
+
+  const idKey = row.IdObjetoExterno ? 'IdObjetoExterno' : (row.IdObjeto ? 'IdObjeto' : 'id');
+  const rowId = row[idKey];
+  if (selectedObjetoId.value != null && rowId != null && String(rowId) === String(selectedObjetoId.value)) {
+    return 'fila-seleccionada-verde';
+  }
+
   return '';
 };
 
@@ -108,9 +125,14 @@ const guardarObservacionesObjeto = async () => {
 
 const confirmarEliminacionObjeto = (filaObjeto) => {
   const idKey = filaObjeto?.IdObjetoExterno ? 'IdObjetoExterno' : (filaObjeto?.IdObjeto ? 'IdObjeto' : 'id');
-  const idObjetoVal = filaObjeto?.[idKey] || 0;
+  const idObjetoVal = filaObjeto?.[idKey];
+  if (!idObjetoVal) {
+    mostrarNotificacion('Aviso', 'Por favor, seleccione un objeto externo de la lista para poder eliminarlo.', 'warning');
+    return;
+  }
+
   if (!selectedBibliografia.value?.IdBibliografia && !filaObjeto?.IdBibliografia) {
-    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación.', 'warning');
+    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación (bibliografía no encontrada).', 'warning');
     return;
   }
 
@@ -212,8 +234,11 @@ const hasPermisos = (etiqueta, modulo) => {
 
 const handleGrupoRowClick = (row) => {
   if (!row) return;
-  selectedGrupoId.value = row.IdGrupoSCAT;
+  const idKey = row.IdGrupoSCAT ? 'IdGrupoSCAT' : (row.IdGrupo ? 'IdGrupo' : (row.id_grupo_scat ? 'id_grupo_scat' : 'id'));
+  selectedGrupoId.value = row[idKey] ?? row.id;
   selectedGrupoRow.value = row;
+
+  // Limpiar objeto externo
   selectedObjetoId.value = null;
   selectedObjetoRow.value = null;
   if (objetoTableRef.value) {
@@ -225,9 +250,20 @@ const handleGrupoRowClick = (row) => {
 };
 
 const rowGrupoClassName = ({ row }) => {
-  if (selectedGrupoId.value !== null && row.IdGrupoSCAT === selectedGrupoId.value) {
+  if (!row || !selectedGrupoRow.value) return '';
+
+  // Regla de oro: Si es exactamente la fila guardada en memoria, esa es la verde
+  if (row === selectedGrupoRow.value) {
     return 'fila-seleccionada-verde';
   }
+
+  // Respaldo por ID
+  const idKey = row.IdGrupoSCAT ? 'IdGrupoSCAT' : (row.IdGrupo ? 'IdGrupo' : (row.id_grupo_scat ? 'id_grupo_scat' : 'id'));
+  const rowId = row[idKey];
+  if (selectedGrupoId.value != null && rowId != null && String(rowId) === String(selectedGrupoId.value)) {
+    return 'fila-seleccionada-verde';
+  }
+
   return '';
 };
 
@@ -384,7 +420,7 @@ const guardarObservaciones = async () => {
 
 const confirmarEliminacionGrupo = (filaGrupo) => {
   if (!filaGrupo?.IdBibliografia || !filaGrupo?.IdGrupoSCAT) {
-    mostrarNotificacion('Aviso', 'Faltan datos para eliminar la asociación.', 'warning');
+    mostrarNotificacion('Aviso', 'Por favor, seleccione un grupo taxonómico de la lista para poder eliminarlo.', 'warning');
     return;
   }
 
@@ -489,13 +525,14 @@ const handleRowClick = async (row, idGrupoASeleccionar = null, idObjetoASeleccio
     datosGrupos.value = responseGrupos.data;
 
     if (datosGrupos.value.length > 0) {
+      const idKey = datosGrupos.value[0].IdGrupoSCAT ? 'IdGrupoSCAT' : (datosGrupos.value[0].IdGrupo ? 'IdGrupo' : 'id');
       const targetGrupo = idGrupoASeleccionar
-        ? datosGrupos.value.find(g => g.IdGrupoSCAT === idGrupoASeleccionar)
+        ? datosGrupos.value.find(g => (g[idKey] ?? g.id) === idGrupoASeleccionar)
         : datosGrupos.value[0];
 
       await nextTick();
       const filaFinalGrupo = targetGrupo || datosGrupos.value[0];
-      selectedGrupoId.value = filaFinalGrupo.IdGrupoSCAT;
+      selectedGrupoId.value = filaFinalGrupo[idKey] ?? filaFinalGrupo.id;
       selectedGrupoRow.value = filaFinalGrupo;
       if (grupoTableRef.value) {
         grupoTableRef.value.setCurrentRow(filaFinalGrupo);
@@ -864,12 +901,12 @@ onMounted(() => {
             <h3>Grupo taxonómico</h3>
             <div class="botones">
               <NuevoButton @crear="agregarGrupo" v-if="hasPermisos(moduloSocatGrp, 'Altas')"/>
-              <EditarButton  @editar="abrirModalEditar(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Cambios')"/>
+              <EditarButton :disabled="!tieneGrupoSeleccionado" @editar="abrirModalEditar(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Cambios')"/>
               <EliminarButton  @eliminar="confirmarEliminacionGrupo(selectedGrupoRow)" v-if="hasPermisos(moduloSocatGrp, 'Bajas')" />
             </div>
           </div>
           <div class="widget-table-container">
-            <el-table ref="grupoTableRef" :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName"
+            <el-table ref="grupoTableRef" :data="datosGrupos" border style="width: 100%" :row-class-name="rowGrupoClassName" :row-key="(row) => row.IdGrupoSCAT || row.IdGrupo || row.id || row.grupo"
               @row-click="handleGrupoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin grupos asociados'">
               <el-table-column prop="grupo" label="Grupo taxonómico" />
@@ -890,7 +927,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="widget-table-container">
-            <el-table ref="objetoTableRef"  :data="datosObjetos" border style="width: 100%" :row-class-name="rowObjetoClassName"
+            <el-table ref="objetoTableRef"  :data="datosObjetos" border style="width: 100%" :row-class-name="rowObjetoClassName" :row-key="(row) => row.IdObjetoExterno || row.IdObjeto || row.id || row.objeto"
               @row-click="handleObjetoRowClick"
               :empty-text="!selectedBibliografia ? 'Seleccione una bibliografía' : 'Sin objetos asociados'">
               <el-table-column prop="objeto" label="Objeto externo" />
@@ -946,10 +983,15 @@ onMounted(() => {
     </DialogGeneral>
 
     <DialogGeneral v-model="esModalObjetosVisible" :bot-cerrar="true" :pressEsc="true" width="75%"
-    @close="cerrarModalObjetos" :draggable="true">
+        @close="cerrarModalObjetos" :draggable="true">
         <div class="dialog-body-iframe-container"
             style="padding: 0; border: none; display: flex; flex-direction: column;">
-            <ObjetoExterno :is-modal="true" @asociar="asociarObjetoDesdeModal" @cerrar="cerrarModalObjetos" />
+            <ObjetoExterno
+                v-if="esModalObjetosVisible"
+                :is-modal="true"
+                @asociar="asociarObjetoDesdeModal"
+                @cerrar="cerrarModalObjetos"
+            />
         </div>
     </DialogGeneral>
 

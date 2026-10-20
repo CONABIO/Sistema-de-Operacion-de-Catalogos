@@ -108,8 +108,7 @@ const cargarTiposArchivo = async () => {
         const response = await axios.get('/api/mimes');
         opcionesTipoArchivo.value = response.data;
     } catch (error) {
-        console.error("Error al cargar los tipos de archivo:", error);
-        ElMessage.error('No se pudieron cargar los tipos de archivo.');
+
     }
 };
 
@@ -163,7 +162,7 @@ watch(selectedOption, (newVal) => {
 });
 
 watch(() => form.value.UrlExterna, (newUrl) => {
-    if (newUrl && selectedOption.value === 'webPage' && props.accion === 'crear') {
+    if (newUrl && selectedOption.value === 'webPage') {
         try {
             let urlToParse = newUrl;
             if (!/^https?:\/\//i.test(newUrl)) {
@@ -198,6 +197,13 @@ watch(() => form.value.UrlExterna, (newUrl) => {
     }
 });
 
+
+watch(dialogVisible, (newVal) => {
+    if (!newVal && props.visible) {
+        emit('cerrar');
+    }
+});
+
 const intentarGuardar = async () => {
     if (!formRef.value) return;
     try {
@@ -219,7 +225,7 @@ const cerrarDialogo = () => {
 </script>
 
 <template>
-    <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true">
+    <DialogGeneral v-model="dialogVisible" :bot-cerrar="true" :press-esc="true" @close="cerrarDialogo">
         <div class="dialog-header">
             <h3>{{ dialogTitle }}</h3>
         </div>
@@ -263,7 +269,7 @@ const cerrarDialogo = () => {
                         <el-col :span="12">
                             <el-form-item label="Protocolo" prop="Protocolo">
                                 <el-select v-model="form.Protocolo" placeholder="Seleccione" style="width: 100%;"
-                                    :disabled="selectedOption === 'localFile'">
+                                    disabled>
                                     <el-option v-for="item in opcionesProtocolo" :key="item" :label="item"
                                         :value="item" />
                                 </el-select>
