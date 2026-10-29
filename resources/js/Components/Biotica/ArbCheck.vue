@@ -60,21 +60,17 @@
                 if(grupos === '')
                 {
                     grupos = element.label;
-                }else{
-                    if(grupos.indexOf(element.label) === -1){
+                }else if(grupos.indexOf(element.label) === -1){
                         grupos += ", " + element.label;
-                    }
-                }
+                    }                
             }
 
             if(catalogos === '')
             {
                 catalogos = element.catalogo;
-            }else{
-                if(catalogos.indexOf(element.catalogo) === -1){
+            }else if(catalogos.indexOf(element.catalogo) === -1){
                     catalogos += ", " + element.catalogo;
                 }
-            }
         });
 
             grpMarcados.value.ids = idsGruposTax;

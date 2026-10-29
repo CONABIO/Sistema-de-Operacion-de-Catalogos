@@ -121,7 +121,7 @@ const cerrarModal = () => {
 const handleFormSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = datosDelFormulario.accionOriginal === 'editar';
-    const nombreNuevoTrim = datosDelFormulario.Descripcion.trim().toLowerCase();
+
     const mensajeDuplicado = esEdicion
         ? "El tipo de distribución que desea modificar ya existe, las modificaciones no se realizaron."
         : "El tipo de distribución que desea ingresar ya existe.";
@@ -205,10 +205,10 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
     const procederConEliminacion = async () => {
-        const nombreItem = itemAEliminar ? `"${itemAEliminar.Descripcion}"` : 'el registro';
+        
         try {
             ElMessageBox.close();
-            const itemAEliminar = currentData.value.find(item => item.IdTipoDistribucion === idTipoDistribucion);
+            
             await axios.delete(`/tipos-distribucion/${idTipoDistribucion}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
@@ -244,7 +244,7 @@ const eliminarTipoDistribucion = (idTipoDistribucion) => {
             <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
                 v-model:total-items="totalItems" endpoint="/busca-tipo-distribucion" id-key="IdTipoDistribucion"
                 @editar-item="editarTipoDistribucion" @eliminar-item="eliminarTipoDistribucion"
-                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila"
+                @nuevo-item="nuevoTipoDistribucion"  @row-click="manejarClickFila" :moduloSocat="'MnuCatTipDist'"
                 :botCerrar = "props.modal" @cerrar="emit('cerrar')">
                 <template #expand-column>
                     <el-table-column type="expand">

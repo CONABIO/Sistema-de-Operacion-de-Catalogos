@@ -131,7 +131,8 @@
                         placeholder="Observaciones"
                       />
                       <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
-                                    style="flex-shrink: 0; min-width: max-content;"/>
+                                    style="flex-shrink: 0; min-width: max-content;"
+                                    v-if="hasPermisos(moduloSocat,'Cambios')"/>
                     </div>
                   </div>
                 </el-col>
@@ -160,13 +161,45 @@
                           </el-scrollbar>
                         </div>
                       </el-main>
-                      <!-- PIE DE PANEL CON PAGINACIÓN -->
-                      <el-footer v-if="totalItems > 0" class="panel-footer">
-                        <el-pagination :current-page="currentPage" :page-size="itemsPerPage" :total="totalItems"
-                          @current-change="handlePageChange" layout="prev, pager, next, total" background small />
-                        <span v-show="numHijos > 0" style="margin-left: auto;">
-                          Num. Hijos: {{ numHijos }}
-                        </span>
+                     
+                      <el-footer>
+                        <div class="pagination-footer">
+
+                          <div
+                            v-if="data.length > 0" class="pagination-left" >
+                            <el-button
+                              :disabled="!prevCursor || cargandoPagina"
+                              @click="paginaAnterior"
+                            >
+                              <
+                            </el-button>
+
+                            <span style="margin: 0 15px;">
+                              Página {{ currentPage }}
+                            </span>
+
+                            <el-button
+                              :disabled="!nextCursor || cargandoPagina"
+                              @click="siguientePagina"
+                            >
+                              >
+                            </el-button>
+                          </div>
+
+                          <div v-if="conteoReg > 0">
+                            Reg. Totales: {{ conteoReg }}
+                          </div>
+
+                          <div class="pagination-right">
+
+                            <span style="margin-left: auto;">
+                              Taxa desc. : {{ numHijos }}
+                            </span>
+
+                          </div>
+
+                        </div>
+
                       </el-footer>
                     </el-container>
                   </el-card>
@@ -181,7 +214,7 @@
                               gap: 16px;">
                     <el-tooltip effect="dark" content="Relaciona taxón" placement="top">
                       <el-button @click="traspasaDatos" circle color="#8e44ad" :disabled="habTraspaso"
-                                  style="margin-left: 10px;">
+                                  style="margin-left: 10px;" v-if="hasPermisos(moduloSocat,'Altas')">
                         <el-icon>
                           <iconoTraspaso />
                         </el-icon>
@@ -190,16 +223,18 @@
                     <el-tooltip effect="dark" content="Cambio de relación" placement="right">
                       <el-button @click="CambioBasSin" circle type="warning" 
                                   style="margin-left: 10px;"
-                                  :disabled = "habCambioSinBas">
+                                  :disabled = "habCambioSinBas" 
+                                  v-if="hasPermisos(moduloSocat,'Cambios')">
                         <el-icon>
                           <reemplazo />
                         </el-icon>
                       </el-button>
                     </el-tooltip>
                     <el-tooltip effect="dark" content="Traspaso de información" placement="right">
-                      <el-button @click="CambioBasSin" circle  
+                      <el-button @click="traspasoInformacion" circle  
                                   style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
-                                  :disabled = "habCambioSinBas">
+                                  :disabled = "habCambioSinBas"
+                                  v-if="hasPermisos(moduloSocat,'Cambios')">
                         <img :src = "'/storage/images/TraspasoInformacion.png'" style="width: 25px; height: 28px">
                       </el-button>
                     </el-tooltip>
@@ -221,6 +256,7 @@
                           :itemsPerPage = 2
                           :mostrarBiblio = "true"
                           :mostrarAcci = "true"
+                          :moduloSocat="moduloSocat"
                           :mostrarSalir = "false" 
                           :mostrarNuevo = "false"
                           :alturaTabla = 220
@@ -259,11 +295,12 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83+%'">
-      <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
-                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
+    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83%'">
+      <Traspaso :taxonAct = "props.taxonAct" 
+                :sinonimo = "relacionAct"
+                @cerrar="cerrarTraspaso"/>
     </DialogForm>
-
+      
     <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
       <IndexRelaciones 
           :treeDataProp = "tipRelacion.treeDataProp"
@@ -292,6 +329,7 @@ import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import { usePage } from '@inertiajs/vue3';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+import Traspaso from '@/Pages/Socat/Relaciones/TraspasoInformacion.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
@@ -323,6 +361,7 @@ const dialogFormVisibleCat = ref(false);
 const dialogFormVisibleBiblio = ref(false);
 const dialogFormVisibleTiposRel = ref(false);
 const dialogFormVisibleTraspasoInfo = ref(false);
+
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -337,6 +376,8 @@ const relDetectada = ref([]);
 const taxActBiblio = ref([]);
 const tipRelacion = ref([]);
 
+const moduloSocat = ref("RelNombreNomclatura");
+
 const habTraspaso = ref(true);
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
@@ -349,6 +390,16 @@ const mostrar = ref(false);
 const data = ref([]);
 const paginas = ref('');
 const currentPage = ref(1);
+
+const nextCursor = ref(null);
+const prevCursor = ref(null);
+const cargandoPagina = ref(false);
+const paginacion = ref(null);
+
+const mostrarNuevoTax = ref(false);
+
+const conteoReg = ref(0);
+
 const itemsPerPage = ref(150);
 const taxonActRel = ref([]);
 const taxonAct = ref([]);
@@ -451,6 +502,20 @@ const opcionesFiltroNomenclatura = ref([
   { label: 'NombreCompleto', value: 'Nombrecompleto' }
 ]);
 
+const traspasoInformacion = async() =>{
+  console.log("Este es el valor del taxon relacionado: ", relacionAct.value.TipoRelacion.idTipoRel); 
+  if(relacionAct.value.TipoRelacion.idTipoRel === 1 || relacionAct.value.TipoRelacion.idTipoRel === 2)
+  {
+    dialogFormVisibleTraspasoInfo.value = true;
+  }else{
+    mostrarNotificacionError('Error', `Para que se habilite el traspaso de información debe existir una relación de sinonimia.`, 'error');
+  }
+}
+
+const cerrarTraspaso =() =>{
+  dialogFormVisibleTraspasoInfo.value= false;
+}
+
 //Funcion para recibir los datos de los grupos y catalogos selccionados
 const recibeGrupos = async (data) => {
   catalogos.value = data['catalogos'];
@@ -515,6 +580,7 @@ const manejarEditar = (item) => {
 const manejaClick = (row) => {
   observacionesRel.value = row.Observaciones;
   relacionAct.value = row;
+  console.log("Este es el valor de relacion Actual: ",  relacionAct.value);
 
   if(JSON.stringify(relDetectada.value) != JSON.stringify(row))
   {
@@ -552,41 +618,6 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
   notificacionDuracion.value = 0;
   notificacionVisible.value = true;
 };
-
-const handleChange = async (value) => {
-  if (value != undefined) {
-    filterText.value = "";
-    mostrar.value = false;
-    catego.value = value[0];
-
-    if (idsGrupos.value != '') {
-      const params = {
-        categ: value[0],
-        catalog: idsGrupos.value
-      };
-
-      const loading = ElLoading.service({
-        lock: true,
-        text: "Loading",
-        spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
-        backgroud: 'rgba(255,255,255,0.85)',
-      });
-
-      //De forma asincrona se ejecutan las funciones de carga de datos por medio de axios
-      const response = await axios.get('/cargar-nomArb', { params });
-
-      if (response.status === 200) {
-
-        data.value = response.data[0];
-        totalItems.value = response.data[1].total;
-        paginas.value = response.data[1].last_page;
-      }
-      else {
-      }
-      loading.close();
-    }
-  }
-}
 
 const filtro_Catalogos = () => {
   //Funcion para abrir el modal que muestra los catalogos taxonómicos
@@ -720,7 +751,7 @@ const cerrarDialog = async(valor) => {
     case "grupos":
       dialogFormVisibleCat.value = false;
     break;
-    case "biblio":
+    case "biblio":{
       const params= {
                   taxAct: props.taxonAct.id
                 };   
@@ -734,6 +765,7 @@ const cerrarDialog = async(valor) => {
       dialogFormVisibleBiblio.value = false;
 
     break;
+    }
     case "relTax": 
       dialogFormVisibleTiposRel.value = false;
     break;
@@ -748,7 +780,7 @@ const Guardar = async() => {
   const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
-      const response = await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
+      await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
                                                                             observacion: observacionesRel.value,
                                                                             taxAct: props.taxonAct.id}});
 
@@ -817,7 +849,7 @@ const Guardar = async() => {
             {
                 for (const child of tiposRel.value) {
                     if (child.children && child.children.length > 0) {
-                        const found = await updateChildNode(child.children, value[value.length - 1]);
+                        await updateChildNode(child.children, value[value.length - 1]);
                     } 
                 }
                 
@@ -935,11 +967,15 @@ const Guardar = async() => {
         }
     } 
     
-    const validacionSinonimos = async () => {
-        const valTaxAct = Object.values(props.taxonAct.relaciones)
-                               .flat()
-                               .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));                               
+    const validacionSinonimos = async () => {  
+        let valTaxAct = null;  
       
+        if(props.taxonAct.relaciones && Object.keys(props.taxonAct.relaciones).length > 0){
+          valTaxAct = Object.values(props.taxonAct.relaciones)
+                                .flat()
+                                .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));  
+        }
+                       
         const valTaxRel = Object.values(taxonActRel.value)
                                .flat()
                                .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));
@@ -954,8 +990,7 @@ const Guardar = async() => {
               7000
           ); 
           return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-        }else{
-          if(valTaxAct !== undefined || valTaxRel !== undefined)
+        }else if(valTaxAct !== null || valTaxRel !== undefined)
           {
             mostrarNotificacion(
                 "Error",
@@ -964,8 +999,7 @@ const Guardar = async() => {
                 7000
             );
             return false;//Se valida que el taxon a relacionar no tenga validos asociados
-          }else{
-              if(props.taxonAct.completo.Estatus === "ND"){
+          }else if(props.taxonAct.completo.Estatus === "ND"){
                 mostrarNotificacion(
                   "Error",
                   "El taxón actual tiene estatus ND, por lo cual no puede tener relaciones de sinonimia.",
@@ -973,8 +1007,7 @@ const Guardar = async() => {
                   7000
               );
               return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-            }else{
-              if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
+            }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
                  taxonActRel.value.completo.categoria.IdNivel1 < 5){
                   mostrarNotificacion(
                     "Error",
@@ -984,9 +1017,6 @@ const Guardar = async() => {
                   );
                   return false;
                  }              
-                }
-              }
-            }
         return true;
       }
 
@@ -1158,12 +1188,13 @@ const Guardar = async() => {
     }
 
    switch (tipRelSelec.value) {
-    case 1:
-      relacionar = validacionSinonimos();
+    case 1:{
+      let relacionar = validacionSinonimos();
       if (relacionar) {
         altaRelacion();
       }
       break;
+    }
   }
 
   const CambioBasSin = async() => {
@@ -1193,7 +1224,7 @@ const Guardar = async() => {
       }
     };
 
-    const procederConActSinBas = async () => {
+    /*const procederConActSinBas = async () => {
       try {
         
         ElMessageBox.close();
@@ -1212,7 +1243,7 @@ const Guardar = async() => {
       } catch (apiError) {
         mostrarNotificacionError('Error', `El tipo de relación no se puede actualizar.`, 'error');
       }
-    };
+    };*/
     //---------------------------------Aqui termina la definición de las funciones internas--------------------------------- 
 
     //---------------------------------Se valida si es basonimo o sinonimo 
@@ -1255,7 +1286,7 @@ const Guardar = async() => {
     }
   }
 
-    // Inicialización de datos
+  // Inicialización de datos
   onMounted( async () => {
     const response = await axios.get('/cargar-tipoRel');
     const resTiposRel = await axios.get('/tipos-relacion/cargaInicial');
@@ -1372,6 +1403,279 @@ const Guardar = async() => {
 
     habCambioSinBas.value = true;
   });
+
+  //-----------------------------------------------
+  const cargarPagina = async (cursor = null) => {
+    let params = [];
+  
+    if(filterText.value === ""){
+      params = {
+        categ: catego.value,
+        catalog: idsGrupos.value
+      };
+    }else{
+      params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: filterText.value
+      };
+    }
+  
+    // Solo enviamos cursor cuando estamos cambiando de página
+    if (cursor) {
+      params.cursor = cursor;
+    }
+
+    try {
+
+      cargandoPagina.value = true;
+     
+      const response = await axios.get('/cargar-nomArb', {
+        params
+      });
+
+      if (response.status === 200) {
+
+        const paginator = response.data[0];
+
+        // Los 150 registros
+        data.value = paginator;
+
+        // Cursores
+        nextCursor.value = response.data[1].next_cursor;
+        prevCursor.value = response.data[1].prev_cursor;
+
+        // Las categorías
+        paginacion.value = response.data[1];
+
+        // Mantienes tu lógica actual
+        if (
+          response.data[3].length === 1 &&
+          (
+            response.data[0].data.length === 0 &&
+            (
+              response.data[3][0].IdAscendente === 0 ||
+              response.data[3][0].IdAscendente === null
+            )
+          )
+        ) {
+
+          categoriaNuevoTax.value = response.data[3][0];
+          mostrarNuevoTax.value = true;
+
+        } else {
+
+          mostrarNuevoTax.value = false;
+
+        }
+
+      } else {
+
+        console.log(
+          "Se presentó un error en la recuperación de los datos"
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Error cargando nombres:",
+        error
+      );
+
+    } finally {
+
+      cargandoPagina.value = false;
+
+    }
+  };
+
+  const cargaConteo = async() =>{
+    let params = [];
+  
+    if(filterText.value === ""){
+      params = {
+        categ: catego.value,
+        catalog: idsGrupos.value
+      };
+    }else{
+      params = {
+        categ: categ.value[0],
+        catalog: idsGrupos.value,
+        taxon: filterText.value
+      };
+    }
+
+    const response = await axios.get('/cargar-contBusq', {
+        params
+    });
+
+    conteoReg.value = response.data[0];
+
+  }
+
+  const handleChange = async (value) => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+    if (value !== undefined) {
+
+      filterText.value = "";
+      mostrar.value = false;
+      catego.value = value[0];
+
+      if (idsGrupos.value !== '') {
+
+        // Cada cambio de categoría comienza desde página 1
+        currentPage.value = 1;
+
+        // Muy importante: eliminar cursores anteriores
+        nextCursor.value = null;
+        prevCursor.value = null;
+
+        try {
+
+          await cargarPagina();
+
+          await cargaConteo();
+
+        } finally {
+
+          loading.close();
+
+        }
+
+        await nextTick();
+
+        if (data.value.length > 0) {
+
+          selectedNodeKey.value = data.value[0].id;
+
+          tree.value.setCurrentKey(
+            data.value[0].id
+          );
+
+          let node = tree.value.getNode(
+            data.value[0].id
+          );
+
+          expande(
+            node.data,
+            node
+          );
+        }
+
+      }
+
+    } else {
+
+      conteoReg.value = 0;
+      catego.value = '';
+
+      tablaNomenclatura.value = [];
+      tablaReferencias.value = [];
+
+      totalRegNom.value = 0;
+      totalRegRef.value = 0;
+
+      data.value = [];
+
+      numHijos.value = 0;
+      taxonAct.value = [];
+
+      // También limpiamos paginación
+      currentPage.value = 1;
+      nextCursor.value = null;
+      prevCursor.value = null;
+
+      loading.close();
+    }
+  };
+
+  const siguientePagina = async () => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+
+    if (!nextCursor.value || cargandoPagina.value) {
+      loading.close();
+      return;
+    }
+
+    currentPage.value++;
+    
+    await cargarPagina(nextCursor.value);
+    
+    await nextTick();
+    
+    if (data.value.length > 0) {
+
+      selectedNodeKey.value = data.value[0].id;
+
+      tree.value.setCurrentKey(
+        data.value[0].id
+      );
+
+      const node = tree.value.getNode(
+        data.value[0].id
+      );
+
+      if (node) {
+        expande(node.data, node);
+      }
+    }
+
+    loading.close();
+  };
+
+  const paginaAnterior = async () => {
+
+    const loading = ElLoading.service({
+          lock: true,
+          text: "Loading",
+          spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
+          backgroud: 'rgba(255,255,255,0.85)',
+        });
+    
+    if (!prevCursor.value || cargandoPagina.value) {
+      loading.close();
+      return;
+    }
+
+    currentPage.value--;
+
+    await cargarPagina(prevCursor.value);
+
+    await nextTick();
+
+    if (data.value.length > 0) {
+
+      selectedNodeKey.value = data.value[0].id;
+
+      tree.value.setCurrentKey(
+        data.value[0].id
+      );
+
+      const node = tree.value.getNode(
+        data.value[0].id
+      );
+
+      if (node) {
+        expande(node.data, node);
+      }
+    }
+    loading.close();
+  };
 
 </script>
 

@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class RequestSinonimos extends FormRequest
 {
+
+    private const ESTADO_VALIDO = 'Válido';
+    private const ESTADO_CORRECTO = 'Correcto';
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -56,7 +60,7 @@ class RequestSinonimos extends FormRequest
     }
 
     public function withValidator($validator){
-        //Log::info('Request completo:', $this->all());
+
 
         $validator->after(function ($validator){
             $taxonAct = $this->input('params.taxonAct', []); 
@@ -91,12 +95,12 @@ class RequestSinonimos extends FormRequest
 
             // === Conteo de registros validos ===
             $contValidoAct = $filtraVal->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto']);
+                return in_array(data_get($rel, 'Nombrecompleto.estatus'), [self::ESTADO_VALIDO, self::ESTADO_CORRECTO], true);
             });
 
             // === Conteo de registros relacionados ===
             $conValidoRel = $filtraRel->contains(function ($rel) {
-                return in_array(data_get($rel, 'Nombrecompleto.estatus'), ['Válido', 'Correcto']);
+                return in_array(data_get($rel, 'Nombrecompleto.estatus'), [self::ESTADO_VALIDO, self::ESTADO_CORRECTO], true);
             });
 
             $estatusAct = data_get($taxonAct, 'estatus');
@@ -127,10 +131,10 @@ class RequestSinonimos extends FormRequest
 
             // 2. Si taxonAct es "Sinonimo", no debe tener más de un válido relacionado
             $contValido = collect(data_get($taxonAct, 'relaciones', []))->some(function ($rel) {
-                return in_array(data_get($rel, 'NombreCompleto.estatus'), ['Válido', 'Correcto']);
+                return in_array(data_get($rel, 'NombreCompleto.estatus'), [self::ESTADO_VALIDO, self::ESTADO_CORRECTO], true);
             });
 
-            if ($estatusAct === "Sinonimo" && $contValido && $estatusRel === "Válido") {
+            if ($estatusAct === "Sinonimo" && $contValido && $estatusRel === self::ESTADO_VALIDO) {
                 Log::info("No pase la validacion 2");
                 $validator->errors()->add('estatus', 'El taxón actual ya tiene una relación con un taxón válido.');
             }

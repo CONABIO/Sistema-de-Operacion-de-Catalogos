@@ -24,8 +24,10 @@ use App\Http\Controllers\RelNomNomComunRegionBiblioController;
 use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
 use App\Http\Controllers\RelNombreNomComunController;
 use App\Http\Controllers\RelNombreCaracteristicasController;
+use App\Http\Controllers\RelNombreRegionController;
 use App\Models\Mime;
 
+const RUTA_AUTORES = '/autores';
 
 Route::get('/', function () {
     return Inertia::render('Auth/Login', [
@@ -44,21 +46,27 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/cargar-usuarios', [UserController::class, 'cargaUsuarios']);
+    Route::get('/carga-perfiles', [UserController::class, 'cargaPerfiles']);
+    Route::delete('/elimina-usuario', [UserController::class, 'eliminaUsuario']);
+    
     //Rutas definidas para Socat
     Route::get('/busca-autor', [AutorTaxonController::class, 'buscaAutor']);
-    Route::get('/autores', [AutorTaxonController::class, 'Index'])->name('autorTaxon.index');
+    Route::get(RUTA_AUTORES, [AutorTaxonController::class, 'Index'])->name('autorTaxon.index');
 });
 
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/generate-token', [TokenController::class, 'generateToken'])->name('generate.token');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/autores', [AutorTaxonController::class, 'index'])->name('autorTaxon.index');
+    Route::get(RUTA_AUTORES, [AutorTaxonController::class, 'index'])->name('autorTaxon.index');
     Route::get('/autores/create', [AutorTaxonController::class, 'create'])->name('autores.create');
-    Route::post('/autores', [AutorTaxonController::class, 'store'])->name('autores.store');
+    Route::post(RUTA_AUTORES, [AutorTaxonController::class, 'store'])->name('autores.store');
     Route::get('/autores/{autor}/edit', [AutorTaxonController::class, 'edit'])->name('autores.edit');
     Route::put('/autores/{id}', [AutorTaxonController::class, 'update'])->name('autores.update');
     Route::delete('/autores/{id}', [AutorTaxonController::class, 'destroy'])->name('autores.destroy');
@@ -109,7 +117,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/Nombre', [NombresArbolController::class, 'Index'])->name('nombreTax.index');
     Route::get('/cargar-nomArb', [NombresArbolController::class, 'fetchNomArb']);
     Route::get('/cargar-hijos-nomArb/{id}', [NombresArbolController::class, 'fetchHijos']);
-
+    Route::get('/carga-taxon/{id}', [NombresArbolController::class, 'cargaTaxon']);
 
     Route::get('/valCamEstatus', [NombresArbolController::class, 'validaCambio']);
     Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
@@ -123,6 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/actualiza-RelBiblioNombre', [NombresArbolController::class, 'actualizaObsNomBiblio']);
     Route::delete('/elimina-RelBiblioNombre', [NombresArbolController::class, 'eliminaRelBiblio']);
     Route::get('/actualizaReferenciasNombre', [NombresArbolController::class, 'muestraReferencias']);
+    Route::get('cargar-contBusq', [NombresArbolController::class, 'cargaConteosBusq']);
 
     Route::get('/carga-AcumuladoSnib', [NombresArbolController::class, 'cargaComAcum']);
 
@@ -244,8 +253,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cargar-relaciones',[TipoRelacionController::class, 'cargaRelaciones']);
 
-    //Route::get('/cargar-relaciones', [TipoRelacionController::class, 'cargaRelacionesInicio']);
-
     Route::get('categorias-taxonomicas', [CategoriaTaxonomicaController::class, 'index'])
         ->name('categorias-taxonomicas.index');
 
@@ -275,24 +282,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/obtener-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'obtenerBiblioCaractSolo']);
     Route::post('/asociar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'asociarBiblioCaractSolo']);
 
-    Route::post('/eliminar-biblio-caract-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
-
-Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
-Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
+    Route::delete('/eliminar-biblio-caract-region', [RelNombreCatalogoRegionBiblioController::class, 'eliminarBiblioCaractRegion']);
+    Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
 
-Route::put('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
+
+Route::post('/actualizar-obs-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'actualizarObservacion']);
 Route::put('/actualizar-obs-relacion-base', [RelNomNomComunRegionBiblioController::class, 'actualizarObsRelacionBase']);
 Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComunRegionBiblioController::class, 'actualizarObsNomComunBase']);
 
-    Route::post('/eliminar-biblio-caract-solo', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
+
+    Route::post('/eliminar-biblio-caract-solo', [RelNombreCatalogoRegionBiblioController::class, 'eliminarBiblioCaractSolo']);
     Route::post('/eliminar-biblio-nomcomun-region', [RelNomNomComunRegionBiblioController::class, 'eliminarBiblioNomComunRegion']);
 
+    Route::post('/actualizar-obs-biblio-caract', [RelNombreCatalogoRegionBiblioController::class, 'actualizaObsBiblioCaract']);
+    Route::post('/actualizar-obs-biblio-caract-Reg', [RelNombreCatalogoRegionBiblioController::class, 'actualizaObsBiblioCaractReg']);
+
     //------------------------------------------------------------------------------------------------------------------------------------------
-    //Rutas para alta y baja de relaciones de nombre comun 
+    //Rutas para alta y baja de relaciones de nombre comun
     Route::post('alta-relNom-Nomcomun', [RelNombreNomComunController::class, 'altaRelNomComun']);
 
-    //Rutas para alta y bajas de relaciones de taxon a caracteristicas 
+    //Rutas para alta y bajas de relaciones de taxon a caracteristicas
     Route::post('alta-relTaxon-Caract', [RelNombreCaracteristicasController::class, 'altaRelTaxCaract']);
     Route::post('alta-relTaxon-Caract-Reg', [RelNombreCaracteristicasController::class, 'altaRelTaxCaractReg']);
 
@@ -300,4 +310,29 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     Route::put('actualiza-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'actCaractTaxonReg']);
     Route::delete('eliminar-Caract-Taxon-Reg', [RelNombreCaracteristicasController::class, 'eliminaRegCaractReg']);
     Route::delete('eliminar-Caract-Taxon', [RelNombreCaracteristicasController::class, 'eliminaRegCaract']);
+
+
+    Route::delete('/eliminar-asociacion-nomcomun', [RelNomNomComunRegionBiblioController::class, 'eliminarRelacionNomComun']);
+
+
+    //RUTAS DE RELACION DE TAXON CON REGION Y BIBLIOGRAFÍA
+    Route::post('/alta-relNombre-Region', [RelNombreRegionController::class, 'store']);
+    Route::post('/asociar-biblio-region-taxon', [RelNombreRegionController::class, 'asociarBiblio']);
+    Route::delete('/eliminar-region-taxon', [RelNombreRegionController::class, 'eliminarRegionTaxon']);
+    Route::get('/obtener-biblio-region-taxon/{idNombre}/{idRegion}/{idTipoDist}', [RelNombreRegionController::class, 'obtenerBiblioRegionTaxon']);
+
+    Route::get('/obtener-pagina', [RelNombreRegionController::class, 'obtenerPagina']);
+
+
+
+    // ASOCIAR OBJETO EXTERNO
+
+    Route::post('/asociaciones-objetos/asociar', [BibliografiaController::class, 'asociarObjetoExterno'])
+        ->name('bibliografias.asociarObjeto');
+
+    Route::delete('/asociaciones-objetos/eliminar', [BibliografiaController::class, 'eliminarAsociacionObjeto'])
+        ->name('bibliografias.asociarObjeto.eliminar');
+
+    Route::put('/asociaciones-objetos/actualizar', [BibliografiaController::class, 'actualizarAsociacionObjeto'])
+        ->name('bibliografias.asociarObjeto.actualizar');
 });

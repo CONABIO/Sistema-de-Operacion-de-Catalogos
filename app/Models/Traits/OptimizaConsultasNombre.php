@@ -78,7 +78,7 @@ trait OptimizaConsultasNombre
     /**
      * Obtiene referencias en batch
      */
-    private function obtenerReferenciasBatch(array $idsNombres)
+    public function obtenerReferenciasBatch(array $idsNombres)
     {
         if (empty($idsNombres)) {
             return collect();
@@ -101,8 +101,8 @@ trait OptimizaConsultasNombre
             ->orderBy('Bibliografia.IdBibliografia')
             ->orderBy('Bibliografia.Autor')
             ->orderBy('Bibliografia.Anio')
-            ->get()
-            ->groupBy('IdNombre');
+            ->get();
+            //->groupBy('IdNombre');
 
         return $referencias;
     }
@@ -210,26 +210,13 @@ trait OptimizaConsultasNombre
             return [];
         }
 
-        // Filtrar solo los activos
-        $nombresActivos = $nombres->where('EstadoRegistro', 1);
-        
-        if ($nombresActivos->isEmpty()) {
-            return [];
-        }
-
-        $idsNombres = $nombresActivos->pluck('IdNombre')->toArray();
+        $idsNombres = $nombres->pluck('IdNombre')->toArray();
         
         // Obtener referencias en batch
         $referenciasBatch = $this->obtenerReferenciasBatch($idsNombres);
-        
-        // Obtener relaciones en batch  
-        //$relacionesBatch = $this->obtenerRelacionesBatch($idsNombres);
-        
-        // Obtener conteos en batch
-        //$conteosBatch = $this->obtenerConteosEjemplaresBatch($idsNombres);
 
         $data = [];
-        foreach ($nombresActivos as $nombre) {
+        foreach ($nombres as $nombre) {
             $status = $this->determinarEstatusOptimizado($nombre);
             
             $nomCat = $nombre->categoria->NombreCategoriaTaxonomica .
@@ -240,9 +227,6 @@ trait OptimizaConsultasNombre
 
             // Datos batch
             $referencias = $referenciasBatch->get($nombre->IdNombre, collect());
-            $relaciones = $this->obtenerRelacionesBatch([$nombre->IdNombre], collect());
-
-            //$conteo = $conteosBatch->get($nombre->IdNombre, 0);
 
             $data[] = [
                 'id' => $nombre->IdNombre,
@@ -250,7 +234,6 @@ trait OptimizaConsultasNombre
                 'children' => [],
                 'texto' => $nomCat,
                 'estatus' => $status,
-                'relaciones' => $relaciones,
                 'referencias' => $referencias,
                 'completo' => $nombre
             ];

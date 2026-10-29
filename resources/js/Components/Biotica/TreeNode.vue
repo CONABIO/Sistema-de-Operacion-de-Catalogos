@@ -95,7 +95,7 @@ const nodeClass = computed(() => {
       </span>
     </div>
 
-    <ul v-if="hasChildren && isExpanded" class="node-children-list" role="group">
+    <ul v-if="hasChildren && isExpanded" class="node-children-list">
       <TreeNode
         v-for="childNode in node.children"
         :key="childNode.IdCatNombre"

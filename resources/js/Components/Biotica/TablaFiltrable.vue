@@ -14,7 +14,9 @@ import BotonRegiones from '@/Components/Biotica/BtnRegiones.vue';
 import SwitchBusqueda from '@/Components/Biotica/SwitchBusqueda.vue';
 import BotonNomComun from '@/Components/Biotica/BtnNomComunes.vue';
 import BotonTipoDist from '@/Components/Biotica/BtnTipoDist.vue';
+import usePermisos from '@/composables/usePermisos';
 
+const { permisos } = usePermisos();
 
 const inputsFiltro = ref({});
 const datosTabla = ref([]);
@@ -25,8 +27,6 @@ const filtros = ref({});
 const sorting = ref({ prop: null, order: null });
 const tipoDeBusqueda = ref('inicia');
 
-/*Juan Carlos 27/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-Se agregan las propiedades para que los botones de editar, nuevo y borrar se oculten*/
 const props = defineProps({
     columnas: { type: Array, required: true },
     datos: { type: Array, required: true, default: [] },
@@ -48,13 +48,16 @@ const props = defineProps({
     valoresOpcion: { type: Array, required: false, default: [] },
     habOpciones: { type: Boolean, default: true },
     permitirSinSeleccion: { type: Boolean, default: false },
+    tipoBusquedaExterno: { type: String, default: '' },
+    mostrarSwitchLocal: { type: Boolean, default: true },
+    moduloSocat: { type: String, default: '' },
     alturaTabla: {
         type: Number,
         default: 550
     },
     highlightCurrentRow: {
         type: Boolean,
-        default: false
+        default: true
     },
     asignaTrasp: {
         type: String,
@@ -65,8 +68,15 @@ const props = defineProps({
         type: Boolean,
         required: false,
         default: true
-    }
+    },
+    deshabilitarGuardar: { type: Boolean, default: false },
 });
+
+watch(() => props.tipoBusquedaExterno, (nuevoValor) => {
+    if (nuevoValor && nuevoValor !== tipoDeBusqueda.value) {
+        tipoDeBusqueda.value = nuevoValor;
+    }
+}, { immediate: true });
 
 const onBiblio = () => emit('abrir-Biblio');
 
@@ -81,6 +91,19 @@ const handleVisibleChange = (visible, prop) => {
     }
 };
 
+const hasPermisos = (modulo) => {
+    if(props.moduloSocat != ""){
+    const permiso = permisos.find(item => item.NombreModulo === props.moduloSocat);
+    return permiso[modulo];
+    }else{return false};
+  };
+
+const buscarExterno = async (columna, valor) => {
+    filtros.value[columna] = valor;
+    currentPage.value = 1;
+    await fetchData();
+};
+
 
 const limpiarTodosLosFiltros = () => {
     Object.keys(filtros.value).forEach(key => {
@@ -93,20 +116,36 @@ const irAPagina = async (numeroPagina) => {
     await fetchData();
 };
 
-const handleRowClickInterno = (row) => {
-    if (editarSelect.value !== null &&
-        editarSelect.value !== row) {
+const limpiarEdicion = () => {
+    editarSelect.value = null;
+};
 
-        return;
+
+const handleRowClickInterno = (row) => {
+    if (!row) return;
+    if (editarSelect.value !== null) {
+        const key = props.idKey || 'id';
+        const idActual = String(editarSelect.value[key]);
+        const idNuevo = String(row[key]);
+
+        if (idActual !== idNuevo) {
+            nextTick(() => {
+                tableRefInterna.value?.setCurrentRow(editarSelect.value);
+            });
+            return;
+        }
     }
 
     selectedRow.value = row;
+    tableRefInterna.value?.setCurrentRow(row);
     emit('row-click', row);
 };
 
 const onEditarInterno = () => {
     if (selectedRow.value) {
-        editarSelect.value = selectedRow.value;
+        if (props.mostrarGuardar) {
+            editarSelect.value = selectedRow.value;
+        }
         emit('editar-item', selectedRow.value);
     }
 };
@@ -121,15 +160,9 @@ const onEliminarInterno = () => {
     }
 };
 
-
-
-
 const rowClassNameInterno = ({ row }) => {
     if (props.rowClassName) return props.rowClassName({ row });
-    const idFila = row[props.idKey];
-    const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-    if (idFila == null || idSeleccionado == null) return '';
-    return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
+    return '';
 };
 
 
@@ -139,15 +172,20 @@ const forzarFocoFilaVerde = async () => {
     await nextTick();
     setTimeout(() => {
         if (!tableRefInterna.value) return;
-
         const filaVerde = tableRefInterna.value.$el.querySelector('.fila-seleccionada-verde');
 
         if (filaVerde) {
-            filaVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            filaVerde.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
         } else {
-            console.warn("Se intentó enfocar, pero la fila verde no está visible en el DOM actual.");
+            const filaCurrent = tableRefInterna.value.$el.querySelector('.current-row');
+            if (filaCurrent) {
+                filaCurrent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
-    }, 300);
+    }, 400);
 };
 
 const setFiltroExterno = (campo, valor) => {
@@ -156,16 +194,27 @@ const setFiltroExterno = (campo, valor) => {
 };
 
 const setCurrentRow = (row) => {
+    if (tableRefInterna.value?.$el) {
+        tableRefInterna.value.$el
+            .querySelectorAll('.fila-seleccionada-verde')
+            .forEach(el => el.classList.remove('fila-seleccionada-verde'));
+    }
     selectedRow.value = row;
     tableRefInterna.value?.setCurrentRow(row);
-}
+};
 
 
 const clearCurrentRow = () => {
+    if (tableRefInterna.value?.$el) {
+        tableRefInterna.value.$el
+            .querySelectorAll('.fila-seleccionada-verde')
+            .forEach(el => el.classList.remove('fila-seleccionada-verde'));
+    }
     selectedRow.value = null;
+    editarSelect.value = null;
     tableRefInterna.value?.setCurrentRow(null);
     emit('row-click', null);
-}
+};
 
 const emit = defineEmits([
     'update:datos',
@@ -180,7 +229,9 @@ const emit = defineEmits([
     'cerrar',
     'abrir-Biblio',
     'guardar',
-    'lista-Actual'
+    'lista-Actual',
+    'abrirNomComun',
+    'abrirTipoDist'
 ]);
 
 
@@ -212,13 +263,10 @@ watch(
         nextTick(() => {
             const currentSelectedId = selectedRow.value ? selectedRow.value[props.idKey] : null;
             const coincidencia = newDatos.find(r => String(r[props.idKey]) === String(currentSelectedId));
+
             if (coincidencia) {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
-            } else if (!props.permitirSinSeleccion) {
-                selectedRow.value = newDatos[0];
-                tableRefInterna.value?.setCurrentRow(newDatos[0]);
-                emit('row-click', newDatos[0]);
             }
         });
     },
@@ -262,6 +310,7 @@ const busquedaLocal = async () => {
 }
 
 const Guardar = () => {
+    if (props.deshabilitarGuardar) return;
     emit('guardar', 'guardar');
     editarSelect.value = null;
 }
@@ -269,12 +318,28 @@ const Guardar = () => {
 const fetchData = async () => {
     try {
         if (props.endpoint === "") {
-            busquedaLocal();
+            let resultado = [...props.datos];
+            Object.keys(filtros.value).forEach(campo => {
+                const valorFiltro = filtros.value[campo]?.toString().toLowerCase();
+                if (valorFiltro) {
+                    resultado = resultado.filter(item => {
+                        const valorItem = item[campo]?.toString().toLowerCase() || '';
+                        if (tipoDeBusqueda.value === 'inicia') {
+                            return valorItem.startsWith(valorFiltro);
+                        } else if (tipoDeBusqueda.value === 'contiene') {
+                            return valorItem.includes(valorFiltro);
+                        } else if (tipoDeBusqueda.value === 'termina') {
+                            return valorItem.endsWith(valorFiltro);
+                        }
+                        return true;
+                    });
+                }
+            });
+            datosTabla.value = resultado;
+            emit('update:totalItems', resultado.length);
             return;
         }
-
         const idPreviamenteSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-
         const response = await axios.get(props.endpoint, {
             params: {
                 filtros: filtros.value,
@@ -301,14 +366,7 @@ const fetchData = async () => {
                 selectedRow.value = coincidencia;
                 tableRefInterna.value?.setCurrentRow(coincidencia);
                 emit('row-click', coincidencia);
-            } else {
-                selectedRow.value = resultados[0];
-                tableRefInterna.value?.setCurrentRow(resultados[0]);
-                emit('row-click', resultados[0]);
             }
-        } else {
-            selectedRow.value = null;
-            emit('row-click', null);
         }
     } catch (error) {
         console.error(`Error en fetchData:`, error);
@@ -325,7 +383,7 @@ watch(paginatedDatos, (newPaginated) => {
         if (!existsInPaginated || !selectedRow.value) {
             nextTick(() => {
                 if (!props.permitirSinSeleccion) {
-                   selectedRow.value = newPaginated[0];
+                    selectedRow.value = newPaginated[0];
                     if (tableRefInterna.value) {
                         tableRefInterna.value.setCurrentRow(newPaginated[0]);
                     }
@@ -368,6 +426,11 @@ const cambioLista = (valor, row) => {
     emit('lista-Actual', valor);
 }
 
+const activarEdicionDesdePadre = (row) => {
+    selectedRow.value = row;
+    editarSelect.value = row;
+};
+
 const onEditar = (item) => emit('editar-item', item);
 const onEliminar = (id) => emit('eliminar-item', id);
 const onNuevo = () => emit('nuevo-item');
@@ -375,9 +438,11 @@ const onRecuperaMarcado = () => emit('traspasaBiblio');
 const abrirNomCom = () => emit('abrirNomComun')
 const abrirTipoDist = () => emit('abrirTipoDist')
 
+
 const cerrarModal = () => {
     emit('cerrar');
 };
+
 
 onMounted(fetchData);
 
@@ -390,30 +455,34 @@ defineExpose({
     sorting,
     selectedRow,
     setCurrentRow,
-    clearCurrentRow
+    clearCurrentRow,
+    activarEdicionDesdePadre,
+    buscarExterno,
+    limpiarEdicion
 });
 </script>
 
 <template>
     <el-card class="box-card-inner-table">
         <template #header>
-            <div class="header-container" style="flex-grow: 1; margin-top: -12px; margin-bottom: -12px;">
+            <div class="header-container" style="flex-grow: 1; margin-top: -4px; margin-bottom: -12px;">
                 <div class="right">
                     <slot name="header-title">
-                        <SwitchBusqueda v-model="tipoDeBusqueda" />
+                        <SwitchBusqueda v-if="props.mostrarSwitchLocal" v-model="tipoDeBusqueda" />
                     </slot>
                 </div>
                 <div class="left">
                     <div class="botonera-biotica">
-                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso"
+                        <BotonTraspaso :icono="props.asignaTrasp" v-if="props.mostrarTraspaso && hasPermisos('Altas')"
                             @traspasa="onRecuperaMarcado" />
-                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo" />
+                        <NuevoButton @crear="onNuevo" v-if="props.mostrarNuevo && hasPermisos('Altas')" />
                         <BotonRegiones style="flex-shrink: 0; min-width: max-content;" v-if="props.mostrarRegion" />
-                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar" />
-                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
-                            v-if="props.mostrarGuardar" />
+                        <EditarButton :disabled="!selectedRow" @editar="onEditarInterno" v-if="props.mostrarEditar && hasPermisos('Cambios')" />
+
                         <EliminarButton :disabled="!selectedRow" @eliminar="onEliminarInterno"
-                            v-if="props.mostrarBorrar" />
+                            v-if="props.mostrarBorrar && hasPermisos('Bajas')" />
+                        <GuardarButton @click="Guardar" style="flex-shrink: 0; min-width: max-content;"
+                            v-if="props.mostrarGuardar && hasPermisos('Cambios')" :disabled="props.deshabilitarGuardar"  />
                         <BotonSalir v-if="props.mostrarSalir" :accion="accionModal" @salir="cerrarModal" />
                         <div v-if="props.mostrarBiblio">
                             <el-tooltip class="item" effect="dark" content="Bibliografia">
@@ -425,6 +494,7 @@ defineExpose({
                                 </el-button>
                             </el-tooltip>
                         </div>
+                        <BotonTipoDist v-if="props.mostrarTipoDist" @click="abrirTipoDist" />
 
                     </div>
                 </div>
@@ -604,15 +674,6 @@ defineExpose({
     border-bottom: 1px solid #ebeef5 !important;
 }
 
-:deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
-    background-color: #ddf6dd !important;
-}
-
-:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
-    background-color: #ddf6dd !important;
-    color: #007bff !important;
-    font-weight: bold;
-}
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
@@ -684,9 +745,9 @@ defineExpose({
     gap: 30px;
     justify-content: flex-end;
     margin-bottom: 15px;
+    margin-top: 4px;
+    margin-right: 35px;
 }
-
-
 
 :deep(.el-table__inner-wrapper) {
     overflow-x: auto !important;
@@ -712,4 +773,20 @@ defineExpose({
 :deep(.el-table__header-wrapper) {
     overflow: hidden !important;
 }
+
+
+:deep(.el-table .current-row td.el-table__cell),
+:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
+    background-color: #ddf6dd !important;
+    color: #007bff !important;
+    font-weight: bold;
+}
+
+:deep(.el-table .current-row:hover > td.el-table__cell),
+:deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
+    background-color: #ddf6dd !important;
+}
 </style>
+
+
+

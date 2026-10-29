@@ -13,6 +13,7 @@ export default {
     }
   },
 
+   emits: ['crear'],
   
   methods: {
     crear() {

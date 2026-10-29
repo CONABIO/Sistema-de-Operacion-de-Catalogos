@@ -57,7 +57,6 @@ class RequestHuesped
     }
 
     public function withValidator($validator){
-        //Log::info('Request completo:', $this->all());
 
         $validator->after(function ($validator){
 

@@ -101,9 +101,10 @@ class ObjetoExternoController extends Controller
         return response()->json(['data' => $objeto, 'message' => 'Ingresado correctamente'], 201);
     }
 
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
-        $objeto = ObjetoExterno::findOrFail($id);
+        $objeto = ObjetoExterno::where('IdObjetoExterno', $id)->firstOrFail();
+
         $existing = ObjetoExterno::where(DB::raw('lower(COALESCE(NombreObjeto, ""))'), strtolower($request->NombreObjeto ?? ''))
             ->where(DB::raw('lower(COALESCE(NombreSitio, ""))'), strtolower($request->NombreSitio ?? ''))
             ->where('IdObjetoExterno', '!=', $id)
@@ -116,13 +117,38 @@ class ObjetoExternoController extends Controller
                 'idExistente' => $existing->IdObjetoExterno
             ], 400);
         }
+        $data = $request->except(['extension', 'tipo', 'UrlExterna', 'IdObjetoExterno', 'FechaCaptura']);
+        if (!empty($data['Fecha'])) {
+            try {
+                $data['Fecha'] = \Carbon\Carbon::parse($data['Fecha'])->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                unset($data['Fecha']);
+            }
+        } else {
+            unset($data['Fecha']);
+        }
+        $mimeValor = $request->IdMime ?? $request->extension ?? null;
+        if ($mimeValor && !is_numeric($mimeValor)) {
+            $ext = strtoupper(trim($mimeValor));
+            $mime = Mime::firstOrCreate(['Extension' => $ext], [
+                'MIME' => $ext . " FILE",
+                'FechaCaptura' => now(),
+                'FechaModificacion' => '9999-12-31 00:00:00'
+            ]);
+            $data['IdMime'] = $mime->IdMime;
+        } elseif (is_numeric($mimeValor)) {
+            $data['IdMime'] = (int) $mimeValor;
+        }
 
-        $data = $request->all();
         $data['FechaModificacion'] = now();
-        $objeto->update($data);
-
-        return response()->json(['data' => $objeto, 'message' => 'Actualizado correctamente']);
+        ObjetoExterno::where('IdObjetoExterno', $id)->update($data);
+        $objetoActualizado = ObjetoExterno::where('IdObjetoExterno', $id)->first();
+        return response()->json([
+            'data' => $objetoActualizado,
+            'message' => 'Actualizado correctamente'
+        ]);
     }
+
 
     public function obtenerPaginaDeObjeto(Request $request)
     {
@@ -131,7 +157,9 @@ class ObjetoExternoController extends Controller
         $sortBy = $request->sortBy ?? 'NombreObjeto';
         $sortOrder = $request->sortOrder ?? 'asc';
         $registroReferencia = ObjetoExterno::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+        }
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
         $posicion = ObjetoExterno::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
             $valor = $registroReferencia->{$sortBy};

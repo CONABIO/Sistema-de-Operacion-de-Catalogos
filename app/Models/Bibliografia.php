@@ -103,6 +103,8 @@ class Bibliografia extends Model
             $query->orWhere('ISBNISSN', 'LIKE', "$texto%");
           }
           break;
+        default:
+          break;
       }
     }
     return $query;

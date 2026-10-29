@@ -76,6 +76,7 @@
                                         :total-items="bibliografiaRel.length"
                                         :highlight-current-row = "true"
                                         :origen = "true"
+                                        :moduloSocat = "'RelNombreNomenclaturaBiblio'"
                                         :alturaTabla = 195
                                         :itemsPerPage = 3
                                         :mostrarAcci = "true"
@@ -114,14 +115,11 @@
                                     </span>
                                     <el-input  :rows="2"
                                             type="textarea"
-                                            placeholder="Observaciones"
+                                            placeholder="Cita completa"
                                             :disable = true
                                             v-model="citaCompleta">
                                     </el-input>
                                 </div>
-                                <!--/el-card-->
-                                <!--el-card class="table-panel"-->
-                                
                                     <div style="display: flex; flex-direction: column; margin-bottom: 10px;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                             <span style="font-size: 18px; font-weight: bold;">
@@ -134,7 +132,8 @@
                                                     v-model="observacionRel">
                                             </el-input>
                                             <GuardarButton :habilitar = "habObservaciones" @click="Guardar"
-                                                style="flex-shrink: 0; min-width: max-content;"/>
+                                                style="flex-shrink: 0; min-width: max-content; " 
+                                                v-if="hasPermisos('RelNombreNomenclaturaBiblio', 'Cambios')"/>
                                         </div>
                                     </div>
                                 <!--/el-card-->
@@ -169,6 +168,9 @@
     import Bibliografia from '@/Pages/Socat/Bibliografia/CuerpoBibliografia.vue';
     import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
     import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
+    import usePermisos from '@/composables/usePermisos';
+
+    const { permisos } = usePermisos();
 
     // Props del componente
     const props = defineProps({
@@ -223,6 +225,12 @@
         notificacionVisible.value = false;
     };
 
+    const hasPermisos = (etiqueta, modulo) => {
+        const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+        return permiso[modulo];
+    };    
+
     const manejaClick = (row) => {        
         tipRelacion.value = row.TipoRelacion.texto;
         taxonRelacionado.value = row.Nombrecompleto.texto; 
@@ -252,7 +260,6 @@
     };
 
     const cerrarRelBiblio = async (datos) =>{
-
         const loading = ElLoading.service({
             lock: true,
             text: "Loading",
@@ -273,7 +280,6 @@
                                                                                     
             } catch (error) {
                 mostrarNotificacionError('Aviso', error.response.data.message, 'error');
-                console.log("Error 422:", error.response.data.message);
             }
         }
         loading.close();
@@ -415,7 +421,7 @@
 
 
 </script>
-<style scope>
+<style scoped>
     .box-card {
         width: 100%;
         max-width: 100%;

@@ -10,6 +10,7 @@ import BotonAceptar from "@/Components/Biotica/BotonAceptar.vue";
 import BotonCancelar from "@/Components/Biotica/BotonCancelar.vue";
 import { ref, computed, watch, onMounted, nextTick, h } from "vue";
 import BotonSalir from '@/Components/Biotica/SalirButton.vue';
+import usePermisos from '@/composables/usePermisos';
 
 import {
   ElTree,
@@ -24,7 +25,8 @@ import {
 import { router, usePage } from "@inertiajs/vue3";
 import LayoutCuerpo from '@/Components/Biotica/LayoutCuerpo.vue';
 
-
+const { permisos } = usePermisos();
+const moduloSocat = ref('MnuCatCaract');
 const notificacionVisible = ref(false);
 const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
@@ -45,6 +47,12 @@ const expandedKeysArray = computed(() => Array.from(expandedNodeIds.value));
 const handleNodeExpand = (data, node) => {
   expandedNodeIds.value.add(data.IdCatNombre);
   handleNodeSelected(data, node);
+};
+
+const hasPermisos = (etiqueta, modulo) => {
+    const permiso = permisos.find(item => item.NombreModulo === etiqueta);
+
+    return permiso[modulo];
 };
 
 const handleNodeCollapse = (data, node) => {
@@ -238,8 +246,6 @@ const modalRules = {
 };
 
 const abrirModalParaInsertar = () => {
-  if (!selectedNode.value && props.treeDataProp.length > 0) {
-  }
   modalMode.value = "insertar";
   formModal.value = { Descripcion: "" };
   opcionNivel.value = selectedNode.value ? "mismo" : "raiz";
@@ -384,7 +390,6 @@ const guardarDesdeModal = async () => {
   if (modalMode.value === 'insertar') {
     proceedWithSave();
   } else {
-    const nombreCaracteristica = formModal.value.Descripcion.trim();
     ElMessageBox({
       title: "Confirmar modificación",
       showConfirmButton: false,
@@ -440,7 +445,6 @@ const handleEliminar = () => {
 
   nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
 
-  const nombreCaracteristica = nodeDataForDeleteConfirmation.value.Descripcion;
   const mensaje = `¿Está seguro de eliminar la característica seleccionada? Esta acción no se puede revertir.`;
 
   ElMessageBox({
@@ -656,11 +660,12 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
           <div class="left-header-content"></div>
           <div class="right-header-content">
             <div class="botonera-biotica">
-              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" />
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" 
+                  v-if="hasPermisos(moduloSocat, 'Altas')"/>
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>
               <EliminarButton @eliminar="handleEliminar" toolPosicion="bottom"
-                :disabled="isAccionDependienteDeNodoDeshabilitada" />
+                :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')"/>
               <BotonSalir :accion="modal ? 'cerrar' : 'salida'" @salir="cerrarDialogo"/>
             </div>
           </div>
@@ -902,23 +907,14 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
 }
 
 .dialog-body-container {
-  background-color: #f3f3f3;
+  background-color: #ffffff;
   padding: 20px 24px;
   border: 3px;
   text-align: left;
   border-radius: 10px;
-  background-color: #ffffff;
-  padding: 20px 24px;
-  text-align: left;
   position: relative;
   z-index: 10;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 :deep(.el-form-item) {
@@ -931,8 +927,6 @@ const isAccionDependienteDeNodoDeshabilitada = computed(
   font-size: 0.9em;
   color: #606266;
 }
-
-
 
 .botonera-biotica {
   display: flex;

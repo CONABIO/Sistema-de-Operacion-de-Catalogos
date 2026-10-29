@@ -55,14 +55,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/carga-filcatalogos', [NombresArbolController::class, 'filtroGruposSCAT']);
     Route::get('/carga-fil-categ', [NombresArbolController::class, 'filtroCateg']);
     Route::get('/carga-list-grp', [NombresArbolController::class, 'cargaListGrupos']);
-    
-    
-    
-    
-    //Route::post('/nombres-store', [NombresArbolController::class, 'store']);
-    //Route::put('/actualiza-nombre/{id}', [NombresArbolController::class, 'update']);
-    //Route::put('/baja-nombre/{id}', [NombresArbolController::class, 'bajaTax']);
-    //Route::put('/mueveTaxones', [NombresArbolController::class, 'mueveTaxa']);
 
     Route::post('/guardar-imagen', [NombresArbolController::class, 'guardaImagen']);
 

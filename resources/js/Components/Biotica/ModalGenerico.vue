@@ -3,7 +3,7 @@
     <div class="modal-container">
       <div class="modal-header">
         <slot name="header"></slot>
-        <button @click="triggerClose" class="modal-close-button" aria-label="Cerrar modal"> <!-- Llama a triggerClose -->
+        <button type="button" @click="triggerClose" class="modal-close-button" aria-label="Cerrar modal"> <!-- Llama a triggerClose -->
           <span style="font-size: 24px; color: rgba(0, 0, 0, 0.5)">×</span>
         </button>
       </div>

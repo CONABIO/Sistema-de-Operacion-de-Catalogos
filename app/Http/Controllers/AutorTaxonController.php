@@ -242,7 +242,9 @@ class AutorTaxonController extends Controller
         $sortBy = $request->sortBy ?? 'NombreAutoridad';
         $sortOrder = $request->sortOrder ?? 'asc';
         $registroReferencia = AutorTaxon::find($id);
-        if (!$registroReferencia) return response()->json(['page' => 1]);
+        if (!$registroReferencia){
+                return response()->json(['page' => 1]);
+            }
         $operador = (strtolower($sortOrder) === 'asc') ? '<' : '>';
         $posicion = AutorTaxon::where(function ($query) use ($registroReferencia, $operador, $sortBy) {
             $valor = $registroReferencia->{$sortBy};

@@ -120,7 +120,9 @@ class RequestAltaRelacionBiblio extends FormRequest
                     ->where('IdBibliografia', $idBiblio)
                     ->first();
 
-                if(!$biblio) continue;
+                if(!$biblio){ 
+                    continue; 
+                }
 
                 $exist = DB::connection('catcentral')
                     ->table('RelacionBibliografia')
