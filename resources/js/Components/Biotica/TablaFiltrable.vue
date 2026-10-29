@@ -57,7 +57,7 @@ const props = defineProps({
     },
     highlightCurrentRow: {
         type: Boolean,
-        default: false
+        default: true
     },
     asignaTrasp: {
         type: String,
@@ -116,6 +116,11 @@ const irAPagina = async (numeroPagina) => {
     await fetchData();
 };
 
+const limpiarEdicion = () => {
+    editarSelect.value = null;
+};
+
+
 const handleRowClickInterno = (row) => {
     if (!row) return;
     if (editarSelect.value !== null) {
@@ -130,13 +135,17 @@ const handleRowClickInterno = (row) => {
             return;
         }
     }
+
     selectedRow.value = row;
+    tableRefInterna.value?.setCurrentRow(row);
     emit('row-click', row);
 };
 
 const onEditarInterno = () => {
     if (selectedRow.value) {
-        editarSelect.value = selectedRow.value;
+        if (props.mostrarGuardar) {
+            editarSelect.value = selectedRow.value;
+        }
         emit('editar-item', selectedRow.value);
     }
 };
@@ -151,15 +160,9 @@ const onEliminarInterno = () => {
     }
 };
 
-
-
-
 const rowClassNameInterno = ({ row }) => {
     if (props.rowClassName) return props.rowClassName({ row });
-    const idFila = row[props.idKey];
-    const idSeleccionado = selectedRow.value ? selectedRow.value[props.idKey] : null;
-    if (idFila == null || idSeleccionado == null) return '';
-    return String(idFila) === String(idSeleccionado) ? 'fila-seleccionada-verde' : '';
+    return '';
 };
 
 
@@ -191,17 +194,27 @@ const setFiltroExterno = (campo, valor) => {
 };
 
 const setCurrentRow = (row) => {
+    if (tableRefInterna.value?.$el) {
+        tableRefInterna.value.$el
+            .querySelectorAll('.fila-seleccionada-verde')
+            .forEach(el => el.classList.remove('fila-seleccionada-verde'));
+    }
     selectedRow.value = row;
     tableRefInterna.value?.setCurrentRow(row);
-}
+};
 
 
 const clearCurrentRow = () => {
+    if (tableRefInterna.value?.$el) {
+        tableRefInterna.value.$el
+            .querySelectorAll('.fila-seleccionada-verde')
+            .forEach(el => el.classList.remove('fila-seleccionada-verde'));
+    }
     selectedRow.value = null;
     editarSelect.value = null;
     tableRefInterna.value?.setCurrentRow(null);
     emit('row-click', null);
-}
+};
 
 const emit = defineEmits([
     'update:datos',
@@ -444,7 +457,8 @@ defineExpose({
     setCurrentRow,
     clearCurrentRow,
     activarEdicionDesdePadre,
-    buscarExterno
+    buscarExterno,
+    limpiarEdicion
 });
 </script>
 
@@ -660,15 +674,6 @@ defineExpose({
     border-bottom: 1px solid #ebeef5 !important;
 }
 
-:deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
-    background-color: #ddf6dd !important;
-}
-
-:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
-    background-color: #ddf6dd !important;
-    color: #007bff !important;
-    font-weight: bold;
-}
 
 :deep(.main-pagination-style button),
 :deep(.main-pagination-style .el-pager li) {
@@ -768,4 +773,20 @@ defineExpose({
 :deep(.el-table__header-wrapper) {
     overflow: hidden !important;
 }
+
+
+:deep(.el-table .current-row td.el-table__cell),
+:deep(.el-table .fila-seleccionada-verde td.el-table__cell) {
+    background-color: #ddf6dd !important;
+    color: #007bff !important;
+    font-weight: bold;
+}
+
+:deep(.el-table .current-row:hover > td.el-table__cell),
+:deep(.el-table .fila-seleccionada-verde:hover > td.el-table__cell) {
+    background-color: #ddf6dd !important;
+}
 </style>
+
+
+

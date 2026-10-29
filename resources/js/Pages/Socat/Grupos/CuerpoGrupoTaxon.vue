@@ -10,23 +10,18 @@ import BotonAceptar from '@/Components/Biotica/BotonAceptar.vue';
 import BotonCancelar from '@/Components/Biotica/BotonCancelar.vue';
 
 const props = defineProps({
-    /*Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6 
-        Se modifica la variable isModal, y traspaso
-        para determinar si se cierra el modal o si sale a la pantalla principal */
     isModal: { type: Boolean,
-               required: false, 
-               default: false }, 
-    datosGrupo: Object, 
+               required: false,
+               default: false },
+    datosGrupo: Object,
     traspaso: {type: Boolean,
-               required:false, 
+               required:false,
                default: true
     }
 });
 
-/*Juan Carlos - 26/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-    Se define la variable emit para pasar funciones o datos al componente padre*/
-const emit = defineEmits(['cerrar']);
 
+const emit = defineEmits(['cerrar']);
 const tableRowClassName = ({ row }) => {
     const idFila = row.IdGrupoSCAT;
     const idSeleccionado = selectedRowId.value;
@@ -41,7 +36,7 @@ const tableRowClassName = ({ row }) => {
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
         if (tablaRef.value) {
-            tablaRef.value.limpiarTodosLosFiltros(); 
+            tablaRef.value.limpiarTodosLosFiltros();
             tablaRef.value.selectedRow = { IdGrupoSCAT: idEncontrado };
         }
         selectedRowId.value = idEncontrado;
@@ -61,10 +56,10 @@ const irAlRegistroEspecifico = async (idEncontrado) => {
             const fila = currentData.value.find(d => String(d.IdGrupoSCAT) === String(idEncontrado));
             if (fila) {
                 selectedRowId.value = fila.IdGrupoSCAT;
-                tablaRef.value.selectedRow = fila; 
+                tablaRef.value.selectedRow = fila;
                 setTimeout(() => {
                     tablaRef.value.forzarFocoFilaVerde();
-                }, 300); 
+                }, 300);
             }
         }
     } catch (err) {
@@ -165,8 +160,8 @@ const cerrarModal = () => {
 const handleFormGrupoSubmited = (datosDelFormulario) => {
     cerrarModal();
     const esEdicion = grupoEditado.value !== null;
-    const mensajeDuplicado = esEdicion 
-        ? "El grupo taxonómico que desea modificar ya existe, las modificaciones no se realizaron." 
+    const mensajeDuplicado = esEdicion
+        ? "El grupo taxonómico que desea modificar ya existe, las modificaciones no se realizaron."
         : "El grupo taxonómico que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(grupo => {
         const mismoNombre = grupo.GrupoSCAT.trim().toLowerCase() === datosDelFormulario.GrupoSCAT.trim().toLowerCase();
@@ -194,7 +189,7 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
 
             if (!esEdicion) {
                 const response = await axios.post("/grupos-taxonomicos", payload);
-                
+
                 mostrarNotificacion("Ingreso", "El grupo taxonómico ha sido ingresado correctamente.", "success");
 
                 const nuevoId = response.data.grupo?.IdGrupoSCAT;
@@ -227,9 +222,9 @@ const handleFormGrupoSubmited = (datosDelFormulario) => {
     } else {
         const mensajeConsignacion = `¿Estás seguro de guardar los cambios para el grupo seleccionado?`;
         ElMessageBox({
-            title: 'Confirmar modificación', 
-            showConfirmButton: false, 
-            showCancelButton: false, 
+            title: 'Confirmar modificación',
+            showConfirmButton: false,
+            showCancelButton: false,
             customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
@@ -291,9 +286,9 @@ const eliminarGrupo = (IdGrupoSCAT) => {
         tituloArea="Catálogo de grupos taxonómicos">
         <div class="h-full flex flex-col">
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef" :moduloSocat="'MnuCatGrpTax'"
-                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"  :row-class-name="tableRowClassName" 
+                class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"  :row-class-name="tableRowClassName"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
-                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="false">
+                @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :highlight-current-row="true">
 
                 <template #actions>
                     <el-button type="primary" @click="asociarSeleccionado">
@@ -322,14 +317,12 @@ const eliminarGrupo = (IdGrupoSCAT) => {
             <h2 style="margin-top: 14px; margin-left: 20px;">Catálogo de grupos taxonómicos</h2>
         </div>
         <div class="h-full flex flex-col flex-grow">
-            <!-- Juan Carlos - 23/01/2026 - https://ecoinformatica.atlassian.net/browse/SOCAT-6
-              Se agrega variable para indicar si es modal :botCerrar -->
             <TablaFiltrable @row-click="manejarClickFila" @row-dblclick="seleccionarGrupo" ref="tablaRef"
                 class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :moduloSocat="'MnuCatGrpTax'"
                 v-model:total-items="totalItems" endpoint="/busca-grupo" id-key="IdGrupoSCAT" @editar-item="editarGrupo"
                 @eliminar-item="eliminarGrupo" @nuevo-item="nuevoGrupo" :mostrarTraspaso="props.traspaso"
-                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal" 
-                @cerrar="cerrarVentana" :highlight-current-row="false" />
+                @traspasaBiblio="asociarSeleccionado" :botCerrar="props.isModal"
+                @cerrar="cerrarVentana" :highlight-current-row="true" />
         </div>
     </div>
 
@@ -344,73 +337,31 @@ const eliminarGrupo = (IdGrupoSCAT) => {
 </template>
 
 <style>
-.message-box-diseno-limpio .el-message-box__header {
-    border-bottom: none;
-}
-
-.message-box-diseno-limpio .el-message-box__content {
-    padding: 10px 20px 20px 20px;
-}
-
-.custom-message-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.body-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.text-container p {
-    margin: 0;
-    line-height: 1.5;
-    color: #606266;
-}
-
-.custom-warning-icon-container {
-    flex-shrink: 0;
-}
-
+.message-box-diseno-limpio .el-message-box__header { border-bottom: none; }
+.message-box-diseno-limpio .el-message-box__content { padding: 10px 20px 20px 20px; }
+.custom-message-content { display: flex; flex-direction: column; }
+.body-content { display: flex; align-items: center; gap: 15px; }
+.text-container p { margin: 0; line-height: 1.5; color: #606266; }
+.custom-warning-icon-container { flex-shrink: 0; }
 .custom-warning-circle {
-    width: 30px;
-    height: 30px;
-    border-radius: 90%;
-    background-color: #F56C6C;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1;
+    width: 30px; height: 30px; border-radius: 90%;
+    background-color: #F56C6C; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: bold; line-height: 1;
 }
+.footer-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 35px; }
 
-.footer-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 35px;
-}
-
-.el-table .fila-seleccionada-verde {
+.el-table .current-row td.el-table__cell,
+.el-table .fila-seleccionada-verde td.el-table__cell {
     background-color: #ddf6dd !important;
 }
 
-.el-table .fila-seleccionada-verde .cell, 
+.el-table .current-row .cell,
+.el-table .current-row td,
+.el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
-  color: #007bff !important; 
-  font-weight: bold; 
-}
-
-
-.el-table .fila-seleccionada-verde {
-    --el-table-tr-bg-color: #ddf6dd !important;
-}
-
-.el-table .fila-seleccionada-verde:hover>td.el-table__cell {
-    background-color: #ddf6dd !important;
+    color: #007bff !important;
+    font-weight: bold;
 }
 </style>
 
