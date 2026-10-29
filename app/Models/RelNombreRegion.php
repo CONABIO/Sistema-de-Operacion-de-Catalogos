@@ -20,4 +20,7 @@ class RelNombreRegion extends Model
 
     //Se asigna el nombre del campo llave primaria
     protected $primaryKey=['IdNombre', 'IdRegion', 'IdTipoDistribucion'];
+
+    //Se asignan los campos que podran ser actualizados 
+    protected $guarded = [];
 }

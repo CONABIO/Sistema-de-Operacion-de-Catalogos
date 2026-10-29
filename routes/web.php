@@ -340,4 +340,8 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
     //Se generan las rutas para traspaso de datos del sinonimo al valido 
     Route::put('/traspaso-NombresComunes', [TraspasoInformacion::class, 'traspasoNomCom']);
     
+    Route::put('/traspaso-Regiones', [TraspasoInformacion::class, 'traspasoRegiones']);
+
+    Route::put('/traspaso-Caracteristicas', [TraspasoInformacion::class, 'traspasoCaract']);
+    
 });

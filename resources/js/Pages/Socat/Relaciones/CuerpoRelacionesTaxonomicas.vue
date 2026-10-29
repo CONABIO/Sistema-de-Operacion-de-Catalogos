@@ -295,10 +295,10 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83%'">
-      <Traspaso :taxonAct = "props.taxonAct" 
-                :sinonimo = "relacionAct"
-                @cerrar="cerrarTraspaso"/>
+    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true"
+                :pressEsc="false" :width="'83%'" >
+      <Traspaso v-if="mostrarComponenteTraspaso" :taxonAct="props.taxonAct"
+                :sinonimo="relacionAct" @cerrar="cerrarTraspaso"/>
     </DialogForm>
       
     <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
@@ -384,6 +384,7 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+const mostrarComponenteTraspaso = ref(false);
 
 const filterText = ref('');
 const mostrar = ref(false);
@@ -502,19 +503,26 @@ const opcionesFiltroNomenclatura = ref([
   { label: 'NombreCompleto', value: 'Nombrecompleto' }
 ]);
 
-const traspasoInformacion = async() =>{
-  console.log("Este es el valor del taxon relacionado: ", relacionAct.value.TipoRelacion.idTipoRel); 
-  if(relacionAct.value.TipoRelacion.idTipoRel === 1 || relacionAct.value.TipoRelacion.idTipoRel === 2)
-  {
-    dialogFormVisibleTraspasoInfo.value = true;
-  }else{
-    mostrarNotificacionError('Error', `Para que se habilite el traspaso de información debe existir una relación de sinonimia.`, 'error');
-  }
-}
+const traspasoInformacion = async () => {
 
-const cerrarTraspaso =() =>{
-  dialogFormVisibleTraspasoInfo.value= false;
-}
+    if (relacionAct.value.TipoRelacion.idTipoRel === 1 || relacionAct.value.TipoRelacion.idTipoRel === 2) {
+
+        mostrarComponenteTraspaso.value = true;
+        dialogFormVisibleTraspasoInfo.value = true;
+
+    } else {
+        mostrarNotificacionError(
+            'Error',
+            'Para que se habilite el traspaso de información debe existir una relación de sinonimia.',
+            'error'
+        );
+    }
+};
+
+const cerrarTraspaso = () => {
+    dialogFormVisibleTraspasoInfo.value = false;
+    mostrarComponenteTraspaso.value = false;
+};
 
 //Funcion para recibir los datos de los grupos y catalogos selccionados
 const recibeGrupos = async (data) => {

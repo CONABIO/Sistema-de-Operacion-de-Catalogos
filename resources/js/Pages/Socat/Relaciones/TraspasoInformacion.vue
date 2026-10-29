@@ -5,7 +5,7 @@
                 <el-container style="height: 98vh;">
                     <el-header class="header">
                         <div class="header-content">
-                        <h2 class="titulo">Traspaso de catálogos relacionados con el taxón</h2>
+                            <h2 class="titulo">Traspaso de catálogos relacionados con el taxón</h2>
                         </div>
                     </el-header>  
                         
@@ -30,7 +30,7 @@
                                     <div :class="{ 'contenido-deshabilitado': nombresComunes.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                                <el-card>
+                                                <el-card style="min-height: 500px;">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -120,7 +120,7 @@
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                                <el-card>
+                                                <el-card style="min-height: 500px;">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -186,7 +186,7 @@
                                     <div :class="{ 'contenido-deshabilitado': caracteristicas.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                                <el-card>
+                                                <el-card style="min-height: 500px;">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -247,7 +247,7 @@
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                                <el-card>
+                                                <el-card style="min-height: 500px;">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -297,62 +297,62 @@
                                     <div :class="{ 'contenido-deshabilitado': regiones.length === 0 }"> 
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                            <el-card>
-                                                <el-container>
-                                                    <el-header class="headerInterno">
-                                                        <div class="header-content">
-                                                            <h1 class="titulo-interno">{{ nombreValido }}</h1>
+                                                <el-card style="min-height: 500px;">
+                                                    <el-container>
+                                                        <el-header class="headerInterno">
+                                                            <div class="header-content">
+                                                                <h1 class="titulo-interno">{{ nombreValido }}</h1>
+                                                            </div>
+                                                        </el-header>
+                                                        <div>
+                                                            <div v-show="!checkAllVal" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
+                                                                            @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', true)">
+                                                                    Marcar todos
+                                                                </el-checkbox> 
+                                                            </div>
+                                                            <div v-show="checkAllVal" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
+                                                                            @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', false)">
+                                                                    Desmarcar todos
+                                                                </el-checkbox>
+                                                            </div>
                                                         </div>
-                                                    </el-header>
-                                                    <div>
-                                                        <div v-show="!checkAllVal" class="header-content">
-                                                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                         @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', true)">
-                                                                Marcar todos
-                                                            </el-checkbox> 
-                                                        </div>
-                                                        <div v-show="checkAllVal" class="header-content">
-                                                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                         @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', false)">
-                                                                Desmarcar todos
-                                                            </el-checkbox>
-                                                        </div>
-                                                    </div>
-                                                    <div class="arbol-wrapper">
-                                                        <el-tree :data="regionesValido"
-                                                                 :props="{ children: 'Regiones' }" 
-                                                                 ref="arbolRegVal"
-                                                                 node-key="IdRegion"
-                                                                 highlight-current 
-                                                                 show-checkbox>
-                                                            <template #default="{ node, data }">
-                                                                <span
-                                                                    style="display: flex; align-items: center; gap: 8px; width: 100%;"
-                                                                    >
-                                                                    <template v-if="data.NombreComun">
-                                                                        <span
-                                                                            style="font-weight: bold; font-size: 13px; color: #333;">
-                                                                            {{ data.NombreComun }}
-                                                                            <span v-if="data.Lengua"
-                                                                                style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
-                                                                                ({{ data.Lengua }})
+                                                        <div class="arbol-wrapper">
+                                                            <el-tree :data="regionesValido"
+                                                                    :props="{ children: 'Regiones' }" 
+                                                                    ref="arbolRegVal"
+                                                                    node-key="IdRegion"
+                                                                    highlight-current 
+                                                                    show-checkbox>
+                                                                <template #default="{ node, data }">
+                                                                    <span
+                                                                        style="display: flex; align-items: center; gap: 8px; width: 100%;"
+                                                                        >
+                                                                        <template v-if="data.NombreComun">
+                                                                            <span
+                                                                                style="font-weight: bold; font-size: 13px; color: #333;">
+                                                                                {{ data.NombreComun }}
+                                                                                <span v-if="data.Lengua"
+                                                                                    style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
+                                                                                    ({{ data.Lengua }})
+                                                                                </span>
                                                                             </span>
-                                                                        </span>
-                                                                    </template>
+                                                                        </template>
 
-                                                                    <template v-else>
-                                                                        <Logo :rutaCategoria="data.Biblio?.url"
-                                                                            style="width: 18px; height: 18px; flex-shrink: 0;" />
-                                                                        <span style="font-size: 12px; color: #606266;">
-                                                                            {{ data.Region }}
-                                                                        </span>
-                                                                    </template>
-                                                                </span>
-                                                            </template>
-                                                        </el-tree>  
-                                                    </div> 
-                                                </el-container>
-                                            </el-card>
+                                                                        <template v-else>
+                                                                            <Logo :rutaCategoria="data.Biblio?.url"
+                                                                                style="width: 18px; height: 18px; flex-shrink: 0;" />
+                                                                            <span style="font-size: 12px; color: #606266;">
+                                                                                {{ data.Region }}
+                                                                            </span>
+                                                                        </template>
+                                                                    </span>
+                                                                </template>
+                                                            </el-tree>  
+                                                        </div> 
+                                                    </el-container>
+                                                </el-card>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="4.5%">
                                            <div 
@@ -374,62 +374,62 @@
                                             </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                            <el-card>
-                                                <el-container>
-                                                    <el-header class="headerInterno">
-                                                        <div class="header-content">
-                                                            <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
+                                                <el-card style="min-height: 500px;">
+                                                    <el-container>
+                                                        <el-header class="headerInterno">
+                                                            <div class="header-content">
+                                                                <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
+                                                            </div>
+                                                        </el-header>
+                                                        <div>
+                                                            <div v-show="!checkAllSin" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', true)">
+                                                                    Marcar todos
+                                                                </el-checkbox> 
+                                                            </div>
+                                                            <div v-show="checkAllSin" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', false)">
+                                                                    Desmarcar todos
+                                                                </el-checkbox>
+                                                            </div>
                                                         </div>
-                                                    </el-header>
-                                                    <div>
-                                                        <div v-show="!checkAllSin" class="header-content">
-                                                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                         @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', true)">
-                                                                Marcar todos
-                                                            </el-checkbox> 
-                                                        </div>
-                                                        <div v-show="checkAllSin" class="header-content">
-                                                            <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                         @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', false)">
-                                                                Desmarcar todos
-                                                            </el-checkbox>
-                                                        </div>
-                                                    </div>
-                                                    <div class="arbol-wrapper">
-                                                        <el-tree :data="regiones"
-                                                                 :props="{ children: 'Regiones' }" 
-                                                                 ref="arbolRegSin"
-                                                                 node-key="IdRegion"
-                                                                 highlight-current 
-                                                                 show-checkbox>
-                                                            <template #default="{ node, data }">
-                                                                <span
-                                                                    style="display: flex; align-items: center; gap: 8px; width: 100%;"
-                                                                    >
-                                                                    <template v-if="data.NombreComun">
-                                                                        <span
-                                                                            style="font-weight: bold; font-size: 13px; color: #333;">
-                                                                            {{ data.NombreComun }}
-                                                                            <span v-if="data.Lengua"
-                                                                                style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
-                                                                                ({{ data.Lengua }})
+                                                        <div class="arbol-wrapper">
+                                                            <el-tree :data="regiones"
+                                                                    :props="{ children: 'Regiones' }" 
+                                                                    ref="arbolRegSin"
+                                                                    node-key="IdRegion"
+                                                                    highlight-current 
+                                                                    show-checkbox>
+                                                                <template #default="{ node, data }">
+                                                                    <span
+                                                                        style="display: flex; align-items: center; gap: 8px; width: 100%;"
+                                                                        >
+                                                                        <template v-if="data.NombreComun">
+                                                                            <span
+                                                                                style="font-weight: bold; font-size: 13px; color: #333;">
+                                                                                {{ data.NombreComun }}
+                                                                                <span v-if="data.Lengua"
+                                                                                    style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
+                                                                                    ({{ data.Lengua }})
+                                                                                </span>
                                                                             </span>
-                                                                        </span>
-                                                                    </template>
+                                                                        </template>
 
-                                                                    <template v-else>
-                                                                        <Logo :rutaCategoria="data.Biblio?.url"
-                                                                            style="width: 18px; height: 18px; flex-shrink: 0;" />
-                                                                        <span style="font-size: 12px; color: #606266;">
-                                                                            {{ data.Region }}
-                                                                        </span>
-                                                                    </template>
-                                                                </span>
-                                                            </template>
-                                                        </el-tree>  
-                                                    </div> 
-                                                </el-container>
-                                            </el-card>
+                                                                        <template v-else>
+                                                                            <Logo :rutaCategoria="data.Biblio?.url"
+                                                                                style="width: 18px; height: 18px; flex-shrink: 0;" />
+                                                                            <span style="font-size: 12px; color: #606266;">
+                                                                                {{ data.Region }}
+                                                                            </span>
+                                                                        </template>
+                                                                    </span>
+                                                                </template>
+                                                            </el-tree>  
+                                                        </div> 
+                                                    </el-container>
+                                                </el-card>
                                             </el-splitter-panel>
                                         </el-splitter>
                                     </div>                                                              
@@ -715,6 +715,7 @@
 
         let seleccionados;
         let idsEliminar;
+        let params;
 
         // Filtrar únicamente los nodos de región
         // Identificar los nodos que se van a transferir
@@ -723,6 +724,14 @@
                 seleccionados = nodos.filter(nodo =>{
                     return nodo[campoId] != null;
                 });
+
+                params = { idVal: idNombreVal.value,
+                           idSin: idNombreSin.value,
+                           seleccion: seleccionados
+                 }
+
+                console.log("Estos son los parametros a pasar: ", params);
+                await axios.put('/traspaso-Regiones', params);
 
                 idsEliminar = new Set(
                     seleccionados.map(nodo => nodo[campoId])
@@ -734,6 +743,14 @@
                     nodo.tipo === 'caracteristica'
                 );
 
+                params = { idVal: idNombreVal.value,
+                           idSin: idNombreSin.value,
+                           seleccion: seleccionados
+                 }
+
+                console.log("Estos son los parametros a pasar: ", params);
+                await axios.put('/traspaso-Caracteristicas', params);
+
                 idsEliminar = new Set(
                     seleccionados.map(nodo => nodo[campoId])
                 );
@@ -744,12 +761,11 @@
                 });
 
                 //----------------------- 
-                const params = { idVal: idNombreVal.value,
-                                 idSin: idNombreSin.value,
-                                 seleccion: seleccionados
-                 }
-                /*try{
-                    const response = await axios.put(`/baja-nombre/${props.taxonAct.id}`, params);*/
+                params = { idVal: idNombreVal.value,
+                           idSin: idNombreSin.value,
+                           seleccion: seleccionados
+                };
+                
                 console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-NombresComunes', params);
 
@@ -841,7 +857,7 @@
     }
 
     .headerInterno {
-        background-color: #badfba;
+        background-color: #e5e7eb;
         padding: 15px;
         border-bottom: 1px solid #e0e0e0;
         height: auto !important;
