@@ -70,7 +70,7 @@ const listaOrdenada = ref(ORDEN_ORIGINAL.map(item => ({ ...item })));
 
 watch(() => props.biblioEdit?.IdBibliografia, (newId) => {
     if (props.biblioEdit && Object.keys(props.biblioEdit).length > 0) {
-        form.value = { ...props.biblioEdit };
+        form.value = { ...props.biblioEdit, Anio: props.biblioEdit.Anio ? String(props.biblioEdit.Anio).trim() : '' };
 
         if (props.biblioEdit.OrdenCitaCompleta) {
             const strOrden = props.biblioEdit.OrdenCitaCompleta.toString().trim();
@@ -152,6 +152,8 @@ const submitForm = async () => {
     try {
         const isValid = await biblioFormRef.value.validate();
         if (isValid) {
+            mostrarModalOrden.value = false;
+
             const ordenString = listaOrdenada.value
                 .map(item => mapaIndices[item.id])
                 .join('');
@@ -167,6 +169,7 @@ const submitForm = async () => {
         ElMessage.error('Por favor, complete los campos obligatorios.');
     }
 };
+
 
 const guardarOrden = () => {
     mostrarModalOrden.value = false;
@@ -209,8 +212,9 @@ const cerrarDialogo = () => emit('cerrar');
                     </el-col>
                     <el-col :span="12">
                         <el-form-item prop="Anio">
-                            <template #label><span class="form-number">{{ orden.Anio }}</span> Año(s)</template>
-                            <el-input v-model="form.Anio" maxlength="50" show-word-limit placeholder="Año"></el-input>
+                            <template #label><span class="form-number">{{ orden.Anio }}</span>Año(s)</template>
+                            <el-input type="textarea" v-model="form.Anio" maxlength="50" show-word-limit
+                            :autosize="{ minRows: 1, maxRows: 3 }" resize="none"  placeholder="Año"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -287,7 +291,7 @@ const cerrarDialogo = () => emit('cerrar');
         </div>
     </div>
 
-    <el-dialog v-model="mostrarModalOrden" width="1000px" append-to-body class="custom-dialog-style">
+    <el-dialog v-model="mostrarModalOrden" width="1000px" append-to-body  destroy-on-close  class="custom-dialog-style">
         <template #header>
             <div class="header-oval modal-header-fix">
                 <h3>Modificar orden de la referencia</h3>

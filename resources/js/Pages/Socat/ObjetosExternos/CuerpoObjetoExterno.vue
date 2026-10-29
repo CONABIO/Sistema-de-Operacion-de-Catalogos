@@ -44,14 +44,51 @@ const manejarClickFila = (row) => {
     if (tablaRef.value) {
         tablaRef.value.selectedRow = row;
     }
+    document.querySelectorAll('.fila-seleccionada-verde').forEach(tr => {
+        tr.classList.remove('fila-seleccionada-verde');
+    });
 };
 
-const tableRowClassName = ({ row }) => {
-    if (row.IdObjetoExterno === selectedRowId.value) {
-        return 'fila-seleccionada-verde';
-    }
-    return '';
+
+
+const seleccionarYResaltarFila = (itemOId) => {
+    if (!itemOId) return;
+    const id = typeof itemOId === 'object' ? itemOId.IdObjetoExterno : itemOId;
+
+    setTimeout(() => {
+        const fila = currentData.value.find(d => d.IdObjetoExterno === id);
+        if (!fila) return;
+        selectedRowId.value = id;
+        if (tablaRef.value) {
+            tablaRef.value.selectedRow = fila;
+            tablaRef.value.setCurrentRow?.(fila);
+            tablaRef.value.forzarFocoFilaVerde?.();
+        }
+        nextTick(() => {
+            document.querySelectorAll('.fila-seleccionada-verde').forEach(tr => {
+                tr.classList.remove('fila-seleccionada-verde');
+            });
+            const index = currentData.value.findIndex(d => d.IdObjetoExterno === id);
+            const filasTr = document.querySelectorAll('.el-table__body tbody tr.el-table__row');
+            let filaTr = null;
+            if (index >= 0 && filasTr[index]) {
+                filaTr = filasTr[index];
+            } else {
+                filaTr = Array.from(filasTr).find(tr => {
+                    const txt = tr.textContent.toLowerCase();
+                    return (fila.NombreObjeto && txt.includes(fila.NombreObjeto.toLowerCase())) ||
+                           (fila.NombreSitio && txt.includes(fila.NombreSitio.toLowerCase()));
+                });
+            }
+            if (filaTr) {
+                const celda = filaTr.querySelector('td.el-table__cell') || filaTr.querySelector('td') || filaTr;
+                celda.click();
+                filaTr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }, 150);
 };
+
 
 const irAlRegistroEspecifico = async (idEncontrado) => {
     try {
@@ -136,7 +173,7 @@ const nuevoObjetoExterno = () => {
 };
 
 const editarObjetoExterno = async (item) => {
-    await nextTick();
+    modalKey.value = Date.now();
     objetoExternoEditado.value = item;
     modalVisible.value = true;
 };
@@ -154,17 +191,11 @@ watch(modalVisible, (newVal) => {
 });
 
 const handleFormSubmited = (datosDelFormulario) => {
-    cerrarModal();
     const esEdicion = objetoExternoEditado.value !== null;
-    const idParaEditar = datosDelFormulario.IdObjetoExterno || (objetoExternoEditado.value?.IdObjetoExterno);
-
+    const idParaEditar = datosDelFormulario.IdObjetoExterno|| objetoExternoEditado.value?.IdObjetoExtern || selectedRowId.value;
     const nNuevo = (datosDelFormulario.NombreObjeto || "").trim().toLowerCase();
     const sNuevo = (datosDelFormulario.NombreSitio || "").trim().toLowerCase();
-
-    const mensajeDuplicado = esEdicion
-        ? "El objeto externo que desea modificar ya existe, las modificaciones no se realizaron."
-        : "El objeto externo que desea ingresar ya existe.";
-
+    const mensajeDuplicado = esEdicion? "El objeto externo que desea modificar ya existe, las modificaciones no se realizaron."  : "El objeto externo que desea ingresar ya existe.";
     const registroExistenteLocal = currentData.value.find(item => {
         const nItem = (item.NombreObjeto || "").trim().toLowerCase();
         const sItem = (item.NombreSitio || "").trim().toLowerCase();
@@ -172,40 +203,47 @@ const handleFormSubmited = (datosDelFormulario) => {
         return esEdicion ? (esMismo && item.IdObjetoExterno !== idParaEditar) : esMismo;
     });
 
-    if (registroExistenteLocal) {
-        selectedRowId.value = registroExistenteLocal.IdObjetoExterno;
-        if (tablaRef.value) {
-            tablaRef.value.selectedRow = registroExistenteLocal;
-            tablaRef.value.forzarFocoFilaVerde();
-        }
+     if (registroExistenteLocal) {
+        cerrarModal();
         mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
+        seleccionarYResaltarFila(registroExistenteLocal);
         return;
     }
 
     const procederConGuardado = async () => {
         try {
             if (!esEdicion) {
+                cerrarModal();
                 const response = await axios.post('/objetos-externos', datosDelFormulario);
-                mostrarNotificacion("Ingreso", "El objeto externo ha sido ingresada correctamente.", "success");
+                mostrarNotificacion("Ingreso", "El objeto externo ha sido ingresado correctamente.", "success");
                 const nuevoId = response.data.data?.IdObjetoExterno || response.data.IdObjetoExterno;
                 if (nuevoId) await irAlRegistroEspecifico(nuevoId);
                 else if (tablaRef.value) await tablaRef.value.fetchData();
             } else {
+                cerrarModal();
                 await axios.put(`/objetos-externos/${idParaEditar}`, datosDelFormulario);
                 mostrarNotificacion("Modificación", "El objeto externo ha sido modificado correctamente.", "success");
                 if (tablaRef.value) await tablaRef.value.fetchData();
                 await nextTick();
-                tablaRef.value.forzarFocoFilaVerde();
+                if (idParaEditar) {
+                    selectedRowId.value = idParaEditar;
+                    const filaActualizada = currentData.value.find(d => d.IdObjetoExterno === idParaEditar);
+                    if (filaActualizada && tablaRef.value) {
+                        tablaRef.value.selectedRow = filaActualizada;
+                    }
+                    tablaRef.value?.forzarFocoFilaVerde();
+                }
             }
         } catch (error) {
             if (error.response?.status === 400 && error.response.data.idExistente) {
+                cerrarModal();
                 mostrarNotificacion("Aviso", mensajeDuplicado, "warning");
                 await irAlRegistroEspecifico(error.response.data.idExistente);
             } else if (error.response?.status === 422) {
                 let errorMsg = "Error:<ul>" + Object.values(error.response.data.errors).flat().map(e => `<li>${e}</li>`).join("") + "</ul>";
                 mostrarNotificacionError("Error", errorMsg, "error", 0);
             } else {
-                mostrarNotificacion("Error", "No se pudo procesar la solicitud.", "error");
+                mostrarNotificacionError("Error", error.response?.data?.message || "No se pudo procesar la solicitud.", "error");
             }
         }
     };
@@ -216,7 +254,9 @@ const handleFormSubmited = (datosDelFormulario) => {
         const mensajeConfirmacion = `¿Estás seguro de guardar cambios para el objeto seleccionado?`;
         ElMessageBox({
             title: 'Confirmar modificación',
-            showConfirmButton: false, showCancelButton: false, customClass: 'message-box-diseno-limpio',
+            showConfirmButton: false,
+            showCancelButton: false,
+            customClass: 'message-box-diseno-limpio',
             message: h('div', { class: 'custom-message-content' }, [
                 h('div', { class: 'body-content' }, [
                     h('div', { class: 'custom-warning-icon-container' }, [h('div', { class: 'custom-warning-circle' }, '!')]),
@@ -224,12 +264,18 @@ const handleFormSubmited = (datosDelFormulario) => {
                 ]),
                 h('div', { class: 'footer-buttons' }, [
                     h(BotonCancelar, { onClick: () => ElMessageBox.close() }),
-                    h(BotonAceptar, { onClick: () => { ElMessageBox.close(); procederConGuardado(); } }),
+                    h(BotonAceptar, {
+                        onClick: () => {
+                            ElMessageBox.close();
+                            procederConGuardado();
+                        }
+                    }),
                 ])
             ])
         }).catch(() => { });
     }
 };
+
 
 const eliminarObjetoExterno = (idObjeto) => {
     const procederConEliminacion = async () => {
@@ -275,7 +321,7 @@ const eliminarObjetoExterno = (idObjeto) => {
     <LayoutCuerpo v-if="!props.isModal" :usar-app-layout="false" tituloPag="Objetos Externos"
         tituloArea="Catálogo de objetos externos">
         <div class="h-full flex flex-col">
-            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData"
+            <TablaFiltrable ref="tablaRef" class="flex-grow" :columnas="columnasDefinidas" v-model:datos="currentData" :highlight-current-row="true"
                 v-model:total-items="totalItems" endpoint="/busca-objeto-externo"  id-key="IdObjetoExterno"  :moduloSocat="'MnuCatObjExt'"
                 @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno"  @row-click="manejarClickFila">
@@ -318,7 +364,7 @@ const eliminarObjetoExterno = (idObjeto) => {
                 @editar-item="editarObjetoExterno" @eliminar-item="eliminarObjetoExterno"
                 @nuevo-item="nuevoObjetoExterno" @row-click="manejarClickFila"
                 :mostrarTraspaso="props.traspaso" @traspasaBiblio="asociarObjeto"
-                :botCerrar="props.isModal" @cerrar="cerrarVentana" :highlight-current-row="false">
+                :botCerrar="props.isModal" @cerrar="cerrarVentana" :highlight-current-row="true">
 
                 <template #extra-columns>
                     <el-table-column label="Extensión" min-width="100">
@@ -348,7 +394,7 @@ const eliminarObjetoExterno = (idObjeto) => {
         <FormObjetoExterno
             :visible="modalVisible"
             :objeto-externo-edit="objetoExternoEditado"
-            :key="objetoExternoEditado ? objetoExternoEditado.IdObjetoExterno : modalKey"
+            :key="modalKey"
             :accion="objetoExternoEditado ? 'editar' : 'crear'"
             @cerrar="cerrarModal"
             @formSubmited="handleFormSubmited" />
@@ -374,6 +420,8 @@ const eliminarObjetoExterno = (idObjeto) => {
 }
 .footer-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 35px; }
 
+.el-table .current-row .cell,
+.el-table .current-row td,
 .el-table .fila-seleccionada-verde .cell,
 .el-table .fila-seleccionada-verde td {
   color: #007bff !important;
@@ -382,10 +430,12 @@ const eliminarObjetoExterno = (idObjeto) => {
 </style>
 
 <style scoped>
+:deep(.el-table__body tr.current-row > td.el-table__cell),
 :deep(.fila-seleccionada-verde) {
   background-color: #ddf6dd !important;
   --el-table-tr-bg-color: #ddf6dd !important;
 }
+
 .expand-content-detail { padding: 10px 15px; background-color: #fdfdfd; font-size: 13px; }
 
 .modal-view-container {
