@@ -137,48 +137,53 @@ class CaracteristicasController extends Controller
     }
 
     public function cargaRegionesNombre($idNombre){
-    $regNombre = Region::regionPorNombre($idNombre)->get();
-    $regCaract = Region::regionPorCaract($idNombre)->get();
-    $regNomComun = Region::regionPorNomComun($idNombre)->get();
+        $regNombre = Region::regionPorNombre($idNombre)->get();
+        $regCaract = Region::regionPorCaract($idNombre)->get();
+        $regNomComun = Region::regionPorNomComun($idNombre)->get();
+        
+        Log::info("Regiones Nombre: " . $regNombre);
+        Log::info("Regiones Caracteristicas: " . $regCaract);
+        Log::info("Regiones Nombre Comun: " . $regNomComun);
 
-    $idsRegiones = collect($regNombre)->pluck('IdRegion')
-         ->merge(collect($regCaract)->pluck('IdRegion'))
-         ->merge(collect($regNomComun)->pluck('IdRegion'))
-         ->unique()->values()->toArray();
-    $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
-    $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
-    $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
 
-    $regPorNombreMapped = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
-    $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
-    $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
+        $idsRegiones = collect($regNombre)->pluck('IdRegion')
+            ->merge(collect($regCaract)->pluck('IdRegion'))
+            ->merge(collect($regNomComun)->pluck('IdRegion'))
+            ->unique()->values()->toArray();
+        $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
+        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
 
-    $regPorNombre = collect($regPorNombreMapped)->map(function($item) use ($idNombre) {
-        $idTipoDist = $item['IdTipoDistribucion'] ?? ($item['TipoDistribucion']['id'] ?? null);
+        $regPorNombreMapped = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
+        $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
+        $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
 
-        if ($idTipoDist) {
-            $tieneBiblio = \DB::connection('catcentral')->table('RelNombreRegionBiblio')
-                ->where('IdNombre', $idNombre)
-                ->where('IdRegion', $item['IdRegion'])
-                ->where('IdTipoDistribucion', $idTipoDist)
-                ->exists();
+        $regPorNombre = collect($regPorNombreMapped)->map(function($item) use ($idNombre) {
+            $idTipoDist = $item['IdTipoDistribucion'] ?? ($item['TipoDistribucion']['id'] ?? null);
 
-            $item['Biblio'] = [
-                'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
-                'texto' => ''
-            ];
-        }
-        return $item;
-    });
+            if ($idTipoDist) {
+                $tieneBiblio = \DB::connection('catcentral')->table('RelNombreRegionBiblio')
+                    ->where('IdNombre', $idNombre)
+                    ->where('IdRegion', $item['IdRegion'])
+                    ->where('IdTipoDistribucion', $idTipoDist)
+                    ->exists();
 
-    $todasLasRegiones = collect()->concat($regPorNombre)->concat($regPorCarct)->concat($regPorNomCom);
+                $item['Biblio'] = [
+                    'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
+                    'texto' => ''
+                ];
+            }
+            return $item;
+        });
 
-    return response()->json([
-        'regPorNombre' => $regPorNombre,
-        'regPorCaract' => $regPorCarct, 
-        'regPorNomCom' => $regPorNomCom,
-        'todas' => $todasLasRegiones,
-    ]);
+        $todasLasRegiones = collect()->concat($regPorNombre)->concat($regPorCarct)->concat($regPorNomCom);
+
+        return response()->json([
+            'regPorNombre' => $regPorNombre,
+            'regPorCaract' => $regPorCarct, 
+            'regPorNomCom' => $regPorNomCom,
+            'todas' => $todasLasRegiones,
+        ]);
 }
 
 private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){

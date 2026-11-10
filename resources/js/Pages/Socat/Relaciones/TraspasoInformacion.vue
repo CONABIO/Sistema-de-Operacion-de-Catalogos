@@ -13,7 +13,7 @@
                         <el-row justify="space-between" align="middle">
 
                             <span style="font-size: 18px; color: #8A2815; font-weight: bold;">
-                                {{ props.taxonAct.label }} 
+                                <!--{{ props.taxonAct.label }}--> 
                             </span>
 
                             <div style="display: flex; gap: 50px;">
@@ -23,10 +23,10 @@
                         </el-row>
                         <br/>
                         <el-row style="width: 100%;">
-                            <el-tabs v-model="tabActiva" type="card" style="width: 100%;">
+                            <el-tabs v-model="tabActiva" @tab-click="handleTabClick" type="card" style="width: 100%;">
                                 <!--Pestaña para mostrar los nombres comunes-->
-                                <el-tab-pane label="Nombre(s) común(es)" name="NomComun" :disabled ="nombresComunes.length === 0" 
-                                             style="border: 3px solid blue;">
+                                <el-tab-pane label="Nombre(s) común(es)" name="NomComun" :disabled ="nombresComunes.length === 0" esa
+                                             style="border: 3px solid #CCE6FF;">
                                     <div :class="{ 'contenido-deshabilitado': nombresComunes.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
@@ -36,28 +36,15 @@
                                                             <div class="header-content">
                                                                 <h1 class="titulo-interno">{{ nombreValido }}</h1>
                                                             </div>
-                                                        </el-header>
-                                                        <div>
-                                                            <div v-show="!checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolNomComVal, nomComTreeVal, 'id', true)">
-                                                                    Marcar todos
-                                                                </el-checkbox> 
-                                                            </div>
-                                                            <div v-show="checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolNomComVal, nomComTreeVal, 'id', false)">
-                                                                    Desmarcar todos
-                                                                </el-checkbox>                                                        
-                                                            </div>
-                                                        </div>
+                                                        </el-header>   
+                                                        <br/>                                                     
                                                         <div class="arbol-wrapper">
                                                             <el-tree :data="nomComTreeVal"
                                                                     :props="{ children: 'Regiones' }"
                                                                     ref="arbolNomComVal"
                                                                     node-key="id"
-                                                                    :highlight-current="true" 
-                                                                    show-checkbox>
+                                                                    :highlight-current="true"
+                                                                    default-expand-all>
                                                                 <template #default="{ node, data }">
                                                                     <span
                                                                         style="display: flex; align-items: center; gap: 8px; width: 100%;"
@@ -122,7 +109,7 @@
                                             <el-splitter-panel size="48%">
                                                 <el-card style="min-height: 500px;">
                                                     <el-container>
-                                                        <el-header class="headerInterno">
+                                                        <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
                                                                 <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
                                                             </div>
@@ -147,7 +134,8 @@
                                                                     ref="arbolNomComSin"
                                                                     node-key="id"
                                                                     :highlight-current="true" 
-                                                                    show-checkbox>
+                                                                    show-checkbox
+                                                                    default-expand-all>
                                                                 <template #default="{ node, data }">
                                                                     <span
                                                                         style="display: flex; align-items: center; gap: 8px; width: 100%;"
@@ -182,7 +170,7 @@
                                 </el-tab-pane>
                                 <!--Pestaña para mostrar las caracteristicas-->                               
                                 <el-tab-pane label="Caracteristicas" name="Caracteristicas" :disabled ="caracteristicas.length === 0"
-                                             style="border: 3px solid green;">
+                                             style="border: 3px solid #E2A2E6;">
                                     <div :class="{ 'contenido-deshabilitado': caracteristicas.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
@@ -192,28 +180,15 @@
                                                             <div class="header-content">
                                                                 <h1 class="titulo-interno">{{ nombreValido }}</h1>
                                                             </div>
-                                                        </el-header>
-                                                        <div>
-                                                            <div v-show="!checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolCaractVal, caractTreeVal, 'treeKey', true)">
-                                                                    Marcar todos
-                                                                </el-checkbox> 
-                                                            </div>
-                                                            <div v-show="checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolCaractVal, caractTreeVal, 'treeKey', false)">
-                                                                    Desmarcar todos
-                                                                </el-checkbox>                                                        
-                                                            </div>
-                                                        </div>
+                                                        </el-header> 
+                                                        <br/>                                                       
                                                         <div class="arbol-wrapper">
-                                                            <el-tree :data="caractTreeVal"
+                                                            <el-tree :data=caractTree(caractTreeVal)
                                                                     :props="{ label: 'label', children: 'children' }"
                                                                     ref="arbolCaractVal"
                                                                     node-key="treeKey"
-                                                                    :highlight-current="true" 
-                                                                    show-checkbox>
+                                                                    :highlight-current="true"
+                                                                    default-expand-all>                                                                    
                                                                 <template #default="{ data }">
                                                                     <div class="tree-node-wrapper"
                                                                     :class="{ 'nodo-region': data.tipo === 'region' }"
@@ -249,7 +224,7 @@
                                             <el-splitter-panel size="48%">
                                                 <el-card style="min-height: 500px;">
                                                     <el-container>
-                                                        <el-header class="headerInterno">
+                                                        <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
                                                                 <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
                                                             </div>
@@ -257,24 +232,25 @@
                                                         <div>
                                                             <div v-show="!checkAllSin" class="header-content">
                                                                 <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                            @change="marcarTodos(arbolCaractSin, caractTree, 'treeKey', true)">
+                                                                            @change="marcarTodos(arbolCaractSin, caractTree(caracteristicas), 'treeKey', true)">
                                                                     Marcar todos
                                                                 </el-checkbox>
                                                             </div>
                                                             <div v-show="checkAllSin" class="header-content">
                                                                 <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                            @change="marcarTodos(arbolCaractSin, caractTree, 'treeKey', false)">
+                                                                            @change="marcarTodos(arbolCaractSin, caractTree(caracteristicas), 'treeKey', false)">
                                                                     Desmarcar todos
                                                                 </el-checkbox>                                                        
                                                             </div>
                                                         </div>
                                                         <div class="arbol-wrapper">
-                                                            <el-tree :data="caractTree"
+                                                            <el-tree :data=caractTree(caracteristicas)
                                                                     :props="{ label: 'label', children: 'children' }"
                                                                     ref="arbolCaractSin"
                                                                     node-key="treeKey"
                                                                     :highlight-current="true" 
-                                                                    show-checkbox>
+                                                                    show-checkbox
+                                                                    default-expand-all>
                                                                 <template #default="{ data }">
                                                                     <div class="tree-node-wrapper"
                                                                     :class="{ 'nodo-region': data.tipo === 'region' }"
@@ -293,7 +269,7 @@
                                 </el-tab-pane>
                                 <!--Pestaña para mostrar las regiones-->
                                 <el-tab-pane label="Regiones" name="Regiones" :disabled ="regiones.length === 0" 
-                                                style="border: 3px solid red;">
+                                                style="border: 3px solid #D3F5C6;">
                                     <div :class="{ 'contenido-deshabilitado': regiones.length === 0 }"> 
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
@@ -304,27 +280,13 @@
                                                                 <h1 class="titulo-interno">{{ nombreValido }}</h1>
                                                             </div>
                                                         </el-header>
-                                                        <div>
-                                                            <div v-show="!checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', true)">
-                                                                    Marcar todos
-                                                                </el-checkbox> 
-                                                            </div>
-                                                            <div v-show="checkAllVal" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllVal" 
-                                                                            @change="marcarTodos(arbolRegVal, regionesValido, 'IdRegion', false)">
-                                                                    Desmarcar todos
-                                                                </el-checkbox>
-                                                            </div>
-                                                        </div>
+                                                        <br/>
                                                         <div class="arbol-wrapper">
-                                                            <el-tree :data="regionesValido"
-                                                                    :props="{ children: 'Regiones' }" 
-                                                                    ref="arbolRegVal"
-                                                                    node-key="IdRegion"
-                                                                    highlight-current 
-                                                                    show-checkbox>
+                                                            <!--el-tree :data="regionesValido"
+                                                                     node-key="IdRegion"
+                                                                     :props="{ children: 'Regiones' }" 
+                                                                     ref="arbolRegVal"
+                                                                     highlight-current>
                                                                 <template #default="{ node, data }">
                                                                     <span
                                                                         style="display: flex; align-items: center; gap: 8px; width: 100%;"
@@ -349,84 +311,106 @@
                                                                         </template>
                                                                     </span>
                                                                 </template>
-                                                            </el-tree>  
+                                                            </el-tree-->  
+                                                            <el-tree :data="regionesValido"
+                                                                     node-key="IdRegion"
+                                                                     :props="{ children: 'Regiones' }" 
+                                                                     ref="arbolRegVal"
+                                                                     highlight-current>
+                                                                <template #default="{ node, data }">
+                                                                    <span class="custom-tree-node"
+                                                                         :class="{
+                                                                                'nodo-nombre': data.origen === 'nombre',
+                                                                                'nodo-caracteristicas': data.origen === 'caracteristica',
+                                                                                'nodo-nomComun': data.origen === 'nomComun'
+                                                                         }"
+                                                                    >
+                                                                        <Logo
+                                                                                :rutaCategoria="data.Biblio?.url"
+                                                                                style="width: 18px; height: 18px; flex-shrink: 0;"
+                                                                        />
+                                                                        <span>{{ data.Region || node.label }}</span>
+                                                                    </span>
+                                                                </template>     
+                                                            </el-tree>
                                                         </div> 
                                                     </el-container>
                                                 </el-card>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="4.5%">
-                                           <div 
-                                                style="
-                                                    display: flex;
-                                                    justify-content: center;
-                                                    align-items: center;
-                                                    width: 100%;
-                                                    height: 100%;
-                                                ">
-                                                <el-tooltip effect="dark" content="Quitar del valido" placement="top">
-                                                    <el-button @click="transferirSelccionados(arbolRegSin, regiones, regionesValido, 'IdRegion', 'Region')" circle color="#8e44ad" 
-                                                                style="margin-left: 10px;">
-                                                        <el-icon>
-                                                        <iconoTraspaso :rotacion="90"/>
-                                                        </el-icon>
-                                                    </el-button>
-                                                </el-tooltip>
-                                            </div>
+                                                <div 
+                                                    style="
+                                                        display: flex;
+                                                        justify-content: center;
+                                                        align-items: center;
+                                                        width: 100%;
+                                                        height: 100%;
+                                                    ">
+                                                    <el-tooltip effect="dark" content="Quitar del valido" placement="top">
+                                                        <el-button @click="transferirSelccionados(arbolRegSin, regiones, regionesValido, 'IdRegion', 'Region')" circle color="#8e44ad" 
+                                                                    style="margin-left: 10px;">
+                                                            <el-icon>
+                                                            <iconoTraspaso :rotacion="90"/>
+                                                            </el-icon>
+                                                        </el-button>
+                                                    </el-tooltip>
+                                                </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
                                                 <el-card style="min-height: 500px;">
                                                     <el-container>
-                                                        <el-header class="headerInterno">
+                                                        <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
                                                                 <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
                                                             </div>
                                                         </el-header>
                                                         <div>
                                                             <div v-show="!checkAllSin" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', true)">
+                                                                <el-checkbox :indeterminate="isIndeterminate" 
+                                                                            v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', true, true)">
                                                                     Marcar todos
                                                                 </el-checkbox> 
                                                             </div>
                                                             <div v-show="checkAllSin" class="header-content">
-                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
-                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', false)">
+                                                                <el-checkbox :indeterminate="isIndeterminate" 
+                                                                            v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRegSin, regiones, 'IdRegion', false, true)">
                                                                     Desmarcar todos
                                                                 </el-checkbox>
                                                             </div>
                                                         </div>
-                                                        <div class="arbol-wrapper">
-                                                            <el-tree :data="regiones"
-                                                                    :props="{ children: 'Regiones' }" 
-                                                                    ref="arbolRegSin"
-                                                                    node-key="IdRegion"
-                                                                    highlight-current 
-                                                                    show-checkbox>
+                                                        <div class="arbol-wrapper">                                                            
+                                                            <el-tree
+                                                                :data="regiones"
+                                                                node-key="IdRegion"
+                                                                :props="{
+                                                                    label: 'Region',
+                                                                    children: 'Regiones',
+                                                                    disabled: 'disabled'
+                                                                }"
+                                                                ref="arbolRegSin"
+                                                                highlight-current
+                                                                show-checkbox
+                                                            >
                                                                 <template #default="{ node, data }">
                                                                     <span
-                                                                        style="display: flex; align-items: center; gap: 8px; width: 100%;"
-                                                                        >
-                                                                        <template v-if="data.NombreComun">
-                                                                            <span
-                                                                                style="font-weight: bold; font-size: 13px; color: #333;">
-                                                                                {{ data.NombreComun }}
-                                                                                <span v-if="data.Lengua"
-                                                                                    style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
-                                                                                    ({{ data.Lengua }})
-                                                                                </span>
-                                                                            </span>
-                                                                        </template>
+                                                                        class="custom-tree-node"
+                                                                        :class="{
+                                                                            'nodo-nombre': data.origen === 'nombre',
+                                                                            'nodo-caracteristicas': data.origen === 'caracteristica',
+                                                                            'nodo-nomComun': data.origen === 'nomComun'
+                                                                        }"
+                                                                    >
+                                                                        <Logo
+                                                                            :rutaCategoria="data.Biblio?.url"
+                                                                            style="width: 18px; height: 18px; flex-shrink: 0;"
+                                                                        />
 
-                                                                        <template v-else>
-                                                                            <Logo :rutaCategoria="data.Biblio?.url"
-                                                                                style="width: 18px; height: 18px; flex-shrink: 0;" />
-                                                                            <span style="font-size: 12px; color: #606266;">
-                                                                                {{ data.Region }}
-                                                                            </span>
-                                                                        </template>
+                                                                        <span>{{ data.Region || node.label }}</span>
                                                                     </span>
                                                                 </template>
-                                                            </el-tree>  
+                                                            </el-tree>
                                                         </div> 
                                                     </el-container>
                                                 </el-card>
@@ -466,7 +450,7 @@
     const regiones= ref([]);
     const regionesValido = ref([]);
     
-    const regionesTransfer = ref([]);
+    //const regionesTransfer = ref([]);
 
     const arbolNomComVal = ref([]);
     const arbolNomComSin = ref([]);
@@ -496,48 +480,118 @@
         emit('cerrar');
     };
 
-    onMounted( async () => {
+    const cargaNombresComunes = async() =>{
         let resp;
 
-        //resp = await axios.get(`/carga-taxon/${props.taxonAct.id}`);
-       
         if(props.taxonAct.estatus === "Sinonimo"){
+            //Se cargan los datos de los nombres comunes 
             resp = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
             nombresComunes.value = resp.data;
+            console.log("Este es el id del taxon sinonimo: ", props.taxonAct.id);
 
+            resp = await axios.get(`/cargar-nomcomun-taxon/${props.sinonimo.idNombre}`);
+            nomComTreeVal.value = resp.data;
+
+            console.log("Este es el id del taxon valido: ", props.sinonimo.idNombre);
+
+        }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
+            //Se cargan los datos de los nombres comunes 
+            resp = await axios.get(`/cargar-nomcomun-taxon/${props.sinonimo.idNombre}`);
+            nombresComunes.value = resp.data;
+
+            resp = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
+            nomComTreeVal.value = resp.data;
+        }
+
+    }
+
+    const cargaCaracteristicas = async() =>{
+        let resp;
+
+        if(props.taxonAct.estatus === "Sinonimo"){
+
+            //Se cargan los datos de las caracteristicas 
             resp = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
             caracteristicas.value = resp.data;
 
-            resp = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
-            regiones.value = resp.data.regPorNombre;
-            regionesTransfer.value = resp.data.regPorNombre;          
+            resp = await axios.get(`/cargaCaracTaxon/${props.sinonimo.idNombre}`);
+            caractTreeVal.value = resp.data;
+
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
-            resp = await axios.get(`/cargar-nomcomun-taxon/${props.sinonimo.idNombre}`);
-            nombresComunes.value = resp.data;
             
+            //Se cargan los datos de las caracteristicas 
             resp = await axios.get(`/cargaCaracTaxon/${props.sinonimo.idNombre}`);
             caracteristicas.value = resp.data;
+
+            resp = await axios.get(`/cargaCaracTaxon/${props.taxonAct.id}`);
+            caractTreeVal.value = resp.data;
+        }
+    }
+
+    const cargaRegiones = async() =>{
+        let resp;
+
+        if(props.taxonAct.estatus === "Sinonimo"){
+            
+            //Se cargan los datos de las regiones 
+            resp = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
+            //regiones.value = resp.data.regPorNombre;
+            //regiones.value = resp.data.todas;
+            regiones.value = prepararRegiones(resp.data.todas);
+
+            console.log("Este es el id los sinonimos: ", props.taxonAct.id);
+            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
             
             resp = await axios.get(`/cargaRegionesTaxon/${props.sinonimo.idNombre}`);
-            regiones.value = resp.data.regPorNombre;
-            regionesTransfer.value = resp.data.regPorNombre;
-        }
+            //regionesValido.value = resp.data.regPorNombre;
+            regionesValido.value = prepararRegiones(resp.data.todas);
 
+            console.log("Este es el id los validos: ", props.sinonimo.idNombre);
+            console.log("Estas son las respuestas de las regiones validas 01: ", resp.data.todas);
+
+        }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
+            
+            //Se cargan los datos de las regiones 
+            resp = await axios.get(`/cargaRegionesTaxon/${props.sinonimo.idNombre}`);
+            //regiones.value = resp.data.regPorNombre;
+            //regiones.value = resp.data.todas;
+            regiones.value = prepararRegiones(resp.data.todas);
+
+            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
+
+            resp = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
+            //regionesValido.value = resp.data.regPorNombre; 
+            regionesValido.value = prepararRegiones(resp.data.todas);           
+
+            console.log("Estas son las respuestas de las regiones validas 02: ", resp.data.todas);
+        }
+    }
+
+    onMounted( async () => {
+        let resp;
+       
         if(props.taxonAct.estatus === "Sinonimo"){
             nombreValido.value = props.sinonimo.Nombrecompleto.texto;
             nombreSinonimo.value = props.taxonAct.label;
-            console.log("Este es el sinonimo: ", props.sinonimo);
-            console.log("Este es el taxonAct: ", props.taxonAct);
             idNombreVal.value = props.sinonimo.idNombre;
             idNombreSin.value = props.taxonAct.id;
         }else{
             nombreValido.value = props.taxonAct.label;
             nombreSinonimo.value =props.sinonimo.Nombrecompleto.texto;
-            console.log("Este es el taxonAct: ", props.taxonAct);
-            console.log("Este es el sinonimo: ", props.sinonimo);
             idNombreVal.value = props.taxonAct.id;
             idNombreSin.value = props.sinonimo.idNombre;
         }
+
+        //Se cargan los datos de los nombres comunes 
+        await cargaNombresComunes();
+
+        //Se cargan los datos de las caracteristicas 
+        await cargaCaracteristicas();
+
+        //Se cargan los datos de las regiones 
+        await cargaRegiones();
+
+        
     });
 
     const colDefRegionNombre = ref([
@@ -577,9 +631,9 @@
         })
     });
 
-    const caractTree = computed(() => {
+    const caractTree = (caracteristicas) => {
 
-        const caracteristicasOrdenadas = [...(caracteristicas.value || [])]
+        const caracteristicasOrdenadas = [...(caracteristicas || [])]
             .sort((a, b) => {
 
                 const nombreA = a.Caracteristica || '';
@@ -648,7 +702,7 @@
                 }))
             };
         });
-    });
+    };
 
     const desmarcar = () => {
         if (arbolRegVal.value) {
@@ -656,45 +710,48 @@
         }
     }
 
-    //Definicion de la funcion 
-    const marcarTodos = (treeRef, listaNodos, campoKey, marcar) => {
+    // Función general para marcar y desmarcar árboles
+    const marcarTodos = (treeRef, listaNodos, campoKey, marcar, soloNombre = false) => {
 
-        // Obtener la instancia del árbol de Vue 
         const tree = treeRef?.value ?? treeRef;
 
-        if (!tree || typeof tree.setCheckedKeys !== 'function') { 
-            console.warn("El árbol no está disponible o no es una instancia de el-tree"); 
-            
-            return; 
+        if (!tree || typeof tree.setCheckedKeys !== 'function') {
+            console.warn("El árbol no está disponible o no es una instancia de el-tree");
+            return;
         }
 
         const ids = [];
 
         const recorrer = (nodos) => {
-
             if (!Array.isArray(nodos)) return;
 
             nodos.forEach(nodo => {
 
-                // Obtener la llave indicada al llamar la función 
-                if (nodo[campoKey] !== undefined && nodo[campoKey] !== null) { 
-                    ids.push(nodo[campoKey]); 
-                } 
-                
-                // Recorrer los hijos 
-                if (Array.isArray(nodo.Regiones)) { 
-                    recorrer(nodo.Regiones); 
+                if (
+                    nodo[campoKey] !== undefined &&
+                    nodo[campoKey] !== null &&
+                    (!soloNombre || nodo.origen === 'nombre')
+                ) {
+                    ids.push(nodo[campoKey]);
+                }
+
+                // Estructura de regiones y nombres comunes
+                if (Array.isArray(nodo.Regiones)) {
+                    recorrer(nodo.Regiones);
+                }
+
+                // Estructura normalizada de características
+                if (Array.isArray(nodo.children)) {
+                    recorrer(nodo.children);
                 }
             });
         };
 
-        // Aquí inicia el recorrido del árbol
-        if(marcar){
+        if (marcar) {
             recorrer(listaNodos);
         }
 
-        // Marca todos los nodos encontrados
-        treeRef.setCheckedKeys(ids, false);
+        tree.setCheckedKeys(ids, false);
     };
 
     const transferirSelccionados = async(arbolOrig, arrayOrig, arrayDest,
@@ -733,27 +790,25 @@
                 console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-Regiones', params);
 
-                idsEliminar = new Set(
-                    seleccionados.map(nodo => nodo[campoId])
-                );
+                await cargaRegiones();
+
             break;
             case 'Caract':
                 seleccionados = nodos.filter(nodo =>
-                    nodo[campoId] != null &&
-                    nodo.tipo === 'caracteristica'
+                    nodo[campoId] != null
                 );
 
                 params = { idVal: idNombreVal.value,
                            idSin: idNombreSin.value,
                            seleccion: seleccionados
-                 }
+                }
 
-                console.log("Estos son los parametros a pasar: ", params);
+                console.log("Estos son los parametros pasados: ", params);
+
                 await axios.put('/traspaso-Caracteristicas', params);
 
-                idsEliminar = new Set(
-                    seleccionados.map(nodo => nodo[campoId])
-                );
+                await cargaCaracteristicas();
+
                 break;
             case 'NomCom':
                 seleccionados = nodos.filter(nodo =>{
@@ -769,47 +824,11 @@
                 console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-NombresComunes', params);
 
-                idsEliminar = new Set(
-                    seleccionados.map(nodo => nodo[campoId])
-                );
+                await cargaNombresComunes();
+                
                 break;
         }
-
-        if (!seleccionados.length) {
-            console.warn("No hay valores seleccionadas");
-            return;
-        }
-
-        // Eliminar los nodos del origen        
-        // eliminarRecursivo(arrayOrig, idsEliminar, campoId);
-        switch(campoTipo){
-            case 'Region':
-                eliminarRecursivo(arrayOrig, idsEliminar, campoId);
-            break;
-            case 'Caract':
-                eliminarRecursivo(caracteristicas.value, idsEliminar, 'IdCatNombre');
-                break;
-            case 'NomCom':
-                eliminarRecursivo(arrayOrig, idsEliminar, campoId);
-            break;
-        }
-
-        // Agregar los nodos al destino, evitando duplicados
-        seleccionados.forEach(nodo => {
-            console.log("Este es el valor de nodo existente: ",  nodo[campoId]);
-            const existe = arrayDest.some(
-                elemento => elemento[campoId] === nodo[campoId]
-            );
-
-            if (!existe) {
-                arrayDest.push(nodo);
-            }
-        });
-
-        await nextTick();
-
-        // Limpiar las selecciones del árbol de origen
-        tree.setCheckedKeys([]);
+        
     };
 
     const eliminarRecursivo = (nodos, idsEliminar, campoId) => {
@@ -830,6 +849,38 @@
             }
         }
     };
+
+    const renderContent = (h, {node, data}) => {
+        const colores = {
+            nombre: 'nodo-nombre',
+            caracteristicas: 'nodo-caracteristicas',
+            nomComun: 'nodo-nomComun'
+        };
+
+        return h(
+            'span', 
+            {
+                class: ['custom-tree-node', colores[data.origen]]
+            }, 
+            node.label
+        );
+    }
+
+    const prepararRegiones = (nodos) => {
+        return nodos.map(nodo => ({
+            ...nodo,
+            disabled: nodo.origen !== 'nombre',
+            Regiones: Array.isArray(nodo.Regiones)
+                ? prepararRegiones(nodo.Regiones)
+                : []
+        }));
+    };
+
+    const handleTabClick = async(tab) =>{
+        if(tab.props.name === 'Regiones'){
+            await cargaRegiones();
+        }
+    }
 
 </script>
 
@@ -857,7 +908,21 @@
     }
 
     .headerInterno {
-        background-color: #e5e7eb;
+        background-color: #3726cc;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        height: auto !important;
+        min-height: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        color: white;
+    }
+
+    .headerInterno-Sin {
+        background-color: #8A2815;
         padding: 15px;
         border-bottom: 1px solid #e0e0e0;
         height: auto !important;
@@ -893,7 +958,7 @@
     .titulo-interno {
         font-size: 1.2rem;
         font-weight: bold;
-        color: #333;
+        color: #ffffff;
         margin: 0;
         text-align: center;
     }
@@ -943,4 +1008,26 @@
         user-select: none;
     }
 
+    .custom-tree-node{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+        border-radius: 4px;
+        color: #222 !important;
+    }
+
+    .nodo-nombre{
+        background-color: #D3F5C6;        
+    }
+
+    .nodo-caracteristicas{
+        background-color: #E2A2E6;
+    }
+
+    .nodo-nomComun{
+        background-color: #CCE6FF;
+    }
 </style>
