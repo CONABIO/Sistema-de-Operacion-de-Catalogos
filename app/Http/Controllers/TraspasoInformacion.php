@@ -157,125 +157,179 @@ class TraspasoInformacion extends Controller
         });
     }
 
-    public function traspasoCaract(Request $request){      
-        DB::connection('catcentral')->transaction(function () use ($request) {
+    public function traspasoCaract(Request $request){ 
         
-            $idCaract = 0;
-            $idTipDist = 0;
-            $idReg = 0;
+        $idSin = $request['idSin'];
+        $idVal = $request['idVal'];  
 
-            foreach($request->seleccion as $item) {
+        try{
 
-                if (isset($item['id'])) {
-                    $idCaract = $item['id'];
-                }
+            DB::connection('catcentral')->transaction(function () use ($request, $idSin, $idVal){
 
-                Log::info("idCaracteristicas: " . $idCaract);
-                $relCaract = RelNombreCatalogo::where('IdNombre',$request['idSin'])
-                                            ->where('IdCatNombre', $idCaract)                                          
-                                            ->first();
-
-                if($relCaract){
-
-                    $datosRelCaract = $relCaract->getAttributes();
-                    $datosRelCaract['IdNombre'] = $request['idVal'];
-
-                    //Insertar un nuevo registro en caracteristicas
-                    RelNombreCatalogo::create($datosRelCaract);
+                foreach($request->seleccion as $item) {
                     
-                    $biblioCaract = RelNombreCatalogoBiblio::where('IdNombre',$request['idSin'])
-                                                        ->where('IdCatNombre', $idCaract)
-                                                        ->get();
+                    if($item['tipo'] === 'caracteristica') {       
 
-                    //Cambiamos y eliminamos las bibliografias de las caracteristicas                                        
-                    foreach($biblioCaract as $itemBiblio){
-                        $originales = $itemBiblio->getAttributes();
-                        
-                        //cambio de datos
-                        $datos = $itemBiblio->getAttributes();
-                        $datos['IdNombre'] = $request['idVal'];
+                        $this->valCreaRelCarac($item['id'], $idSin, $idVal);
 
-                        DB::connection('catcentral')
-                            ->table('RelNombreCatalogoBiblio')
-                            ->insert($datos);
-
-                        //Eliminar el original
-                        $eliminados = DB::connection('catcentral')
-                            ->table('RelNombreCatalogoBiblio')
-                            ->where('IdNombre', $originales['IdNombre'])
-                            ->where('IdCatNombre', $originales['IdCatNombre'])
-                            ->where('IdBibliografia', $originales['IdBibliografia'])
-                            ->delete();
-                    }
-
-                    //Recorremos las regiones 
-                    foreach($item['children'] ?? [] as $region){
-                        $idReg = $region['id'];
-                        $idTipDist = $region['tipDistribucion'];
-
-                        $relRegCaract = RelNombreCatalogoRegion::where('IdNombre',$request['idSin'])
-                                                            ->where('IdCatNombre', $idCaract) 
-                                                            ->where('IdRegion', $idReg)
-                                                            ->where('IdTipoDistribucion', $idTipDist)                                         
-                                                            ->first();
-
-                        if($relRegCaract){
-                            $originales = $relRegCaract->getAttributes();
-                        
-                            //cambio de datos
-                            $datos = $relRegCaract->getAttributes();
-                            $datos['IdNombre'] = $request['idVal'];
-
-                            DB::connection('catcentral')
-                                ->table('RelNombreCatalogoRegion')
-                                ->insert($datos);
-
-                            $biblioRegCaract = RelNombreCatalogoRegionBiblio::where('IdNombre', $originales['IdNombre'])
-                                                                            ->where('IdCatNombre', $originales['IdCatNombre'])
-                                                                            ->where('IdRegion', $originales['IdRegion'])
-                                                                            ->where('IdTipoDistribucion', $originales['IdTipoDistribucion'])
-                                                                            ->get();
-
-                            //Se recorren las bibliografias de las regiones
-                            foreach($biblioRegCaract as $biblioCaract){
-                                $biblioOrig = $biblioCaract->getAttributes();
-                                
-                                //Cambio de datos
-                                $datosBiblio = $biblioCaract->getAttributes();
-                                $datosBiblio['IdNombre'] = $request['idVal'];
-
-                                DB::connection('catcentral')
-                                    ->table('RelNombreCatalogoRegionBiblio')
-                                    ->insert($datosBiblio);
-
-                                $elimRegBiblio = DB::connection('catcentral')
-                                    ->table('RelNombreCatalogoRegionBiblio')
-                                    ->where('IdNombre', $biblioOrig['IdNombre'])
-                                    ->where('IdCatNombre', $biblioOrig['IdCatNombre'])
-                                    ->where('IdRegion', $biblioOrig['IdRegion'])
-                                    ->where('IdTipoDistribucion', $biblioOrig['IdTipoDistribucion'])
-                                    ->where('IdBibliografia', $biblioOrig['IdBibliografia'])
-                                    ->delete();
-                            }    
-
-                            //Eliminar el original
+                        $cont = RelNombreCatalogoRegion::where('IdNombre', $idSin)
+                                                    ->where('IdCatNombre', $item['id'])
+                                                    ->count();
+                        if($cont === 0){                    
                             $eliminados = DB::connection('catcentral')
-                                ->table('RelNombreCatalogoRegion')
-                                ->where('IdNombre', $originales['IdNombre'])
-                                ->where('IdCatNombre', $originales['IdCatNombre'])
-                                ->where('IdRegion', $originales['IdRegion'])
-                                ->where('IdTipoDistribucion', $originales['IdTipoDistribucion'])
-                                ->delete();
-
+                                        ->table('RelNombreCatalogo')
+                                        ->where('IdNombre', $idSin)
+                                        ->where('IdCatNombre', $item['id'])                                  
+                                        ->delete();
                         }
+                        
+                    }else{
 
-                    }
+                        $this->valCreaRelCaractReg($item, $idSin, $idVal);
 
+                        $idCaract = explode('-', $item['treeKey'])[1];
+                        $cont = RelNombreCatalogoRegion::where('IdNombre', $idSin)
+                                                    ->where('IdCatNombre', $idCaract)
+                                                    ->count();
+                        if($cont === 0){
+                            $eliminados = DB::connection('catcentral')
+                                        ->table('RelNombreCatalogo')
+                                        ->where('IdNombre', $idSin)
+                                        ->where('IdCatNombre', $idCaract)                                  
+                                        ->delete();
+                        }
+                    }                
                 }
+            });
 
-                //Eliminar original
-                $relCaract->delete();
+        } catch(\Throwable $e){
+            Log::error('Error en el traspaso de características: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrio un error durante el traspaso.',
+                'error' => $e->getMessage()
+            ], 500);
+        }        
+    }
+
+    private function valCreaRelCarac($idCatNom, $idSin, $idVal){
+
+        // Se recupera el registro para validar su existencia y el resto de los datos 
+        $relCarac = RelNombreCatalogo::where('IdNombre', $idSin)
+                                     ->where('IdCatNombre', $idCatNom)
+                                     ->first();
+        
+        if ($relCarac) {
+            $datosRelCat = $relCarac->getAttributes();
+            $datosRelCat['IdNombre'] = $idVal;
+
+            //Se valida si existe el registro en la tabla antes de continuar 
+            $existRelCat = RelNombreCatalogo::where('IdNombre', $datosRelCat['IdNombre'])
+                                            ->where('IdCatNombre', $datosRelCat['IdCatNombre'])
+                                            ->exists();
+
+            if(!$existRelCat){
+                RelNombreCatalogo::create($datosRelCat);
             }
-        });
+
+            $biblio = RelNombreCatalogoBiblio::where('IdNombre', $idSin)
+                                             ->where('IdCatNombre', $idCatNom)                                                         
+                                             ->get();
+
+            foreach($biblio as $itemBiblio){
+                $originales = $itemBiblio->getAttributes();
+                            //cambio de datos
+                $datos = $itemBiblio->getAttributes();
+                $datos['IdNombre'] = $idVal;
+
+                $existe = RelNombreCatalogoBiblio::where('IdNombre', $datos['IdNombre'])
+                                                 ->where('IdCatNombre', $datos['IdCatNombre'])
+                                                 ->where('IdBibliografia', $datos['IdBibliografia'])
+                                                 ->exists();
+                
+                if(!$existe){
+                    DB::connection('catcentral')
+                        ->table('RelNombreCatalogoBiblio')
+                        ->insert($datos);
+                }
+            }
+        }
+
+    }
+
+    private function valCreaRelCaractReg($registro, $idSin, $idVal){
+
+        $idReg = $registro['id'];
+        $idCaract = explode('-', $registro['treeKey'])[1];
+
+        $relCarac = RelNombreCatalogoRegion::where('IdNombre', $idSin)
+                                           ->where('IdCatNombre', $idCaract)
+                                           ->where('IdRegion', $idReg)
+                                           ->where('IdTipoDistribucion', $registro['tipDistribucion'])
+                                           ->first();        
+
+        $this->valCreaRelCarac($idCaract, $idSin, $idVal);
+
+        $datos = $relCarac->getAttributes();
+        $datos['IdNombre'] = $idVal;
+
+        $existe = RelNombreCatalogoRegion::where('IdNombre', $datos['IdNombre'])
+                                         ->where('IdCatNombre', $datos['IdCatNombre'])
+                                         ->where('IdRegion', $datos['IdRegion'])
+                                         ->where('IdTipoDistribucion', $datos['IdTipoDistribucion'])
+                                         ->exists();   
+        
+        if(!$existe){
+            DB::connection('catcentral')
+                ->table('RelNombreCatalogoRegion')
+                ->insert($datos);
+        }
+
+        $biblioReg = RelNombreCatalogoRegionBiblio::where('IdNombre', $idSin)
+                                                  ->where('IdCatNombre', $idCaract)
+                                                  ->where('IdRegion', $idReg)
+                                                  ->where('IdTipoDistribucion', $registro['tipDistribucion'])                                                        
+                                                  ->get();
+        
+        foreach($biblioReg as $itemBiblio){
+
+            $originales = $itemBiblio->getAttributes();
+                            //cambio de datos
+            $datos = $itemBiblio->getAttributes();
+            $datos['IdNombre'] = $idVal;
+
+            $existe = RelNombreCatalogoRegionBiblio::where('IdNombre', $datos['IdNombre'])
+                                                   ->where('IdCatNombre', $datos['IdCatNombre'])
+                                                   ->where('IdRegion', $datos['IdRegion'])
+                                                   ->where('IdTipoDistribucion', $datos['IdTipoDistribucion'])
+                                                   ->where('IdBibliografia', $datos['IdBibliografia'])
+                                                   ->exists();
+            
+            if(!$existe){
+                DB::connection('catcentral')
+                    ->table('RelNombreCatalogoRegionBiblio')
+                    ->insert($datos);
+            }
+
+            //Borrar la bibliografia insertada 
+            $eliminados = DB::connection('catcentral')
+                                 ->table('RelNombreCatalogoRegionBiblio')
+                                 ->where('IdNombre', $originales['IdNombre'])
+                                 ->where('IdCatNombre', $originales['IdCatNombre'])
+                                 ->where('IdRegion', $originales['IdRegion'])
+                                 ->where('IdTipoDistribucion', $datos['IdTipoDistribucion'])
+                                 ->where('IdBibliografia', $originales['IdBibliografia'])
+                                 ->delete();
+        }
+        
+        $eliminaReg = DB::connection('catcentral')
+                             ->table('RelNombreCatalogoRegion')
+                             ->where('IdNombre', $relCarac['IdNombre'])
+                             ->where('IdCatNombre', $relCarac['IdCatNombre'])
+                             ->where('IdRegion', $relCarac['IdRegion'])
+                             ->where('IdTipoDistribucion', $relCarac['IdTipoDistribucion'])
+                             ->delete();
+
     }
 }
