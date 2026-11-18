@@ -215,9 +215,7 @@ class TraspasoInformacionController extends Controller
         }        
     }
 
-    public function traspasoRelaciones(Request $request){ 
-
-        Log::info("esto es lo que llega en el request: " . $request);        
+    public function traspasoRelaciones(Request $request){         
 
         DB::connection('catcentral')->transaction(function () use ($request) {
 

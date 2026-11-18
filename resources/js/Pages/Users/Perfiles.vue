@@ -125,7 +125,6 @@
     } 
 
     const manejaClick = (row) => {
-        console.log("Esto vale el row: ", row);
         registroActual.value = row;
     }
 
@@ -149,7 +148,6 @@
     });
     
     const manejarEliminarItem = (item) => {
-        console.log("Este es el item: ", item);
 
         const procederConEliminacion = async () => {
 
@@ -188,14 +186,11 @@
 
     const guardarUsuario = (item) =>{
         if(registroActual.IdRol === rolActualizado.value || rolActualizado.value === 0){
-            console.log("No cambio el rol: ", rolActualizado.value);
             return;
         }else{
             const response = axios.post('/actualizaUsr', { data: {usr: registroActual.value, 
                                                                   perfil: rolActualizado.value}} ) ;            
-            console.log("Si cambio el rol: ", rolActualizado.value);
         }
-        console.log(item);
         rolActualizado.value = 0;
     }
 

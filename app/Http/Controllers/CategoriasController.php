@@ -39,7 +39,6 @@ class CategoriasController extends Controller
 
     public function fetchHijos($id)
     {
-        Log::info("Este es el id que se busca: " . $id);
         $catTax = CategoriasTaxonomicas::where('IdAscendente', '=', $id)
                                        ->where('IdCategoriaTaxonomica', '<>', $id)
                                            ->OrderbyRaw("IdNivel1 ASC, IdNivel3 ASC, IdNivel4 ASC,
@@ -47,7 +46,7 @@ class CategoriasController extends Controller
                                                          IdNivel8 ASC, IdNivel9 ASC, IdNivel10 ASC,
                                                          IdNivel11 ASC, IdNivel12 ASC")
                                            ->get();
-        Log::info($catTax);
+        
         $data=[];
         $comp = true;
         foreach($catTax as $cat)

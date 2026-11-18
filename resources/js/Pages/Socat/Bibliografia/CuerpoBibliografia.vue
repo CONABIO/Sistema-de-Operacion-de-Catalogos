@@ -215,7 +215,7 @@ const cerrarBiblio = async (bibliografiasSeleccionadas) => {
 
         if (response.status === 200) {
             await cargarBibliografiasRelacionadas();
-            console.log("Asociación exitosa");
+
         }
     } catch (error) {
         console.error("Error al asociar bibliografía:", error);

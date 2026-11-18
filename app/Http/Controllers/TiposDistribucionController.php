@@ -13,7 +13,6 @@ class TiposDistribucionController extends Controller
 
     public function index()
     {
-        Log::info("Mostrando el índice de TipoDistribucion");
 
         $tipoDistribucion = TipoDistribucion::orderBy('Descripcion')->paginate(100);
 
@@ -152,12 +151,11 @@ class TiposDistribucionController extends Controller
 
     public function destroy($IdTipoDistribucion)
     {
-        Log::info("Eliminando TipoDistribucion con ID: {$IdTipoDistribucion}");
+        
         try {
             $tipoDistribucion = TipoDistribucion::findOrFail($IdTipoDistribucion);
             $tipoDistribucion->delete();
 
-            Log::info("TipoDistribucion eliminado con ID: {$IdTipoDistribucion}");
             return response()->json(['message' => 'TipoDistribucion eliminado exitosamente'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar TipoDistribucion con ID: {$IdTipoDistribucion}: {$e->getMessage()}");

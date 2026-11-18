@@ -140,11 +140,6 @@ class CaracteristicasController extends Controller
         $regNombre = Region::regionPorNombre($idNombre)->get();
         $regCaract = Region::regionPorCaract($idNombre)->get();
         $regNomComun = Region::regionPorNomComun($idNombre)->get();
-        
-        Log::info("Regiones Nombre: " . $regNombre);
-        Log::info("Regiones Caracteristicas: " . $regCaract);
-        Log::info("Regiones Nombre Comun: " . $regNomComun);
-
 
         $idsRegiones = collect($regNombre)->pluck('IdRegion')
             ->merge(collect($regCaract)->pluck('IdRegion'))

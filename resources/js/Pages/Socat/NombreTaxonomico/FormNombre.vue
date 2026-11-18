@@ -415,7 +415,6 @@
 
   const hasPermisos = (etiqueta, modulo) => {
       
-      console.log("Esto vale permisos: ", permisos);
       const permiso = permisos.find(item => item.NombreModulo === etiqueta);
 
       return permiso[modulo];
@@ -917,13 +916,8 @@
           estSin.value = false;
           estNa.value = false;
           estNd.value = false;
-          console.log("valido: ", estCor.value, 
-                      "sinonimo: ", estSin.value,
-                      "na: ", estNa.value,
-                      "Nd: ", estNd.value);
         break;
         case 6:
-        console.log("Entre a case 9");
           estCor.value = true;
           estSin.value = true;
           estNa.value = false;
@@ -1148,7 +1142,6 @@
 
       }
       catch(error){
-        console.log("este es el error: ", error);
           if (error.response.status === 422) {
               const errorMessages = Object.values(error.response.data.errors).flat();
               errorMessages.forEach(msg => {
@@ -1287,7 +1280,6 @@
     
 
     if(!props.nuevoTax){
-      console.log("Esto vale taxonActual: ", taxonActual.value);
       if(taxonActual.value !== undefined &&
          taxonActual.value !== null &&
          taxonActual.value !== '' &&
@@ -1296,7 +1288,7 @@
           IdAscOblig = taxonActual.value.completo.IdNombre;
         }
         else{
-          console.log("Entre a validar si es un cambio");
+
           IdAscOblig = taxonActual.value.completo.IdAscendObligatorio;
         }
       }else{
@@ -1304,7 +1296,6 @@
           IdAscOblig = props.taxonAct.completo.IdNombre;
         }
         else{
-          console.log("Entre a validar si es un cambio");
           IdAscOblig = props.taxonAct.completo.IdAscendObligatorio;
         }
       }
@@ -1378,7 +1369,6 @@
                       emit('resultadoAlta', response.data.nombreNuevo, nivel);
                   }
                   catch(error){
-                    console.log("este es el error: ", error);
                       if (error.response.status === 422) {
                           const errorMessages = Object.values(error.response.data.errors).flat();
                           errorMessages.forEach(msg => {
@@ -1402,7 +1392,6 @@
                   if (!confirmado) {
                       return;
                   }
-                  console.log("Esto es props taxAct: ", listAutorTax.value);
                   if(Array.isArray(listAutorTax.value) && 
                                         listAutorTax.value.length === 0){
                     await mostrarNotificacionError(
@@ -1446,7 +1435,6 @@
                       emit('regresaTaxMod', response.data.nombreMod);
                   }
                   catch(error){
-                    console.log("este es el error: ", error);
                       if (error.response.status === 422) {
                           const errorMessages = Object.values(error.response.data.errors).flat();
                           errorMessages.forEach(msg => {

@@ -390,7 +390,7 @@
                                 </el-tab-pane>
                                 <!--Pestaña para mostrar las relaciones-->
                                 <el-tab-pane label="Relaciones" name="Relaciones"  :disable = "relacionesSin.length === 0"
-                                    style="border: 3px  ">
+                                    style="border: 3px solid #C2BCBC; ">
                                     <div :class="{ 'contenido-deshabilitado': nombresComunes.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
@@ -622,12 +622,9 @@
             //Se cargan los datos de los nombres comunes 
             resp = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
             nombresComunes.value = resp.data;
-            console.log("Este es el id del taxon sinonimo: ", props.taxonAct.id);
 
             resp = await axios.get(`/cargar-nomcomun-taxon/${props.sinonimo.idNombre}`);
             nomComTreeVal.value = resp.data;
-
-            console.log("Este es el id del taxon valido: ", props.sinonimo.idNombre);
 
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
             //Se cargan los datos de los nombres comunes 
@@ -673,16 +670,10 @@
             //regiones.value = resp.data.regPorNombre;
             //regiones.value = resp.data.todas;
             regiones.value = prepararRegiones(resp.data.todas);
-
-            console.log("Este es el id los sinonimos: ", props.taxonAct.id);
-            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
             
             resp = await axios.get(`/cargaRegionesTaxon/${props.sinonimo.idNombre}`);
             //regionesValido.value = resp.data.regPorNombre;
             regionesValido.value = prepararRegiones(resp.data.todas);
-
-            console.log("Este es el id los validos: ", props.sinonimo.idNombre);
-            console.log("Estas son las respuestas de las regiones validas 01: ", resp.data.todas);
 
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
             
@@ -692,13 +683,9 @@
             //regiones.value = resp.data.todas;
             regiones.value = prepararRegiones(resp.data.todas);
 
-            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
-
             resp = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
             //regionesValido.value = resp.data.regPorNombre; 
             regionesValido.value = prepararRegiones(resp.data.todas);           
-
-            console.log("Estas son las respuestas de las regiones validas 02: ", resp.data.todas);
         }
     }
 
@@ -717,15 +704,13 @@
 
             //relacionesSin.value = resp.data;
             relacionesSin.value = estructuraArbolRel(resp.data);
-            console.log("Estas son las relaciones sinonimas 001: ", relacionesSin.value);
             
             params = {
                         taxAct: props.sinonimo.idNombre
                     };
                     
             resp = await axios.get('/carga-RelacionesTax', { params });
-            relacionesVal.value = estructuraArbolRel(resp.data);
-            console.log("Estas son las relaciones validas: ", relacionesVal.value);           
+            relacionesVal.value = estructuraArbolRel(resp.data);         
 
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
             
@@ -735,8 +720,7 @@
                     };
 
             resp = await axios.get('/carga-RelacionesTax', { params });
-            relacionesSin.value = estructuraArbolRel(resp.data);
-            console.log("Estas son las relaciones sinonimas 002: ", relacionesSin.value);      
+            relacionesSin.value = estructuraArbolRel(resp.data);    
             
             //Se cargan los datos de las regiones 
             params = {
@@ -744,14 +728,12 @@
                     };
                     
             resp = await axios.get('/carga-RelacionesTax', { params });
-            relacionesVal.value = estructuraArbolRel(resp.data);
-            console.log("Estas son las relaciones validas 002: ", relacionesVal.value);  
+            relacionesVal.value = estructuraArbolRel(resp.data); 
 
         }
     }
 
     const estructuraArbolRel = (datosRelaciones) =>{
-        console.log("Esta es la estructura de datos original: ", datosRelaciones);
         return datosRelaciones.map((item, index)=>({
             id: item.idNombre ?? index, 
             label: item.Nombrecompleto.texto, 
@@ -817,7 +799,6 @@
     });
 
     const regionesTaxon = computed(() => {
-        console.log("Este es el valor de regiones: ", regiones.value);
         let lista = [];
         regiones.value.forEach(nc => {
             if(nc.Regiones && Array.isArray(nc.Regiones)){
@@ -968,8 +949,6 @@
         // Recuperar los nodos marcados
         const nodos = tree.getCheckedNodes();
 
-        console.log("Nodos marcados:", nodos);
-
         let seleccionados;
         let idsEliminar;
         let params;
@@ -987,7 +966,6 @@
                            seleccion: seleccionados
                  }
 
-                console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-Regiones', params);
 
                 await cargaRegiones();
@@ -1002,8 +980,6 @@
                            idSin: idNombreSin.value,
                            seleccion: seleccionados
                 }
-
-                console.log("Estos son los parametros pasados: ", params);
 
                 await axios.put('/traspaso-Caracteristicas', params);
 
@@ -1021,7 +997,6 @@
                            seleccion: seleccionados
                 };
                 
-                console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-NombresComunes', params);
 
                 await cargaNombresComunes();
@@ -1057,7 +1032,6 @@
                                 }
 
                                 await axios.put('/traspaso-Relaciones', params);
-                                console.log("Estos son los parametros: ", params);
                                 
                             }
 
@@ -1065,7 +1039,6 @@
                         case 'Basónimo / Nombre original':
                             resp = await axios.get(`/carga-taxon/${item.id}`);
                             taxonActual.value = resp.data[0];
-                            console.log("El item que llego es Basónimo: ", item);
                             
                             sinonimos = await validacionSinonimos();
                             if (sinonimos){
@@ -1077,8 +1050,7 @@
                                     }
                                     
                                     await axios.put('/traspaso-Relaciones', params);
-                                    console.log("Basonimo");
-                                    console.log('Pase la revisión y este es el item que va a ser pasado: ', item);
+                                    
                                 }
                             }
                         break;
@@ -1086,8 +1058,6 @@
                             resp = await axios.get(`/carga-taxon/${item.id}`);
                             taxonActual.value = resp.data[0];
                                                        
-                            console.log("El item que llego es Equivalencia: ", item);
-
                             equivalencia = validacionEquivalencia();
                             
                             if(equivalencia)
@@ -1103,8 +1073,6 @@
                         case 'Parental':
                             resp = await axios.get(`/carga-taxon/${item.id}`);
                             taxonActual.value = resp.data[0];
-                                                       
-                            console.log("El item que llego es Parental: ", item);
 
                             parental = validacionParental();
                     
@@ -1122,8 +1090,6 @@
                             resp = await axios.get(`/carga-taxon/${item.id}`);
                             taxonActual.value = resp.data[0];
 
-                            console.log("El item que llego es Huésped: ", item);
-
                             huesped = validacionHuesped();
                             
                             if(huesped)
@@ -1139,8 +1105,6 @@
                         case 'Homonimia':
                             resp = await axios.get(`/carga-taxon/${item.id}`);
                             taxonActual.value = resp.data[0];
-
-                            console.log("El item que llego es Homonimia: ", item);
                             
                             homonimo = validaHomonimos();
 
@@ -1164,7 +1128,6 @@
                             }  
 
                             await axios.put('/traspaso-Relaciones', params);                                     
-                            console.log("El item que llego es es cualquier otro: ", item);
                         break;
                     }
                 };

@@ -19,7 +19,6 @@ class NombreComunController extends Controller
 
     public function index()
     {
-        Log::info("Mostrando el índice de Nombres Comunes");
 
         $nombresComunes = NomComun::orderBy('NomComun')->paginate(100);
 
@@ -165,12 +164,12 @@ class NombreComunController extends Controller
 
     public function destroy($IdNomComun)
     {
-        Log::info("Eliminando Nombre Común con ID: {$IdNomComun}");
+        
         try {
             $nombreComun = NomComun::findOrFail($IdNomComun);
             $nombreComun->delete();
 
-            Log::info("Nombre Común eliminado con ID: {$IdNomComun}");
+            
             return response()->json(['message' => 'Nombre Común eliminado exitosamente'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar Nombre Común con ID: {$IdNomComun}: {$e->getMessage()}");

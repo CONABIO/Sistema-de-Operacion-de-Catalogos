@@ -26,7 +26,6 @@ const props = defineProps({
     });
 
 const cerrarDialogo = () => {
-    console.log("Esta es la funcion para cerrar el modal disparado desde la tabla")
     emit('cerrar');
 }
 

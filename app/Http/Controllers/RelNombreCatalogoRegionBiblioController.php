@@ -138,8 +138,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
 
     public function actualizaObsBiblioCaract(Request $request){       
         try {
-            log::info("Estos son los parametros: ");
-            log::info($request);
+ 
             $relBiblio = RelNombreCatalogoBiblio::where('IdNombre', $request->params['idNombre'])
                                                 ->where('IdCatNombre',  $request->params['idCaract'])
                                                 ->where('IdBibliografia',  $request->params['Biblio'])
@@ -153,8 +152,7 @@ class RelNombreCatalogoRegionBiblioController extends Controller
     }
 
     public function actualizaObsBiblioCaractReg(Request $request){
-        log::info("Estos son los parametros: ");
-        log::info($request);
+
         try {
              $relBiblio = RelNombreCatalogoRegionBiblio::where('IdNombre', $request->params['idNombre'])
                                                        ->where('IdCatNombre', $request->params['idCaract'])

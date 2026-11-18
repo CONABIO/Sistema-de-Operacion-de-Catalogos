@@ -144,7 +144,6 @@ const page = usePage();
 watch(() => page.props.flash?.newNodeId, (newId) => {
   if (newId) {
     pendingId.value = newId;
-    console.log("ID detectado para seleccionar:", newId);
   }
 }, { immediate: true });
 onMounted(() => {

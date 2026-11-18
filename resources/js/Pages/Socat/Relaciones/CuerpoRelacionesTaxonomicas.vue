@@ -590,7 +590,6 @@ const manejarEditar = (item) => {
 const manejaClick = (row) => {
   observacionesRel.value = row.Observaciones;
   relacionAct.value = row;
-  console.log("Este es el valor de relacion Actual: ",  relacionAct.value);
 
   if(JSON.stringify(relDetectada.value) != JSON.stringify(row))
   {
