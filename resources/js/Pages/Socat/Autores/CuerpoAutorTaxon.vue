@@ -121,7 +121,7 @@ const armaAutoridad = () => {
 }
 
 const subirRow = () => {
-    console.log("Estoy en la funcion de subirr: ", filaSeleccionada.value);
+
     if (!filaSeleccionada.value) return;
 
     const index = autoresRel.value.findIndex(

@@ -87,7 +87,6 @@ class RequestNombre extends FormRequest
      */
     protected function failedValidation(Validator $validator)
     {
-        Log::info("Entre aqui porque encontre un error");
         throw new HttpResponseException(response()->json([
             'status' => 422,
             'message' => 'Error de validación',

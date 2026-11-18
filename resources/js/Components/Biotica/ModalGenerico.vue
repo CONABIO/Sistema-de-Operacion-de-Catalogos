@@ -44,14 +44,14 @@ const emit = defineEmits(["close"]); // Tu emit original
 
 // Esta función se llamará por el botón X, clic en overlay (si está habilitado), o tecla ESC
 const triggerClose = () => {
-  console.log("ModalGenerico: triggerClose llamado");
+
   props.onClose(); // Llama a la función pasada por la prop onClose
   emit("close");   // Emite el evento close
 };
 
 const handleOverlayClick = () => {
   if (props.closeOnOverlayClick) {
-    console.log("ModalGenerico: Clic en overlay detectado y permitido.");
+
     triggerClose();
   } else {
     console.log("ModalGenerico: Clic en overlay detectado, pero closeOnOverlayClick es false.");
@@ -60,7 +60,6 @@ const handleOverlayClick = () => {
 
 const handleEscKey = (event) => {
   if (props.visible && props.closeOnEsc && event.key === 'Escape') {
-    console.log("ModalGenerico: Tecla ESC detectada.");
     triggerClose();
   }
 };

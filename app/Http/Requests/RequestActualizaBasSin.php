@@ -26,7 +26,7 @@ class RequestActualizaBasSin extends FormRequest
      */
     public function rules(): array
     {
-        log::info("Estoy dentro del request RequestActualizaBasSin");
+
         return [
             'data.relCompleta.relIdNombre' => 'required|integer',
             'data.relCompleta.relIdNombreRel' => 'required|integer',

@@ -36,10 +36,10 @@ class AutorTaxonController extends Controller
 
     public function buscaAutoresRel(Request $request)
     {
-        Log::info("Entre a buscar lo autores: " . $request->ids);
+        
         $ids = explode(',', $request->ids);
         $autores = AutorTaxon::whereIn('IdAutorTaxon', $ids)->get();
-        Log::info(json_encode($autores, JSON_PRETTY_PRINT));
+        
         return response()->json([
             'status' => 200,
             'autores' => $autores
@@ -217,16 +217,15 @@ class AutorTaxonController extends Controller
 
     public function destroy($id)
     {
-        Log::info("Intentando eliminar autor con ID: {$id}");
         $autorTaxon = AutorTaxon::find($id);
-        Log::info("AutorTaxon encontrado:", (array) $autorTaxon);
+        
         if (!$autorTaxon) {
             Log::warning("AutorTaxon no encontrado con ID: {$id}");
             return response()->json(['message' => 'AutorTaxon not found'], 404);
         }
         try {
             $autorTaxon->delete();
-            Log::info("AutorTaxon eliminado con ID: {$id}");
+            
             return response()->json(['message' => 'AutorTaxon deleted successfully'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar AutorTaxon con ID: {$id}: " . $e->getMessage());

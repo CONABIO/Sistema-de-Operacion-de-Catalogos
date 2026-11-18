@@ -25,12 +25,12 @@
                         <el-row style="width: 100%;">
                             <el-tabs v-model="tabActiva" @tab-click="handleTabClick" type="card" style="width: 100%;">
                                 <!--Pestaña para mostrar los nombres comunes-->
-                                <el-tab-pane label="Nombre(s) común(es)" name="NomComun" :disabled ="nombresComunes.length === 0" esa
-                                             style="border: 3px solid #CCE6FF;">
+                                <el-tab-pane label="Nombre(s) común(es)" name="NomComun" :disabled ="nombresComunes.length === 0" 
+                                             style="border: 3px solid #CCE6FF;"> 
                                     <div :class="{ 'contenido-deshabilitado': nombresComunes.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -107,7 +107,7 @@
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
@@ -174,7 +174,7 @@
                                     <div :class="{ 'contenido-deshabilitado': caracteristicas.length === 0 }">
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -222,7 +222,7 @@
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
@@ -273,7 +273,7 @@
                                     <div :class="{ 'contenido-deshabilitado': regiones.length === 0 }"> 
                                         <el-splitter class="splitter-full">
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno">
                                                             <div class="header-content">
@@ -281,37 +281,7 @@
                                                             </div>
                                                         </el-header>
                                                         <br/>
-                                                        <div class="arbol-wrapper">
-                                                            <!--el-tree :data="regionesValido"
-                                                                     node-key="IdRegion"
-                                                                     :props="{ children: 'Regiones' }" 
-                                                                     ref="arbolRegVal"
-                                                                     highlight-current>
-                                                                <template #default="{ node, data }">
-                                                                    <span
-                                                                        style="display: flex; align-items: center; gap: 8px; width: 100%;"
-                                                                        >
-                                                                        <template v-if="data.NombreComun">
-                                                                            <span
-                                                                                style="font-weight: bold; font-size: 13px; color: #333;">
-                                                                                {{ data.NombreComun }}
-                                                                                <span v-if="data.Lengua"
-                                                                                    style="font-weight: normal; color: #606266; font-size: 12px; margin-left: 5px;">
-                                                                                    ({{ data.Lengua }})
-                                                                                </span>
-                                                                            </span>
-                                                                        </template>
-
-                                                                        <template v-else>
-                                                                            <Logo :rutaCategoria="data.Biblio?.url"
-                                                                                style="width: 18px; height: 18px; flex-shrink: 0;" />
-                                                                            <span style="font-size: 12px; color: #606266;">
-                                                                                {{ data.Region }}
-                                                                            </span>
-                                                                        </template>
-                                                                    </span>
-                                                                </template>
-                                                            </el-tree-->  
+                                                        <div class="arbol-wrapper">                                                            
                                                             <el-tree :data="regionesValido"
                                                                      node-key="IdRegion"
                                                                      :props="{ children: 'Regiones' }" 
@@ -357,7 +327,7 @@
                                                 </div>
                                             </el-splitter-panel>
                                             <el-splitter-panel size="48%">
-                                                <el-card style="min-height: 500px;">
+                                                <el-card class="paneles-card">
                                                     <el-container>
                                                         <el-header class="headerInterno-Sin">
                                                             <div class="header-content">
@@ -418,6 +388,154 @@
                                         </el-splitter>
                                     </div>                                                              
                                 </el-tab-pane>
+                                <!--Pestaña para mostrar las relaciones-->
+                                <el-tab-pane label="Relaciones" name="Relaciones"  :disable = "relacionesSin.length === 0"
+                                    style="border: 3px solid #C2BCBC; ">
+                                    <div :class="{ 'contenido-deshabilitado': nombresComunes.length === 0 }">
+                                        <el-splitter class="splitter-full">
+                                            <el-splitter-panel size="48%">
+                                                <el-card class="paneles-card">
+                                                    <el-container>
+                                                        <el-header class="headerInterno">
+                                                            <div class="header-content">
+                                                                <h1 class="titulo-interno">{{ nombreValido }}</h1>
+                                                            </div>
+                                                        </el-header>   
+                                                        <br/>                                                     
+                                                        <div class="arbol-wrapper">
+                                                            <!--:data="relacionesVal"-->
+                                                            <el-tree  :data="relacionesVal" 
+                                                                    node-key="id"
+                                                                    :props="{ children: 'Regiones' }"
+                                                                    ref="arbolRelVal"
+                                                                    :highlight-current="true"
+                                                                    default-expand-all>
+                                                                <template #default="{ data }">
+                                                                    <div class="nodo-personalizado">
+                                                                        <!--Icono bibliografia-->
+                                                                        <Logo :rutaCategoria="data.iconoBiblio"
+                                                                              style="width: 18px; height: 24px; flex-shrink: 0;" />
+                                                                        
+                                                                        <!--Icono Tipo Relacion-->
+                                                                        <el-tooltip :content="data.textoRelacion" placement="top">
+                                                                            <span class="icono-relacion"
+                                                                                  v-html="data.iconoRelacion">
+                                                                            </span>
+                                                                        </el-tooltip>
+
+                                                                        <!--Icono Categoria Taxonomica-->
+                                                                        <el-tooltip :content="data.textoCategoria" placement="top">
+                                                                            <img :src="data.iconoCategoria"
+                                                                                 class="icono-arbol"/>
+                                                                        </el-tooltip>
+                                                                        
+                                                                        <!--Texto del nodo-->
+                                                                        <span class="texto-nodo">
+                                                                              {{ data.label }}
+                                                                        </span>
+
+                                                                    </div>
+                                                                </template>
+                                                            </el-tree>
+                                                        </div> 
+                                                    </el-container>
+                                                </el-card>
+                                            </el-splitter-panel>
+                                            <el-splitter-panel size="4.5%">
+                                                <div
+                                                    style="
+                                                        display: flex;
+                                                        justify-content: center;
+                                                        align-items: center;
+                                                        width: 100%;
+                                                        height: 100%;
+                                                    ">
+                                                    <el-tooltip
+                                                        effect="dark"
+                                                        content="Quitar del válido"
+                                                        placement="top"
+                                                    >
+                                                        <el-button
+                                                            @click="transferirSelccionados(
+                                                                arbolRelSin,
+                                                                relacionesSin,
+                                                                relacionesVal,
+                                                                'id',
+                                                                'Relacion'
+                                                            )"
+                                                            circle
+                                                            color="#8e44ad"
+                                                        >
+                                                            <el-icon>
+                                                                <iconoTraspaso :rotacion="90" />
+                                                            </el-icon>
+                                                        </el-button>
+                                                    </el-tooltip>
+                                                </div>
+                                            </el-splitter-panel>
+                                            <el-splitter-panel size="48%">
+                                                <el-card class="paneles-card">
+                                                    <el-container>
+                                                        <el-header class="headerInterno-Sin">
+                                                            <div class="header-content">
+                                                                <h1 class="titulo-interno">{{ nombreSinonimo }}</h1>
+                                                            </div>
+                                                        </el-header>
+                                                        <div>
+                                                            <div v-show="!checkAllSin" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRelSin, relacionesSin, 'id', true)">
+                                                                    Marcar todos
+                                                                </el-checkbox> 
+                                                            </div>
+                                                            <div v-show="checkAllSin" class="header-content">
+                                                                <el-checkbox :indeterminate="isIndeterminate" v-model="checkAllSin" 
+                                                                            @change="marcarTodos(arbolRelSin, nombresComunes, 'id', false)">
+                                                                    Desmarcar todos
+                                                                </el-checkbox>                                                        
+                                                            </div>
+                                                        </div>
+                                                        <div class="arbol-wrapper">
+                                                            <el-tree :data="relacionesSin"
+                                                                    node-key="id"
+                                                                    ref="arbolRelSin"
+                                                                    :highlight-current="true"
+                                                                    default-expand-all
+                                                                    show-checkbox>
+                                                                <template #default="{ data }">
+                                                                    <div class="nodo-personalizado">
+                                                                        <!--Icono bibliografia-->
+                                                                        <Logo :rutaCategoria="data.iconoBiblio"
+                                                                              style="width: 18px; height: 24px; flex-shrink: 0;" />
+                                                                        
+                                                                        <!--Icono Tipo Relacion-->
+                                                                        <el-tooltip :content="data.textoRelacion" placement="top">
+                                                                            <span class="icono-relacion"
+                                                                                  v-html="data.iconoRelacion">
+                                                                            </span>
+                                                                        </el-tooltip>
+
+                                                                        <!--Icono Categoria Taxonomica-->
+                                                                        <el-tooltip :content="data.textoCategoria" placement="top">
+                                                                            <img :src="data.iconoCategoria"
+                                                                                 class="icono-arbol"/>
+                                                                        </el-tooltip>
+                                                                        
+                                                                        <!--Texto del nodo-->
+                                                                        <span class="texto-nodo">
+                                                                              {{ data.label }}
+                                                                        </span>
+
+                                                                    </div>
+                                                                </template>
+                                                            </el-tree>
+                                                        </div> 
+                                                    </el-container>
+                                                </el-card>
+                                            </el-splitter-panel>
+                                        </el-splitter>
+                                    </div>
+                                </el-tab-pane>
                             </el-tabs>
                         </el-row>
                     </el-main>
@@ -436,6 +554,8 @@
     import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
     import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 
+    import { useValidacionesRelaciones } from '@/Composables/useValidacionesRelaciones';
+
     const tabActiva = ref("NomComun");
 
     const nombreValido = ref("");
@@ -447,8 +567,14 @@
     const nombresComunes = ref([]);
     const caracteristicas = ref([]);
     const caracteristicasValido = ref([]);
-    const regiones= ref([]);
+    const regiones = ref([]);
     const regionesValido = ref([]);
+
+    const relacionesSin = ref([]);
+    const relacionesVal = ref([]);
+
+    const arbolRelVal = ref(null);
+    const arbolRelSin = ref(null);
     
     //const regionesTransfer = ref([]);
 
@@ -465,6 +591,15 @@
     const checkAllVal = ref(false);
     const checkAllSin = ref(false);
     const isIndeterminate = ref(false);
+
+    const taxonValido = ref(null);
+    const taxonActual = ref(null);
+
+    const notificacionVisible = ref(false);
+    const notificacionTitulo = ref("");
+    const notificacionMensaje = ref("");
+    const notificacionTipo = ref("info");
+    const notificacionDuracion = ref(5000);
 
     const emit = defineEmits(['cerrar']);
     const props = defineProps({
@@ -487,12 +622,9 @@
             //Se cargan los datos de los nombres comunes 
             resp = await axios.get(`/cargar-nomcomun-taxon/${props.taxonAct.id}`);
             nombresComunes.value = resp.data;
-            console.log("Este es el id del taxon sinonimo: ", props.taxonAct.id);
 
             resp = await axios.get(`/cargar-nomcomun-taxon/${props.sinonimo.idNombre}`);
             nomComTreeVal.value = resp.data;
-
-            console.log("Este es el id del taxon valido: ", props.sinonimo.idNombre);
 
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
             //Se cargan los datos de los nombres comunes 
@@ -538,16 +670,10 @@
             //regiones.value = resp.data.regPorNombre;
             //regiones.value = resp.data.todas;
             regiones.value = prepararRegiones(resp.data.todas);
-
-            console.log("Este es el id los sinonimos: ", props.taxonAct.id);
-            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
             
             resp = await axios.get(`/cargaRegionesTaxon/${props.sinonimo.idNombre}`);
             //regionesValido.value = resp.data.regPorNombre;
             regionesValido.value = prepararRegiones(resp.data.todas);
-
-            console.log("Este es el id los validos: ", props.sinonimo.idNombre);
-            console.log("Estas son las respuestas de las regiones validas 01: ", resp.data.todas);
 
         }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
             
@@ -557,14 +683,66 @@
             //regiones.value = resp.data.todas;
             regiones.value = prepararRegiones(resp.data.todas);
 
-            console.log("Estas son las respuestas de las regiones sinonimas: ", resp.data.todas);
-
             resp = await axios.get(`/cargaRegionesTaxon/${props.taxonAct.id}`);
             //regionesValido.value = resp.data.regPorNombre; 
             regionesValido.value = prepararRegiones(resp.data.todas);           
-
-            console.log("Estas son las respuestas de las regiones validas 02: ", resp.data.todas);
         }
+    }
+
+    const cargaRelaciones = async() =>{
+        let resp;
+        let params;
+
+        if(props.taxonAct.estatus === "Sinonimo"){
+            
+
+            params = {
+                        taxAct: props.taxonAct.id
+                    };
+
+            resp = await axios.get('/carga-RelacionesTax', { params });
+
+            //relacionesSin.value = resp.data;
+            relacionesSin.value = estructuraArbolRel(resp.data);
+            
+            params = {
+                        taxAct: props.sinonimo.idNombre
+                    };
+                    
+            resp = await axios.get('/carga-RelacionesTax', { params });
+            relacionesVal.value = estructuraArbolRel(resp.data);         
+
+        }else if(props.sinonimo.Nombrecompleto.estatus === "Sinonimo") {
+            
+            //Se cargan los datos de las regiones 
+            params = {
+                        taxAct: props.sinonimo.idNombre
+                    };
+
+            resp = await axios.get('/carga-RelacionesTax', { params });
+            relacionesSin.value = estructuraArbolRel(resp.data);    
+            
+            //Se cargan los datos de las regiones 
+            params = {
+                        taxAct: props.taxonAct.id
+                    };
+                    
+            resp = await axios.get('/carga-RelacionesTax', { params });
+            relacionesVal.value = estructuraArbolRel(resp.data); 
+
+        }
+    }
+
+    const estructuraArbolRel = (datosRelaciones) =>{
+        return datosRelaciones.map((item, index)=>({
+            id: item.idNombre ?? index, 
+            label: item.Nombrecompleto.texto, 
+            iconoBiblio: item.Biblio.url,
+            iconoRelacion: item.TipoRelacion.svg,
+            textoRelacion: item.TipoRelacion.texto,
+            iconoCategoria: item.Nombrecompleto.url,
+            textoCategoria: item.Nombrecompleto.nomCat
+        }));
     }
 
     onMounted( async () => {
@@ -575,11 +753,15 @@
             nombreSinonimo.value = props.taxonAct.label;
             idNombreVal.value = props.sinonimo.idNombre;
             idNombreSin.value = props.taxonAct.id;
+            const resp = await axios.get(`/carga-taxon/${props.sinonimo.idNombre}`);
+            taxonValido.value = resp.data[0];
         }else{
             nombreValido.value = props.taxonAct.label;
             nombreSinonimo.value =props.sinonimo.Nombrecompleto.texto;
             idNombreVal.value = props.taxonAct.id;
             idNombreSin.value = props.sinonimo.idNombre;
+            const resp = await axios.get(`/carga-taxon/${props.taxonAct.id}`);
+            taxonValido.value = resp.data[0];
         }
 
         //Se cargan los datos de los nombres comunes 
@@ -591,7 +773,7 @@
         //Se cargan los datos de las regiones 
         await cargaRegiones();
 
-        
+        await cargaRelaciones();
     });
 
     const colDefRegionNombre = ref([
@@ -617,7 +799,6 @@
     });
 
     const regionesTaxon = computed(() => {
-        console.log("Este es el valor de regiones: ", regiones.value);
         let lista = [];
         regiones.value.forEach(nc => {
             if(nc.Regiones && Array.isArray(nc.Regiones)){
@@ -768,8 +949,6 @@
         // Recuperar los nodos marcados
         const nodos = tree.getCheckedNodes();
 
-        console.log("Nodos marcados:", nodos);
-
         let seleccionados;
         let idsEliminar;
         let params;
@@ -787,7 +966,6 @@
                            seleccion: seleccionados
                  }
 
-                console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-Regiones', params);
 
                 await cargaRegiones();
@@ -802,8 +980,6 @@
                            idSin: idNombreSin.value,
                            seleccion: seleccionados
                 }
-
-                console.log("Estos son los parametros pasados: ", params);
 
                 await axios.put('/traspaso-Caracteristicas', params);
 
@@ -821,12 +997,143 @@
                            seleccion: seleccionados
                 };
                 
-                console.log("Estos son los parametros a pasar: ", params);
                 await axios.put('/traspaso-NombresComunes', params);
 
                 await cargaNombresComunes();
                 
                 break;
+            case 'Relacion':
+                    
+                let resp;
+                let sinonimos = false;
+                let basonimos = false;
+                let equivalencia = false;
+                let huesped = false;
+                let parental = false;
+                let homonimo = false;
+
+                seleccionados = nodos.filter(nodo =>{
+                    return nodo[campoId] != null;
+                });
+
+                for(const item of seleccionados){
+                    switch(item.textoRelacion){
+                        case 'Sinónimo':
+                            
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+                            sinonimos = await validacionSinonimos();
+                           
+                            if(sinonimos){
+                                params = { nueIdVal: taxonValido.value.id,
+                                           idValAnt: idNombreSin.value,
+                                           idSin: taxonActual.value.id,
+                                           idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                }
+
+                                await axios.put('/traspaso-Relaciones', params);
+                                
+                            }
+
+                        break;
+                        case 'Basónimo / Nombre original':
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+                            
+                            sinonimos = await validacionSinonimos();
+                            if (sinonimos){
+                                basonimos = await validacionBasonimos();
+                                if(basonimos){
+                                    params = { idVal: taxonValido.value.id,
+                                               idSin: taxonActual.value.id,
+                                               idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                    }
+                                    
+                                    await axios.put('/traspaso-Relaciones', params);
+                                    
+                                }
+                            }
+                        break;
+                        case 'Equivalencia':
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+                                                       
+                            equivalencia = validacionEquivalencia();
+                            
+                            if(equivalencia)
+                            {
+                                params = { idVal: taxonValido.value.id,
+                                           idSin: taxonActual.value.id,
+                                           idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                }
+
+                                await axios.put('/traspaso-Relaciones', params);
+                            }
+                        break;
+                        case 'Parental':
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+
+                            parental = validacionParental();
+                    
+                            if(parental)
+                            {
+                                params = { idVal: taxonValido.value.id,
+                                           idSin: taxonActual.value.id,
+                                           idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                }
+
+                                await axios.put('/traspaso-Relaciones', params);
+                            }
+                        break;
+                        case 'Huésped-Hospedero':
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+
+                            huesped = validacionHuesped();
+                            
+                            if(huesped)
+                            {
+                                params = { idVal: taxonValido.value.id,
+                                           idSin: taxonActual.value.id,
+                                           idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                }
+
+                                await axios.put('/traspaso-Relaciones', params);
+                            }
+                        break;
+                        case 'Homonimia':
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+                            
+                            homonimo = validaHomonimos();
+
+                            if(homonimo)
+                            {
+                                params = { idVal: taxonValido.value.id,
+                                           idSin: taxonActual.value.id,
+                                           idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                                }
+
+                                await axios.put('/traspaso-Relaciones', params);
+                            }
+                        break;
+                        default:
+                            resp = await axios.get(`/carga-taxon/${item.id}`);
+                            taxonActual.value = resp.data[0];
+
+                            params = { idVal: taxonValido.value.id,
+                                       idSin: taxonActual.value.id,
+                                       idTipoRel: taxonActual.value.completo.nombre_rel[0].IdTipoRelacion
+                            }  
+
+                            await axios.put('/traspaso-Relaciones', params);                                     
+                        break;
+                    }
+                };
+
+                await cargaRelaciones();
+            break;
         }
         
     };
@@ -882,9 +1189,49 @@
         }
     }
 
+    const mostrarNotificacion = (
+        titulo,
+        mensaje,
+        tipo = "warning",
+        duracion = 5000,
+        dangerouslyUseHTML = false
+    ) => {
+        notificacionTitulo.value = titulo;
+        notificacionMensaje.value = mensaje;
+        notificacionTipo.value = tipo;
+        notificacionDuracion.value = duracion;
+        notificacionVisible.value = true;
+    };
+
+    const {
+        validacionSinonimos,
+        validacionBasonimos,
+        validacionEquivalencia,
+        validacionHuesped,
+        validacionParental,
+        vallidacionHomonimos
+    } = useValidacionesRelaciones(
+        () => taxonValido.value, 
+        () => taxonActual.value,
+        mostrarNotificacion
+    );
+
 </script>
 
-<style scoped>
+<style scoped>  
+    .paneles-card{
+        min-height: 500px;  
+        max-height: 530px; 
+        overflow-x: auto;  
+        overflow-y: auto;
+    }
+
+    /* Árbol con desplazamiento automático */
+    .arbol-wrapper {
+        flex: 1;
+        min-height: 0;        
+    }
+
     .box-card {
         width: 100%;
         max-width: 100%;
@@ -987,7 +1334,6 @@
         display: none;
     }
 
-
     /* ----------------------------------------------------------------------------------------------*/
 
     .demo-panel {
@@ -1029,5 +1375,34 @@
 
     .nodo-nomComun{
         background-color: #CCE6FF;
+    }
+
+    .nodo-personalizado {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+    }
+
+    .icono-arbol {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    .icono-relacion {
+        display: inline-flex;
+        align-items: center;
+        width: 22px;
+        height: 22px;
+    }
+
+    .icono-relacion :deep(svg) {
+        width: 22px;
+        height: 22px;
+    }
+
+    .texto-nodo {
+        font-size: 13px;
     }
 </style>

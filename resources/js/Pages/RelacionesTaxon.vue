@@ -164,7 +164,7 @@
 ];
 
 const openDialog = async (nodo) => {
-    console.log(nodo.label);    
+    
     alert("Estoy mandando " + nodo.label);
 };
 //-------------------------------------------------
@@ -226,7 +226,7 @@ const openDialog = async (nodo) => {
     const filtro_Catalogos = () => {
         //Funcion para abrir el modal que muestra los catalogos taxonómicos
         dialogFormVisibleCat.value = true;
-        console.log("Estoy en el llamado de lista de grupos");
+
     };
 
     //Funcion para recibir los datos de los grupos y catalogos selccionados
@@ -246,11 +246,9 @@ const openDialog = async (nodo) => {
 
     //Esta funcion se dispara una vez que se selecciona una categia taxonomica
     const handleChange = async (value) => {
-        console.log(value);
-         console.log(props.categoriasTax);
         const etiqueta = props.categoriasTax.find(categoria => categoria.value === value[0]);
         etiquetaList1.value = etiqueta.label;
-        console.log("Se dispara para cargar la lista de taxones");
+
     };
 
     //Funcion para recuperar la relacion taxonomica 
@@ -285,7 +283,6 @@ const openDialog = async (nodo) => {
                 .filter(r => r.IdTipoRelacion === 1)
                 .map(r => r.IdNombreRel);
             
-            console.log("Estas son los sinonimos: ", idsNombreSin.length);
         }
         
         if (props.taxonAct?.completo?.nombre_rel_val !== undefined && 
@@ -301,7 +298,6 @@ const openDialog = async (nodo) => {
                 .filter(r => r.IdTipoRelacion === 1)
                 .map(r => r.IdNombre);
             
-            console.log("Estas son los validos: ", idsNombreVal.length);
         }
         if(idsNombreSin.length > 0)
         {
@@ -311,7 +307,7 @@ const openDialog = async (nodo) => {
         {
             params = {ids: idsNombreVal};
         }
-        console.log("Estos son los parametros a pasar: ", params);
+
 
         const response = await axios.get('/cargar-relaciones', { params });
       
@@ -329,7 +325,6 @@ const openDialog = async (nodo) => {
     const updateChildNode = async (children, res) => {
         for (const child of children) {
             if (child.value === res) {
-                console.log("Lo encontre: ", child);
                 etiquetaList2.value = child.label;
                 return true; 
             }

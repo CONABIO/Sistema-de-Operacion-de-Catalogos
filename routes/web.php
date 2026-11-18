@@ -25,7 +25,7 @@ use App\Http\Controllers\RelNombreCatalogoRegionBiblioController;
 use App\Http\Controllers\RelNombreNomComunController;
 use App\Http\Controllers\RelNombreCaracteristicasController;
 use App\Http\Controllers\RelNombreRegionController;
-use App\Http\Controllers\TraspasoInformacion;
+use App\Http\Controllers\TraspasoInformacionController;
 use App\Models\Mime;
 
 const RUTA_AUTORES = '/autores';
@@ -338,10 +338,12 @@ Route::put('/actualizar-obs-nomcomun-base', [App\Http\Controllers\RelNomNomComun
         ->name('bibliografias.asociarObjeto.actualizar');
 
     //Se generan las rutas para traspaso de datos del sinonimo al valido 
-    Route::put('/traspaso-NombresComunes', [TraspasoInformacion::class, 'traspasoNomCom']);
+    Route::put('/traspaso-NombresComunes', [TraspasoInformacionController::class, 'traspasoNomCom']);
     
-    Route::put('/traspaso-Regiones', [TraspasoInformacion::class, 'traspasoRegiones']);
+    Route::put('/traspaso-Regiones', [TraspasoInformacionController::class, 'traspasoRegiones']);
 
-    Route::put('/traspaso-Caracteristicas', [TraspasoInformacion::class, 'traspasoCaract']);
+    Route::put('/traspaso-Caracteristicas', [TraspasoInformacionController::class, 'traspasoCaract']);
+
+    Route::put('/traspaso-Relaciones', [TraspasoInformacionController::class, 'traspasoRelaciones']);
     
 });

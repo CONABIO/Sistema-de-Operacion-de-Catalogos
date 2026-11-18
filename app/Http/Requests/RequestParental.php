@@ -77,7 +77,6 @@ class RequestParental extends FormRequest
 
             //Valida que la relacion no exista 
             if($exists){
-                log::info("La relación que intenta crear ya existe");
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 
