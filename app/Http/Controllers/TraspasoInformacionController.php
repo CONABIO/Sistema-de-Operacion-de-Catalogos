@@ -15,9 +15,11 @@ use App\Models\RelNombreCatalogo;
 use App\Models\RelNombreCatalogoBiblio;
 use App\Models\RelNombreCatalogoRegion;
 use App\Models\RelNombreCatalogoRegionBiblio;
+use App\Models\RelacionBibliografia;
+use App\Models\Nombre_Relacion;
 use Illuminate\Support\Facades\DB;
 
-class TraspasoInformacion extends Controller
+class TraspasoInformacionController extends Controller
 {
     
     public function traspasoNomCom(Request $request){
@@ -211,6 +213,101 @@ class TraspasoInformacion extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }        
+    }
+
+    public function traspasoRelaciones(Request $request){ 
+
+        Log::info("esto es lo que llega en el request: " . $request);        
+
+        DB::connection('catcentral')->transaction(function () use ($request) {
+
+            $nomRel = Nombre_Relacion::where('IdNombre', $request['idValAnt'])
+                                    ->where('IdNombreRel', $request['idSin'])
+                                    ->where('IdTipoRelacion', $request['idTipoRel'])
+                                    ->first();
+
+            if ($nomRel) {
+                $datosNomRel = $nomRel->getAttributes();
+                $datosNomRel['IdNombre'] = $request['nueIdVal'];
+
+                Nombre_Relacion::create($datosNomRel);
+
+                $biblio = RelacionBibliografia::where('IdNombre', $request['idValAnt'])
+                                            ->where('IdNombreRel', $request['idSin'])
+                                            ->where('IdTipoRelacion', $request['idTipoRel'])
+                                            ->get();
+                
+                foreach($biblio as $itemBiblio){
+                    $originales = $itemBiblio->getAttributes();
+                    //cambio de datos
+                    $datos = $itemBiblio->getAttributes();
+                    $datos['IdNombre'] = $request['nueIdVal'];
+
+                    DB::connection('catcentral')
+                        ->table('RelacionBibliografia')
+                        ->insert($datos);
+
+                    //Elimina el original
+                    $eliminados = DB::connection('catcentral')
+                        ->table('RelacionBibliografia')
+                        ->where('IdNombre', $originales['IdNombre'])
+                        ->where('IdNombreRel', $originales['IdNombreRel'])
+                        ->where('IdTipoRelacion', $originales['IdTipoRelacion'])
+                        ->where('IdBibliografia', $originales['IdBibliografia'])
+                        ->delete();
+                }
+
+                $nomRel->delete();
+            }
+
+            
+
+            $relNom = Nombre_Relacion::where('IdNombre', $request['idSin'])
+                                    ->where('IdNombreRel', $request['idValAnt']) 
+                                    ->where('IdTipoRelacion', $request['idTipoRel'])
+                                    ->first();
+
+            if ($relNom) {
+                $datosNomRel = $relNom->getAttributes();
+                $datosNomRel['IdNombreRel'] = $request['nueIdVal'];
+
+                Nombre_Relacion::create($datosNomRel);
+                
+                $biblio = RelacionBibliografia::where('IdNombre', $request['idSin'])
+                                            ->where('IdNombreRel', $request['idValAnt'])
+                                            ->where('IdTipoRelacion', $request['idTipoRel'])
+                                            ->get();
+                
+                foreach($biblio as $itemBiblio){
+                    $originales = $itemBiblio->getAttributes();
+                    //cambio de datos
+                    $datos = $itemBiblio->getAttributes();
+                    $datos['IdNombreRel'] = $request['nueIdVal'];
+
+                    // Insertar el nuevo registro
+                    //RelNomNomComunRegionBiblio::create($datos);
+                    DB::connection('catcentral')
+                        ->table('RelacionBibliografia')
+                        ->insert($datos);
+
+                    //Elimina el original
+                    $eliminados = DB::connection('catcentral')
+                        ->table('RelacionBibliografia')
+                        ->where('IdNombre', $originales['IdNombre'])
+                        ->where('IdNombreRel', $originales['IdNombreRel'])
+                        ->where('IdTipoRelacion', $originales['IdTipoRelacion'])
+                        ->where('IdBibliografia', $originales['IdBibliografia'])
+                        ->delete();
+                }
+
+               $eliminado = Nombre_Relacion::where('IdNombre', $request['idSin'])
+                                    ->where('IdNombreRel', $request['idValAnt']) 
+                                    ->where('IdTipoRelacion', $request['idTipoRel'])
+                                    ->delete();
+            }
+
+            
+        });        
     }
 
     private function valCreaRelCarac($idCatNom, $idSin, $idVal){
