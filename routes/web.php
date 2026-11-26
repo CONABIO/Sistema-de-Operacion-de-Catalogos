@@ -71,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/autores/{autor}/edit', [AutorTaxonController::class, 'edit'])->name('autores.edit');
     Route::put('/autores/{id}', [AutorTaxonController::class, 'update'])->name('autores.update');
     Route::delete('/autores/{id}', [AutorTaxonController::class, 'destroy'])->name('autores.destroy');
+    Route::get('/autores/{id}/relaciones', [AutorTaxonController::class, 'relaciones'])->name('autores.relaciones');
     Route::get('busca-autoresRel', [AutorTaxonController::class, 'buscaAutoresRel']);
     Route::post('/autores/obtener-pagina', [AutorTaxonController::class, 'obtenerPaginaDeAutor']);
 

@@ -378,23 +378,34 @@ const handleFormAutorSubmited = async (datosDelFormulario) => {
 
 
 
-const manejarEliminarItem = (itemId) => {
+const manejarEliminarItem = async (itemId) => {
+    try {
+        const { data } = await axios.get(`/autores/${itemId}/relaciones`);
+        const relaciones = data.relaciones || [];
+        if (relaciones.length) {
+            mostrarAvisoAutorAsociado();
+            return;
+        }
+    } catch (error) {
+        mostrarNotificacionError('Aviso', 'No se pudieron validar las asociaciones de la autoridad taxonómica.', 'warning');
+        return;
+    }
+
     const procederConEliminacion = async () => {
         try {
             ElMessageBox.close();
-
-
-            const autorAEliminar = datosDeAutores.value.find(aut => aut.IdAutorTaxon === itemId);
-
-            
-
             await axios.delete(`/autores/${itemId}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
             mostrarNotificacion('Eliminación', `La autoridad taxonómica ha sido eliminada correctamente.`, 'success');
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El autor ${nombreAutorEliminado} no se puede eliminar. Este autor esta asociado a un taxón.`, 'warning');
+            const relaciones = apiError.response?.data?.relaciones || [];
+            if (apiError.response?.status === 409 && relaciones.length) {
+                mostrarAvisoAutorAsociado();
+            } else {
+                mostrarNotificacionError('Aviso', 'No se pudo eliminar la autoridad taxonómica.', 'warning');
+            }
         }
     };
     const cancelarEliminacion = () => {
@@ -434,6 +445,10 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
     notificacionTipo.value = tipo;
     notificacionDuracion.value = 5000;
     notificacionVisible.value = true;
+};
+
+const mostrarAvisoAutorAsociado = () => {
+    mostrarNotificacionError('Aviso', 'La autoridad taxonómica seleccionada no se puede eliminar porque está asociada a uno o más nombres taxonómicos.', 'warning');
 };
 
 
@@ -670,4 +685,5 @@ const onEliminarInterno = () => {
     word-break: break-word !important;
     line-height: 1.4 !important;
 }
+
 </style>

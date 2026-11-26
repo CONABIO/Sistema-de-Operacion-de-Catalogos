@@ -207,57 +207,69 @@ class BibliografiaController extends Controller
         return response()->json(['page' => (int)$pagina]);
     }
 
-
-    public function destroy($id)
+public function destroy($id)
     {
         try {
             $conn = DB::connection('catcentral');
+            $schema = $conn->getSchemaBuilder();
 
-            if ($conn->table('RelacionBibliografia')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una relación taxonómica.'], 400);
+            if ($schema->hasTable('RelacionBibliografia') && $conn->table('RelacionBibliografia')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a una relación taxonómica.'], 422);
             }
 
-            if ($conn->table('RelNombreBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más taxones.'], 400);
+            if ($schema->hasTable('RelNombreBiblio') && $conn->table('RelNombreBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a uno o más taxones.'], 422);
             }
 
-            if ($conn->table('RelNomNomComunRegionBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres comunes .'], 400);
+            if ($schema->hasTable('RelNombreCatalogoBiblio') && $conn->table('RelNombreCatalogoBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a una o más características del taxón.'], 422);
             }
 
-            if ($conn->table('RelNombreCatalogoBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más características del nombre.'], 400);
+            if ($schema->hasTable('RelNombreCatalogoRegionBiblio') && $conn->table('RelNombreCatalogoRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a una o más características por región.'], 422);
             }
 
-            if ($conn->table('RelNombreCatalogoRegionBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más característica(s)-región(es) del nombre.'], 400);
+            $tablaNomComun = $schema->hasTable('RelNomNomComunRegionBiblio')
+                ? 'RelNomNomComunRegionBiblio'
+                : ($schema->hasTable('RelNomComunRegionBiblio') ? 'RelNomComunRegionBiblio' : null);
+
+            if ($tablaNomComun && $conn->table($tablaNomComun)->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a uno o más nombres comunes.'], 422);
             }
 
-            if ($conn->table('RelNombreRegionBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a una o más regiones.'], 400);
+            if ($schema->hasTable('RelNombreRegionBiblio') && $conn->table('RelNombreRegionBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está asociada a una o más regiones.'], 422);
             }
 
-            if ($conn->table('RelNomNomComunRegionBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más nombres comunes .'], 400);
+            if ($schema->hasTable('RelObjetoExternoBiblio') && $conn->table('RelObjetoExternoBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque tiene objetos externos asociados.'], 422);
             }
 
-            if ($conn->table('RelObjetoExternoBiblio')->where('IdBibliografia', $id)->exists()) {
-                return response()->json(['message' => 'No se puede eliminar porque esta asociada a uno o más objetos externos.'], 400);
+            if ($schema->hasTable('RelBiblioGrupoSCAT') && $conn->table('RelBiblioGrupoSCAT')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque tiene grupos taxonómicos asociados.'], 422);
+            }
+
+            if ($schema->hasTable('RelEjemplarBiblio') && $conn->table('RelEjemplarBiblio')->where('IdBibliografia', $id)->exists()) {
+                return response()->json(['message' => 'No se puede eliminar porque está citando a uno o más ejemplares biológicos.'], 422);
+            }
+
+            $tablasEstudio = ['RelRegionEstudioCatEcolBiblio', 'RelRegionEstudioSitioCatEcolBiblio', 'RelEstudioCatEcolBiblio'];
+            foreach ($tablasEstudio as $tEst) {
+                if ($schema->hasTable($tEst) && $conn->table($tEst)->where('IdBibliografia', $id)->exists()) {
+                    return response()->json(['message' => 'No se puede eliminar porque está asociada a estudios ecológicos.'], 422);
+                }
             }
 
             $biblio = Bibliografia::where('IdBibliografia', $id)->firstOrFail();
             $biblio->delete();
 
-            return response()->json(['message' => 'Bibliografia eliminada con éxito'], 200);
+            return response()->json(['message' => 'Referencia bibliográfica eliminada con éxito.'], 200);
 
         } catch (\Exception $e) {
-            Log::error("Error deleting Bibliografia: {$e->getMessage()}");
+            Log::error("Error deleting Bibliografia ID {$id}: {$e->getMessage()}");
             return response()->json(['message' => 'Error al intentar eliminar: ' . $e->getMessage()], 500);
         }
     }
-
-
-
 
     public function getGruposTaxonomicos($bibliografiaId)
     {

@@ -224,6 +224,21 @@ class AutorTaxonController extends Controller
             return response()->json(['message' => 'AutorTaxon not found'], 404);
         }
         try {
+            $relaciones = DB::connection('catcentral')->table('RelNombreAutor')
+                ->join('Nombre', 'Nombre.IdNombre', '=', 'RelNombreAutor.IdNombre')
+                ->where('RelNombreAutor.IdAutorTaxon', $id)
+                ->select('Nombre.IdNombre', 'Nombre.Nombre')
+                ->distinct()
+                ->orderBy('Nombre.Nombre')
+                ->get();
+
+            if ($relaciones->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'La autoridad taxonómica tiene nombres taxonómicos asociados.',
+                    'relaciones' => $relaciones,
+                ], 409);
+            }
+
             $autorTaxon->delete();
             
             return response()->json(['message' => 'AutorTaxon deleted successfully'], 200);
@@ -231,6 +246,24 @@ class AutorTaxonController extends Controller
             Log::error("Error al eliminar AutorTaxon con ID: {$id}: " . $e->getMessage());
             return response()->json(['message' => 'Error al eliminar el AutorTaxon'], 500);
         }
+    }
+
+    public function relaciones($id)
+    {
+        $autorTaxon = AutorTaxon::find($id);
+        if (!$autorTaxon) {
+            return response()->json(['message' => 'AutorTaxon not found'], 404);
+        }
+
+        $relaciones = DB::connection('catcentral')->table('RelNombreAutor')
+            ->join('Nombre', 'Nombre.IdNombre', '=', 'RelNombreAutor.IdNombre')
+            ->where('RelNombreAutor.IdAutorTaxon', $id)
+            ->select('Nombre.IdNombre', 'Nombre.Nombre')
+            ->distinct()
+            ->orderBy('Nombre.Nombre')
+            ->get();
+
+        return response()->json(['relaciones' => $relaciones]);
     }
 
 

@@ -223,7 +223,8 @@ const eliminarNombreComun = (idNomComun) => {
             mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             console.error(apiError);
-            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común está asociado.`, 'warning');
+
+            mostrarNotificacionError('Aviso', apiError.response.data.message, 'warning');
         }
     };
 
@@ -247,6 +248,7 @@ const eliminarNombreComun = (idNomComun) => {
         ])
     }).catch(() => { });
 };
+
 </script>
 
 <template>

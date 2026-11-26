@@ -252,12 +252,10 @@ const handleGrupoRowClick = (row) => {
 const rowGrupoClassName = ({ row }) => {
   if (!row || !selectedGrupoRow.value) return '';
 
-  // Regla de oro: Si es exactamente la fila guardada en memoria, esa es la verde
   if (row === selectedGrupoRow.value) {
     return 'fila-seleccionada-verde';
   }
 
-  // Respaldo por ID
   const idKey = row.IdGrupoSCAT ? 'IdGrupoSCAT' : (row.IdGrupo ? 'IdGrupo' : (row.id_grupo_scat ? 'id_grupo_scat' : 'id'));
   const rowId = row[idKey];
   if (selectedGrupoId.value != null && rowId != null && String(rowId) === String(selectedGrupoId.value)) {
@@ -763,8 +761,8 @@ const borrarDatos = (idBibliografia) => {
       }
       mostrarNotificacion("Eliminación", "La referencia bibliográfica ha sido eliminada correctamente.", "success");
     } catch (apiError) {
-      console.error(apiError);
-      mostrarNotificacion("Aviso", apiError.response?.data?.message || 'Ocurrió un error.', "warning");
+        console.error(apiError);
+        mostrarNotificacion("Aviso", apiError.response?.data?.message || 'Ocurrió un error.', "warning");
     }
   };
 

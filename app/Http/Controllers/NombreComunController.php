@@ -105,7 +105,7 @@ class NombreComunController extends Controller
     public function update(Request $request, $IdNomComun)
     {
         $nombreComun = NomComun::find($IdNomComun);
-        if (!$nombreComun){ 
+        if (!$nombreComun){
                 return response()->json(['message' => 'Not found'], 404);
             }
         $existing = NomComun::where(DB::raw('lower(NomComun)'), strtolower($request->NomComun))
@@ -164,13 +164,34 @@ class NombreComunController extends Controller
 
     public function destroy($IdNomComun)
     {
-        
+        $nombreComun = NomComun::find($IdNomComun);
+
+        if (!$nombreComun) {
+            Log::warning("Nombre Común no encontrado con ID: {$IdNomComun}");
+            return response()->json(['message' => 'Nombre Común no encontrado'], 404);
+        }
+
         try {
-            $nombreComun = NomComun::findOrFail($IdNomComun);
+            $tieneBiblio = RelNomNomComunRegionBiblio::where('IdNomComun', $IdNomComun)->exists();
+            if ($tieneBiblio) {
+                return response()->json([
+                    'message' => 'No se puede eliminar el nombre común tiene referencias bibliográficas asociadas.',
+                    'origen' => 'RelNomNomComunRegionBiblio'
+                ], 409);
+            }
+
+            $tieneRegion = RelNomNomComunRegion::where('IdNomComun', $IdNomComun)->exists();
+            if ($tieneRegion) {
+                return response()->json([
+                    'message' => 'No se puede eliminar el nombre común está asignado a nombres taxonómicos y/o regiones.',
+                    'origen' => 'RelNomNomComunRegion'
+                ], 409);
+            }
+
             $nombreComun->delete();
 
-            
             return response()->json(['message' => 'Nombre Común eliminado exitosamente'], 200);
+
         } catch (\Exception $e) {
             Log::error("Error al eliminar Nombre Común con ID: {$IdNomComun}: {$e->getMessage()}");
             return response()->json(['message' => 'Error al eliminar Nombre Común'], 500);
@@ -294,4 +315,24 @@ public function cargaNombresComunes($IdNombre)
 
     return response()->json($resultadoFinal);
 }
+
+public function relaciones($IdNomComun)
+    {
+        $nombreComun = NomComun::find($IdNomComun);
+
+        if (!$nombreComun) {
+            return response()->json(['message' => 'Nombre Común no encontrado'], 404);
+        }
+
+        $relaciones = RelNomNomComunRegion::from('RelNomNomComunRegion as rnncr')
+            ->join('Nombre as n', 'n.IdNombre', '=', 'rnncr.IdNombre')
+            ->leftJoin('Region as r', 'r.IdRegion', '=', 'rnncr.IdRegion')
+            ->where('rnncr.IdNomComun', $IdNomComun)
+            ->select('n.IdNombre', 'n.Nombre', 'r.IdRegion', 'r.NombreRegion')
+            ->distinct()
+            ->orderBy('n.Nombre')
+            ->get();
+
+        return response()->json(['relaciones' => $relaciones]);
+    }
 }
