@@ -313,7 +313,7 @@
 
   //Funcion para buscar el nodo en el arbol
   const buscarNodo = (nodos, id) => {
-    console.log("Esto llega a buscarNodos: ", nodos);
+
     for(const nodo of nodos){
       // ¿Es el nodo que buscamos?
         if (String(nodo.id) === String(id)) {
@@ -390,7 +390,7 @@
     );
 
     if (rootIndex !== -1) {
-      console.log("Es nodo raíz");
+
       data.value.splice(rootIndex, 1);
       taxonAct.value = [];
       return true;
@@ -402,7 +402,7 @@
         const found = deleteChildNode(data.value[i].children, res);
         if (found) {
 
-          console.log("Cuales el taxon actual: ", taxonAct.value.completo);
+
           selectedNodeKey.value = taxonAct.value.completo.IdNombreAscendente;
 
           tree.value.setCurrentKey(
@@ -450,7 +450,7 @@
   //Funcion que se encarga de ejecutar acciones una vez que se crea el elemento
   onMounted(() => {
     dialogFormVisibleCat.value = true;
-    console.log(authUser);
+
   });
 
   //Funcion para el envio de mensajes en pantalla
@@ -1115,7 +1115,6 @@
 
         mostrarNotificacion('Eliminación exitosa', `La relación de: ${item.TipoRelacion.texto} fue eliminado correctamente.`, 'success');
       } catch (apiError) {
-        console.log("Que trae apiError: ", apiError);
         mostrarNotificacionError('Aviso', `La relación de: ${item.TipoRelacion.texto} no se puede eliminar.`, 'success');
       }
     };
@@ -1184,10 +1183,6 @@
   }
 
   const moverTaxon = async (taxMover, taxRecb, nodoMov, nodoRecb) => {
-    console.log("Entre a mover el taxon");
-    console.log("Estos son los parametros recibidos taxMover: ", taxMover,
-                " taxRecb: ", taxRecb, " nodoMov: ", nodoMov,
-                " nodoRecb: ", nodoRecb);
 
     if (nodoMov.data.completo.padre.IdNombre === nodoRecb.data.completo.IdNombre) {
       await mostrarNotificacion(
@@ -1265,7 +1260,6 @@
     } catch (error) {
       // El usuario canceló la operación
       console.log(error);
-      console.log('Operación cancelada por el usuario');
     }
 
   }
@@ -1375,7 +1369,6 @@
   const handleMenuClick = (action) => {
     isMenuVisible.value = false;
     // Aquí puedes agregar lógica específica para cada acción
-    console.log('Acción seleccionada:', action);
   };
 
   // Cerrar menú
@@ -1398,7 +1391,6 @@
   };
 
   const handlePageChange = (page) => {
-    console.log("Este es el valor de page:", page);
     currentPage.value = page;
     fetchFilteredData();
   };

@@ -214,7 +214,7 @@ class GrupoTaxonomicoController extends Controller
             ], 409);
         }
 
-        Log::info("Intentando eliminar grupo taxonómico con ID: {$IdGrupoSCAT}");
+        
         $grupoTaxonomico = GrupoScat::find($IdGrupoSCAT);
 
         if (!$grupoTaxonomico) {
@@ -224,7 +224,7 @@ class GrupoTaxonomicoController extends Controller
 
         try {
             $grupoTaxonomico->delete();
-            Log::info("GrupoTaxonomico eliminado con ID: {$IdGrupoSCAT}");
+            
             return response()->json(['message' => 'Grupo eliminado correctamente.'], 200);
         } catch (\Exception $e) {
             Log::error("Error al eliminar GrupoTaxonomico con ID: {$IdGrupoSCAT}: " . $e->getMessage());

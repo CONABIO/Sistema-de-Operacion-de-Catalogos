@@ -44,8 +44,6 @@ class RelNombreCaracteristicasController extends Controller
     
     public function altaRelTaxCaractReg(RequestAltaNombreCaractReg $request){
         try{
-            log::info("Esto es lo que llega en el requets");
-            log::info($request);
 
             DB::beginTransaction();
             
@@ -55,7 +53,7 @@ class RelNombreCaracteristicasController extends Controller
 
 
             if(!$existe){
-                log::info("Si entre al if");
+                
                 $relCaract = RelNombreCatalogo::create([
                     'IdNombre' => $request['idNombre'],
                     'IdCatNombre' => $request['idCaract'],

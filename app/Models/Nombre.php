@@ -244,6 +244,7 @@ class Nombre extends Model
                         COUNT(DISTINCT RelacionBibliografia.IdBibliografia) AS Biblio,
                         CategoriaTaxonomica.IdNivel2,
                         CategoriaTaxonomica.RutaIcono AS CategIcono,
+                        CategoriaTaxonomica.NombreCategoriaTaxonomica AS NombreCategoria,
                         Nombre_Relacion.FechaCaptura,
                         Nombre_Relacion.FechaModificacion,
                         Nombre_Relacion.Observaciones,
@@ -271,8 +272,9 @@ class Nombre extends Model
                         Tipo_Relacion.IdTipoRelacion, Tipo_Relacion.RutaIcono, Tipo_Relacion.Descripcion,
                         Nombre.IdNombre, Nombre.NombreCompleto, Nombre.Estatus, Nombre.SistClasCatDicc,
                         Nombre.NombreAutoridad, CategoriaTaxonomica.IdNivel2, CategoriaTaxonomica.RutaIcono,
-                        Nombre_Relacion.FechaCaptura, Nombre_Relacion.FechaModificacion, 
-                        Nombre_Relacion.Observaciones, Nombre_Relacion.IdNombre, Nombre_Relacion.IdNombreRel
+                        CategoriaTaxonomica.NombreCategoriaTaxonomica, Nombre_Relacion.FechaCaptura, 
+                        Nombre_Relacion.FechaModificacion, Nombre_Relacion.Observaciones, 
+                        Nombre_Relacion.IdNombre, Nombre_Relacion.IdNombreRel
                     ')
                     ->orderByRaw('Tipo_Relacion.IdTipoRelacion ASC, Nombre.NombreCompleto ASC');
             return $query;

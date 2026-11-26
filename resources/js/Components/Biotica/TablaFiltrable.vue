@@ -302,7 +302,7 @@ const busquedaLocal = async () => {
         filtros.value.forEach(objeto => {
             if (objeto && typeof objeto === 'object') {
                 Object.entries(objeto).forEach(([campo, valor]) => {
-                    console.log("1", campo, valor);
+
                 });
             }
         });

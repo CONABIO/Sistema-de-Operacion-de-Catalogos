@@ -144,7 +144,6 @@ const page = usePage();
 watch(() => page.props.flash?.newNodeId, (newId) => {
   if (newId) {
     pendingId.value = newId;
-    console.log("ID detectado para seleccionar:", newId);
   }
 }, { immediate: true });
 onMounted(() => {
@@ -166,7 +165,7 @@ const modalRules = {
       trigger: "blur"
     },
     {
-      pattern: /^(?!.*  ).+$/, 
+      pattern: /^(?!.*  ).+$/,
       message: "No se permite ingresar más de un espacio seguido.",
       trigger: ["blur", "change"],
     },
@@ -235,7 +234,7 @@ const guardarDesdeModal = async () => {
     } else {
       idPadreObjetivo = null;
     }
-  
+
   const registroExistente = props.flatTreeDataProp.find(item => {
     const mismoNombre = item.NombreCategoriaTaxonomica.trim().toLowerCase() === nombreNormalizado;
     const mismoPadre = item.IdAscendente === idPadreObjetivo;
@@ -417,7 +416,7 @@ const handleEliminar = () => {
         }
         mostrarNotificacion("Eliminación", `La categoria taxonómica ha sido eliminada correctamente.`, "success");
       },
-      onError: (e) => {
+      onError: (errors) => {
         pendingId.value = null;
         nextTick(() => {
           if (treeRef.value) {
@@ -428,7 +427,11 @@ const handleEliminar = () => {
             }
           }
         });
-        mostrarNotificacionError("Aviso", "No se puede eliminar la categoría taxonómica porque tiene nombres asociados", "warning");
+        const mensajeError = errors.message
+          || Object.values(errors).flat()[0]
+          || "No se puede eliminar la categoría taxonómica.";
+
+        mostrarNotificacionError("Aviso", mensajeError, "warning");
       },
     });
     ElMessageBox.close();
@@ -670,7 +673,7 @@ const isCambiarIconoDeshabilitado = computed(() => {
           <div class="left-header-content"></div>
           <div class="right-header-content">
             <div class="action-group">
-              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible" 
+              <NuevoButton @crear="abrirModalParaInsertar" toolPosicion="bottom" :disabled="esModalVisible"
                   v-if="hasPermisos(moduloSocat, 'Altas')" />
               <EditarButton @editar="abrirModalParaEditar" toolPosicion="bottom"
                 :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Cambios')"/>

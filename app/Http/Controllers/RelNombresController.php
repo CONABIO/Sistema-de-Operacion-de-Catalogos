@@ -238,7 +238,8 @@ class RelNombresController extends Controller
                         'idNombre' => $relacion->IdNombre, 
                         'Nombrecompleto' => ['texto' => $relacion->NombreCompleto." ".$relacion->NombreAutoridad." - ".$status." - ".$relacion->SistClasCatDicc,
                                                'url' => $relacion->CategIcono,
-                                               'estatus' => $status],
+                                               'estatus' => $status,
+                                               'nomCat' => $relacion->NombreCategoria],
                         'Biblio' => ['texto' => '',
                                        'url' => $biblio,
                                        'contBiblio' => $relacion->Biblio],
@@ -416,8 +417,6 @@ class RelNombresController extends Controller
     }
 
     public function altaRelacionesBiblio(RequestAltaRelacionBiblio $request){
-
-        Log::info("Llegue al controlador para alta de bibliografia en las relaciones");
         
         $data = $request->all();
 

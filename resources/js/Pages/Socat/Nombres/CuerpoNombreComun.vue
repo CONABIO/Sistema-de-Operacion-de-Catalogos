@@ -26,7 +26,6 @@ const props = defineProps({
     });
 
 const cerrarDialogo = () => {
-    console.log("Esta es la funcion para cerrar el modal disparado desde la tabla")
     emit('cerrar');
 }
 
@@ -224,7 +223,8 @@ const eliminarNombreComun = (idNomComun) => {
             mostrarNotificacion("Eliminación", `El nombre común ha sido eliminado correctamente.`, "success");
         } catch (apiError) {
             console.error(apiError);
-            mostrarNotificacionError('Aviso', `El nombre común seleccionado no se puede eliminar. Este nombre común está asociado.`, 'warning');
+
+            mostrarNotificacionError('Aviso', apiError.response.data.message, 'warning');
         }
     };
 
@@ -248,6 +248,7 @@ const eliminarNombreComun = (idNomComun) => {
         ])
     }).catch(() => { });
 };
+
 </script>
 
 <template>

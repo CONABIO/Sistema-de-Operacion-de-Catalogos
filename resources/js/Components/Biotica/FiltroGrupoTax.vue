@@ -102,9 +102,9 @@
     };
 
     onMounted(async () => {
-        console.log("Ya estoy aqui");
         
         cargaGrupos();
+        
     });
 
     watch([catalogos, grupos, idsGrupos], () => {

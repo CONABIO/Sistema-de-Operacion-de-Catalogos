@@ -44,7 +44,6 @@ function handleNodeLabelClick() {
   emit("node-selected", props.node);
   if (hasChildren.value) {
     emit("toggle-expansion", String(props.node.IdCatNombre));
-    // console.log('TreeNode: Emitido toggle-expansion (desde texto) para', String(props.node.IdCatNombre));
   }
 }
 

@@ -207,7 +207,6 @@
                                                                              
         } catch (error) {
             mostrarNotificacionError('Aviso', error.response.data.message, 'error');
-            console.log("Error 422:", error.response.data.message);
         }
         
         loading.close();

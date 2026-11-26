@@ -140,7 +140,6 @@ class TipoRegionController extends Controller
     {
         $query = TipoRegion::query();
         $query->where('IdTipoRegion', '!=', $tipoRegion->IdTipoRegion);
-
         $profundidad = 0;
         for ($i = 1; $i <= self::MAX_NIVELES; $i++) {
             if ($tipoRegion->{"Nivel{$i}"} > 0) {
@@ -155,23 +154,37 @@ class TipoRegionController extends Controller
         }
 
         if ($query->exists()) {
-            throw ValidationException::withMessages(['message' => 'No es posible eliminar el tipo de región seleccionado por tener regiones asociadas.']);
+            throw ValidationException::withMessages([
+                'message' => 'No es posible eliminar el tipo de región seleccionado porque tiene tipos de regiones subordinadas (hijos en el árbol).'
+            ]);
         }
 
         $regionesUsandoEsteTipo = Region::where('IdTipoRegion', $tipoRegion->IdTipoRegion)->exists();
 
         if ($regionesUsandoEsteTipo) {
             throw ValidationException::withMessages([
-                'message' => 'No es posible eliminar el tipo de región seleccionado por tener regiones asociadas'
+                'message' => 'No es posible eliminar el tipo de región seleccionado porque está asignado a regiones geográficas.'
             ]);
         }
 
-        $tipoRegion->delete();
+        try {
+            $tipoRegion->delete();
 
-        if ($request->boolean('isModal')) {
-            return back()->with('success', 'Tipo de Región eliminado.');
+            if ($request->boolean('isModal')) {
+                return back()->with('success', 'Tipo de Región eliminado.');
+            }
+
+            return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región eliminado.');
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            throw ValidationException::withMessages([
+                'message' => 'No es posible eliminar este tipo de región porque tiene registros dependientes en el sistema.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Error al eliminar TipoRegion ID {$tipoRegion->IdTipoRegion}: " . $e->getMessage());
+            throw ValidationException::withMessages([
+                'message' => 'Ocurrió un error al intentar eliminar el tipo de región.'
+            ]);
         }
-
-        return redirect()->route('tipos-region.index')->with('success', 'Tipo de Región eliminado.');
     }
 }

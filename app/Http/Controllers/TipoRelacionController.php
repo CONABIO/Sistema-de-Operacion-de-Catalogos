@@ -159,13 +159,13 @@ class TipoRelacionController extends Controller
 
         return $data;
     }
-    
+
     /*Esta es la modificacion agregada para que sea respuesta AJAX y indes como cargaba normalmente
-        Juan Carlos Mora Morquecho 22/04/2026 
+        Juan Carlos Mora Morquecho 22/04/2026
     Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     public function index()
-    {        
+    {
         $data = $this->cargaInicio();
 
         return Inertia::render('Socat/TipoRelacion/indexTipoRelacion', [
@@ -175,7 +175,7 @@ class TipoRelacionController extends Controller
     }
 
     private function cargaInicio(){
-        
+
         $todosLosNodosPlanos = Tipo_Relacion::orderBy('Nivel1')
             ->orderBy('Nivel2')
             ->orderBy('Nivel3')
@@ -193,8 +193,8 @@ class TipoRelacionController extends Controller
         return response()->json($this->cargaInicio());
     }
 
-    /*Esta es la modificacion agregada para que sea respuesta AJAX 
-        Juan Carlos Mora Morquecho 22/04/2026 
+    /*Esta es la modificacion agregada para que sea respuesta AJAX
+        Juan Carlos Mora Morquecho 22/04/2026
     Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     private function buildTreeFromLevels(Collection $nodes): array
@@ -292,11 +292,11 @@ class TipoRelacionController extends Controller
             ->with('flash', ['newNodeId' => $tipoRelacion->IdTipoRelacion]);
     }
 
-    public function destroy(Tipo_Relacion $tipoRelacion)
+   public function destroy(Tipo_Relacion $tipoRelacion)
     {
-        if ($tipoRelacion->IdTipoRelacion <= 8) {
+        /* if ($tipoRelacion->IdTipoRelacion <= 8) {
             return Redirect::back()->withErrors(['message' => 'La relación seleccionada no puede ser eliminada por ser un registro protegido del sistema.']);
-        }
+        } */
 
         $query = Tipo_Relacion::query();
         $profundidad = 0;
@@ -315,13 +315,21 @@ class TipoRelacionController extends Controller
             return Redirect::back()->withErrors(['message' => 'No se puede eliminar un elemento que tiene subordinados en el árbol.']);
         }
 
+        $enUso = DB::connection('catcentral')->table('Nombre_Relacion')
+            ->where('IdTipoRelacion', $tipoRelacion->IdTipoRelacion)
+            ->exists();
+
+        if ($enUso) {
+            return Redirect::back()->withErrors(['message' => 'No se puede eliminar el tipo de relación está asignado a relaciones entre nombres taxonómicos.']);
+        }
+
         try {
             $tipoRelacion->delete();
             return Redirect::back()->with('success', 'Tipo de Relación eliminado con éxito.');
         } catch (QueryException $e) {
             $errorCode = $e->errorInfo[1];
             if ($errorCode == 1451) {
-                return Redirect::back()->withErrors(['message' => 'No se puede eliminar. Este tipo de relación está en uso en otra parte del sistema.']);
+                return Redirect::back()->withErrors(['message' => 'No se puede eliminar este tipo de relación está en uso en otra parte del sistema.']);
             }
 
             return Redirect::back()->withErrors(['message' => 'Error de base de datos al intentar eliminar el registro.']);

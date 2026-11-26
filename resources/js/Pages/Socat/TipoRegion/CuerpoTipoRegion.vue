@@ -399,7 +399,9 @@ const proceedWithDeletion = (nodeId, nombre) => {
             });
         },
         onError: (error) => {
-            const mensajeError = error.message || "Ocurrió un error al intentar eliminar.";
+            const mensajeError = error.message
+                || (typeof error === 'object' ? Object.values(error).flat()[0] : null)
+                || "Ocurrió un error al intentar eliminar.";
             mostrarNotificacion("Aviso", mensajeError, "warning");
         },
     });
@@ -508,7 +510,6 @@ const handleNodeDoubleClick = (data) => {
                 @node-collapse="handleNodeCollapse" @node-click="handleNodeSelected"
                 @node-dblclick="handleNodeDoubleClick" class="custom-element-tree">
                 <template #default="{ node, data }">
-                    <!-- Quitamos el tooltip y dejamos solo el span -->
                     <span :id="`tree-node-${data.IdTipoRegion}`" class="custom-tree-node-content">
                         {{ node.label }}
                     </span>
@@ -543,7 +544,7 @@ const handleNodeDoubleClick = (data) => {
 
                         <el-form-item prop="Descripcion" label="Descripción del tipo de región:">
                             <el-input  type="textarea" ref="descripcionInputRef" v-model="formModal.Descripcion"
-                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit 
+                                placeholder="Ingrese la descripción" clearable maxlength="255" show-word-limit
                                 @keydown.enter.prevent :autosize="{ minRows: 1, maxRows: 2 }" resize="none" />
                         </el-form-item>
 
