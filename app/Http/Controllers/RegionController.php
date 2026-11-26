@@ -77,7 +77,7 @@ class RegionController extends Controller
 
     private function buildTipoRegionTree(Collection $nodes): array
     {
-        if ($nodes->isEmpty()){ 
+        if ($nodes->isEmpty()){
             return [];
         }
         $tree = [];
@@ -188,14 +188,80 @@ class RegionController extends Controller
 
     public function destroy(Region $region)
     {
-        $tieneHijosInternos = Region::where('IdRegionAsc', $region->IdRegion)
-            ->where('IdRegion', '!=', $region->IdRegion)
-            ->exists();
-        if ($tieneHijosInternos) {
+        $id = $region->IdRegion;
+        $nombre = strtoupper(trim($region->NombreRegion ?? ''));
+
+        if (in_array($nombre, ['MÉXICO', 'MEXICO', 'ND', 'MEXICO/ND/ND'])) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'message' => 'No se puede eliminar porque tiene sub-regiones dependientes.'
+                'message' => 'La región seleccionada es parte de la información protegida del sistema y no puede ser eliminada.'
             ]);
         }
+
+        $tieneHijosInternos = Region::where('IdRegionAsc', $id)
+            ->where('IdRegion', '!=', $id)
+            ->exists();
+
+        if ($tieneHijosInternos) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'message' => 'No es posible eliminar esta región porque tiene sub-regiones que dependen de ella.'
+            ]);
+        }
+
+        $conn = 'catcentral';
+        $schema = DB::connection($conn)->getSchemaBuilder();
+
+        if ($schema->hasTable('RelNombreRegion')) {
+            $enNombreRegion = DB::connection($conn)->table('RelNombreRegion')
+                ->where('IdRegion', $id)
+                ->exists();
+
+            if ($enNombreRegion) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'message' => 'No es posible eliminar la región seleccionada porque está asignada a la distribución de especies taxonómicas.'
+                ]);
+            }
+        }
+
+        if ($schema->hasTable('RelNombreCatalogoRegion')) {
+            $enCatRegion = DB::connection($conn)->table('RelNombreCatalogoRegion')
+                ->where('IdRegion', $id)
+                ->exists();
+
+            if ($enCatRegion) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'message' => 'No es posible eliminar la región seleccionada porque tiene características de taxones asociadas.'
+                ]);
+            }
+        }
+
+        $tablaNomComun = $schema->hasTable('RelNomNomComunRegion')
+            ? 'RelNomNomComunRegion'
+            : ($schema->hasTable('RelNomComunRegion') ? 'RelNomComunRegion' : null);
+
+        if ($tablaNomComun) {
+            $enNomComun = DB::connection($conn)->table($tablaNomComun)
+                ->where('IdRegion', $id)
+                ->exists();
+
+            if ($enNomComun) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'message' => 'No es posible eliminar la región seleccionada porque tiene nombres comunes asociados.'
+                ]);
+            }
+        }
+
+        if ($schema->hasTable('RelRegionSitio')) {
+            $enSitio = DB::connection($conn)->table('RelRegionSitio')
+                ->where('IdRegion', $id)
+                ->exists();
+
+            if ($enSitio) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'message' => 'No es posible eliminar la región seleccionada porque tiene sitios de colecta asociados.'
+                ]);
+            }
+        }
+
         if ($region->IdRegion == $region->IdRegionAsc) {
             $otroNodo = Region::where('IdRegion', '!=', $region->IdRegion)->first();
             if ($otroNodo) {
@@ -205,12 +271,13 @@ class RegionController extends Controller
                 DB::statement('SET FOREIGN_KEY_CHECKS=0');
             }
         }
+
         try {
             $region->delete();
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->getCode() == "23000") {
+            if ($e->getCode() == "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1451)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'message' => 'No es posible eliminar la región seleccionada, ya que está asociada a un taxón.'
+                    'message' => 'No es posible eliminar la región seleccionada porque se encuentra asociada a otros registros en el sistema.'
                 ]);
             }
             throw $e;

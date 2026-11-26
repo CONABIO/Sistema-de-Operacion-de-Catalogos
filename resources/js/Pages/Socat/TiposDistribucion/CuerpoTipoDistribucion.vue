@@ -99,7 +99,7 @@ const mostrarNotificacionError = (titulo, mensaje, tipo = "info", duracion = 500
     notificacionTitulo.value = titulo;
     notificacionMensaje.value = mensaje;
     notificacionTipo.value = tipo;
-    notificacionDuracion.value = 0;
+    notificacionDuracion.value = duracion;
     notificacionVisible.value = true;
 };
 const cerrarNotificacion = () => {
@@ -205,18 +205,17 @@ const handleFormSubmited = (datosDelFormulario) => {
 
 const eliminarTipoDistribucion = (idTipoDistribucion) => {
     const procederConEliminacion = async () => {
-        
+
         try {
             ElMessageBox.close();
-            
+
             await axios.delete(`/tipos-distribucion/${idTipoDistribucion}`);
             if (tablaRef.value) {
                 tablaRef.value.fetchData();
             }
             mostrarNotificacion("Eliminación", `El tipo de distribución  fue eliminado correctamente.`, "success");
         } catch (apiError) {
-            mostrarNotificacionError('Aviso', `El tipo de distribución seleccionado no se puede eliminar. Este tipo de distribución esta asociado.`, 'success');
-
+            mostrarNotificacionError('Aviso', apiError.response.data.message, 'warning');
         }
     };
     const cancelarEliminacion = () => { ElMessageBox.close(); };

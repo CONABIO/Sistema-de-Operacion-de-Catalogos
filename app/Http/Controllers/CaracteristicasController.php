@@ -22,8 +22,8 @@ class CaracteristicasController extends Controller
     use OptimizaConsultasRegiones;
     use OptimizaConsultasCaracteristicas;
 
-    /*Esta es la modificacion agregada para que sea respuesta AJAX 
-        Juan Carlos Mora Morquecho 02/06/2026 
+    /*Esta es la modificacion agregada para que sea respuesta AJAX
+        Juan Carlos Mora Morquecho 02/06/2026
     Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     public function index(Request $request): InertiaResponse
@@ -69,7 +69,7 @@ class CaracteristicasController extends Controller
         {
             return;
         }
-  
+
         $idsRegiones = $data->pluck('IdRegion')->unique();
         $idsCaract = $data->pluck('IdCatNombre')->unique();
         $idsDistr = $data->pluck('IdTipoDistribucion')->unique();
@@ -102,7 +102,7 @@ class CaracteristicasController extends Controller
             $item = ['IdCatNombre' => $idCatNombre,
                     'Caracteristica' => $caractIndexadas[$idCatNombre]['caracteristica'] ?? '',
                     'BiblioCaract' => ['texto'=> '',
-                                       'url'=>$biblio], 
+                                       'url'=>$biblio],
                     'Regiones' => [],
                     'Observaciones' => $primero->RelNomCat,
                     ];
@@ -118,7 +118,7 @@ class CaracteristicasController extends Controller
                 $biblioReg = $registro->contBiblioRegion > 0
                                 ? Helpers::IMG_LIBRO_VERDE
                                 : Helpers::IMG_LIBRO_ROJO;
-                
+
                 $item['Regiones'][] = [
                         'IdRegion' => $registro->IdRegion,
                         'Region' => $regionesIndexadas[$registro->IdRegion]['Region'] ?? '',
@@ -137,48 +137,48 @@ class CaracteristicasController extends Controller
     }
 
     public function cargaRegionesNombre($idNombre){
-    $regNombre = Region::regionPorNombre($idNombre)->get();
-    $regCaract = Region::regionPorCaract($idNombre)->get();
-    $regNomComun = Region::regionPorNomComun($idNombre)->get();
+        $regNombre = Region::regionPorNombre($idNombre)->get();
+        $regCaract = Region::regionPorCaract($idNombre)->get();
+        $regNomComun = Region::regionPorNomComun($idNombre)->get();
 
-    $idsRegiones = collect($regNombre)->pluck('IdRegion')
-         ->merge(collect($regCaract)->pluck('IdRegion'))
-         ->merge(collect($regNomComun)->pluck('IdRegion'))
-         ->unique()->values()->toArray();
-    $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
-    $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
-    $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
+        $idsRegiones = collect($regNombre)->pluck('IdRegion')
+            ->merge(collect($regCaract)->pluck('IdRegion'))
+            ->merge(collect($regNomComun)->pluck('IdRegion'))
+            ->unique()->values()->toArray();
+        $todosLosNodosRegiones = Region::orderBy('NombreRegion')->get()->keyBy('IdRegion')->all();
+        $treeData = $this->buildRegionTreeBatch($todosLosNodosRegiones);
+        $regionesIndexadas = $this->aplanadoAscendencia($treeData, $idsRegiones);
 
-    $regPorNombreMapped = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
-    $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
-    $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
+        $regPorNombreMapped = $this->mapeoRegiones($regNombre, $regionesIndexadas, 'nombre');
+        $regPorCarct = $this->mapeoRegiones($regCaract, $regionesIndexadas, 'caracteristica');
+        $regPorNomCom = $this->mapeoRegiones($regNomComun, $regionesIndexadas, 'nomComun');
 
-    $regPorNombre = collect($regPorNombreMapped)->map(function($item) use ($idNombre) {
-        $idTipoDist = $item['IdTipoDistribucion'] ?? ($item['TipoDistribucion']['id'] ?? null);
+        $regPorNombre = collect($regPorNombreMapped)->map(function($item) use ($idNombre) {
+            $idTipoDist = $item['IdTipoDistribucion'] ?? ($item['TipoDistribucion']['id'] ?? null);
 
-        if ($idTipoDist) {
-            $tieneBiblio = \DB::connection('catcentral')->table('RelNombreRegionBiblio')
-                ->where('IdNombre', $idNombre)
-                ->where('IdRegion', $item['IdRegion'])
-                ->where('IdTipoDistribucion', $idTipoDist)
-                ->exists();
+            if ($idTipoDist) {
+                $tieneBiblio = \DB::connection('catcentral')->table('RelNombreRegionBiblio')
+                    ->where('IdNombre', $idNombre)
+                    ->where('IdRegion', $item['IdRegion'])
+                    ->where('IdTipoDistribucion', $idTipoDist)
+                    ->exists();
 
-            $item['Biblio'] = [
-                'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
-                'texto' => ''
-            ];
-        }
-        return $item;
-    });
+                $item['Biblio'] = [
+                    'url' => $tieneBiblio ? Helpers::IMG_LIBRO_VERDE : Helpers::IMG_LIBRO_ROJO,
+                    'texto' => ''
+                ];
+            }
+            return $item;
+        });
 
-    $todasLasRegiones = collect()->concat($regPorNombre)->concat($regPorCarct)->concat($regPorNomCom);
+        $todasLasRegiones = collect()->concat($regPorNombre)->concat($regPorCarct)->concat($regPorNomCom);
 
-    return response()->json([
-        'regPorNombre' => $regPorNombre,
-        'regPorCaract' => $regPorCarct, 
-        'regPorNomCom' => $regPorNomCom,
-        'todas' => $todasLasRegiones,
-    ]);
+        return response()->json([
+            'regPorNombre' => $regPorNombre,
+            'regPorCaract' => $regPorCarct,
+            'regPorNomCom' => $regPorNomCom,
+            'todas' => $todasLasRegiones,
+        ]);
 }
 
 private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
@@ -186,7 +186,7 @@ private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
         $biblio = ($valor->Biblio > 0 || $valor->contBiblio > 0)
                         ? Helpers::IMG_LIBRO_VERDE
                         : Helpers::IMG_LIBRO_ROJO;
-        
+
         $tipDist = null;
         if(isset($valor->IdTipoDistribucion) || isset($valor->id_tipo)){
             $tipDist = [
@@ -196,19 +196,19 @@ private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
         }
 
         return [
-            'IdRegion' => $valor->IdRegion, 
+            'IdRegion' => $valor->IdRegion,
             'Region'   => $regIndexadas[$valor->IdRegion]['Region'] ?? $valor->NombreRegion ?? 'Desconocida',
             'TipoDistribucion' => $tipDist, // Debe coincidir con el 'prop' en Vue
             'origen'           => $origenDatos,
-            'Observaciones'    => $valor->Observaciones ?? $valor->observaciones ?? '', 
+            'Observaciones'    => $valor->Observaciones ?? $valor->observaciones ?? '',
             'Biblio'           => ['texto' => '', 'url' => $biblio]
         ];
     })->values();
 }
-    
 
-    /*Esta es la modificacion agregada para que sea respuesta AJAX 
-        Juan Carlos Mora Morquecho 22/04/2026 
+
+    /*Esta es la modificacion agregada para que sea respuesta AJAX
+        Juan Carlos Mora Morquecho 22/04/2026
     Esta modificación es para cargar desde el modal la informacion y no depender del inertia */
 
     private function buildTreeOptimized(Collection $elements): array
@@ -275,27 +275,80 @@ private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
     {
         $nodo = CatalogoNombre::find($id);
         if (!$nodo) {
-            return response()->json(['error' => 'Característica no encontrada.'], 404);
+            return response()->json(['message' => 'Característica no encontrada.'], 404);
         }
+
         if ($nodo->tieneHijos()) {
             return response()->json([
-                'error' => 'No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.'
+                'message' => 'No es posible eliminar el elemento seleccionado ya que tiene características subordinadas.'
             ], 409);
         }
+
+        $conn = 'catcentral';
+        $schema = \DB::connection($conn)->getSchemaBuilder();
+
+        if ($schema->hasTable('RelNombreCatalogoRegionBiblio')) {
+            $enRegionBiblio = \DB::connection($conn)->table('RelNombreCatalogoRegionBiblio')
+                ->where('IdCatNombre', $id)
+                ->exists();
+
+            if ($enRegionBiblio) {
+                return response()->json([
+                    'message' => 'No es posible eliminar la característica porque tiene referencias bibliográficas y regiones asociadas a taxones.'
+                ], 409);
+            }
+        }
+
+        if ($schema->hasTable('RelNombreCatalogoBiblio')) {
+            $enBiblio = \DB::connection($conn)->table('RelNombreCatalogoBiblio')
+                ->where('IdCatNombre', $id)
+                ->exists();
+
+            if ($enBiblio) {
+                return response()->json([
+                    'message' => 'No es posible eliminar la característica porque tiene citas bibliográficas asociadas a taxones.'
+                ], 409);
+            }
+        }
+
+        if ($schema->hasTable('RelNombreCatalogoRegion')) {
+            $enRegion = \DB::connection($conn)->table('RelNombreCatalogoRegion')
+                ->where('IdCatNombre', $id)
+                ->exists();
+
+            if ($enRegion) {
+                return response()->json([
+                    'message' => 'No es posible eliminar la característica porque está asignada a taxones por región.'
+                ], 409);
+            }
+        }
+
+        if ($schema->hasTable('RelNombreCatalogo')) {
+            $enTaxon = \DB::connection($conn)->table('RelNombreCatalogo')
+                ->where('IdCatNombre', $id)
+                ->exists();
+
+            if ($enTaxon) {
+                return response()->json([
+                    'message' => 'No es posible eliminar la característica seleccionada porque se encuentra asociada a un taxón.'
+                ], 409);
+            }
+        }
+
         try {
             $nodo->delete();
             return response()->json(['message' => 'Característica eliminada correctamente.'], 200);
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == "23000" || str_contains($e->getMessage(), '1451')) {
                 return response()->json([
-                    'error' => 'No es posible eliminar la característica seleccionada porque se encuentra asociada a un taxón.'
-                ], 422); 
+                    'message' => 'No es posible eliminar la característica seleccionada porque se encuentra asociada a un taxón.'
+                ], 409);
             }
             Log::error("Error SQL al eliminar característica {$id}: " . $e->getMessage());
-            return response()->json(['error' => 'Ocurrió un error interno en el servidor.'], 500);
+            return response()->json(['message' => 'Ocurrió un error interno en el servidor.'], 500);
         } catch (\Exception $e) {
             Log::error("Error general al eliminar característica {$id}: " . $e->getMessage());
-            return response()->json(['error' => 'Ocurrió un error al intentar eliminar.'], 500);
+            return response()->json(['message' => 'Ocurrió un error al intentar eliminar.'], 500);
         }
     }
 
@@ -317,7 +370,7 @@ private function mapeoRegiones($listaReg, $regIndexadas, $origenDatos){
                     ->where(function ($query) use ($nodo) {
                         return $query->where('IdAscendente', $nodo->IdAscendente);
                     })
-                    ->ignore($nodo->IdCatNombre, 'IdCatNombre') 
+                    ->ignore($nodo->IdCatNombre, 'IdCatNombre')
             ],
         ], [
             'Descripcion.required' => 'La descripción es obligatoria.',

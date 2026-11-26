@@ -758,7 +758,8 @@
     //******************************************************************************************** */
     const onCreaRelacion = async (data) => {  
 
-        
+        let caracteristica;
+
         idNombre.value = props.taxonActual.id;
 
         if(georeferido.value){
@@ -780,9 +781,12 @@
 
                 const cadRegion = obtenerRutaRegion(idTipoReg.value.IdRegion);
 
-                const caracteristica = CaracteristicasTaxon.value.find(
-                    item => item.IdCatNombre == idCaracteristica.value
-                );
+                if(CaracteristicasTaxon.value.length > 0)
+                    {
+                    caracteristica = CaracteristicasTaxon.value.find(
+                        item => item.IdCatNombre == idCaracteristica.value
+                    );
+                }
 
                 if(caracteristica) {
                     const nuevaRegion = {
@@ -825,6 +829,10 @@
                         ]
                     }
 
+                    if(CaracteristicasTaxon.value.length === 0)
+                    {
+                        CaracteristicasTaxon.value = [];
+                    }
                     CaracteristicasTaxon.value.push(nuevaCaract);
                 }
 

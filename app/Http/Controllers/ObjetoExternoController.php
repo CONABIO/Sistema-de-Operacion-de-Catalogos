@@ -174,58 +174,64 @@ class ObjetoExternoController extends Controller
     }
 
   public function destroy($id)
-{
-    try {
-        $objeto = ObjetoExterno::findOrFail($id);
-        $relaciones = [
-            'RelObjetoExternoBiblio'            => 'Bibliografías',
-            'RelObjetoExternoEjemplar'          => 'Ejemplares',
-            'RelObjetoExternoNombre'            => 'Nombres',
-            'RelObjetoExternoSitio'             => 'Sitios',
-            'RelEstudioObjetoExterno'           => 'Estudios',
-            'RelEstudioCatColObjetoExterno'     => 'Estudios de Catálogo Ecológico',
-            'RelRegionEstudioSitioCatColObjetoExterno' => 'Región-Estudio (CatCol)',
-        ];
+    {
+        try {
+            $objeto = ObjetoExterno::findOrFail($id);
 
-        $tablasConDatos = [];
+            $relaciones = [
+                'RelObjetoExternoNombre'                   => 'nombres taxonómicos',
+                'RelObjetoExternoEjemplar'                 => 'ejemplares',
+                'RelObjetoExternoSitio'                    => 'sitios de colecta',
+                'RelObjetoExternoBiblio'                   => 'bibliografías',
+                'RelEstudioObjetoExterno'                  => 'estudios/Proyectos',
+                'RelEstudioCatEcolObjetoExterno'           => 'estudios de Catálogo Ecológico',
+                'RelEstudioCatColObjetoExterno'            => 'estudios de Catálogo Ecológico',
+                'RelRegionEstudioCatEcolObjetoExterno'     => 'región-Estudio (Catálogo Ecológico)',
+                'RelRegionEstudioSitioCatEcolObjetoExterno'=> 'región-Estudio-Sitio (Catálogo Ecológico)',
+                'RelRegionEstudioSitioCatColObjetoExterno' => 'región-Estudio-Sitio (Catálogo Ecológico)',
+            ];
 
-        foreach ($relaciones as $tabla => $nombreVisible) {
-            if (\Illuminate\Support\Facades\Schema::connection('catcentral')->hasTable($tabla)) {
-                $existe = DB::connection('catcentral')
-                    ->table($tabla)
-                    ->where('IdObjetoExterno', $id)
-                    ->exists();
+            $tablasConDatos = [];
 
-                if ($existe) {
-                    $tablasConDatos[] = $nombreVisible;
+            foreach ($relaciones as $tabla => $nombreVisible) {
+                if (\Illuminate\Support\Facades\Schema::connection('catcentral')->hasTable($tabla)) {
+                    $existe = DB::connection('catcentral')
+                        ->table($tabla)
+                        ->where('IdObjetoExterno', $id)
+                        ->exists();
+
+                    if ($existe && !in_array($nombreVisible, $tablasConDatos)) {
+                        $tablasConDatos[] = $nombreVisible;
+                    }
                 }
             }
-        }
 
-        if (count($tablasConDatos) > 0) {
-            $listaTablas = implode(', ', array_slice($tablasConDatos, 0, -1));
-            if (count($tablasConDatos) > 1) {
-                $listaTablas .= ' y ' . end($tablasConDatos);
-            } else {
-                $listaTablas = $tablasConDatos[0];
+            if (count($tablasConDatos) > 0) {
+                $listaTablas = implode(', ', array_slice($tablasConDatos, 0, -1));
+                if (count($tablasConDatos) > 1) {
+                    $listaTablas .= ' y ' . end($tablasConDatos);
+                } else {
+                    $listaTablas = $tablasConDatos[0];
+                }
+
+                return response()->json([
+                    'message' => "El registro no se puede eliminar porque está relacionado con {$listaTablas}."
+                ], 422);
             }
 
+            $objeto->delete();
+
             return response()->json([
-                'message' => "El registro no se puede eliminar porque está relacionado con {$listaTablas}."
-            ], 422);
+                'message' => 'El objeto externo fue eliminado correctamente.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al eliminar ObjetoExterno ID {$id}: " . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Error al intentar eliminar el registro: ' . $e->getMessage()
+            ], 500);
         }
-
-        $objeto->delete();
-
-        return response()->json([
-            'message' => 'El objeto externo fue eliminado correctamente.'
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Error al intentar eliminar el registro. Es posible que existan dependencias a nivel de base de datos no controladas.'
-        ], 500);
     }
-}
 
 }

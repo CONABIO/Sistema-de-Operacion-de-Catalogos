@@ -20,4 +20,7 @@ class RelNombreCatalogoRegionBiblio extends Model
 
     //Se asigna el nombre del campo llave primaria
     protected $primaryKey=['IdNombre', 'IdCatNombre', 'IdRegion', 'IdTipoDistribucion', 'IdBibliografia'];
+
+    //Se asignan los campos que podran ser actualizados 
+    protected $guarded = [];
 }

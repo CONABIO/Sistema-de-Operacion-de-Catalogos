@@ -9,7 +9,6 @@ export default defineConfig({
         cors: {
             origin: 'http://172.16.3.63:8000',
         },
-
     },
     plugins: [
         laravel({

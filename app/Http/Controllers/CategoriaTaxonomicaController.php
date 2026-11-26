@@ -6,7 +6,7 @@ use App\Models\CategoriasTaxonomicas;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -148,13 +148,23 @@ class CategoriaTaxonomicaController extends Controller
             ]);
         }
 
+        $tieneNombres = DB::connection('catcentral')->table('Nombre')
+            ->where('IdCategoriaTaxonomica', $categoria_taxonomica->IdCategoriaTaxonomica)
+            ->exists();
+
+        if ($tieneNombres) {
+            throw ValidationException::withMessages([
+                'message' => 'No es posible eliminar esta categoría taxonómica porque tiene nombres asociados.'
+            ]);
+        }
+
         try {
             $categoria_taxonomica->delete();
             return redirect()->route('categorias-taxonomicas.index')->with('success', 'Categoría eliminada con éxito.');
         } catch (QueryException $e) {
             if ($e->getCode() === "23000" || (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1451)) {
                 throw ValidationException::withMessages([
-                    'message' => 'No es posible eliminar esta categoría porque tiene nombres asociados'
+                    'message' => 'No es posible eliminar esta categoría porque tiene nombres asociados.'
                 ]);
             }
             throw $e;

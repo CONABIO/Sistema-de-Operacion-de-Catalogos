@@ -74,8 +74,6 @@
 
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        console.log('Ejecutando salida segura...');
-
         fetch('/logout', {
             method: 'POST',
             headers: {

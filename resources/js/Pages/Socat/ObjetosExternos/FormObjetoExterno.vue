@@ -208,7 +208,6 @@ const intentarGuardar = async () => {
     if (!formRef.value) return;
     try {
         await formRef.value.validate();
-        console.log("Formulario válido, enviando...");
         const datosParaEnviar = {
             ...form.value,
             IdObjetoExterno: props.accion === 'editar' ? props.objetoExternoEdit?.IdObjetoExterno : null,

@@ -44,11 +44,7 @@ const manejarClickFila = (row) => {
     if (tablaRef.value) {
         tablaRef.value.selectedRow = row;
     }
-    document.querySelectorAll('.fila-seleccionada-verde').forEach(tr => {
-        tr.classList.remove('fila-seleccionada-verde');
-    });
 };
-
 
 
 const seleccionarYResaltarFila = (itemOId) => {
@@ -276,6 +272,13 @@ const handleFormSubmited = (datosDelFormulario) => {
     }
 };
 
+const tableRowClassName = ({ row }) => {
+    if (selectedRowId.value && String(row.IdObjetoExterno) === String(selectedRowId.value)) {
+        return 'fila-seleccionada-verde';
+    }
+    return '';
+};
+
 
 const eliminarObjetoExterno = (idObjeto) => {
     const procederConEliminacion = async () => {
@@ -288,7 +291,7 @@ const eliminarObjetoExterno = (idObjeto) => {
             const mensajeError = error.response?.data?.message || 'No se pudo eliminar el registro.';
             const status = error.response?.status;
 
-            if (status === 422) {
+            if (status === 422 || status === 409) {
                 mostrarNotificacion("Aviso", mensajeError, "warning");
             } else {
                 mostrarNotificacionError("Error", mensajeError, "error");

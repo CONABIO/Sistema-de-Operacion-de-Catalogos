@@ -466,7 +466,7 @@ watch(() => props.treeDataProp, async (newVal) => {
 
 
 onMounted(() => {
-    
+
     if (localTreeData.value && localTreeData.value.length > 0 && !nodeIdToSelectAfterInsert.value) {
         const firstNodeId = localTreeData.value[0].IdTipoRelacion;
         selectAndFocusNode(firstNodeId);
@@ -738,23 +738,11 @@ const guardarDesdeModal = async () => {
 const handleEliminar = () => {
     if (esModalVisible.value) return ElMessage.info("Cierre cualquier operación en curso.");
     if (!selectedNode.value) return ElMessage.warning("Por favor, seleccione un nodo para eliminar.");
-
-    if (selectedNode.value.IdTipoRelacion <= 8) {
-        return mostrarNotificacion(
-            "Aviso",
-            "No es posible eliminar el tipo de relación seleccionado porque es parte de la información del sistema",
-            "warning"
-        );
-    }
-
     if (selectedNode.value.children && selectedNode.value.children.length > 0) {
         return mostrarNotificacion("Aviso", "No es posible eliminar la relación seleccionada por tener otros tipos de relaciones que dependen de ella.", "warning");
     }
-
     nodeDataForDeleteConfirmation.value = { ...selectedNode.value };
-
     const mensaje = `¿Está seguro de eliminar el tipo de relación seleccionado? Esta acción no se puede revertir.`;
-
     ElMessageBox({
         title: "Confirmar eliminación",
         showConfirmButton: false,
@@ -770,26 +758,23 @@ const handleEliminar = () => {
                 h(BotonAceptar, { texto: "Sí, Eliminar", onClick: proceedWithDeletion }),
             ]),
         ]),
-    }).catch();
+    }).catch(() => { });
 };
 
 const proceedWithDeletion = async () => {
     try {
         ElMessageBox.close();
-        if (!nodeDataForDeleteConfirmation.value){ 
+        if (!nodeDataForDeleteConfirmation.value){
             return;
         }
-
-         const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion;
-
+        const idQueFallo = nodeDataForDeleteConfirmation.value.IdTipoRelacion;
         const nodeInTree = treeRef.value?.getNode(idQueFallo);
         const parentId = nodeInTree?.parent && nodeInTree.parent.level > 0
             ? nodeInTree.parent.data.IdTipoRelacion
             : null;
-
         router.delete(`/tipos-relacion/${idQueFallo}`, {
             preserveScroll: true,
-            preserveState: true, 
+            preserveState: true,
             onSuccess: () => {
                 mostrarNotificacion("Eliminación", `El tipo de relación ha sido eliminado correctamente.`, "success");
 
@@ -811,8 +796,13 @@ const proceedWithDeletion = async () => {
                     }
                 });
             },
-            onError: (error) => {
-                mostrarNotificacionError('Aviso', `El tipo de relación no se puede eliminar porque tiene nombres asociados`, 'warning');
+            onError: (errors) => {
+                const mensajeError = errors.message
+                    || Object.values(errors).flat()[0]
+                    || "No se puede eliminar el tipo de relación.";
+
+                mostrarNotificacionError('Aviso', mensajeError, 'warning');
+
                 nextTick(() => {
                     const nodoOriginal = findNodeInTree(localTreeData.value, idQueFallo);
                     if (nodoOriginal) {
@@ -832,6 +822,7 @@ const proceedWithDeletion = async () => {
         ElMessageBox.alert('Ocurrió un error al intentar eliminar el registro.', 'Error', { type: 'error' });
     }
 };
+
 
 const MAX_NIVELES = 5;
 const calcularNivelesParaNuevoNodo = (nodoReferencia, opcion, todosLosNodos) => {
@@ -965,7 +956,7 @@ const cerrarDialogo = () => {
                                     :disabled="isAccionDependienteDeNodoDeshabilitada" v-if="hasPermisos(moduloSocat, 'Bajas')" />
                                 <CambiarIconoButton @cambiar-icono="abrirModalIconos" toolPosicion="bottom"
                                     :disabled="isAccionDependienteDeNodoDeshabilitada || esNodoProtegido" v-if="hasPermisos(moduloSocat, 'Cambios')" />
-                                <BotonSalir toolPosicion="bottom" :accion = props.accion  @salir="cerrarDialogo" />                            
+                                <BotonSalir toolPosicion="bottom" :accion = props.accion  @salir="cerrarDialogo" />
                             </div>
                         </div>
                     </div>
@@ -995,7 +986,7 @@ const cerrarDialogo = () => {
                 <div v-else class="no-data-message"> No hay datos de tipos de relación para mostrar. </div>
             </el-card>
         </div>
-   
+
 
 
     <Teleport to="body">

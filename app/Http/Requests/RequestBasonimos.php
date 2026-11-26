@@ -98,7 +98,6 @@ class RequestBasonimos extends FormRequest
                 ->exists();
 
             if($exists){
-                log::info("La relación que intenta crear ya existe");
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
 

@@ -13,7 +13,6 @@ class TiposDistribucionController extends Controller
 
     public function index()
     {
-        Log::info("Mostrando el índice de TipoDistribucion");
 
         $tipoDistribucion = TipoDistribucion::orderBy('Descripcion')->paginate(100);
 
@@ -29,7 +28,7 @@ class TiposDistribucionController extends Controller
     }
 
     public function cargaTiposDist(Request $request){
-        
+
         if($request->origen === 'caracteristicas'){
             $tipoDistrib = TipoDistribucion::orderBy('Descripcion')
                                         ->get();
@@ -149,20 +148,74 @@ class TiposDistribucionController extends Controller
         return response()->json(['page' => (int)$pagina]);
     }
 
-
-    public function destroy($IdTipoDistribucion)
+public function destroy($IdTipoDistribucion)
     {
-        Log::info("Eliminando TipoDistribucion con ID: {$IdTipoDistribucion}");
-        try {
-            $tipoDistribucion = TipoDistribucion::findOrFail($IdTipoDistribucion);
-            $tipoDistribucion->delete();
+        $tipoDistribucion = TipoDistribucion::find($IdTipoDistribucion);
 
-            Log::info("TipoDistribucion eliminado con ID: {$IdTipoDistribucion}");
-            return response()->json(['message' => 'TipoDistribucion eliminado exitosamente'], 200);
-        } catch (\Exception $e) {
-            Log::error("Error al eliminar TipoDistribucion con ID: {$IdTipoDistribucion}: {$e->getMessage()}");
-            return response()->json(['message' => 'Error al eliminar TipoDistribucion'], 500);
+        if (!$tipoDistribucion) {
+            Log::warning("TipoDistribucion no encontrado con ID: {$IdTipoDistribucion}");
+            return response()->json(['message' => 'Tipo de distribución no encontrado'], 404);
         }
+
+        try {
+            $conexion = 'catcentral';
+            if (DB::connection($conexion)->getSchemaBuilder()->hasTable('RelNombreRegion')) {
+                $enNombreRegion = DB::connection($conexion)->table('RelNombreRegion')
+                    ->where('IdTipoDistribucion', $IdTipoDistribucion)
+                    ->exists();
+
+                if ($enNombreRegion) {
+                    return response()->json([
+                        'message' => 'No se puede eliminar el tipo de distribución está asignado a especies por región.',
+                        'origen' => 'RelNombreRegion'
+                    ], 409);
+                }
+            }
+
+            if (DB::connection($conexion)->getSchemaBuilder()->hasTable('RelNombreCatalogoRegion')) {
+                $enNombreCatRegion = DB::connection($conexion)->table('RelNombreCatalogoRegion')
+                    ->where('IdTipoDistribucion', $IdTipoDistribucion)
+                    ->exists();
+
+                if ($enNombreCatRegion) {
+                    return response()->json([
+                        'message' => 'No se puede eliminar el tipo de distribución está asignado a catálogos de especies por región.',
+                        'origen' => 'RelNombreCatalogoRegion'
+                    ], 409);
+                }
+            }
+            $tipoDistribucion->delete();
+            return response()->json([
+                'message' => 'Tipo de distribución eliminado exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error("Error al eliminar TipoDistribucion con ID {$IdTipoDistribucion}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al eliminar el tipo de distribución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function relaciones($IdTipoDistribucion)
+    {
+        $tipoDistribucion = TipoDistribucion::find($IdTipoDistribucion);
+
+        if (!$tipoDistribucion) {
+            return response()->json(['message' => 'Tipo de distribución no encontrado'], 404);
+        }
+
+        $relaciones = DB::table('RelNombreRegion as rnr')
+            ->join('Nombre as n', 'n.IdNombre', '=', 'rnr.IdNombre')
+            ->leftJoin('Region as r', 'r.IdRegion', '=', 'rnr.IdRegion')
+            ->where('rnr.IdTipoDistribucion', $IdTipoDistribucion)
+            ->select('n.IdNombre', 'n.Nombre', 'r.IdRegion', 'r.NombreRegion')
+            ->distinct()
+            ->orderBy('n.Nombre')
+            ->get();
+
+        return response()->json(['relaciones' => $relaciones]);
     }
 
     public function buscaTipoDistribucion(Request $request)

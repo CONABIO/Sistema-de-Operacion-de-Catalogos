@@ -231,7 +231,7 @@
                       </el-button>
                     </el-tooltip>
                     <el-tooltip effect="dark" content="Traspaso de información" placement="right">
-                      <el-button @click="CambioBasSin" circle  
+                      <el-button @click="traspasoInformacion" circle  
                                   style="margin-left: 10px; background: rgb(145, 184, 88); border: none;"
                                   :disabled = "habCambioSinBas"
                                   v-if="hasPermisos(moduloSocat,'Cambios')">
@@ -295,11 +295,12 @@
                     :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
     </DialogForm>
 
-    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true" :pressEsc="false" :width="'83+%'">
-      <Bibliografia :taxonAct="taxActBiblio" :relaciones="tablaNomenclatura" 
-                    :totalRegistros = "totalRegNom" @cerrar="cerrarDialog('biblio')" />
+    <DialogForm v-model="dialogFormVisibleTraspasoInfo" :botCerrar="true"
+                :pressEsc="false" :width="'83%'" >
+      <Traspaso v-if="mostrarComponenteTraspaso" :taxonAct="props.taxonAct"
+                :sinonimo="relacionAct" @cerrar="cerrarTraspaso"/>
     </DialogForm>
-
+      
     <DialogForm v-model="dialogFormVisibleTiposRel" :botCerrar="true" :pressEsc="false" :width="'83%'">
       <IndexRelaciones 
           :treeDataProp = "tipRelacion.treeDataProp"
@@ -328,6 +329,7 @@ import { showConfirmMessage } from '@/Composables/mensajeConfirm';
 import { usePage } from '@inertiajs/vue3';
 import FiltroGrupos from '@/Pages/Socat/NombreTaxonomico/FiltroGrupoTax.vue';
 import Bibliografia from '@/Pages/Socat/Relaciones/BibliografiaRelacionesTax.vue';
+import Traspaso from '@/Pages/Socat/Relaciones/TraspasoInformacion.vue';
 import DialogForm from '@/Components/Biotica/DialogGeneral.vue';
 import Logo from '@/Components/Biotica/LogoCategoria.vue';
 import Rompecabezas from '@/Components/Biotica/Icons/Rompecabezas.vue';
@@ -349,6 +351,8 @@ import BotonSalir from '@/Components/Biotica/SalirButton.vue';
 import iconoTraspaso from "@/Components/Biotica/Icons/TraspasoInfo.vue";
 import GuardarButton from '@/Components/Biotica/GuardarButton.vue';
 
+import { useValidacionesRelaciones } from '@/Composables/useValidacionesRelaciones';
+
 const { permisos } = usePermisos();
 
 const page = usePage();
@@ -359,6 +363,7 @@ const dialogFormVisibleCat = ref(false);
 const dialogFormVisibleBiblio = ref(false);
 const dialogFormVisibleTiposRel = ref(false);
 const dialogFormVisibleTraspasoInfo = ref(false);
+
 const categ = ref(null);
 const catego = ref('');
 const catalogos = ref('');
@@ -381,6 +386,7 @@ const notificacionTitulo = ref("");
 const notificacionMensaje = ref("");
 const notificacionTipo = ref("info");
 const notificacionDuracion = ref(5000);
+const mostrarComponenteTraspaso = ref(false);
 
 const filterText = ref('');
 const mostrar = ref(false);
@@ -393,7 +399,7 @@ const prevCursor = ref(null);
 const cargandoPagina = ref(false);
 const paginacion = ref(null);
 
- const mostrarNuevoTax = ref(false);
+const mostrarNuevoTax = ref(false);
 
 const conteoReg = ref(0);
 
@@ -498,6 +504,27 @@ const opcionesFiltroNomenclatura = ref([
   { label: 'TipoRelación', value: 'TipoRelacion' },
   { label: 'NombreCompleto', value: 'Nombrecompleto' }
 ]);
+
+const traspasoInformacion = async () => {
+
+    if (relacionAct.value.TipoRelacion.idTipoRel === 1 || relacionAct.value.TipoRelacion.idTipoRel === 2) {
+
+        mostrarComponenteTraspaso.value = true;
+        dialogFormVisibleTraspasoInfo.value = true;
+
+    } else {
+        mostrarNotificacionError(
+            'Error',
+            'Para que se habilite el traspaso de información debe existir una relación de sinonimia.',
+            'error'
+        );
+    }
+};
+
+const cerrarTraspaso = () => {
+    dialogFormVisibleTraspasoInfo.value = false;
+    mostrarComponenteTraspaso.value = false;
+};
 
 //Funcion para recibir los datos de los grupos y catalogos selccionados
 const recibeGrupos = async (data) => {
@@ -652,7 +679,7 @@ const expande = async (draggingNode, nodeData, nodeComponent) => {
 const filterNode = async (value) => {
   mostrar.value = false;
 
-  const loading = ElLoading.service({
+const loading = ElLoading.service({
     lock: true,
     text: "Loading",
     spinner: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="none" d="M0 0h200v200H0z"></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M70 95.5V112m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5L92 57.3M33.6 91 48 82.7m0-25.5L33.6 49m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;-120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path><path fill="none" stroke-linecap="round" stroke="#53B0FF" stroke-width="15" transform-origin="center" d="M130 155.5V172m0-84v16.5m0 0a25.5 25.5 0 1 0 0 51 25.5 25.5 0 0 0 0-51Zm36.4 4.5-14.3 8.3M93.6 151l14.3-8.3m0-25.4L93.6 109m58.5 33.8 14.3 8.2"><animateTransform type="rotate" attributeName="transform" calcMode="spline" dur="1.1" values="0;120" keyTimes="0;1" keySplines="0 0 1 1" repeatCount="indefinite"></animateTransform></path></svg>`,
@@ -759,7 +786,7 @@ const cerrarDialog = async(valor) => {
 
 const Guardar = async() => {
 
-  const procederConActualizacion = async () => {
+const procederConActualizacion = async () => {
     try {
       ElMessageBox.close();
       await axios.put('/actualiza-RelacionesTax', { data: {relCompleta: relacionAct.value.TipoRelacion.relCompleta, 
@@ -947,226 +974,6 @@ const Guardar = async() => {
                 altaRelacion();
               break
         }
-    } 
-    
-    const validacionSinonimos = async () => {  
-        let valTaxAct = null;  
-      
-        if(props.taxonAct.relaciones && Object.keys(props.taxonAct.relaciones).length > 0){
-          valTaxAct = Object.values(props.taxonAct.relaciones)
-                                .flat()
-                                .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));  
-        }
-                       
-        const valTaxRel = Object.values(taxonActRel.value)
-                               .flat()
-                               .find(item => item.Estatus === 2 && (item.IdTipoRelacion === 1 || item.IdTipoRelacion === 2));
-
-        //Se valida que el taxon no sea del mismo estatus 
-        if(taxonActRel.value.completo.Estatus === props.taxonAct.completo.Estatus)
-        {
-          mostrarNotificacion(
-              "Error",
-              "El taxón actual y el taxón a relacionar no pueden tener el mismo estatus.",
-              "error",
-              7000
-          ); 
-          return false;//Se valida si el taxon a relacionar no cuente con un valido relacionado si el taxon a relacionar es válido
-        }else if(valTaxAct !== null || valTaxRel !== undefined)
-          {
-            mostrarNotificacion(
-                "Error",
-                "El taxón sinónimo seleccionado ya cuenta con un válido relacionado.",
-                "error",
-                7000
-            );
-            return false;//Se valida que el taxon a relacionar no tenga validos asociados
-          }else if(props.taxonAct.completo.Estatus === "ND"){
-                mostrarNotificacion(
-                  "Error",
-                  "El taxón actual tiene estatus ND, por lo cual no puede tener relaciones de sinonimia.",
-                  "error",
-                  7000
-              );
-              return false;//Se valida que el nivel taxonomico de los taxones a relacionar no se superior a familia 
-            }else if(props.taxonAct.completo.categoria.IdNivel1 < 5 || 
-                 taxonActRel.value.completo.categoria.IdNivel1 < 5){
-                  mostrarNotificacion(
-                    "Error",
-                    "No se pueden tener relaciones de sinonimia en taxones de categoría superior a familia.",
-                    "error",
-                    7000
-                  );
-                  return false;
-                 }              
-        return true;
-      }
-
-     const validacionBasonimos = async () => {
-
-      const valTaxAct = Object.values(props.taxonAct.relaciones)
-                               .flat()
-                               .find(item => item.IdTipoRelacion === 2);                               
-      
-      const valTaxRel = Object.values(taxonActRel.value)
-                               .flat()
-                               .find(item => item.IdTipoRelacion === 2);
-
-      if(valTaxAct !== undefined || valTaxRel !== undefined){
-        mostrarNotificacion(
-             "Error",
-             "La relación de basonimia no puede ser generada, ya que alguno de los taxones ya cuenta con una relación de este tipo.",
-             "error",
-             7000
-        ); 
-        return false;
-      }else if(props.taxonAct.completo.categoria.IdNivel1 < 7 || 
-               taxonActRel.value.completo.categoria.IdNivel1 < 7){
-                mostrarNotificacion(
-                  "Error",
-                  "El taxón actual es de categoría superior a especie, por lo cual no se puede generar la relación de basonimia.",
-                  "error",
-                  7000
-                ); 
-                return false;
-              }
-      return true;
-    }
-
-    const validacionEquivalencia = async () => {
-
-      if(props.taxonAct.completo.SistClasCatDicc === taxonActRel.value.completo.SistClasCatDicc){
-            mostrarNotificacion(
-                "Error",
-                "No se puede generar la relación, ya que el sistema de clasificación es el mismo en ambos taxones.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
-      if(props.taxonAct.completo.SistClasCatDicc === 'NA' || 
-         props.taxonAct.completo.SistClasCatDicc === 'ND' || 
-         taxonActRel.value.completo.SistClasCatDicc === 'NA' || 
-         taxonActRel.value.completo.SistClasCatDicc === 'ND'){
-          mostrarNotificacion(
-                "Error",
-                "No se puede generar la relación porque el sistema de clasificación de uno de los taxones es NA o ND.",
-                "error",
-                7000
-            ); 
-            console.log("Entre al error equivalencia 2");
-            return false;
-      }
-
-      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica){
-          mostrarNotificacion(
-                "Alerta",
-                "No se puede generar la relación porque la categoría taxonómica no es la misma en ambos taxones.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
-      if(!(props.taxonAct.completo.categoria.IdNivel1 < 7 && props.taxonAct.completo.categoria.IdNivel3 === 0) ||
-         !(taxonActRel.value.completo.categoria.IdNivel1 < 7 && taxonActRel.value.completo.categoria.IdNivel3 === 0)){
-          mostrarNotificacion(
-                "Error",
-                "No se puede generar la relación porque la debe ser género o superior.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
-      return true;
-    } 
-
-    const validacionHuesped = async () => {
-      const gruposPara = ["ARACH", "COLEO", "DIPTE", "HYMEN", "INSEC", 
-                          "NEMAT", "ACANT", "ANNEL", "CESTO", "CRUST", 
-                          "MONOG", "PROT", "MYXOZ", "TREMA"];
-      const gruposVert = ["ANFIB", "AVES", "MAMIF", "PECES", "REPTI"];   
-      const estatusPermitidos = ["Válido", 'Aceptado'] 
-      
-
-      if(!estatusPermitidos.includes(props.taxonAct.estatus) || !estatusPermitidos.includes(taxonActRel.value.estatus)){
-        mostrarNotificacion(
-                "Error",
-                "No se puede generar la relación, ya que uno o ambos taxones tienen estatus diferente de válido/correcto.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
-      if(!(
-              (gruposPara.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-               gruposVert.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado)) ||
-              (gruposVert.includes(props.taxonAct.completo.scat.grupo_scat.GrupoAbreviado) &&
-               gruposPara.includes(taxonActRel.value.completo.scat.grupo_scat.GrupoAbreviado))
-            )
-          ){
-            mostrarNotificacion(
-                "Error",
-                "***El vertebrado o parásito que selecciono no pertenece a un grupo válido7: Vertebrados válidos (ANFIB, AVES, MAMIF, PECES, REPTI), Parásitos válidos (ARACH, COLEO, DIPTE, HYMEN, INSEC, NEMAT, ACANT, ANNEL, CESTO, CRUST, MONOG, PROT, MYXOZ, TREMA).",
-                "error",
-                7000
-            ); 
-            return false;
-           }
-
-      return true;
-    }
-
-    const validacionParental = async () => {
-      if(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica != "híbrido"){
-         mostrarNotificacion(
-                "Error",
-                "No es posible asociar un parental a un taxón que no es un híbrido.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-
-      const categPerm = ["género", "especie", "híbrido"];
-    
-          if(!categPerm.includes(props.taxonAct.completo.categoria.NombreCategoriaTaxonomica) || 
-             !categPerm.includes(taxonActRel.value.completo.categoria.NombreCategoriaTaxonomica)){
-           mostrarNotificacion(
-                "Error",
-                "No es posible asociar un parental a un taxón cuya categoría taxonómica sea diferente de género o especie.",
-                "error",
-                7000
-            ); 
-            return false; 
-      }
-
-      return true;
-    }
-
-    const validaHomonimos = async () => {
-      if(props.taxonAct.id === taxonActRel.value.id){
-        mostrarNotificacion(
-                "Alerta",
-                "Está tratando de relacionar el nombre consigo mismo, lo cual no es posible.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-      if(props.taxonAct.completo.TaxonCompleto != taxonActRel.value.completo.TaxonCompleto){
-        mostrarNotificacion(
-                "Error",
-                "Está tratando de relacionar dos taxones con diferente nombre; esto no es posible.",
-                "error",
-                7000
-            ); 
-            return false;
-      }
-      return true;
     }
 
    switch (tipRelSelec.value) {
@@ -1268,7 +1075,7 @@ const Guardar = async() => {
     }
   }
 
-    // Inicialización de datos
+  // Inicialización de datos
   onMounted( async () => {
     const response = await axios.get('/cargar-tipoRel');
     const resTiposRel = await axios.get('/tipos-relacion/cargaInicial');
@@ -1333,7 +1140,13 @@ const Guardar = async() => {
               
             } else {
                 // Otros errores inesperados
-                ElMessage.error("Ocurrió un error en el servidor.");
+                //ElMessage.error("Ocurrió un error en el servidor.");
+                mostrarNotificacion(
+                  "Error",
+                  "Ocurrió un error en el servidor.",
+                  "error",
+                  7000
+              );
             }
 
             loading.close();
@@ -1658,6 +1471,19 @@ const Guardar = async() => {
     }
     loading.close();
   };
+
+  const {
+    validacionSinonimos,
+    validacionBasonimos,
+    validacionEquivalencia,
+    validacionHuesped,
+    validacionParental,
+    vallidacionHomonimos
+  } = useValidacionesRelaciones(
+      () => props.taxonAct, 
+      () => taxonActRel.value,
+      mostrarNotificacion
+  );
 
 </script>
 

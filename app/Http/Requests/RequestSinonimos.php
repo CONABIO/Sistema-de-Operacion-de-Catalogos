@@ -119,13 +119,11 @@ class RequestSinonimos extends FormRequest
                 ->exists();
 
             if($exists){
-                log::info("La relación que intenta crear ya existe");
                 $validator->errors()->add('relacion', 'La relación entre estos taxones ya existe.');
             }
             
             // 1. No deben tener el mismo estatus
             if ($estatusAct && $estatusRel && $estatusAct === $estatusRel) {
-                Log::info("No pase la validacion 1");
                 $validator->errors()->add('estatus', 'El taxón actual y el taxón a relacionar no puede tener el mismo estatus.');
             }
 
@@ -135,25 +133,21 @@ class RequestSinonimos extends FormRequest
             });
 
             if ($estatusAct === "Sinonimo" && $contValido && $estatusRel === self::ESTADO_VALIDO) {
-                Log::info("No pase la validacion 2");
                 $validator->errors()->add('estatus', 'El taxón actual ya tiene una relación con un taxón válido.');
             }
 
             // 3. No puede ser ND
             if ($estatusAct === "ND") {
-                Log::info("No pase la validacion 3");
                 $validator->errors()->add('estatus', 'El taxón actual tiene estatus ND y no puede tener relaciones de sinonimia.');
             }
 
             // 4. No se permiten relaciones si alguno es superior a familia
             if ($idNivelAct < 5 || $idNivelRel < 5) {
-                Log::info("No pase la validacion 4");
                 $validator->errors()->add('categoria', 'No se puede tener relaciones de sinonimia en taxones de categoría superior a familia.');
             }
 
             //5. No se permite la relación si el taxón relacionado ya cuenta con un valido
             if ($contValidoAct > 0 || $conValidoRel > 0){
-                Log::info("No se paso la validacion 5");
                 $validator->errors()->add('validos', 'No se puede tener relaciones de sinonimia si el taxón relacionado tiene una relación valida.');
             } 
         });
